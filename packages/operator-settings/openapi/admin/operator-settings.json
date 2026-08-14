@@ -295,8 +295,7 @@
         "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       },
       "patch": {
         "requestBody": {
@@ -678,8 +677,7 @@
         "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       }
     },
     "/v1/admin/settings/operator-payment-instructions": {
@@ -739,8 +737,7 @@
         "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       },
       "patch": {
         "requestBody": {
@@ -822,8 +819,7 @@
         "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       }
     },
     "/v1/admin/settings/operator-payment-defaults": {
@@ -876,8 +872,7 @@
         "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       },
       "patch": {
         "requestBody": {
@@ -988,8 +983,7 @@
         "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       }
     },
     "/v1/admin/settings/operator": {
@@ -1151,8 +1145,7 @@
         "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       },
       "patch": {
         "requestBody": {
@@ -1585,8 +1578,7 @@
         "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
         "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-api-id": "@voyant-travel/operator-settings#api.admin"
       }
     }
   },

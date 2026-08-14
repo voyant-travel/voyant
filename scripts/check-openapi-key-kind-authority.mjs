@@ -1,42 +1,39 @@
 #!/usr/bin/env node
 /**
- * The PK/SK capability line is declared, complete, and published (voyant#4625 §1).
+ * Every public API bundle states which storefront key kind may call it
+ * (voyant#4625 §1).
  *
- * Three things have to hold together, and each one alone is worth nothing:
+ * A bundle that declares neither `publishable` nor `guardedIntake` is
+ * secret-key-only — the right fail-closed default, and indistinguishable from
+ * nobody having looked at it. So a secret-only public bundle must be named in
+ * `scripts/checks/openapi/secret-only-public-bundles.json` with a reason. That
+ * turns "unclassified" into a reviewable decision instead of silence, which is
+ * the whole point: `/v1/public/*` names the audience, not the trust level, and
+ * a route nobody classified must not become browser-reachable by default.
  *
- *  1. **Every public API bundle states a posture.** A bundle that declares
- *     neither `publishable` nor `guardedIntake` is secret-key-only — which is
- *     the right default, and indistinguishable from nobody having looked at it.
- *     So a secret-only public bundle must be named in
- *     `scripts/checks/openapi/secret-only-public-bundles.json` with a reason.
- *     That turns "unclassified" into a reviewable decision instead of silence.
+ * ## Why this checks declarations and not the committed specs
  *
- *  2. **Every published operation carries `x-voyant-key-kind`.** "Public API"
- *     reads as "safe to expose" to anyone skimming; the document has to say per
- *     operation which key kind reaches it.
+ * The key kind is a property of the DEPLOYMENT: it falls out of which bundles
+ * a deployment selected and where they mounted. A per-package `openapi/*.json`
+ * is a package artifact, so writing a deployment fact into it is a layering
+ * error — and a costly one. Seven packages own `generate:openapi` scripts;
+ * stamping their output made every one of them depend on a resolved deployment
+ * graph, which broke `verify:openapi-drift` and the `operations --check`
+ * generator on a clean checkout.
  *
- *  3. **The stamp matches the graph.** Derived from the same declarations the
- *     runtime middleware reads, so a document can never promise a reach the
- *     deployment refuses. Hand-editing a spec fails here rather than shipping a
- *     contract the runtime 403s.
- *
- * (1) without (2) documents nothing; (2) without (3) documents a guess.
+ * The stamp still exists where it is meaningful and where the graph is known:
+ * `buildSelectedGraphOpenApiDocuments` stamps `x-voyant-key-kind` on every
+ * operation of the documents a deployment actually serves, from the same
+ * declaration the capability middleware enforces. That path is covered by
+ * `packages/framework/src/selected-graph-openapi.test.ts`.
  */
 import { readFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 
-import {
-  KEY_KIND_EXTENSION,
-  keyKindForPath,
-  publishedOperations,
-  readApiBundles,
-} from "./lib/openapi-key-kind.mjs"
-import { openApiDocumentFiles, requireDeploymentGraph } from "./lib/openapi-key-kind-tree.mjs"
+import { readApiBundles } from "./lib/openapi-key-kind.mjs"
+import { requireDeploymentGraph } from "./lib/openapi-key-kind-tree.mjs"
 
-// Resolved from this file, not the cwd: package-level `generate:openapi`
-// scripts invoke it from their own directory, where the tracked-tree scan
-// would find no repository and refuse to run.
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const bundles = readApiBundles(requireDeploymentGraph(root))
 const allowlist = JSON.parse(
@@ -45,9 +42,8 @@ const allowlist = JSON.parse(
 const secretOnly = new Map(Object.entries(allowlist.bundles ?? {}))
 
 const failures = []
-
-// (1) Every public bundle states a posture — or is named as secret-only.
 const publicBundles = bundles.filter((bundle) => bundle.surface === "public")
+
 for (const bundle of publicBundles) {
   const declared = bundle.publishable !== undefined || bundle.guardedIntake !== undefined
   const listed = secretOnly.has(bundle.apiId)
@@ -74,35 +70,8 @@ for (const apiId of secretOnly.keys()) {
   }
 }
 
-// (2) + (3) Every published operation is stamped, and stamped correctly.
-const documents = openApiDocumentFiles(root)
-let operationCount = 0
-let publishableCount = 0
-for (const file of documents) {
-  const document = JSON.parse(readFileSync(path.join(root, file), "utf8"))
-  for (const { path: routePath, method, operation } of publishedOperations(document)) {
-    operationCount += 1
-    const expected = routePath.startsWith("/v1/admin/")
-      ? "secret"
-      : keyKindForPath(bundles, routePath)
-    if (expected === "publishable") publishableCount += 1
-    const actual = operation[KEY_KIND_EXTENSION]
-    if (actual === undefined) {
-      failures.push(
-        `${file}: ${method.toUpperCase()} ${routePath} has no ${KEY_KIND_EXTENSION}. Run \`pnpm generate:openapi-key-kind\`.`,
-      )
-    } else if (actual !== expected) {
-      failures.push(
-        `${file}: ${method.toUpperCase()} ${routePath} is stamped "${actual}" but the graph says "${expected}". Run \`pnpm generate:openapi-key-kind\`.`,
-      )
-    }
-  }
-}
-
-// A checker that finds nothing passes for free. Both halves must have run.
-if (documents.length === 0) failures.push("no committed OpenAPI documents were found.")
+// A checker that finds nothing passes for free.
 if (publicBundles.length === 0) failures.push("the graph selected no public API bundles.")
-if (operationCount === 0) failures.push("no published operations were inspected.")
 
 if (failures.length > 0) {
   console.error("OpenAPI key-kind authority failed:\n")
@@ -110,6 +79,8 @@ if (failures.length > 0) {
   process.exit(1)
 }
 
+const publishable = publicBundles.filter((bundle) => bundle.publishable !== undefined).length
+const guarded = publicBundles.filter((bundle) => bundle.guardedIntake !== undefined).length
 console.log(
-  `OpenAPI key-kind authority: OK (${publicBundles.length} public bundles, ${operationCount} operations, ${publishableCount} publishable)`,
+  `OpenAPI key-kind authority: OK (${publicBundles.length} public bundles state a posture; ${publishable} declare publishable paths, ${guarded} declare guarded intake, ${secretOnly.size} recorded secret-only)`,
 )

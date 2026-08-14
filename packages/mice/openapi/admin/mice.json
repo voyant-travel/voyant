@@ -299,8 +299,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       },
       "post": {
         "requestBody": {
@@ -505,8 +504,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/programs/{id}/cost-sheet": {
@@ -645,8 +643,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/programs/{id}": {
@@ -788,8 +785,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       },
       "patch": {
         "parameters": [
@@ -1017,8 +1013,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/sessions": {
@@ -1172,8 +1167,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       },
       "post": {
         "requestBody": {
@@ -1370,8 +1364,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/sessions/{id}": {
@@ -1549,8 +1542,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       },
       "patch": {
         "parameters": [
@@ -1751,8 +1743,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       },
       "delete": {
         "parameters": [
@@ -1807,8 +1798,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/sessions/{id}/inclusions": {
@@ -1965,8 +1955,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/delegates": {
@@ -2125,8 +2114,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       },
       "post": {
         "requestBody": {
@@ -2317,8 +2305,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/delegates/{id}": {
@@ -2480,8 +2467,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       },
       "patch": {
         "parameters": [
@@ -2675,8 +2661,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/delegates/{id}/enrollments": {
@@ -2860,8 +2845,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/rooming-assignments": {
@@ -2985,8 +2969,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       },
       "post": {
         "requestBody": {
@@ -3141,8 +3124,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/rooming-assignments/{id}": {
@@ -3286,8 +3268,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       },
       "patch": {
         "parameters": [
@@ -3447,8 +3428,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/rooming-assignments/{id}/delegates": {
@@ -3623,8 +3603,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/rfps": {
@@ -3750,8 +3729,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       },
       "post": {
         "requestBody": {
@@ -3898,8 +3876,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/rfps/{id}/invitations": {
@@ -4048,8 +4025,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/rfps/{id}/bids": {
@@ -4209,8 +4185,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/rfps/{id}/award": {
@@ -4419,8 +4394,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/rfps/{id}": {
@@ -4620,8 +4594,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       },
       "patch": {
         "parameters": [
@@ -4772,8 +4745,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/bids/{id}/lines": {
@@ -4924,8 +4896,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/bids/{id}/evaluations": {
@@ -5064,8 +5035,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     },
     "/v1/admin/mice/bids/{id}": {
@@ -5256,8 +5226,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       },
       "patch": {
         "parameters": [
@@ -5409,8 +5378,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/mice#api.admin",
         "x-voyant-unit-id": "@voyant-travel/mice",
-        "x-voyant-package-name": "@voyant-travel/mice",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/mice"
       }
     }
   },

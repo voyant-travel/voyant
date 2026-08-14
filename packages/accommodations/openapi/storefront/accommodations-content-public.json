@@ -216,8 +216,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "publishable"
+        }
       }
     },
     "/v1/public/accommodations/{id}/content": {
@@ -231,8 +230,7 @@
           "404": {
             "description": "Accommodation content was not found."
           }
-        },
-        "x-voyant-key-kind": "publishable"
+        }
       }
     }
   },

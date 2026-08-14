@@ -3,12 +3,9 @@
     "Checked-in OpenAPI documents that are generated from route modules, and the",
     "command that generates them. Nothing regenerated-and-diffed them before, so",
     "three PRs merged green with stale specs (voyant#4193, #4204, #4210).",
-    "",
     "A spec belongs here as soon as it is generated rather than hand-written.",
     "Adding one costs a few seconds of check time; leaving one out costs a",
-    "published contract that silently stops describing the deployment.",
-    "",
-    "A generator here also stamps `x-voyant-key-kind` (voyant#4625), which reads the resolved deployment graph \u2014 so `verify:openapi-key-kind`, which generates that graph, runs BEFORE this check in the chain. Reordering them makes every generator fail with \"deployment-graph.generated.json is missing\"."
+    "published contract that silently stops describing the deployment."
   ],
   "generators": [
     {

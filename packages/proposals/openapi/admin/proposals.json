@@ -228,8 +228,7 @@
         "summary": "GET /v1/admin/proposals/pipelines",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -333,8 +332,7 @@
         "summary": "POST /v1/admin/proposals/pipelines",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/pipelines/{id}": {
@@ -420,8 +418,7 @@
         "summary": "GET /v1/admin/proposals/pipelines/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -550,8 +547,7 @@
         "summary": "PATCH /v1/admin/proposals/pipelines/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -619,8 +615,7 @@
         "summary": "DELETE /v1/admin/proposals/pipelines/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/stages": {
@@ -734,8 +729,7 @@
         "summary": "GET /v1/admin/proposals/stages",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -861,8 +855,7 @@
         "summary": "POST /v1/admin/proposals/stages",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/stages/{id}": {
@@ -959,8 +952,7 @@
         "summary": "GET /v1/admin/proposals/stages/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -1111,8 +1103,7 @@
         "summary": "PATCH /v1/admin/proposals/stages/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1164,8 +1155,7 @@
         "summary": "DELETE /v1/admin/proposals/stages/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposals": {
@@ -1393,8 +1383,7 @@
         "summary": "GET /v1/admin/proposals/proposals",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1617,8 +1606,7 @@
         "summary": "POST /v1/admin/proposals/proposals",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposals/{id}": {
@@ -1780,8 +1768,7 @@
         "summary": "GET /v1/admin/proposals/proposals/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2029,8 +2016,7 @@
         "summary": "PATCH /v1/admin/proposals/proposals/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2082,8 +2068,7 @@
         "summary": "DELETE /v1/admin/proposals/proposals/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposals/{id}/participants": {
@@ -2152,8 +2137,7 @@
         "summary": "GET /v1/admin/proposals/proposals/{id}/participants",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -2251,8 +2235,7 @@
         "summary": "POST /v1/admin/proposals/proposals/{id}/participants",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposal-participants/{id}": {
@@ -2306,8 +2289,7 @@
         "summary": "DELETE /v1/admin/proposals/proposal-participants/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposals/{id}/products": {
@@ -2403,8 +2385,7 @@
         "summary": "GET /v1/admin/proposals/proposals/{id}/products",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -2554,8 +2535,7 @@
         "summary": "POST /v1/admin/proposals/proposals/{id}/products",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposal-products/{id}": {
@@ -2722,8 +2702,7 @@
         "summary": "PATCH /v1/admin/proposals/proposal-products/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2775,8 +2754,7 @@
         "summary": "DELETE /v1/admin/proposals/proposal-products/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposals/{id}/media": {
@@ -2868,8 +2846,7 @@
         "summary": "GET /v1/admin/proposals/proposals/{id}/media",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -3013,8 +2990,7 @@
         "summary": "POST /v1/admin/proposals/proposals/{id}/media",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposal-media/{id}": {
@@ -3068,8 +3044,7 @@
         "summary": "DELETE /v1/admin/proposals/proposal-media/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposal-versions": {
@@ -3275,8 +3250,7 @@
         "summary": "GET /v1/admin/proposals/proposal-versions",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposals/{id}/versions": {
@@ -3543,8 +3517,7 @@
         "summary": "POST /v1/admin/proposals/proposals/{id}/versions",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposal-versions/{id}/validity": {
@@ -3750,8 +3723,7 @@
         "summary": "PATCH /v1/admin/proposals/proposal-versions/{id}/validity",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposals/{id}/versions/snapshot": {
@@ -3940,8 +3912,7 @@
         "summary": "POST /v1/admin/proposals/proposals/{id}/versions/snapshot",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposal-versions/expire": {
@@ -4099,8 +4070,7 @@
         "summary": "POST /v1/admin/proposals/proposal-versions/expire",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposal-versions/{id}": {
@@ -4273,8 +4243,7 @@
         "summary": "GET /v1/admin/proposals/proposal-versions/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4537,8 +4506,7 @@
         "summary": "PATCH /v1/admin/proposals/proposal-versions/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4606,8 +4574,7 @@
         "summary": "DELETE /v1/admin/proposals/proposal-versions/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposal-versions/{id}/trip-snapshot": {
@@ -4952,8 +4919,7 @@
         "summary": "POST /v1/admin/proposals/proposal-versions/{id}/trip-snapshot",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposal-versions/{id}/send": {
@@ -5143,8 +5109,7 @@
         "summary": "POST /v1/admin/proposals/proposal-versions/{id}/send",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposal-versions/{id}/view": {
@@ -5317,8 +5282,7 @@
         "summary": "POST /v1/admin/proposals/proposal-versions/{id}/view",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposal-versions/{id}/accept": {
@@ -5766,8 +5730,7 @@
         "summary": "POST /v1/admin/proposals/proposal-versions/{id}/accept",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposal-versions/{id}/decline": {
@@ -5957,8 +5920,7 @@
         "summary": "POST /v1/admin/proposals/proposal-versions/{id}/decline",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposal-versions/{id}/lines": {
@@ -6046,8 +6008,7 @@
         "summary": "GET /v1/admin/proposals/proposal-versions/{id}/lines",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -6218,8 +6179,7 @@
         "summary": "POST /v1/admin/proposals/proposal-versions/{id}/lines",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/proposals/proposal-version-lines/{id}": {
@@ -6391,8 +6351,7 @@
         "summary": "PATCH /v1/admin/proposals/proposal-version-lines/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -6460,8 +6419,7 @@
         "summary": "DELETE /v1/admin/proposals/proposal-version-lines/{id}",
         "tags": ["proposals"],
         "x-voyant-module": "proposals",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     }
   },

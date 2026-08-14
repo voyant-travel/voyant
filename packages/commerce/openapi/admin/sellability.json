@@ -250,8 +250,7 @@
         "summary": "POST /v1/admin/sellability/resolve",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/resolve-and-persist": {
@@ -467,8 +466,7 @@
         "summary": "POST /v1/admin/sellability/resolve-and-persist",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/snapshots": {
@@ -658,8 +656,7 @@
         "summary": "GET /v1/admin/sellability/snapshots",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/snapshots/{id}": {
@@ -783,8 +780,7 @@
         "summary": "GET /v1/admin/sellability/snapshots/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/snapshot-items": {
@@ -987,8 +983,7 @@
         "summary": "GET /v1/admin/sellability/snapshot-items",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/policies": {
@@ -1200,8 +1195,7 @@
         "summary": "GET /v1/admin/sellability/policies",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1398,8 +1392,7 @@
         "summary": "POST /v1/admin/sellability/policies",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/policies/{id}": {
@@ -1534,8 +1527,7 @@
         "summary": "GET /v1/admin/sellability/policies/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -1757,8 +1749,7 @@
         "summary": "PATCH /v1/admin/sellability/policies/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1809,8 +1800,7 @@
         "summary": "DELETE /v1/admin/sellability/policies/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/policy-results": {
@@ -1947,8 +1937,7 @@
         "summary": "GET /v1/admin/sellability/policy-results",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -2070,8 +2059,7 @@
         "summary": "POST /v1/admin/sellability/policy-results",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/policy-results/{id}": {
@@ -2166,8 +2154,7 @@
         "summary": "GET /v1/admin/sellability/policy-results/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2314,8 +2301,7 @@
         "summary": "PATCH /v1/admin/sellability/policy-results/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2366,8 +2352,7 @@
         "summary": "DELETE /v1/admin/sellability/policy-results/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/offer-refresh-runs": {
@@ -2500,8 +2485,7 @@
         "summary": "GET /v1/admin/sellability/offer-refresh-runs",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -2627,8 +2611,7 @@
         "summary": "POST /v1/admin/sellability/offer-refresh-runs",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/offer-refresh-runs/{id}": {
@@ -2727,8 +2710,7 @@
         "summary": "GET /v1/admin/sellability/offer-refresh-runs/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2879,8 +2861,7 @@
         "summary": "PATCH /v1/admin/sellability/offer-refresh-runs/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2931,8 +2912,7 @@
         "summary": "DELETE /v1/admin/sellability/offer-refresh-runs/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/offer-expiration-events": {
@@ -3065,8 +3045,7 @@
         "summary": "GET /v1/admin/sellability/offer-expiration-events",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3192,8 +3171,7 @@
         "summary": "POST /v1/admin/sellability/offer-expiration-events",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/offer-expiration-events/{id}": {
@@ -3292,8 +3270,7 @@
         "summary": "GET /v1/admin/sellability/offer-expiration-events/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -3444,8 +3421,7 @@
         "summary": "PATCH /v1/admin/sellability/offer-expiration-events/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3496,8 +3472,7 @@
         "summary": "DELETE /v1/admin/sellability/offer-expiration-events/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/explanations": {
@@ -3634,8 +3609,7 @@
         "summary": "GET /v1/admin/sellability/explanations",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3774,8 +3748,7 @@
         "summary": "POST /v1/admin/sellability/explanations",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/sellability/explanations/{id}": {
@@ -3878,8 +3851,7 @@
         "summary": "GET /v1/admin/sellability/explanations/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4043,8 +4015,7 @@
         "summary": "PATCH /v1/admin/sellability/explanations/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4095,8 +4066,7 @@
         "summary": "DELETE /v1/admin/sellability/explanations/{id}",
         "tags": ["sellability"],
         "x-voyant-module": "sellability",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     }
   },

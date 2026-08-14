@@ -69,8 +69,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/navigation-preferences/organization": {
@@ -167,8 +166,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/navigation-preferences/me": {
@@ -250,8 +248,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     }
   }

@@ -659,8 +659,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1548,8 +1547,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-sessions/{id}": {
@@ -1918,8 +1916,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2831,8 +2828,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-sessions/{id}/requires-redirect": {
@@ -3314,8 +3310,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-sessions/{id}/complete": {
@@ -3737,8 +3732,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-sessions/{id}/fail": {
@@ -4108,8 +4102,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-sessions/{id}/cancel": {
@@ -4479,8 +4472,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-sessions/{id}/expire": {
@@ -4850,8 +4842,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-instruments": {
@@ -5182,8 +5173,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -5573,8 +5563,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-instruments/{id}": {
@@ -5803,8 +5792,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -6218,8 +6206,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -6276,8 +6263,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-authorizations": {
@@ -6538,8 +6524,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -7077,8 +7062,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-authorizations/{id}": {
@@ -7266,8 +7250,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -7829,8 +7812,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -7887,8 +7869,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-captures": {
@@ -8075,8 +8056,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -8287,8 +8267,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-captures/{id}": {
@@ -8431,8 +8410,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -8667,8 +8645,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -8725,8 +8702,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/revenue": {
@@ -8796,8 +8772,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/aging": {
@@ -8857,8 +8832,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/profitability": {
@@ -8943,8 +8917,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/profitability/departures": {
@@ -9287,8 +9260,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/profitability/products": {
@@ -9581,8 +9553,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/profitability/travelers": {
@@ -9703,8 +9674,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/profitability/departures/export": {
@@ -9777,8 +9747,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/reports/profitability/products/export": {
@@ -9835,8 +9804,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/cost-categories": {
@@ -9914,8 +9882,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -10014,8 +9981,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/cost-categories/{id}": {
@@ -10144,8 +10110,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/accountant-shares": {
@@ -10227,8 +10192,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -10341,8 +10305,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/accountant-shares/{id}/revoke": {
@@ -10409,8 +10372,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/payment-schedules": {
@@ -10527,8 +10489,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -10784,8 +10745,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/payment-schedules/default-plan": {
@@ -11004,8 +10964,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/payment-schedules/{scheduleId}": {
@@ -11266,8 +11225,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -11332,8 +11290,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/payment-schedules/{scheduleId}/payment-session": {
@@ -12118,8 +12075,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/guarantees": {
@@ -12293,8 +12249,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -12616,8 +12571,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/guarantees/{guaranteeId}/payment-session": {
@@ -13402,8 +13356,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/guarantees/{guaranteeId}": {
@@ -13732,8 +13685,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -13824,8 +13776,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/booking-items/{bookingItemId}/tax-lines": {
@@ -13946,8 +13897,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -14176,8 +14126,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/booking-items/{bookingItemId}/tax-lines/{taxLineId}": {
@@ -14411,8 +14360,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -14477,8 +14425,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/booking-items/{bookingItemId}/commissions": {
@@ -14625,8 +14572,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -14906,8 +14852,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/booking-items/{bookingItemId}/commissions/{commissionId}": {
@@ -15192,8 +15137,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -15258,8 +15202,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payments": {
@@ -15602,8 +15545,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payments/{id}": {
@@ -15805,8 +15747,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "description": "Update a customer payment. Recomputes the invoice's paid/balance/status from the remaining completed payments. Supplier payments (`spay_*` id) must be updated via `/supplier-payments/{id}` and return 400 here.",
@@ -16113,8 +16054,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "description": "Remove a customer payment, recomputing invoice totals the same way PATCH does. Supplier payments (`spay_*` id) must be deleted via `/supplier-payments/{id}` and return 400 here.",
@@ -16303,8 +16243,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-payments": {
@@ -16608,8 +16547,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -16921,8 +16859,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-payments/{id}": {
@@ -17258,8 +17195,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices": {
@@ -17661,8 +17597,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -18127,8 +18062,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/from-booking": {
@@ -18655,8 +18589,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/convert-to-invoice": {
@@ -18952,8 +18885,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}": {
@@ -19244,8 +19176,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -19710,8 +19641,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -19786,8 +19716,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/void": {
@@ -20101,8 +20030,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/payment-session": {
@@ -20878,8 +20806,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/line-items": {
@@ -20980,8 +20907,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -21172,8 +21098,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/line-items/{lineId}": {
@@ -21369,8 +21294,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -21435,8 +21359,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/payments": {
@@ -21593,8 +21516,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -21914,8 +21836,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/credit-notes": {
@@ -22032,8 +21953,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -22272,8 +22192,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/credit-notes/{creditNoteId}": {
@@ -22516,8 +22435,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/credit-notes/{creditNoteId}/line-items": {
@@ -22605,8 +22523,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -22765,8 +22682,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/notes": {
@@ -22834,8 +22750,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -22954,8 +22869,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoice-number-series": {
@@ -23141,8 +23055,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -23378,8 +23291,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoice-number-series/{id}": {
@@ -23532,8 +23444,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -23800,8 +23711,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -23865,8 +23775,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoice-number-series/{id}/allocate": {
@@ -23969,8 +23878,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoice-templates": {
@@ -24141,8 +24049,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -24336,8 +24243,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoice-templates/{id}": {
@@ -24467,8 +24373,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -24692,8 +24597,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -24757,8 +24661,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-regimes": {
@@ -24934,8 +24837,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -25130,8 +25032,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-regimes/{id}": {
@@ -25264,8 +25165,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -25491,8 +25391,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -25556,8 +25455,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-classes": {
@@ -25721,8 +25619,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -25917,8 +25814,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-classes/{id}": {
@@ -26054,8 +25950,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -26281,8 +26176,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -26346,8 +26240,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-policy-profiles": {
@@ -26488,8 +26381,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -26629,8 +26521,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-policy-profiles/{id}": {
@@ -26738,8 +26629,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -26910,8 +26800,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -26975,8 +26864,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-policy-rules": {
@@ -27141,8 +27029,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -27322,8 +27209,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/tax-policy-rules/{id}": {
@@ -27451,8 +27337,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -27662,8 +27547,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -27727,8 +27611,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/renditions": {
@@ -27862,8 +27745,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/render": {
@@ -28356,8 +28238,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/attachments": {
@@ -28454,8 +28335,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -28644,8 +28524,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/attachments/{attachmentId}": {
@@ -28841,8 +28720,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -28907,8 +28785,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoice-attachments/{id}/download": {
@@ -28970,8 +28847,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/external-refs": {
@@ -29082,8 +28958,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -29292,8 +29167,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/external-refs/{refId}": {
@@ -29360,8 +29234,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/travel-credits": {
@@ -29608,8 +29481,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/finance#api.admin",
@@ -29888,8 +29760,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/travel-credits/{id}": {
@@ -30118,8 +29989,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/finance#api.admin",
@@ -30372,8 +30242,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/travel-credits/{id}/redeem": {
@@ -30700,8 +30569,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/payments": {
@@ -30883,8 +30751,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/action-ledger": {
@@ -31264,8 +31131,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-sessions/{id}/action-ledger": {
@@ -31645,8 +31511,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices": {
@@ -32020,8 +31885,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -32755,8 +32619,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices/{id}": {
@@ -33221,8 +33084,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -33809,8 +33671,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -33875,8 +33736,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices/{id}/lines": {
@@ -34448,8 +34308,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices/{id}/allocations": {
@@ -35027,8 +34886,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices/{id}/document/download": {
@@ -35090,8 +34948,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices/{id}/payments": {
@@ -35403,8 +35260,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -35722,8 +35578,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices/{id}/attachments": {
@@ -35820,8 +35675,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -35999,8 +35853,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoices/{id}/attachments/{attachmentId}": {
@@ -36067,8 +35920,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/supplier-invoice-attachments/{id}/download": {
@@ -36130,8 +35982,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/generate-document": {
@@ -36403,8 +36254,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/regenerate-document": {
@@ -36676,8 +36526,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoice-renditions/{id}/download": {
@@ -36739,8 +36588,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/invoices/{id}/poll-settlement": {
@@ -36921,8 +36769,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-disputes": {
@@ -37207,8 +37054,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "description": "Record a chargeback against the payment session it contests. Idempotent on `(paymentSessionId, processorReference)`: a repeat report advances the dispute it already recorded, and a different reference opens a second one.",
@@ -37543,8 +37389,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/payment-disputes/{id}": {
@@ -37746,8 +37591,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "description": "Advance a dispute. `won`, `lost` and `withdrawn` are terminal and stamp `resolvedAt`; a processor that contests the payment again issues a new dispute rather than reviving this one.",
@@ -38037,8 +37881,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/disputes": {
@@ -38256,8 +38099,7 @@
           "finance"
         ],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/finance/refund-settlements": {
@@ -38637,8 +38479,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "operationId": "postAdminFinanceRefundSettlements",
@@ -39265,8 +39106,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/finance/refund-settlements/{id}": {
@@ -39547,8 +39387,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "patch": {
         "operationId": "patchAdminFinanceRefundSettlementsById",
@@ -39923,8 +39762,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/finance/refund-settlements/{id}/execute": {
@@ -40238,8 +40076,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/finance/payments/{paymentId}/refundable": {
@@ -40332,8 +40169,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/finance/bookings/{bookingId}/refund-settlements": {
@@ -40630,8 +40466,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     }
   },

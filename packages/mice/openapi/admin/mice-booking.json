@@ -13,18 +13,13 @@
             "name": "bookingId",
             "in": "path",
             "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "The booking's MICE details, or null when none exist."
-          }
+          "200": { "description": "The booking's MICE details, or null when none exist." }
         },
-        "x-voyant-api-id": "@voyant-travel/mice#booking-extension.api.admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-api-id": "@voyant-travel/mice#booking-extension.api.admin"
       },
       "put": {
         "summary": "Create or update MICE details for a booking",
@@ -33,9 +28,7 @@
             "name": "bookingId",
             "in": "path",
             "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "requestBody": {
@@ -45,24 +38,17 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "programId": {
-                    "type": ["string", "null"]
-                  },
-                  "delegateId": {
-                    "type": ["string", "null"]
-                  }
+                  "programId": { "type": ["string", "null"] },
+                  "delegateId": { "type": ["string", "null"] }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "The saved booking MICE details."
-          }
+          "200": { "description": "The saved booking MICE details." }
         },
-        "x-voyant-api-id": "@voyant-travel/mice#booking-extension.api.admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-api-id": "@voyant-travel/mice#booking-extension.api.admin"
       },
       "delete": {
         "summary": "Remove MICE details from a booking",
@@ -71,21 +57,14 @@
             "name": "bookingId",
             "in": "path",
             "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "The MICE details were removed."
-          },
-          "404": {
-            "description": "No MICE details exist for the booking."
-          }
+          "200": { "description": "The MICE details were removed." },
+          "404": { "description": "No MICE details exist for the booking." }
         },
-        "x-voyant-api-id": "@voyant-travel/mice#booking-extension.api.admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-api-id": "@voyant-travel/mice#booking-extension.api.admin"
       }
     }
   }

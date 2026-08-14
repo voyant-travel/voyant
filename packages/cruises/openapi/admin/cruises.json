@@ -156,8 +156,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -526,8 +525,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/voyage-groups": {
@@ -745,8 +743,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -1014,8 +1011,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/voyage-groups/{id}": {
@@ -1295,8 +1291,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "put": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -1590,8 +1585,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -1757,8 +1751,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/voyage-groups/{id}/segments": {
@@ -1964,8 +1957,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -2198,8 +2190,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/voyage-group-segments/{segmentId}": {
@@ -2450,8 +2441,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -2486,8 +2476,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/enrichment/{programId}": {
@@ -2652,8 +2641,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -2688,8 +2676,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/sailings": {
@@ -2877,8 +2864,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -3056,8 +3042,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/sailings/{key}": {
@@ -3138,8 +3123,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "put": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -3360,8 +3344,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/sailings/{key}/itinerary": {
@@ -3429,8 +3412,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/sailings/{key}/days/bulk": {
@@ -3651,8 +3633,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/sailings/{key}/pricing": {
@@ -3729,8 +3710,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/sailings/{key}/pricing/bulk": {
@@ -4071,8 +4051,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/sailings/{key}/quote": {
@@ -4221,8 +4200,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/prices": {
@@ -4453,8 +4431,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -4711,8 +4688,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/prices/{priceId}": {
@@ -4991,8 +4967,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/ships": {
@@ -5183,8 +5158,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -5414,8 +5388,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/ships/{key}": {
@@ -5625,8 +5598,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "put": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -5899,8 +5871,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/ships/{key}/effective": {
@@ -6011,8 +5982,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/ships/{key}/editorial-overlays": {
@@ -6123,8 +6093,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "put": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -6259,8 +6228,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -6403,8 +6371,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/ships/{key}/editorial-overlays/history": {
@@ -6536,8 +6503,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/ships/{key}/decks": {
@@ -6605,8 +6571,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -6728,8 +6693,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/decks/{deckId}": {
@@ -6838,8 +6802,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/ships/{key}/categories": {
@@ -6907,8 +6870,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/ships/{key}/categories/bulk": {
@@ -7252,8 +7214,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/categories/{categoryId}": {
@@ -7560,8 +7521,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/categories/{categoryId}/cabins": {
@@ -7641,8 +7601,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/categories/{categoryId}/cabins/bulk": {
@@ -7765,8 +7724,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/cabins/{cabinId}": {
@@ -7896,8 +7854,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/search-index/bulk": {
@@ -8128,8 +8085,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/search-index/{crsiId}": {
@@ -8166,8 +8122,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/search-index/rebuild": {
@@ -8222,8 +8177,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/{key}": {
@@ -8304,8 +8258,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "put": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -8718,8 +8671,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -8981,8 +8933,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/{key}/aggregates/recompute": {
@@ -9246,8 +9197,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/{key}/sailings": {
@@ -9324,8 +9274,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/{key}/days/bulk": {
@@ -9542,8 +9491,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/{key}/refresh": {
@@ -9624,8 +9572,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/{key}/detach": {
@@ -9872,8 +9819,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/{key}/enrichment": {
@@ -9995,8 +9941,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/cruises#api.admin",
@@ -10157,8 +10102,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/cruises/{key}/enrichment/bulk": {
@@ -10333,8 +10277,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     }
   },

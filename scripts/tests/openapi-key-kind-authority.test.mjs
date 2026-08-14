@@ -1,10 +1,7 @@
 import assert from "node:assert/strict"
-import { mkdirSync, rmSync, writeFileSync } from "node:fs"
-import path from "node:path"
 import test from "node:test"
 
 import { keyKindForPath, resolveMountPath } from "../lib/openapi-key-kind.mjs"
-import { openApiDocumentFiles } from "../lib/openapi-key-kind-tree.mjs"
 
 /**
  * The derivation the generator writes and the checker enforces. These pin the
@@ -82,36 +79,4 @@ test("mounts resolve the way the runtime resolves them", () => {
     resolveMountPath({ id: "@x/y" }, { surface: "public", mount: "/v1/public/custom" }),
     "/v1/public/custom",
   )
-})
-
-test("document discovery reads the tracked tree, not the working directory", () => {
-  // A git worktree parked in the repo root carries its own `packages/*/openapi`.
-  // Walking the filesystem would validate ANOTHER checkout's specs and report
-  // success while this tree was unstamped (voyant#4281).
-  const repoRoot = process.cwd()
-  const probe = path.join(repoRoot, "packages", "__key_kind_probe__", "openapi", "storefront")
-  try {
-    mkdirSync(probe, { recursive: true })
-    writeFileSync(
-      path.join(probe, "probe.json"),
-      JSON.stringify({ paths: { "/v1/public/probe": { get: {} } } }),
-    )
-    const files = openApiDocumentFiles(repoRoot)
-    assert.ok(files.length > 0, "the tracked tree must still yield documents")
-    assert.ok(
-      !files.some((file) => file.includes("__key_kind_probe__")),
-      "an untracked document must not be discovered",
-    )
-  } finally {
-    rmSync(path.join(repoRoot, "packages", "__key_kind_probe__"), {
-      recursive: true,
-      force: true,
-    })
-  }
-})
-
-test("refusing to scan a tree that is not a repository is loud, not silent", () => {
-  // Returning an empty list off-repo would turn this checker's own vacuity
-  // guard green while it checked nothing.
-  assert.throws(() => openApiDocumentFiles(path.join(process.cwd(), "packages")), /untracked tree/)
 })

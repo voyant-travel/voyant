@@ -52,8 +52,7 @@
         "summary": "GET /v1/admin/trips/health",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips": {
@@ -518,8 +517,7 @@
         "summary": "GET /v1/admin/trips",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/trips#api.admin",
@@ -908,8 +906,7 @@
         "summary": "POST /v1/admin/trips",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}": {
@@ -1242,8 +1239,7 @@
         "summary": "GET /v1/admin/trips/{envelopeId}",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/trips#api.admin",
@@ -1501,8 +1497,7 @@
         "summary": "PATCH /v1/admin/trips/{envelopeId}",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/snapshots": {
@@ -1633,8 +1628,7 @@
         "summary": "GET /v1/admin/trips/{envelopeId}/snapshots",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/trips#api.admin",
@@ -1827,8 +1821,7 @@
         "summary": "POST /v1/admin/trips/{envelopeId}/snapshots",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/snapshots/{snapshotId}": {
@@ -1973,8 +1966,7 @@
         "summary": "GET /v1/admin/trips/snapshots/{snapshotId}",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/components": {
@@ -2318,8 +2310,7 @@
         "summary": "POST /v1/admin/trips/{envelopeId}/components",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/components/reorder": {
@@ -2606,8 +2597,7 @@
         "summary": "POST /v1/admin/trips/{envelopeId}/components/reorder",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/components/{componentId}": {
@@ -2940,8 +2930,7 @@
         "summary": "PATCH /v1/admin/trips/components/{componentId}",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/trips#api.admin",
@@ -3202,8 +3191,7 @@
         "summary": "DELETE /v1/admin/trips/components/{componentId}",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/components/{componentId}/refs": {
@@ -3515,8 +3503,7 @@
         "summary": "POST /v1/admin/trips/components/{componentId}/refs",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/requirements": {
@@ -3738,8 +3725,7 @@
         "summary": "POST /v1/admin/trips/{envelopeId}/requirements",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "get": {
         "x-voyant-api-id": "@voyant-travel/trips#api.admin",
@@ -3916,8 +3902,7 @@
         "summary": "GET /v1/admin/trips/{envelopeId}/requirements",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/requirements/{requirementId}/sourcing-operations/{operationId}": {
@@ -4108,8 +4093,7 @@
         "summary": "GET /v1/admin/trips/requirements/{requirementId}/sourcing-operations/{operationId}",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/requirements/{requirementId}/select": {
@@ -4545,8 +4529,7 @@
         "summary": "POST /v1/admin/trips/requirements/{requirementId}/select",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/price": {
@@ -4971,8 +4954,7 @@
         "summary": "POST /v1/admin/trips/{envelopeId}/price",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/reserve": {
@@ -5397,8 +5379,7 @@
         "summary": "POST /v1/admin/trips/{envelopeId}/reserve",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/checkout": {
@@ -5810,8 +5791,7 @@
         "summary": "POST /v1/admin/trips/{envelopeId}/checkout",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/cancellation-preview": {
@@ -6230,8 +6210,7 @@
         "summary": "POST /v1/admin/trips/{envelopeId}/cancellation-preview",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/trips/{envelopeId}/cancel-components": {
@@ -6655,8 +6634,7 @@
         "summary": "POST /v1/admin/trips/{envelopeId}/cancel-components",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     }
   },

@@ -506,8 +506,7 @@
         "summary": "GET /v1/admin/promotions",
         "tags": ["promotions"],
         "x-voyant-module": "promotions",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1048,8 +1047,7 @@
         "summary": "POST /v1/admin/promotions",
         "tags": ["promotions"],
         "x-voyant-module": "promotions",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/promotions/{id}": {
@@ -1331,8 +1329,7 @@
         "summary": "GET /v1/admin/promotions/{id}",
         "tags": ["promotions"],
         "x-voyant-module": "promotions",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -1898,8 +1895,7 @@
         "summary": "PATCH /v1/admin/promotions/{id}",
         "tags": ["promotions"],
         "x-voyant-module": "promotions",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1972,8 +1968,7 @@
         "summary": "DELETE /v1/admin/promotions/{id}",
         "tags": ["promotions"],
         "x-voyant-module": "promotions",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/promotions/{id}/archive": {
@@ -2255,8 +2250,7 @@
         "summary": "POST /v1/admin/promotions/{id}/archive",
         "tags": ["promotions"],
         "x-voyant-module": "promotions",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     }
   },

@@ -24,9 +24,7 @@
                       "type": "object",
                       "required": ["schemaVersion", "events"],
                       "properties": {
-                        "schemaVersion": {
-                          "const": "voyant.event-catalog.v1"
-                        },
+                        "schemaVersion": { "const": "voyant.event-catalog.v1" },
                         "events": {
                           "type": "array",
                           "items": {
@@ -44,48 +42,25 @@
                               "redactedFields"
                             ],
                             "properties": {
-                              "key": {
-                                "type": "string"
-                              },
-                              "id": {
-                                "type": "string"
-                              },
-                              "unitId": {
-                                "type": "string"
-                              },
-                              "packageName": {
-                                "type": "string"
-                              },
-                              "eventType": {
-                                "type": "string"
-                              },
-                              "version": {
-                                "type": "string"
-                              },
-                              "payloadSchema": {
-                                "type": "object",
-                                "additionalProperties": true
-                              },
-                              "visibility": {
-                                "enum": ["internal", "external"]
-                              },
+                              "key": { "type": "string" },
+                              "id": { "type": "string" },
+                              "unitId": { "type": "string" },
+                              "packageName": { "type": "string" },
+                              "eventType": { "type": "string" },
+                              "version": { "type": "string" },
+                              "payloadSchema": { "type": "object", "additionalProperties": true },
+                              "visibility": { "enum": ["internal", "external"] },
                               "audit": {
                                 "type": "object",
                                 "required": ["sourceModule", "category"],
                                 "properties": {
-                                  "sourceModule": {
-                                    "type": "string"
-                                  },
-                                  "category": {
-                                    "enum": ["domain", "internal"]
-                                  }
+                                  "sourceModule": { "type": "string" },
+                                  "category": { "enum": ["domain", "internal"] }
                                 }
                               },
                               "redactedFields": {
                                 "type": "array",
-                                "items": {
-                                  "type": "string"
-                                }
+                                "items": { "type": "string" }
                               }
                             }
                           }
@@ -97,8 +72,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     }
   }

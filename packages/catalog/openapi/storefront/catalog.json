@@ -595,8 +595,7 @@
         "summary": "POST /v1/public/catalog/search",
         "tags": ["catalog"],
         "x-voyant-module": "catalog",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/catalog/checkout/start": {
@@ -815,38 +814,6 @@
               }
             }
           },
-          "401": {
-            "description": "Missing checkout session capability",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["error"]
-                }
-              }
-            }
-          },
-          "403": {
-            "description": "Capability was issued for a different booking or lacks payment:start",
-            "content": {
-              "application/json": {
-                "schema": {
-                  "type": "object",
-                  "properties": {
-                    "error": {
-                      "type": "string"
-                    }
-                  },
-                  "required": ["error"]
-                }
-              }
-            }
-          },
           "404": {
             "description": "Booking not found",
             "content": {
@@ -926,6 +893,38 @@
                 }
               }
             }
+          },
+          "401": {
+            "description": "Missing checkout session capability",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Capability was issued for a different booking or lacks payment:start",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
           }
         },
         "operationId": "postPublicCatalogCheckoutStart",
@@ -943,8 +942,7 @@
             },
             "description": "Booking-scoped checkout capability granting payment:start, as issued by booking creation. May also be presented as the voyant_checkout_session cookie."
           }
-        ],
-        "x-voyant-key-kind": "publishable"
+        ]
       }
     }
   },

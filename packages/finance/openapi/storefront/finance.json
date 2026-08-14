@@ -248,8 +248,7 @@
         "summary": "POST /v1/public/finance/travel-credits/validate",
         "tags": ["finance"],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/documents/by-reference": {
@@ -421,8 +420,7 @@
         "summary": "GET /v1/public/finance/documents/by-reference",
         "tags": ["finance"],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/bookings/{bookingId}/documents": {
@@ -591,8 +589,7 @@
         "summary": "GET /v1/public/finance/bookings/{bookingId}/documents",
         "tags": ["finance"],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/bookings/{bookingId}/documents/by-reference": {
@@ -772,8 +769,7 @@
         "summary": "GET /v1/public/finance/bookings/{bookingId}/documents/by-reference",
         "tags": ["finance"],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/bookings/{bookingId}/payments": {
@@ -928,8 +924,7 @@
         "summary": "GET /v1/public/finance/bookings/{bookingId}/payments",
         "tags": ["finance"],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/bookings/{bookingId}/payment-options": {
@@ -1235,8 +1230,7 @@
         "summary": "GET /v1/public/finance/bookings/{bookingId}/payment-options",
         "tags": ["finance"],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/payment-sessions/{sessionId}": {
@@ -1630,8 +1624,7 @@
         "summary": "GET /v1/public/finance/payment-sessions/{sessionId}",
         "tags": ["finance"],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/bookings/{bookingId}/payment-schedules/{scheduleId}/payment-session": {
@@ -2321,8 +2314,7 @@
         "summary": "POST /v1/public/finance/bookings/{bookingId}/payment-schedules/{scheduleId}/payment-session",
         "tags": ["finance"],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/bookings/{bookingId}/guarantees/{guaranteeId}/payment-session": {
@@ -3012,8 +3004,7 @@
         "summary": "POST /v1/public/finance/bookings/{bookingId}/guarantees/{guaranteeId}/payment-session",
         "tags": ["finance"],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/invoices/{invoiceId}/payment-session": {
@@ -3695,8 +3686,7 @@
         "summary": "POST /v1/public/finance/invoices/{invoiceId}/payment-session",
         "tags": ["finance"],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/accountant/{token}/summary": {
@@ -3781,8 +3771,7 @@
         "summary": "GET /v1/public/finance/accountant/{token}/summary",
         "tags": ["finance"],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/finance/accountant/{token}/invoices": {
@@ -3852,8 +3841,7 @@
         "summary": "GET /v1/public/finance/accountant/{token}/invoices",
         "tags": ["finance"],
         "x-voyant-module": "finance",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     }
   },

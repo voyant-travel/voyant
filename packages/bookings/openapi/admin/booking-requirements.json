@@ -295,8 +295,7 @@
         "summary": "GET /v1/admin/booking-requirements/contact-requirements",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -467,8 +466,7 @@
         "summary": "POST /v1/admin/booking-requirements/contact-requirements",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/contact-requirements/{id}": {
@@ -589,8 +587,7 @@
         "summary": "GET /v1/admin/booking-requirements/contact-requirements/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -786,8 +783,7 @@
         "summary": "PATCH /v1/admin/booking-requirements/contact-requirements/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -838,8 +834,7 @@
         "summary": "DELETE /v1/admin/booking-requirements/contact-requirements/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/questions": {
@@ -1054,8 +1049,7 @@
         "summary": "GET /v1/admin/booking-requirements/questions",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1259,8 +1253,7 @@
         "summary": "POST /v1/admin/booking-requirements/questions",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/questions/{id}": {
@@ -1401,8 +1394,7 @@
         "summary": "GET /v1/admin/booking-requirements/questions/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -1631,8 +1623,7 @@
         "summary": "PATCH /v1/admin/booking-requirements/questions/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1683,8 +1674,7 @@
         "summary": "DELETE /v1/admin/booking-requirements/questions/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/option-questions": {
@@ -1827,8 +1817,7 @@
         "summary": "GET /v1/admin/booking-requirements/option-questions",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1943,8 +1932,7 @@
         "summary": "POST /v1/admin/booking-requirements/option-questions",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/option-questions/{id}": {
@@ -2037,8 +2025,7 @@
         "summary": "GET /v1/admin/booking-requirements/option-questions/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2178,8 +2165,7 @@
         "summary": "PATCH /v1/admin/booking-requirements/option-questions/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2230,8 +2216,7 @@
         "summary": "DELETE /v1/admin/booking-requirements/option-questions/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/question-options": {
@@ -2366,8 +2351,7 @@
         "summary": "GET /v1/admin/booking-requirements/question-options",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -2487,8 +2471,7 @@
         "summary": "POST /v1/admin/booking-requirements/question-options",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/question-options/{id}": {
@@ -2581,8 +2564,7 @@
         "summary": "GET /v1/admin/booking-requirements/question-options/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2727,8 +2709,7 @@
         "summary": "PATCH /v1/admin/booking-requirements/question-options/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2779,8 +2760,7 @@
         "summary": "DELETE /v1/admin/booking-requirements/question-options/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/unit-triggers": {
@@ -2920,8 +2900,7 @@
         "summary": "GET /v1/admin/booking-requirements/unit-triggers",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3032,8 +3011,7 @@
         "summary": "POST /v1/admin/booking-requirements/unit-triggers",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/unit-triggers/{id}": {
@@ -3123,8 +3101,7 @@
         "summary": "GET /v1/admin/booking-requirements/unit-triggers/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -3260,8 +3237,7 @@
         "summary": "PATCH /v1/admin/booking-requirements/unit-triggers/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3312,8 +3288,7 @@
         "summary": "DELETE /v1/admin/booking-requirements/unit-triggers/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/option-triggers": {
@@ -3449,8 +3424,7 @@
         "summary": "GET /v1/admin/booking-requirements/option-triggers",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3553,8 +3527,7 @@
         "summary": "POST /v1/admin/booking-requirements/option-triggers",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/option-triggers/{id}": {
@@ -3640,8 +3613,7 @@
         "summary": "GET /v1/admin/booking-requirements/option-triggers/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -3769,8 +3741,7 @@
         "summary": "PATCH /v1/admin/booking-requirements/option-triggers/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3821,8 +3792,7 @@
         "summary": "DELETE /v1/admin/booking-requirements/option-triggers/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/extra-triggers": {
@@ -3974,8 +3944,7 @@
         "summary": "GET /v1/admin/booking-requirements/extra-triggers",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -4093,8 +4062,7 @@
         "summary": "POST /v1/admin/booking-requirements/extra-triggers",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/extra-triggers/{id}": {
@@ -4188,8 +4156,7 @@
         "summary": "GET /v1/admin/booking-requirements/extra-triggers/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4332,8 +4299,7 @@
         "summary": "PATCH /v1/admin/booking-requirements/extra-triggers/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4384,8 +4350,7 @@
         "summary": "DELETE /v1/admin/booking-requirements/extra-triggers/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/answers": {
@@ -4575,8 +4540,7 @@
         "summary": "GET /v1/admin/booking-requirements/answers",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -4748,8 +4712,7 @@
         "summary": "POST /v1/admin/booking-requirements/answers",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/booking-requirements/answers/{id}": {
@@ -4873,8 +4836,7 @@
         "summary": "GET /v1/admin/booking-requirements/answers/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -5071,8 +5033,7 @@
         "summary": "PATCH /v1/admin/booking-requirements/answers/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -5123,8 +5084,7 @@
         "summary": "DELETE /v1/admin/booking-requirements/answers/{id}",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     }
   },

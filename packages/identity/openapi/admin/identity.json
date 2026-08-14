@@ -307,8 +307,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
         "tags": ["Identity"],
@@ -477,8 +476,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/contact-points/{id}": {
@@ -598,8 +596,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "patch": {
         "tags": ["Identity"],
@@ -793,8 +790,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "delete": {
         "tags": ["Identity"],
@@ -849,8 +845,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/addresses": {
@@ -1059,8 +1054,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
         "tags": ["Identity"],
@@ -1274,8 +1268,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/addresses/{id}": {
@@ -1422,8 +1415,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "patch": {
         "tags": ["Identity"],
@@ -1662,8 +1654,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "delete": {
         "tags": ["Identity"],
@@ -1718,8 +1709,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/named-contacts": {
@@ -1908,8 +1898,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
         "tags": ["Identity"],
@@ -2089,8 +2078,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/named-contacts/{id}": {
@@ -2215,8 +2203,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "patch": {
         "tags": ["Identity"],
@@ -2421,8 +2408,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "delete": {
         "tags": ["Identity"],
@@ -2477,8 +2463,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/entities/{entityType}/{entityId}/contact-points": {
@@ -2593,8 +2578,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
         "tags": ["Identity"],
@@ -2771,8 +2755,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/entities/{entityType}/{entityId}/addresses": {
@@ -2914,8 +2897,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
         "tags": ["Identity"],
@@ -3136,8 +3118,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     },
     "/v1/admin/identity/entities/{entityType}/{entityId}/named-contacts": {
@@ -3257,8 +3238,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       },
       "post": {
         "tags": ["Identity"],
@@ -3446,8 +3426,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/identity#api.admin",
         "x-voyant-unit-id": "@voyant-travel/identity",
-        "x-voyant-package-name": "@voyant-travel/identity",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/identity"
       }
     }
   },

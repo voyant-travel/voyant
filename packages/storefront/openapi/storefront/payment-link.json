@@ -175,8 +175,7 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
         "x-voyant-unit-id": "@voyant-travel/storefront#payment-link",
-        "x-voyant-package-name": "@voyant-travel/storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-package-name": "@voyant-travel/storefront"
       }
     },
     "/v1/public/payment-link/{sessionId}/retry": {
@@ -257,8 +256,7 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
         "x-voyant-unit-id": "@voyant-travel/storefront#payment-link",
-        "x-voyant-package-name": "@voyant-travel/storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-package-name": "@voyant-travel/storefront"
       }
     },
     "/v1/public/payment-link/resolve": {
@@ -336,8 +334,7 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
         "x-voyant-unit-id": "@voyant-travel/storefront#payment-link",
-        "x-voyant-package-name": "@voyant-travel/storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-package-name": "@voyant-travel/storefront"
       }
     },
     "/v1/public/payment-link/{sessionId}/start-card": {
@@ -535,8 +532,7 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
         "x-voyant-unit-id": "@voyant-travel/storefront#payment-link",
-        "x-voyant-package-name": "@voyant-travel/storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-package-name": "@voyant-travel/storefront"
       }
     },
     "/v1/public/payment-link/{sessionId}/trip-summary": {
@@ -675,8 +671,7 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
         "x-voyant-unit-id": "@voyant-travel/storefront#payment-link",
-        "x-voyant-package-name": "@voyant-travel/storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-package-name": "@voyant-travel/storefront"
       }
     },
     "/v1/public/payment-link/{sessionId}/booking-summary": {
@@ -835,8 +830,7 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
         "x-voyant-unit-id": "@voyant-travel/storefront#payment-link",
-        "x-voyant-package-name": "@voyant-travel/storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-package-name": "@voyant-travel/storefront"
       }
     },
     "/v1/public/bookings/{bookingId}/checkout-status": {
@@ -1025,8 +1019,7 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#payment-link.api",
         "x-voyant-unit-id": "@voyant-travel/storefront#payment-link",
-        "x-voyant-package-name": "@voyant-travel/storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-package-name": "@voyant-travel/storefront"
       }
     }
   },

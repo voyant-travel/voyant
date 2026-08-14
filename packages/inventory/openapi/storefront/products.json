@@ -90,8 +90,7 @@
         "summary": "GET /v1/public/products/tags",
         "tags": ["products"],
         "x-voyant-module": "products",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/categories": {
@@ -188,8 +187,7 @@
         "summary": "GET /v1/public/products/categories",
         "tags": ["products"],
         "x-voyant-module": "products",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/destinations": {
@@ -367,8 +365,7 @@
         "summary": "GET /v1/public/products/destinations",
         "tags": ["products"],
         "x-voyant-module": "products",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products": {
@@ -1238,8 +1235,7 @@
         "summary": "GET /v1/public/products",
         "tags": ["products"],
         "x-voyant-module": "products",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/slug/{slug}": {
@@ -1960,8 +1956,7 @@
         "summary": "GET /v1/public/products/slug/{slug}",
         "tags": ["products"],
         "x-voyant-module": "products",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/{id}": {
@@ -2682,8 +2677,7 @@
         "summary": "GET /v1/public/products/{id}",
         "tags": ["products"],
         "x-voyant-module": "products",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/{id}/brochure": {
@@ -2815,8 +2809,7 @@
         "summary": "GET /v1/public/products/{id}/brochure",
         "tags": ["products"],
         "x-voyant-module": "products",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/products/{id}/content": {
@@ -3205,8 +3198,7 @@
         "summary": "GET /v1/public/products/{id}/content",
         "tags": ["products"],
         "x-voyant-module": "products",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     }
   },

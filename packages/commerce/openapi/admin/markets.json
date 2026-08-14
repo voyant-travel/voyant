@@ -269,8 +269,7 @@
         "summary": "GET /v1/admin/markets/markets",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -429,8 +428,7 @@
         "summary": "POST /v1/admin/markets/markets",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/markets/{id}": {
@@ -541,8 +539,7 @@
         "summary": "GET /v1/admin/markets/markets/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -726,8 +723,7 @@
         "summary": "PATCH /v1/admin/markets/markets/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -779,8 +775,7 @@
         "summary": "DELETE /v1/admin/markets/markets/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/market-locales": {
@@ -906,8 +901,7 @@
         "summary": "GET /v1/admin/markets/market-locales",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/markets/{id}/locales": {
@@ -1044,8 +1038,7 @@
         "summary": "POST /v1/admin/markets/markets/{id}/locales",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/market-locales/{id}": {
@@ -1181,8 +1174,7 @@
         "summary": "PATCH /v1/admin/markets/market-locales/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1234,8 +1226,7 @@
         "summary": "DELETE /v1/admin/markets/market-locales/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/market-currencies": {
@@ -1369,8 +1360,7 @@
         "summary": "GET /v1/admin/markets/market-currencies",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/markets/{id}/currencies": {
@@ -1523,8 +1513,7 @@
         "summary": "POST /v1/admin/markets/markets/{id}/currencies",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/market-currencies/{id}": {
@@ -1676,8 +1665,7 @@
         "summary": "PATCH /v1/admin/markets/market-currencies/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1729,8 +1717,7 @@
         "summary": "DELETE /v1/admin/markets/market-currencies/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/fx-rate-sets": {
@@ -1854,8 +1841,7 @@
         "summary": "GET /v1/admin/markets/fx-rate-sets",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1981,8 +1967,7 @@
         "summary": "POST /v1/admin/markets/fx-rate-sets",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/fx-rate-sets/{id}": {
@@ -2077,8 +2062,7 @@
         "summary": "GET /v1/admin/markets/fx-rate-sets/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2229,8 +2213,7 @@
         "summary": "PATCH /v1/admin/markets/fx-rate-sets/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2282,8 +2265,7 @@
         "summary": "DELETE /v1/admin/markets/fx-rate-sets/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/exchange-rates": {
@@ -2411,8 +2393,7 @@
         "summary": "GET /v1/admin/markets/exchange-rates",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/fx-rate-sets/{id}/exchange-rates": {
@@ -2554,8 +2535,7 @@
         "summary": "POST /v1/admin/markets/fx-rate-sets/{id}/exchange-rates",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/exchange-rates/{id}": {
@@ -2696,8 +2676,7 @@
         "summary": "PATCH /v1/admin/markets/exchange-rates/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2749,8 +2728,7 @@
         "summary": "DELETE /v1/admin/markets/exchange-rates/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/price-catalogs": {
@@ -2882,8 +2860,7 @@
         "summary": "GET /v1/admin/markets/price-catalogs",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3023,8 +3000,7 @@
         "summary": "POST /v1/admin/markets/price-catalogs",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/price-catalogs/{id}": {
@@ -3122,8 +3098,7 @@
         "summary": "GET /v1/admin/markets/price-catalogs/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -3272,8 +3247,7 @@
         "summary": "PATCH /v1/admin/markets/price-catalogs/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -3325,8 +3299,7 @@
         "summary": "DELETE /v1/admin/markets/price-catalogs/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/product-rules": {
@@ -3493,8 +3466,7 @@
         "summary": "GET /v1/admin/markets/product-rules",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3669,8 +3641,7 @@
         "summary": "POST /v1/admin/markets/product-rules",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/product-rules/{id}": {
@@ -3786,8 +3757,7 @@
         "summary": "GET /v1/admin/markets/product-rules/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -3971,8 +3941,7 @@
         "summary": "PATCH /v1/admin/markets/product-rules/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4024,8 +3993,7 @@
         "summary": "DELETE /v1/admin/markets/product-rules/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/channel-rules": {
@@ -4171,8 +4139,7 @@
         "summary": "GET /v1/admin/markets/channel-rules",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -4322,8 +4289,7 @@
         "summary": "POST /v1/admin/markets/channel-rules",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/markets/channel-rules/{id}": {
@@ -4426,8 +4392,7 @@
         "summary": "GET /v1/admin/markets/channel-rules/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4586,8 +4551,7 @@
         "summary": "PATCH /v1/admin/markets/channel-rules/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4639,8 +4603,7 @@
         "summary": "DELETE /v1/admin/markets/channel-rules/{id}",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     }
   },

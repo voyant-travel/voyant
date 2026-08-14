@@ -141,8 +141,7 @@
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
-        "x-voyant-package-name": "@voyant-travel/flights",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/flights"
       }
     },
     "/v1/admin/flights/ancillaries": {
@@ -159,8 +158,7 @@
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
-        "x-voyant-package-name": "@voyant-travel/flights",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/flights"
       }
     },
     "/v1/admin/flights/seatmap": {
@@ -177,8 +175,7 @@
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
-        "x-voyant-package-name": "@voyant-travel/flights",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/flights"
       }
     },
     "/v1/admin/flights/price": {
@@ -195,8 +192,7 @@
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
-        "x-voyant-package-name": "@voyant-travel/flights",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/flights"
       }
     },
     "/v1/admin/flights/book": {
@@ -213,8 +209,7 @@
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
-        "x-voyant-package-name": "@voyant-travel/flights",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/flights"
       }
     },
     "/v1/admin/flights/orders": {
@@ -231,8 +226,7 @@
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
-        "x-voyant-package-name": "@voyant-travel/flights",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/flights"
       }
     },
     "/v1/admin/flights/orders/{orderId}": {
@@ -249,8 +243,7 @@
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
-        "x-voyant-package-name": "@voyant-travel/flights",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/flights"
       }
     },
     "/v1/admin/flights/orders/{orderId}/ticket": {
@@ -267,8 +260,7 @@
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
-        "x-voyant-package-name": "@voyant-travel/flights",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/flights"
       }
     },
     "/v1/admin/flights/orders/{orderId}/cancel": {
@@ -285,8 +277,7 @@
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
-        "x-voyant-package-name": "@voyant-travel/flights",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/flights"
       }
     },
     "/v1/admin/flights/reference/airports": {
@@ -303,8 +294,7 @@
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
-        "x-voyant-package-name": "@voyant-travel/flights",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/flights"
       }
     },
     "/v1/admin/flights/reference/airlines": {
@@ -321,8 +311,7 @@
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
-        "x-voyant-package-name": "@voyant-travel/flights",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/flights"
       }
     },
     "/v1/admin/flights/reference/aircraft": {
@@ -339,8 +328,7 @@
         "x-voyant-module": "flights",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/flights",
-        "x-voyant-package-name": "@voyant-travel/flights",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/flights"
       }
     }
   },

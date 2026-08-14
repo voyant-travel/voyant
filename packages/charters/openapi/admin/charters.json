@@ -263,8 +263,7 @@
         "summary": "GET /v1/admin/charters/products",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -498,8 +497,7 @@
         "summary": "POST /v1/admin/charters/products",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/products/{key}/aggregates/recompute": {
@@ -693,8 +691,7 @@
         "summary": "POST /v1/admin/charters/products/{key}/aggregates/recompute",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/products/{key}/voyages": {
@@ -775,8 +772,7 @@
         "summary": "GET /v1/admin/charters/products/{key}/voyages",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/products/{key}": {
@@ -861,8 +857,7 @@
         "summary": "GET /v1/admin/charters/products/{key}",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "put": {
         "parameters": [
@@ -1054,8 +1049,7 @@
         "summary": "PUT /v1/admin/charters/products/{key}",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1247,8 +1241,7 @@
         "summary": "DELETE /v1/admin/charters/products/{key}",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/voyages": {
@@ -1473,8 +1466,7 @@
         "summary": "GET /v1/admin/charters/voyages",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1731,8 +1723,7 @@
         "summary": "POST /v1/admin/charters/voyages",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/voyages/{key}/suites/bulk": {
@@ -1920,8 +1911,7 @@
         "summary": "PUT /v1/admin/charters/voyages/{key}/suites/bulk",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/voyages/{key}/schedule/bulk": {
@@ -2054,8 +2044,7 @@
         "summary": "PUT /v1/admin/charters/voyages/{key}/schedule/bulk",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/voyages/{key}/quote/per-suite": {
@@ -2180,8 +2169,7 @@
         "summary": "POST /v1/admin/charters/voyages/{key}/quote/per-suite",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/voyages/{key}/quote/whole-yacht": {
@@ -2302,8 +2290,7 @@
         "summary": "POST /v1/admin/charters/voyages/{key}/quote/whole-yacht",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/voyages/{key}": {
@@ -2388,8 +2375,7 @@
         "summary": "GET /v1/admin/charters/voyages/{key}",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "put": {
         "parameters": [
@@ -2586,8 +2572,7 @@
         "summary": "PUT /v1/admin/charters/voyages/{key}",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/bookings/{bookingId}/myba": {
@@ -2716,8 +2701,7 @@
         "summary": "POST /v1/admin/charters/bookings/{bookingId}/myba",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/yachts": {
@@ -2925,8 +2909,7 @@
         "summary": "GET /v1/admin/charters/yachts",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3190,8 +3173,7 @@
         "summary": "POST /v1/admin/charters/yachts",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/charters/yachts/{key}": {
@@ -3276,8 +3258,7 @@
         "summary": "GET /v1/admin/charters/yachts/{key}",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "put": {
         "parameters": [
@@ -3476,8 +3457,7 @@
         "summary": "PUT /v1/admin/charters/yachts/{key}",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     }
   },

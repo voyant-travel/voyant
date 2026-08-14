@@ -10,12 +10,7 @@
         "operationId": "getStorefrontCapabilities",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "200": {
-            "description": "Storefront admin capabilities."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "200": { "description": "Storefront admin capabilities." } }
       }
     },
     "/v1/admin/storefronts/storefronts": {
@@ -23,23 +18,13 @@
         "operationId": "listStorefronts",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "200": {
-            "description": "Storefronts for the operator organization."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "200": { "description": "Storefronts for the operator organization." } }
       },
       "post": {
         "operationId": "createStorefront",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "201": {
-            "description": "Created storefront."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "201": { "description": "Created storefront." } }
       }
     },
     "/v1/admin/storefronts/storefronts/{storefrontId}": {
@@ -47,34 +32,19 @@
         "operationId": "getStorefront",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "200": {
-            "description": "Storefront detail."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "200": { "description": "Storefront detail." } }
       },
       "patch": {
         "operationId": "updateStorefront",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "200": {
-            "description": "Updated storefront."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "200": { "description": "Updated storefront." } }
       },
       "delete": {
         "operationId": "deleteStorefront",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "204": {
-            "description": "Storefront deleted."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "204": { "description": "Storefront deleted." } }
       }
     },
     "/v1/admin/storefronts/storefronts/{storefrontId}/allowed-origins": {
@@ -82,12 +52,7 @@
         "operationId": "setStorefrontAllowedOrigins",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "200": {
-            "description": "Updated storefront allowed origins."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "200": { "description": "Updated storefront allowed origins." } }
       }
     },
     "/v1/admin/storefronts/storefronts/{storefrontId}/channel-binding": {
@@ -95,34 +60,19 @@
         "operationId": "getStorefrontChannelBinding",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "200": {
-            "description": "Storefront channel binding."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "200": { "description": "Storefront channel binding." } }
       },
       "put": {
         "operationId": "setStorefrontChannelBinding",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "200": {
-            "description": "Updated storefront channel binding."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "200": { "description": "Updated storefront channel binding." } }
       },
       "delete": {
         "operationId": "clearStorefrontChannelBinding",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "204": {
-            "description": "Storefront channel binding cleared."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "204": { "description": "Storefront channel binding cleared." } }
       }
     },
     "/v1/admin/storefronts/storefronts/{storefrontId}/keys": {
@@ -130,23 +80,15 @@
         "operationId": "listStorefrontApiKeys",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "200": {
-            "description": "Storefront access keys."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "200": { "description": "Storefront access keys." } }
       },
       "post": {
         "operationId": "issueStorefrontApiKey",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
         "responses": {
-          "201": {
-            "description": "Issued access key, plaintext token revealed once."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+          "201": { "description": "Issued access key, plaintext token revealed once." }
+        }
       }
     },
     "/v1/admin/storefronts/storefronts/{storefrontId}/keys/{keyId}/rotate": {
@@ -155,11 +97,8 @@
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
         "responses": {
-          "201": {
-            "description": "Rotated access key, plaintext token revealed once."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+          "201": { "description": "Rotated access key, plaintext token revealed once." }
+        }
       }
     },
     "/v1/admin/storefronts/storefronts/{storefrontId}/keys/{keyId}": {
@@ -167,12 +106,7 @@
         "operationId": "revokeStorefrontApiKey",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "204": {
-            "description": "Access key revoked."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "204": { "description": "Access key revoked." } }
       }
     },
     "/v1/admin/storefronts/storefronts/{storefrontId}/account-policy": {
@@ -180,12 +114,7 @@
         "operationId": "updateStorefrontAccountPolicy",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "200": {
-            "description": "Updated buyer-account policy."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "200": { "description": "Updated buyer-account policy." } }
       }
     },
     "/v1/admin/storefronts/storefronts/{storefrontId}/methods": {
@@ -193,12 +122,7 @@
         "operationId": "updateStorefrontMethods",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "200": {
-            "description": "Updated customer auth methods."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "200": { "description": "Updated customer auth methods." } }
       }
     },
     "/v1/admin/storefronts/storefronts/{storefrontId}/provider-credentials": {
@@ -207,11 +131,8 @@
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
         "responses": {
-          "200": {
-            "description": "Provider credential status (never secret values)."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+          "200": { "description": "Provider credential status (never secret values)." }
+        }
       }
     },
     "/v1/admin/storefronts/storefronts/{storefrontId}/provider-credentials/{provider}": {
@@ -219,23 +140,13 @@
         "operationId": "putStorefrontProviderCredential",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "204": {
-            "description": "Provider credential stored."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "204": { "description": "Provider credential stored." } }
       },
       "delete": {
         "operationId": "deleteStorefrontProviderCredential",
         "tags": ["Storefronts"],
         "x-voyant-api-id": "@voyant-travel/auth#storefront.api.admin",
-        "responses": {
-          "204": {
-            "description": "Provider credential cleared."
-          }
-        },
-        "x-voyant-key-kind": "secret"
+        "responses": { "204": { "description": "Provider credential cleared." } }
       }
     }
   }

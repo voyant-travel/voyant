@@ -153,8 +153,7 @@
         "x-voyant-module": "media",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/storage",
-        "x-voyant-package-name": "@voyant-travel/storage",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/storage"
       }
     }
   },

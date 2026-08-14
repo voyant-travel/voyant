@@ -37,8 +37,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/media#api.admin",
         "x-voyant-unit-id": "@voyant-travel/media",
-        "x-voyant-package-name": "@voyant-travel/media",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/media"
       },
       "get": {
         "parameters": [
@@ -255,8 +254,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/media#api.admin",
         "x-voyant-unit-id": "@voyant-travel/media",
-        "x-voyant-package-name": "@voyant-travel/media",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/media"
       }
     },
     "/v1/admin/media-library/assets/{assetId}": {
@@ -418,8 +416,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/media#api.admin",
         "x-voyant-unit-id": "@voyant-travel/media",
-        "x-voyant-package-name": "@voyant-travel/media",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/media"
       },
       "patch": {
         "parameters": [
@@ -660,8 +657,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/media#api.admin",
         "x-voyant-unit-id": "@voyant-travel/media",
-        "x-voyant-package-name": "@voyant-travel/media",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/media"
       },
       "delete": {
         "parameters": [
@@ -853,8 +849,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/media#api.admin",
         "x-voyant-unit-id": "@voyant-travel/media",
-        "x-voyant-package-name": "@voyant-travel/media",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/media"
       }
     },
     "/v1/admin/media-library/folders": {
@@ -944,8 +939,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/media#api.admin",
         "x-voyant-unit-id": "@voyant-travel/media",
-        "x-voyant-package-name": "@voyant-travel/media",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/media"
       },
       "post": {
         "requestBody": {
@@ -1027,8 +1021,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/media#api.admin",
         "x-voyant-unit-id": "@voyant-travel/media",
-        "x-voyant-package-name": "@voyant-travel/media",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/media"
       }
     },
     "/v1/admin/media-library/folders/{folderId}": {
@@ -1100,8 +1093,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/media#api.admin",
         "x-voyant-unit-id": "@voyant-travel/media",
-        "x-voyant-package-name": "@voyant-travel/media",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/media"
       },
       "patch": {
         "parameters": [
@@ -1208,8 +1200,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/media#api.admin",
         "x-voyant-unit-id": "@voyant-travel/media",
-        "x-voyant-package-name": "@voyant-travel/media",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/media"
       },
       "delete": {
         "parameters": [
@@ -1279,8 +1270,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/media#api.admin",
         "x-voyant-unit-id": "@voyant-travel/media",
-        "x-voyant-package-name": "@voyant-travel/media",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/media"
       }
     },
     "/v1/admin/media-library/folders/{folderId}/members": {
@@ -1366,8 +1356,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/media#api.admin",
         "x-voyant-unit-id": "@voyant-travel/media",
-        "x-voyant-package-name": "@voyant-travel/media",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/media"
       }
     },
     "/v1/admin/media-library/folders/{folderId}/members/{assetId}": {
@@ -1419,8 +1408,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/media#api.admin",
         "x-voyant-unit-id": "@voyant-travel/media",
-        "x-voyant-package-name": "@voyant-travel/media",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/media"
       }
     },
     "/v1/admin/media-library/usage": {
@@ -1520,8 +1508,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/media#api.admin",
         "x-voyant-unit-id": "@voyant-travel/media",
-        "x-voyant-package-name": "@voyant-travel/media",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/media"
       },
       "post": {
         "requestBody": {
@@ -1608,8 +1595,7 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/media#api.admin",
         "x-voyant-unit-id": "@voyant-travel/media",
-        "x-voyant-package-name": "@voyant-travel/media",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-package-name": "@voyant-travel/media"
       }
     }
   },

@@ -234,8 +234,7 @@
         "summary": "GET /v1/public/charters",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/charters/voyages": {
@@ -460,8 +459,7 @@
         "summary": "GET /v1/public/charters/voyages",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/charters/voyages/{key}": {
@@ -690,8 +688,7 @@
         "summary": "GET /v1/public/charters/voyages/{key}",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/charters/voyages/{key}/quote/per-suite": {
@@ -838,8 +835,7 @@
         "summary": "POST /v1/public/charters/voyages/{key}/quote/per-suite",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/charters/voyages/{key}/quote/whole-yacht": {
@@ -979,8 +975,7 @@
         "summary": "POST /v1/public/charters/voyages/{key}/quote/whole-yacht",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/charters/yachts/{key}": {
@@ -1065,8 +1060,7 @@
         "summary": "GET /v1/public/charters/yachts/{key}",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     },
     "/v1/public/charters/products/{key}": {
@@ -1134,8 +1128,7 @@
         "summary": "GET /v1/public/charters/products/{key}",
         "tags": ["charters"],
         "x-voyant-module": "charters",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     }
   },

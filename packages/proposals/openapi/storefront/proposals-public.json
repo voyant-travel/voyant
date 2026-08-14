@@ -141,8 +141,7 @@
         "x-voyant-module": "proposal-versions",
         "x-voyant-surface": "storefront",
         "x-voyant-unit-id": "@voyant-travel/proposals#presentation-extension",
-        "x-voyant-package-name": "@voyant-travel/proposals",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-package-name": "@voyant-travel/proposals"
       }
     },
     "/v1/public/proposals/{proposalVersionId}/accept": {
@@ -159,8 +158,7 @@
         "x-voyant-module": "proposal-versions",
         "x-voyant-surface": "storefront",
         "x-voyant-unit-id": "@voyant-travel/proposals#presentation-extension",
-        "x-voyant-package-name": "@voyant-travel/proposals",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-package-name": "@voyant-travel/proposals"
       }
     },
     "/v1/public/proposals/{proposalVersionId}/decline": {
@@ -177,8 +175,7 @@
         "x-voyant-module": "proposal-versions",
         "x-voyant-surface": "storefront",
         "x-voyant-unit-id": "@voyant-travel/proposals#presentation-extension",
-        "x-voyant-package-name": "@voyant-travel/proposals",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-package-name": "@voyant-travel/proposals"
       }
     },
     "/v1/public/proposals/{proposalVersionId}/request-edits": {
@@ -195,8 +192,7 @@
         "x-voyant-module": "proposal-versions",
         "x-voyant-surface": "storefront",
         "x-voyant-unit-id": "@voyant-travel/proposals#presentation-extension",
-        "x-voyant-package-name": "@voyant-travel/proposals",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-package-name": "@voyant-travel/proposals"
       }
     }
   },

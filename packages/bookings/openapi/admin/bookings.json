@@ -879,8 +879,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{bookingId}/amendments/traveler-roster/preview": {
@@ -1104,8 +1103,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{bookingId}/amendments": {
@@ -1141,8 +1139,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{bookingId}/amendments/{amendmentId}": {
@@ -1209,8 +1206,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{bookingId}/amendments/{amendmentId}/accept": {
@@ -1346,8 +1342,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{bookingId}/amendments/{amendmentId}/apply": {
@@ -1475,8 +1470,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{bookingId}/amendments/{amendmentId}/reconcile": {
@@ -1583,8 +1577,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/pricing-preview": {
@@ -1665,8 +1658,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/aggregates": {
@@ -1853,8 +1845,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/overview": {
@@ -2240,8 +2231,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/sharing-groups": {
@@ -2315,8 +2305,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/sharing-groups/{groupId}/travelers": {
@@ -2390,8 +2379,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/allocations": {
@@ -2509,8 +2497,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/activity": {
@@ -2600,8 +2587,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/group": {
@@ -2657,8 +2643,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/cancel": {
@@ -2982,8 +2967,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/start": {
@@ -3304,8 +3288,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/complete": {
@@ -3626,8 +3609,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/override-status": {
@@ -3980,8 +3962,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/action-ledger": {
@@ -4114,8 +4095,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/action-approvals/{approvalId}/decide": {
@@ -4281,8 +4261,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/travelers": {
@@ -4380,8 +4359,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -4555,8 +4533,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/travelers/{travelerId}/reveal": {
@@ -4708,8 +4685,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/travelers/{travelerId}/travel-details": {
@@ -4795,8 +4771,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -4965,8 +4940,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -5053,8 +5027,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/travelers/with-travel-details": {
@@ -5246,8 +5219,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/travelers/{travelerId}/with-travel-details": {
@@ -5446,8 +5418,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/travelers/{travelerId}": {
@@ -5630,8 +5601,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -5686,8 +5656,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/items": {
@@ -5865,8 +5834,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -6202,8 +6170,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/items/{itemId}": {
@@ -6548,8 +6515,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -6620,8 +6586,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/items/{itemId}/travelers": {
@@ -6694,8 +6659,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -6837,8 +6801,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/items/{itemId}/travelers/{linkId}": {
@@ -6919,8 +6882,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/supplier-statuses": {
@@ -7017,8 +6979,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/bookings#booking-supplier-extension.api",
@@ -7185,8 +7146,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/supplier-statuses/{statusId}": {
@@ -7365,8 +7325,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/fulfillments": {
@@ -7470,8 +7429,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -7659,8 +7617,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/fulfillments/{fulfillmentId}": {
@@ -7857,8 +7814,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/redemptions": {
@@ -7940,8 +7896,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -8090,8 +8045,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/notes": {
@@ -8145,8 +8099,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -8246,8 +8199,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/notes/{noteId}": {
@@ -8357,8 +8309,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -8413,8 +8364,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/documents": {
@@ -8491,8 +8441,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -8632,8 +8581,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}/documents/{documentId}": {
@@ -8690,8 +8638,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/groups": {
@@ -8832,8 +8779,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -8949,8 +8895,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/groups/{id}": {
@@ -9067,8 +9012,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -9209,8 +9153,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -9257,8 +9200,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/groups/{id}/members": {
@@ -9313,8 +9255,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -9438,8 +9379,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/groups/{id}/members/{bookingId}": {
@@ -9496,8 +9436,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/groups/{id}/travelers": {
@@ -9543,8 +9482,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings": {
@@ -9970,8 +9908,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/bookings/{id}": {
@@ -10483,8 +10420,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -11002,8 +10938,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/bookings#api.admin",
@@ -11050,8 +10985,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     }
   },

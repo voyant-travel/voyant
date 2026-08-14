@@ -362,8 +362,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "publishable"
+        }
       }
     },
     "/v1/public/cruises/sailings/{key}": {
@@ -462,8 +461,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "publishable"
+        }
       }
     },
     "/v1/public/cruises/sailings/{key}/quote": {
@@ -713,8 +711,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "publishable"
+        }
       }
     },
     "/v1/public/cruises/ships/{key}/effective": {
@@ -825,8 +822,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "publishable"
+        }
       }
     },
     "/v1/public/cruises/ships/{key}": {
@@ -937,8 +933,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "publishable"
+        }
       }
     },
     "/v1/public/cruises/{slug}": {
@@ -1204,8 +1199,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "publishable"
+        }
       }
     }
   },

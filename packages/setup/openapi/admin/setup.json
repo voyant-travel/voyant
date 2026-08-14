@@ -127,8 +127,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/setup/initialize": {
@@ -283,8 +282,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/setup/steps/{stepId}/complete": {
@@ -387,8 +385,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/setup/steps/{stepId}/skip": {
@@ -491,8 +488,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/setup/dismiss": {
@@ -618,8 +614,7 @@
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     }
   }

@@ -17,17 +17,12 @@
                 "schema": {
                   "type": "object",
                   "required": ["data"],
-                  "properties": {
-                    "data": {
-                      "$ref": "#/components/schemas/BookingTaxSettings"
-                    }
-                  }
+                  "properties": { "data": { "$ref": "#/components/schemas/BookingTaxSettings" } }
                 }
               }
             }
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       },
       "patch": {
         "summary": "Update booking tax settings",
@@ -39,31 +34,18 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "taxPriceMode": {
-                    "type": "string",
-                    "enum": ["inclusive", "exclusive"]
-                  },
-                  "taxPolicyProfileId": {
-                    "type": ["string", "null"]
-                  },
-                  "invoicingMode": {
-                    "type": "string",
-                    "enum": ["direct", "proforma-first"]
-                  }
+                  "taxPriceMode": { "type": "string", "enum": ["inclusive", "exclusive"] },
+                  "taxPolicyProfileId": { "type": ["string", "null"] },
+                  "invoicingMode": { "type": "string", "enum": ["direct", "proforma-first"] }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "The updated booking tax settings"
-          },
-          "409": {
-            "description": "This deployment does not support tax setting updates"
-          }
-        },
-        "x-voyant-key-kind": "secret"
+          "200": { "description": "The updated booking tax settings" },
+          "409": { "description": "This deployment does not support tax setting updates" }
+        }
       }
     }
   },
@@ -73,17 +55,9 @@
         "type": "object",
         "required": ["taxPriceMode", "taxPolicyProfileId", "invoicingMode"],
         "properties": {
-          "taxPriceMode": {
-            "type": "string",
-            "enum": ["inclusive", "exclusive"]
-          },
-          "taxPolicyProfileId": {
-            "type": ["string", "null"]
-          },
-          "invoicingMode": {
-            "type": "string",
-            "enum": ["direct", "proforma-first"]
-          }
+          "taxPriceMode": { "type": "string", "enum": ["inclusive", "exclusive"] },
+          "taxPolicyProfileId": { "type": ["string", "null"] },
+          "invoicingMode": { "type": "string", "enum": ["direct", "proforma-first"] }
         }
       }
     }

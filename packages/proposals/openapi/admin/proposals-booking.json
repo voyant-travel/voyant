@@ -13,18 +13,13 @@
             "name": "bookingId",
             "in": "path",
             "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "The booking's Proposal details, or null when none exist."
-          }
+          "200": { "description": "The booking's Proposal details, or null when none exist." }
         },
-        "x-voyant-api-id": "@voyant-travel/proposals#booking-extension.api",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-api-id": "@voyant-travel/proposals#booking-extension.api"
       },
       "put": {
         "summary": "Create or update Proposal details for a booking",
@@ -33,9 +28,7 @@
             "name": "bookingId",
             "in": "path",
             "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "requestBody": {
@@ -45,24 +38,17 @@
               "schema": {
                 "type": "object",
                 "properties": {
-                  "proposalId": {
-                    "type": ["string", "null"]
-                  },
-                  "proposalVersionId": {
-                    "type": ["string", "null"]
-                  }
+                  "proposalId": { "type": ["string", "null"] },
+                  "proposalVersionId": { "type": ["string", "null"] }
                 }
               }
             }
           }
         },
         "responses": {
-          "200": {
-            "description": "The saved booking Proposal details."
-          }
+          "200": { "description": "The saved booking Proposal details." }
         },
-        "x-voyant-api-id": "@voyant-travel/proposals#booking-extension.api",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-api-id": "@voyant-travel/proposals#booking-extension.api"
       },
       "delete": {
         "summary": "Remove Proposal details from a booking",
@@ -71,21 +57,14 @@
             "name": "bookingId",
             "in": "path",
             "required": true,
-            "schema": {
-              "type": "string"
-            }
+            "schema": { "type": "string" }
           }
         ],
         "responses": {
-          "200": {
-            "description": "The Proposal details were removed."
-          },
-          "404": {
-            "description": "No Proposal details exist for the booking."
-          }
+          "200": { "description": "The Proposal details were removed." },
+          "404": { "description": "No Proposal details exist for the booking." }
         },
-        "x-voyant-api-id": "@voyant-travel/proposals#booking-extension.api",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-api-id": "@voyant-travel/proposals#booking-extension.api"
       }
     }
   }

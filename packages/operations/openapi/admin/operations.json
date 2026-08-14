@@ -125,8 +125,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/overview": {
@@ -395,8 +394,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/rules": {
@@ -590,8 +588,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -793,8 +790,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/rules/batch-update": {
@@ -1039,8 +1035,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/rules/batch-delete": {
@@ -1142,8 +1137,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/rules/{id}": {
@@ -1280,8 +1274,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -1505,8 +1498,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -1566,8 +1558,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/start-times": {
@@ -1743,8 +1734,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -1907,8 +1897,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/start-times/batch-update": {
@@ -2116,8 +2105,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/start-times/batch-delete": {
@@ -2219,8 +2207,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/start-times/{id}": {
@@ -2339,8 +2326,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -2527,8 +2513,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -2588,8 +2573,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots": {
@@ -2922,8 +2906,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -3289,8 +3272,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/batch-update": {
@@ -3699,8 +3681,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/batch-delete": {
@@ -3802,8 +3783,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}": {
@@ -4028,8 +4008,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -4417,8 +4396,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -4478,8 +4456,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/unit-availability": {
@@ -4578,8 +4555,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/summary": {
@@ -5320,8 +5296,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/closeouts": {
@@ -5466,8 +5441,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -5596,8 +5570,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/closeouts/batch-update": {
@@ -5771,8 +5744,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/closeouts/batch-delete": {
@@ -5874,8 +5846,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/closeouts/{id}": {
@@ -5975,8 +5946,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -6129,8 +6099,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -6190,8 +6159,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation": {
@@ -6703,8 +6671,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/resources": {
@@ -7024,8 +6991,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/resources/{resourceId}": {
@@ -7349,8 +7315,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -7505,8 +7470,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/travelers/{travelerId}": {
@@ -7749,8 +7713,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/travelers/{travelerId}/rooming-preferences": {
@@ -7930,8 +7893,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/travelers/{travelerId}/sharing-group": {
@@ -8093,8 +8055,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/sharing-groups/pair": {
@@ -8254,8 +8215,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/sharing-groups/{groupId}/label": {
@@ -8420,8 +8380,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -8564,8 +8523,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/audit-log": {
@@ -8677,8 +8635,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/export-passengers": {
@@ -8729,8 +8686,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/export-rooming-list": {
@@ -8793,8 +8749,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/auto-materialize": {
@@ -9139,8 +9094,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/materialize-templates": {
@@ -9270,8 +9224,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/auto-allocate": {
@@ -9615,8 +9568,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/room-blocks/materialize": {
@@ -9916,8 +9868,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/room-blocks/{blockId}": {
@@ -10074,8 +10025,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/products/{productId}/allocation/resource-templates": {
@@ -10275,8 +10225,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/products/{productId}/options/{optionId}/allocation/resource-templates/{kind}": {
@@ -10626,8 +10575,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -10778,8 +10726,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/products/{id}/allocation/materialize-open-slots": {
@@ -10923,8 +10870,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/fleet-resources": {
@@ -11073,8 +11019,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "description": "Attach a fleet `resources` record (a coach, a boat, a room) to this departure. Writes the departure's `allocation_resources` container and the cross-departure `resource_slot_assignments` commitment in one transaction, adopting an existing live assignment rather than duplicating it. Rejects a resource already committed to an overlapping departure. Re-attaching the same resource is a no-op.",
@@ -11362,8 +11307,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/fleet-resources/{fleetResourceId}": {
@@ -11530,8 +11474,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/travelers/assignments": {
@@ -11801,8 +11744,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/auto-allocate/preview": {
@@ -12134,8 +12076,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slots/{id}/allocation/conflicts": {
@@ -12265,8 +12206,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-points": {
@@ -12423,8 +12363,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -12565,8 +12504,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-points/batch-update": {
@@ -12752,8 +12690,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-points/batch-delete": {
@@ -12855,8 +12792,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-points/{id}": {
@@ -12964,8 +12900,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -13130,8 +13065,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -13191,8 +13125,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slot-pickups": {
@@ -13318,8 +13251,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -13440,8 +13372,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slot-pickups/batch-update": {
@@ -13607,8 +13538,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slot-pickups/batch-delete": {
@@ -13710,8 +13640,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/slot-pickups/{id}": {
@@ -13808,8 +13737,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -13954,8 +13882,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -14015,8 +13942,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/meeting-configs": {
@@ -14233,8 +14159,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -14450,8 +14375,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/meeting-configs/batch-update": {
@@ -14713,8 +14637,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/meeting-configs/batch-delete": {
@@ -14816,8 +14739,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/meeting-configs/{id}": {
@@ -14964,8 +14886,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -15206,8 +15127,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -15267,8 +15187,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-groups": {
@@ -15423,8 +15342,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -15565,8 +15483,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-groups/batch-update": {
@@ -15751,8 +15668,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-groups/batch-delete": {
@@ -15854,8 +15770,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-groups/{id}": {
@@ -15962,8 +15877,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -16127,8 +16041,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -16188,8 +16101,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-locations": {
@@ -16351,8 +16263,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -16515,8 +16426,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-locations/batch-update": {
@@ -16724,8 +16634,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-locations/batch-delete": {
@@ -16827,8 +16736,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/pickup-locations/{id}": {
@@ -16947,8 +16855,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -17135,8 +17042,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -17196,8 +17102,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/location-pickup-times": {
@@ -17388,8 +17293,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -17591,8 +17495,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/location-pickup-times/batch-update": {
@@ -17840,8 +17743,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/location-pickup-times/batch-delete": {
@@ -17943,8 +17845,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/location-pickup-times/{id}": {
@@ -18084,8 +17985,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -18312,8 +18212,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -18373,8 +18272,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/custom-pickup-areas": {
@@ -18510,8 +18408,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -18639,8 +18536,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/custom-pickup-areas/batch-update": {
@@ -18813,8 +18709,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/custom-pickup-areas/batch-delete": {
@@ -18916,8 +18811,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/availability/custom-pickup-areas/{id}": {
@@ -19018,8 +18912,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -19171,8 +19064,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -19232,8 +19124,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/resources": {
@@ -19422,8 +19313,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -19607,8 +19497,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/resources/batch-update": {
@@ -19836,8 +19725,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/resources/batch-delete": {
@@ -19939,8 +19827,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/resources/{id}": {
@@ -20070,8 +19957,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -20278,8 +20164,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -20339,8 +20224,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/pools": {
@@ -20507,8 +20391,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -20666,8 +20549,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/pools/batch-update": {
@@ -20869,8 +20751,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/pools/batch-delete": {
@@ -20972,8 +20853,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/pools/{id}": {
@@ -21089,8 +20969,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -21271,8 +21150,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -21332,8 +21210,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/pool-members": {
@@ -21441,8 +21318,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -21567,8 +21443,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/pool-members/{id}": {
@@ -21630,8 +21505,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/requirements": {
@@ -21789,8 +21663,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -21960,8 +21833,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/requirements/batch-update": {
@@ -22155,8 +22027,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/requirements/batch-delete": {
@@ -22258,8 +22129,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/requirements/{id}": {
@@ -22372,8 +22242,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -22546,8 +22415,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -22607,8 +22475,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/allocations": {
@@ -22766,8 +22633,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -22937,8 +22803,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/allocations/batch-update": {
@@ -23132,8 +22997,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/allocations/batch-delete": {
@@ -23235,8 +23099,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/allocations/{id}": {
@@ -23349,8 +23212,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -23523,8 +23385,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -23584,8 +23445,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/slot-assignments": {
@@ -23773,8 +23633,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -23978,8 +23837,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/slot-assignments/batch-update": {
@@ -24210,8 +24068,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/slot-assignments/batch-delete": {
@@ -24313,8 +24170,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/slot-assignments/{id}": {
@@ -24442,8 +24298,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -24653,8 +24508,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -24714,8 +24568,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/closeouts": {
@@ -24852,8 +24705,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -25033,8 +24885,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/closeouts/batch-update": {
@@ -25223,8 +25074,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/closeouts/batch-delete": {
@@ -25326,8 +25176,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/closeouts/{id}": {
@@ -25434,8 +25283,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -25621,8 +25469,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -25682,8 +25529,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/operators": {
@@ -25837,8 +25683,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -25986,8 +25831,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/operators/{id}": {
@@ -26098,8 +25942,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -26272,8 +26115,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -26333,8 +26175,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/vehicles": {
@@ -26559,8 +26400,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -26811,8 +26651,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/vehicles/{id}": {
@@ -26975,8 +26814,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -27252,8 +27090,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -27313,8 +27150,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/drivers": {
@@ -27476,8 +27312,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -27642,8 +27477,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/drivers/{id}": {
@@ -27762,8 +27596,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -27953,8 +27786,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -28014,8 +27846,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/transfer-preferences": {
@@ -28293,8 +28124,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -28678,8 +28508,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/transfer-preferences/{id}": {
@@ -28913,8 +28742,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -29323,8 +29151,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -29384,8 +29211,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatches": {
@@ -29663,8 +29489,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -29964,8 +29789,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatches/{id}": {
@@ -30154,8 +29978,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -30479,8 +30302,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -30540,8 +30362,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/execution-events": {
@@ -30704,8 +30525,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -30881,8 +30701,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/execution-events/{id}": {
@@ -31005,8 +30824,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -31207,8 +31025,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -31268,8 +31085,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-assignments": {
@@ -31462,8 +31278,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -31658,8 +31473,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-assignments/{id}": {
@@ -31794,8 +31608,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -32015,8 +31828,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -32076,8 +31888,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-legs": {
@@ -32248,8 +32059,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -32445,8 +32255,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-legs/{id}": {
@@ -32582,8 +32391,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -32804,8 +32612,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -32865,8 +32672,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-passengers": {
@@ -33002,8 +32808,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -33140,8 +32945,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-passengers/{id}": {
@@ -33248,8 +33052,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -33411,8 +33214,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -33472,8 +33274,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/driver-shifts": {
@@ -33652,8 +33453,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -33832,8 +33632,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/driver-shifts/{id}": {
@@ -33960,8 +33759,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -34163,8 +33961,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -34224,8 +34021,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/service-incidents": {
@@ -34401,8 +34197,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -34587,8 +34382,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/service-incidents/{id}": {
@@ -34716,8 +34510,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -34926,8 +34719,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -34987,8 +34779,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-checkpoints": {
@@ -35163,8 +34954,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -35369,8 +35159,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/dispatch-checkpoints/{id}": {
@@ -35510,8 +35299,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -35740,8 +35528,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -35801,8 +35588,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facilities": {
@@ -36127,8 +35913,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -36494,8 +36279,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facilities/{id}": {
@@ -36723,8 +36507,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -37114,8 +36897,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -37175,8 +36957,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facilities/{id}/contact-points": {
@@ -37296,8 +37077,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -37514,8 +37294,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/contact-points/{id}": {
@@ -37740,8 +37519,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -37801,8 +37579,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facilities/{id}/addresses": {
@@ -37973,8 +37750,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "parameters": [
@@ -38280,8 +38056,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/addresses/{id}": {
@@ -38599,8 +38374,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -38660,8 +38434,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facility-contacts": {
@@ -38842,8 +38615,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facilities/{id}/contacts": {
@@ -39061,8 +38833,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facility-contacts/{id}": {
@@ -39277,8 +39048,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -39338,8 +39108,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facility-features": {
@@ -39500,8 +39269,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facilities/{id}/features": {
@@ -39702,8 +39470,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facility-features/{id}": {
@@ -39901,8 +39668,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -39962,8 +39728,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facility-operation-schedules": {
@@ -40136,8 +39901,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facilities/{id}/operation-schedules": {
@@ -40354,8 +40118,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/facility-operation-schedules/{id}": {
@@ -40572,8 +40335,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -40633,8 +40395,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/properties": {
@@ -40838,8 +40599,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -41078,8 +40838,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/properties/{id}": {
@@ -41228,8 +40987,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -41475,8 +41233,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -41536,8 +41293,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/property-groups": {
@@ -41747,8 +41503,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -41974,8 +41729,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/property-groups/{id}": {
@@ -42126,8 +41880,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -42378,8 +42131,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -42439,8 +42191,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/property-group-members": {
@@ -42603,8 +42354,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -42786,8 +42536,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/property-group-members/{id}": {
@@ -42906,8 +42655,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -43095,8 +42843,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "delete": {
         "parameters": [
@@ -43156,8 +42903,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/function-spaces": {
@@ -43333,8 +43079,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "post": {
         "requestBody": {
@@ -43547,8 +43292,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/function-spaces/{id}": {
@@ -43734,8 +43478,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       },
       "patch": {
         "parameters": [
@@ -43957,8 +43700,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/function-spaces/{id}/capacities": {
@@ -44112,8 +43854,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/space-blocks": {
@@ -44356,8 +44097,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/space-blocks/{id}": {
@@ -44582,8 +44322,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/space-blocks/{id}/slots": {
@@ -44744,8 +44483,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/space-blocks/{id}/pickups": {
@@ -45020,8 +44758,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/space-blocks/{id}/pickups/reverse": {
@@ -45171,8 +44908,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/space-blocks/{id}/release": {
@@ -45357,8 +45093,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     },
     "/v1/admin/operations/acceptance/aggregates": {
@@ -45485,8 +45220,7 @@
           "operations"
         ],
         "x-voyant-module": "operations",
-        "x-voyant-surface": "admin",
-        "x-voyant-key-kind": "secret"
+        "x-voyant-surface": "admin"
       }
     }
   },

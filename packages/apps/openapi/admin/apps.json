@@ -7,144 +7,72 @@
   },
   "paths": {
     "/v1/admin/apps": {
-      "get": {
-        "summary": "List app registrations",
-        "x-voyant-key-kind": "secret"
-      },
-      "post": {
-        "summary": "Create a custom app registration",
-        "x-voyant-key-kind": "secret"
-      }
+      "get": { "summary": "List app registrations" },
+      "post": { "summary": "Create a custom app registration" }
     },
     "/v1/admin/apps/oauth/authorize": {
-      "post": {
-        "summary": "Approve app OAuth consent",
-        "x-voyant-key-kind": "secret"
-      }
+      "post": { "summary": "Approve app OAuth consent" }
     },
     "/v1/admin/apps/oauth/token": {
-      "post": {
-        "summary": "Issue an app OAuth token",
-        "x-voyant-key-kind": "secret"
-      }
+      "post": { "summary": "Issue an app OAuth token" }
     },
     "/v1/admin/apps/oauth/revoke-installation": {
-      "post": {
-        "summary": "Revoke installation credentials",
-        "x-voyant-key-kind": "secret"
-      }
+      "post": { "summary": "Revoke installation credentials" }
     },
     "/v1/admin/apps/oauth/session-token/exchange": {
-      "post": {
-        "summary": "Exchange an app session token",
-        "x-voyant-key-kind": "secret"
-      }
+      "post": { "summary": "Exchange an app session token" }
     },
     "/v1/admin/apps/install": {
-      "post": {
-        "summary": "Install an app release",
-        "x-voyant-key-kind": "secret"
-      }
+      "post": { "summary": "Install an app release" }
     },
     "/v1/admin/apps/marketplace/install-intents/resolve": {
-      "post": {
-        "summary": "Resolve and admit an opaque Marketplace install intent",
-        "x-voyant-key-kind": "secret"
-      }
+      "post": { "summary": "Resolve and admit an opaque Marketplace install intent" }
     },
     "/v1/admin/apps/installations": {
-      "get": {
-        "summary": "List app installations",
-        "x-voyant-key-kind": "secret"
-      }
+      "get": { "summary": "List app installations" }
     },
     "/v1/admin/apps/installations/{installationId}": {
-      "get": {
-        "summary": "Get app installation detail",
-        "x-voyant-key-kind": "secret"
-      }
+      "get": { "summary": "Get app installation detail" }
     },
     "/v1/admin/apps/installations/{installationId}/audit": {
-      "get": {
-        "summary": "List app installation audit events",
-        "x-voyant-key-kind": "secret"
-      }
+      "get": { "summary": "List app installation audit events" }
     },
     "/v1/admin/apps/installations/{installationId}/pause": {
-      "post": {
-        "summary": "Pause an app installation",
-        "x-voyant-key-kind": "secret"
-      }
+      "post": { "summary": "Pause an app installation" }
     },
     "/v1/admin/apps/installations/{installationId}/resume": {
-      "post": {
-        "summary": "Resume an app installation",
-        "x-voyant-key-kind": "secret"
-      }
+      "post": { "summary": "Resume an app installation" }
     },
     "/v1/admin/apps/installations/{installationId}/uninstall": {
-      "post": {
-        "summary": "Uninstall an app installation",
-        "x-voyant-key-kind": "secret"
-      }
+      "post": { "summary": "Uninstall an app installation" }
     },
     "/v1/admin/apps/installations/{installationId}/activate": {
-      "post": {
-        "summary": "Activate an app installation release",
-        "x-voyant-key-kind": "secret"
-      }
+      "post": { "summary": "Activate an app installation release" }
     },
     "/v1/admin/apps/installations/{installationId}/purge-preview": {
-      "post": {
-        "summary": "Preview app installation purge impact",
-        "x-voyant-key-kind": "secret"
-      }
+      "post": { "summary": "Preview app installation purge impact" }
     },
     "/v1/admin/apps/installations/{installationId}/session-token": {
-      "post": {
-        "summary": "Issue an app extension session token",
-        "x-voyant-key-kind": "secret"
-      }
+      "post": { "summary": "Issue an app extension session token" }
     },
     "/v1/admin/apps/installations/{installationId}/setup-handoff": {
-      "post": {
-        "summary": "Create a one-time Marketplace app setup handoff",
-        "x-voyant-key-kind": "secret"
-      }
+      "post": { "summary": "Create a one-time Marketplace app setup handoff" }
     },
     "/v1/admin/apps/installations/{installationId}/webhooks": {
-      "get": {
-        "summary": "List app webhook delivery health",
-        "x-voyant-key-kind": "secret"
-      }
+      "get": { "summary": "List app webhook delivery health" }
     },
     "/v1/admin/apps/installations/{installationId}/webhooks/replay": {
-      "post": {
-        "summary": "Replay an app webhook delivery",
-        "x-voyant-key-kind": "secret"
-      }
+      "post": { "summary": "Replay an app webhook delivery" }
     },
     "/v1/admin/apps/{appId}": {
-      "get": {
-        "summary": "Get an app registration",
-        "x-voyant-key-kind": "secret"
-      }
+      "get": { "summary": "Get an app registration" }
     },
     "/v1/admin/apps/{appId}/releases": {
-      "get": {
-        "summary": "List app releases",
-        "x-voyant-key-kind": "secret"
-      },
-      "post": {
-        "summary": "Create an app release from an uploaded manifest",
-        "x-voyant-key-kind": "secret"
-      }
+      "get": { "summary": "List app releases" },
+      "post": { "summary": "Create an app release from an uploaded manifest" }
     },
     "/v1/admin/apps/{appId}/releases/fetch": {
-      "post": {
-        "summary": "Create an app release from a fetched manifest",
-        "x-voyant-key-kind": "secret"
-      }
+      "post": { "summary": "Create an app release from a fetched manifest" }
     }
   }
 }

@@ -150,7 +150,6 @@
     "verify:symbol-policy": "node --import tsx --test scripts/tests/symbol-policy.test.mjs && tsx scripts/checks/symbols/index.ts",
     "verify:route-conformance": "node --import tsx --test scripts/tests/route-conformance.test.mjs && tsx scripts/checks/routes/index.ts",
     "verify:analytics-conformance": "node --import tsx --test scripts/tests/analytics-conformance.test.mjs && tsx scripts/checks/analytics/index.ts",
-    "generate:openapi-key-kind": "node scripts/gen-openapi-key-kind.mjs",
     "verify:openapi-key-kind": "pnpm --filter operator prepare:verify && node --test scripts/tests/openapi-key-kind-authority.test.mjs && node scripts/check-openapi-key-kind-authority.mjs",
     "verify:openapi-drift": "node --test scripts/tests/openapi-drift.test.mjs && node scripts/checks/openapi/index.mjs",
     "verify:ref-mirrors": "node --import tsx --test scripts/tests/ref-mirrors.test.mjs && tsx scripts/checks/schema/index.ts",

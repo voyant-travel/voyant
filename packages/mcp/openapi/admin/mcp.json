@@ -19,20 +19,10 @@
                 "type": "object",
                 "required": ["jsonrpc", "method"],
                 "properties": {
-                  "jsonrpc": {
-                    "type": "string",
-                    "const": "2.0"
-                  },
-                  "id": {
-                    "type": ["string", "number", "null"]
-                  },
-                  "method": {
-                    "type": "string"
-                  },
-                  "params": {
-                    "type": "object",
-                    "additionalProperties": true
-                  }
+                  "jsonrpc": { "type": "string", "const": "2.0" },
+                  "id": { "type": ["string", "number", "null"] },
+                  "method": { "type": "string" },
+                  "params": { "type": "object", "additionalProperties": true }
                 }
               }
             }
@@ -42,8 +32,7 @@
           "200": {
             "description": "The MCP JSON-RPC response."
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     },
     "/v1/admin/mcp/manifest": {
@@ -56,8 +45,7 @@
           "200": {
             "description": "The contract-versioned tools visible to the caller."
           }
-        },
-        "x-voyant-key-kind": "secret"
+        }
       }
     }
   }

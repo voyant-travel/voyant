@@ -485,8 +485,7 @@
         "summary": "GET /v1/public/pricing/products/{productId}/pricing",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "storefront",
-        "x-voyant-key-kind": "publishable"
+        "x-voyant-surface": "storefront"
       }
     }
   },
