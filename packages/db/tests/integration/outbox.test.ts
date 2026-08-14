@@ -32,8 +32,23 @@ if (TEST_DATABASE_URL) {
 
 describe.skipIf(!DB_AVAILABLE)("event outbox", () => {
   const db = createTestDb()
+  /**
+   * Whether this file created `event_outbox` rather than finding it.
+   *
+   * Standalone this suite runs against a bare database and cleans up after
+   * itself. In CI's `db-integration` lane it runs against a migrated one, where
+   * the table is real and every later test in the lane emits through it — so an
+   * unconditional `DROP TABLE` takes the outbox out from under them, which is
+   * exactly what happened when this file was first added to that lane. Drop
+   * only what we created.
+   */
+  let createdTable = false
 
   beforeAll(async () => {
+    const existing = await db.execute(
+      sql`SELECT to_regclass('public.event_outbox')::text AS "tableName"`,
+    )
+    createdTable = existing[0]?.tableName == null
     await db.execute(/* sql */ `
       CREATE TABLE IF NOT EXISTS "event_outbox" (
         "id" text PRIMARY KEY,
@@ -68,6 +83,7 @@ describe.skipIf(!DB_AVAILABLE)("event outbox", () => {
   })
 
   afterAll(async () => {
+    if (!createdTable) return
     await db.execute(/* sql */ `DROP TABLE IF EXISTS "event_outbox"`)
   })
 
