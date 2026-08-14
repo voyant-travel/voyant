@@ -111,7 +111,7 @@ function adapters(
 }
 
 describe("closed storefront shopping market adapter", () => {
-  it("ignores a soft-deleted storefront channel binding", async () => {
+  it("fails closed when the channel is not active", async () => {
     const statements: Array<{ sql: string; params: unknown[] }> = []
     const provider = createClosedPublicApiShoppingAdapters({
       primitives: {
@@ -137,7 +137,7 @@ describe("closed storefront shopping market adapter", () => {
 
     await expect(provider.listActiveMarkets(storefront)).rejects.toThrow("active channel")
     expect(statements).toHaveLength(1)
-    expect(statements[0]?.sql).toContain("binding.deleted_at IS NULL")
+    expect(statements[0]?.sql).toContain("channel.status = 'active'")
     expect(statements[0]?.params).toEqual([storefront.channelId])
   })
 
@@ -155,7 +155,7 @@ describe("closed storefront shopping market adapter", () => {
   it("fails closed for an inactive channel", async () => {
     await expect(
       adapters({ active: () => false }).markets.listActiveMarkets(storefront),
-    ).rejects.toThrow("active storefront channel")
+    ).rejects.toThrow("active channel")
   })
 })
 

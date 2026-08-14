@@ -2,7 +2,7 @@
 import { mkdir, writeFile } from "node:fs/promises"
 import path from "node:path"
 import { customerBusinessAccountOnboardingRuntimePort } from "@voyant-travel/auth/customer-business-onboarding-runtime-port"
-import { publicApiRuntimePort } from "@voyant-travel/auth/storefront-runtime-port"
+import { publicApiRuntimePort } from "@voyant-travel/auth/public-api-runtime-port"
 import { createVoyantGraphRuntime } from "@voyant-travel/framework/deployment-artifacts"
 import { legalDocumentArtifactProviderPort } from "@voyant-travel/legal"
 import { describe, expect, it, vi } from "vitest"
@@ -416,7 +416,7 @@ describe("Voyant project runtime composition", () => {
     })
   })
 
-  it("resolves the storefront channel a host customer-auth context never carries", async () => {
+  it("resolves the public channel a host customer-auth context never carries", async () => {
     // A `voyant-cloud` deployment supplies its own resolver and its control
     // plane has no channel concept, so the context comes back without one and
     // every public catalog read 403s (#4323). The binding itself is local.
@@ -426,11 +426,12 @@ describe("Voyant project runtime composition", () => {
       methods: { emailCode: true, emailPassword: true },
     })
     mocks.runtimePorts[publicApiRuntimePort.id] = {
-      resolvePublicApiByApiKey: async () => ({
-        storefront: { id: "sf_1", allowedOrigins: ["https://shop.example.com"] },
-        key: { id: "sfk_1" },
+      resolveApiKeyByToken: async () => ({
+        id: "pak_1",
+        allowedOrigins: ["https://shop.example.com"],
+        channelId: null,
       }),
-      resolvePublicApiByOrigin: async () => null,
+      resolveApiKeysByOrigin: async () => [],
     }
     try {
       const projectRoot = await createGeneratedProject()
@@ -452,7 +453,7 @@ describe("Voyant project runtime composition", () => {
         new Request("https://api.example.com/api/v1/public/catalog/search", {
           method: "POST",
           headers: {
-            "x-voyant-storefront-origin": "https://shop.example.com",
+            "x-voyant-public-origin": "https://shop.example.com",
             "x-api-key": "vpk_token",
           },
         }),

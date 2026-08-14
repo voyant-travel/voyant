@@ -79,14 +79,14 @@ describe("createPublicApiRoutes", () => {
     })
   })
 
-  it("rejects public requests without an active storefront channel context", async () => {
+  it("rejects public requests without an active channel context", async () => {
     const app = new Hono().route("/", createPublicApiRoutes())
 
     const res = await app.request("/settings")
 
     expect(res.status).toBe(403)
     expect(await res.json()).toEqual({
-      error: "Active storefront channel context is required.",
+      error: "Active channel context is required.",
     })
   })
 

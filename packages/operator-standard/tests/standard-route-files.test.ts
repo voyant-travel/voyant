@@ -74,7 +74,7 @@ describe("createStandardOperatorRouteFiles", () => {
       'import { accessCatalog } from "../../access/selected-access-catalog.generated.js"',
     )
     expect(runtime?.source).toContain('import.meta.glob("../../../src/admin/*/index.tsx"')
-    expect(runtime?.source).toContain("packages/*/openapi/{admin,storefront}/*.json")
+    expect(runtime?.source).toContain("packages/*/openapi/{admin,public-api}/*.json")
 
     for (const file of standardOperatorRouteFiles.filter(
       (candidate) => candidate.path !== "_lib/operator-frontend.tsx",

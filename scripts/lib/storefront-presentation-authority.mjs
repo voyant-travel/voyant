@@ -55,7 +55,7 @@ export function checkStorefrontPresentationAuthority({
   for (const token of [
     '"@voyant-travel/public-api#presentation.customer"',
     "presentationFactories",
-    "StorefrontComposerPage",
+    "PublicApiComposerPage",
     "CruiseDetailPage",
     "ProductDetailPageProducts",
     "AccommodationDetailPage",
@@ -75,10 +75,10 @@ export function checkStorefrontPresentationAuthority({
     'id: "@voyant-travel/public-api#presentation.customer"',
     "accountSignInSearchSchema",
     "confirmationSearchSchema",
-    "getStorefrontCustomerProductDetailRoute",
+    "getPublicApiCustomerProductDetailRoute",
     "CustomerAccountPage",
-    "StorefrontMessagesProvider",
-    "createStorefrontMessagesProvider",
+    "PublicApiMessagesProvider",
+    "createPublicApiMessagesProvider",
   ]) {
     if (!packagePresentation.includes(token)) {
       failures.push(`package presentation contribution must contain ${token}`)
@@ -88,7 +88,7 @@ export function checkStorefrontPresentationAuthority({
     failures.push("package presentation contribution must not import Operator aliases")
   }
 
-  if (!messageAdapter.includes("createStorefrontMessagesProvider")) {
+  if (!messageAdapter.includes("createPublicApiMessagesProvider")) {
     failures.push("Storefront message adapter must use the package-owned provider factory")
   }
   if (messageAdapter.includes("function OperatorStorefrontMessagesProvider")) {
@@ -108,7 +108,7 @@ export function checkStorefrontPresentationAuthority({
     "createPublicApiIntakePersistence",
     "relationshipsService.createPerson",
     "customerSignals",
-    "requireStorefrontDb",
+    "requirePublicApiDb",
   ]) {
     if (!packageIntake.includes(token))
       failures.push(`package intake adapter must contain ${token}`)

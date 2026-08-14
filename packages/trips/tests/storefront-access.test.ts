@@ -22,7 +22,7 @@ const CONTEXT = {
 }
 const SCOPE = { marketId: "market_ro", locale: "ro-RO", currency: "EUR" }
 
-describe("storefront Trip access", () => {
+describe("public Trip access", () => {
   it("creates an empty managed Trip and persists only the capability digest", async () => {
     const state: { envelope?: TripEnvelope; access?: TripPublicAccess } = {}
     const result = await createPublicApiTrip(
@@ -36,7 +36,7 @@ describe("storefront Trip access", () => {
     expect(result.trip.envelope.id).toBe("trip_storefront_1")
     expect(result.trip.envelope.travelerParty).toEqual({})
     expect(result.trip.envelope.constraints).toEqual({ publicApiScope: SCOPE })
-    expect(result.trip.envelope.createdBy).toBe("storefront:storefront_bucharest:anonymous")
+    expect(result.trip.envelope.createdBy).toBe("channel:channel_direct:anonymous")
     expect(state.access).toMatchObject({
       envelopeId: "trip_storefront_1",
       capabilityDigest: await sha256Hex(CAPABILITY),
@@ -49,7 +49,7 @@ describe("storefront Trip access", () => {
     expect(JSON.stringify(state.access)).not.toContain(CAPABILITY)
   })
 
-  it("resolves only in the bound storefront and channel", async () => {
+  it("resolves only in the bound channel", async () => {
     const state = await seededState()
     const db = createDb(state)
     const result = await resolvePublicApiTripAccess(db, CAPABILITY, CONTEXT, { now: () => NOW })
@@ -63,7 +63,7 @@ describe("storefront Trip access", () => {
         { ...CONTEXT, channelId: "chan_other" },
         { now: () => NOW },
       ),
-    ).resolves.toEqual({ ok: false, reason: "wrong_storefront" })
+    ).resolves.toEqual({ ok: false, reason: "wrong_channel" })
   })
 
   it("fails closed for malformed, expired, and differently-owned capabilities", async () => {
@@ -138,8 +138,8 @@ function envelopeRow(): TripEnvelope {
     reservedAt: null,
     checkoutIdempotencyKey: null,
     checkoutStartedAt: null,
-    createdBy: "storefront:storefront_bucharest:anonymous",
-    updatedBy: "storefront:storefront_bucharest:anonymous",
+    createdBy: "channel:channel_direct:anonymous",
+    updatedBy: "channel:channel_direct:anonymous",
     createdAt: NOW,
     updatedAt: NOW,
   }

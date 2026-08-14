@@ -67,7 +67,7 @@ rejectMatch(
 )
 requireMatch(
   sources.storefrontContributor,
-  /\[publicApiOffersRuntimePort\.id\]:\s*createCommerceStorefrontOfferResolvers[\s\S]*\[publicApiCustomerPortalRuntimePort\.id\]/,
+  /\[publicApiOffersRuntimePort\.id\]:\s*createCommercePublicApiOfferResolvers[\s\S]*\[publicApiCustomerPortalRuntimePort\.id\]/,
   "Storefront contributor must retain offers and customer-portal projections",
 )
 requireMatch(

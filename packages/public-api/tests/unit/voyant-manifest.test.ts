@@ -80,8 +80,8 @@ describe("storefront deployment manifest", () => {
         {
           id: "@voyant-travel/public-api#api.admin",
           surface: "admin",
-          mount: "storefront",
-          openapi: { document: "storefront" },
+          mount: "public-api",
+          openapi: { document: "public-api" },
           runtime: {
             entry: "@voyant-travel/public-api",
             export: "createPublicApiModule",
@@ -91,8 +91,8 @@ describe("storefront deployment manifest", () => {
           id: "@voyant-travel/public-api#api.public",
           surface: "public",
           mount: "/",
-          resource: "storefront",
-          openapi: { document: "storefront" },
+          resource: "public-api",
+          openapi: { document: "public-api" },
           anonymous: [
             "/bookings",
             "/departures",
@@ -215,7 +215,7 @@ describe("storefront deployment manifest", () => {
             id: "@voyant-travel/public-api#customer-portal.api",
             surface: "public",
             mount: "customer-portal",
-            resource: "storefront",
+            resource: "public-api",
             openapi: { document: "customer-portal" },
             runtime: {
               entry: "@voyant-travel/public-api/customer-portal",
@@ -238,8 +238,8 @@ describe("storefront deployment manifest", () => {
           {
             id: "@voyant-travel/public-api#verification.api",
             surface: "public",
-            mount: "storefront-verification",
-            openapi: { document: "storefront-verification" },
+            mount: "customer-verification",
+            openapi: { document: "public-api-verification" },
             anonymous: true,
             runtime: {
               entry: "@voyant-travel/public-api/verification",
@@ -274,7 +274,7 @@ describe("storefront deployment manifest", () => {
           id: "@voyant-travel/public-api#payment-link.api",
           surface: "public",
           mount: "/",
-          resource: "storefront",
+          resource: "public-api",
           openapi: { document: "payment-link" },
           anonymous: ["payment-link-config", "payment-link"],
           runtime: {

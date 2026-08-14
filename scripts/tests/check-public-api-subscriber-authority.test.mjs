@@ -25,7 +25,7 @@ runtimePorts: [
       "export const createPublicApiVoyantRuntime = () => undefined\n",
     "packages/runtime/src/deployment-resources.ts": "export const resources = {}\n",
     "packages/public-api/src/runtime-contributor.ts": `
-[publicApiOffersRuntimePort.id]: createCommerceStorefrontOfferResolvers()
+[publicApiOffersRuntimePort.id]: createCommercePublicApiOfferResolvers()
 [publicApiCustomerPortalRuntimePort.id]: customerPortal
 `,
     "packages/relationships/src/runtime-contributor.ts":
