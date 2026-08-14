@@ -44,6 +44,8 @@ export async function runEventOutboxDrainJob(
         delivered: result.delivered,
         retried: result.retried,
         deadLettered: result.deadLettered,
+        unsubscribed: result.unsubscribed,
+        unsubscribedEventTypes: result.unsubscribedEventTypes,
         batches: result.batches,
         budgetExhausted: result.budgetExhausted,
         remainingBacklog: stats.pending,

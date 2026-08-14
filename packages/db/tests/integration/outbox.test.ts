@@ -226,6 +226,31 @@ describe.skipIf(!DB_AVAILABLE)("event outbox", () => {
       errorSpy.mockRestore()
     })
 
+    // voyant#4634: a tenant outbox showed `booking.contract_document.requested`
+    // delivered, attempts 1, no error — while nothing in the repository
+    // subscribed to it. `Promise.all([])` resolves to `[]`, so "consumed by
+    // every subscriber" and "consumed by nobody" were the same recorded row.
+    it("names the events it delivered to nobody", async () => {
+      const bus = createEventBus()
+      bus.subscribe("heard", vi.fn())
+      await insertOutboxEvents(db, [
+        { name: "heard", data: {}, metadata: { eventId: "evt_heard" } },
+        { name: "unheard", data: {}, metadata: { eventId: "evt_unheard_1" } },
+        { name: "unheard", data: {}, metadata: { eventId: "evt_unheard_2" } },
+      ])
+
+      const result = await drainOutbox(db, bus)
+
+      // Still delivered — the point is that the count now says so out loud.
+      expect(result).toMatchObject({
+        claimed: 3,
+        delivered: 3,
+        unsubscribed: 2,
+        unsubscribedEventTypes: ["unheard"],
+      })
+      expect((await getOutboxStats(db)).delivered).toBe(3)
+    })
+
     it("returns an empty result when nothing is due", async () => {
       const result = await drainOutbox(db, createEventBus())
       expect(result).toMatchObject({

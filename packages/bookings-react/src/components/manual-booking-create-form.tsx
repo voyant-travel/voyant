@@ -76,6 +76,7 @@ import {
   type BookingCreateExtraLineInput,
   type BookingCreateGroupMembershipInput,
   type BookingCreateTravelCreditRedemptionInput,
+  useBookingContractGenerationCapability,
   usePricingPreview,
 } from "../index.js"
 import { describeUnsatisfiedRequirements } from "../journey/lib/unsatisfied-requirements.js"
@@ -679,6 +680,10 @@ export function ManualBookingCreateForm({
     setGenerateInvoiceAndContractState(next)
     if (next) setGenerateProformaState(false)
   }
+  // voyant#4634: the contract half of this option is only real where the
+  // deployment can render one. It used to be offered unconditionally and drop
+  // the contract in silence.
+  const contractGeneration = useBookingContractGenerationCapability()
   const [notifyTraveler, setNotifyTraveler] = React.useState(true)
   const [contact, setContact] = React.useState({
     firstName: "",
@@ -2126,18 +2131,30 @@ export function ManualBookingCreateForm({
                     {messages.bookingCreateDialog.labels.generateProforma}
                   </Label>
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Checkbox
-                    id="manual-booking-generate-invoice-and-contract"
-                    checked={generateInvoiceAndContract}
-                    onCheckedChange={(value) => setGenerateInvoiceAndContract(value === true)}
-                  />
-                  <Label
-                    htmlFor="manual-booking-generate-invoice-and-contract"
-                    className="cursor-pointer"
-                  >
-                    {messages.bookingCreateDialog.labels.generateInvoiceAndContract}
-                  </Label>
+                <div className="flex flex-col gap-1">
+                  <div className="flex items-center gap-2 text-sm">
+                    <Checkbox
+                      id="manual-booking-generate-invoice-and-contract"
+                      checked={generateInvoiceAndContract}
+                      disabled={!contractGeneration.available}
+                      onCheckedChange={(value) => setGenerateInvoiceAndContract(value === true)}
+                    />
+                    <Label
+                      htmlFor="manual-booking-generate-invoice-and-contract"
+                      className={
+                        contractGeneration.available
+                          ? "cursor-pointer"
+                          : "cursor-not-allowed text-muted-foreground"
+                      }
+                    >
+                      {messages.bookingCreateDialog.labels.generateInvoiceAndContract}
+                    </Label>
+                  </div>
+                  {contractGeneration.available ? null : (
+                    <p className="pl-6 text-muted-foreground text-xs">
+                      {messages.bookingCreateDialog.labels.generateInvoiceAndContractUnavailable}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-start gap-2 border-t pt-2 text-sm">
                   <Checkbox

@@ -43,6 +43,27 @@ export interface DrainOutboxResult {
   batches: number
   durationMs: number
   budgetExhausted: boolean
+  /**
+   * Deliveries that ran zero handlers.
+   *
+   * voyant#4634: `Promise.all([])` resolves to `[]`, so an event nobody
+   * subscribes to reports no failures and is marked `delivered` — the same
+   * recorded outcome as one consumed successfully by every subscriber. A
+   * checked-in tenant outbox showed `booking.contract_document.requested`
+   * delivered with 0 errors while nothing in the repository subscribed to it,
+   * which is how a promise the deployment never kept read as working.
+   *
+   * The bus already counts the handlers it invoked; this stops discarding it.
+   * Only the `deliver()` path can report it — a third-party bus with `emit()`
+   * alone is fire-and-forget and cannot.
+   */
+  unsubscribed: number
+  /**
+   * The distinct event names behind `unsubscribed`, so the count names the
+   * events rather than only sizing the silence. Bounded by the event types in
+   * one drain, not by row count.
+   */
+  unsubscribedEventTypes: string[]
 }
 
 /** Minimal delivery surface needed by the durable outbox drain. */
@@ -248,7 +269,10 @@ export async function drainOutbox(
     batches: 0,
     durationMs: 0,
     budgetExhausted: false,
+    unsubscribed: 0,
+    unsubscribedEventTypes: [],
   }
+  const unsubscribedEventTypes = new Set<string>()
 
   while (result.batches < maxBatches && result.claimed < maxEvents) {
     if (Date.now() >= claimDeadline) {
@@ -273,6 +297,12 @@ export async function drainOutbox(
           const delivery = await bus.deliver(envelope)
           failedCount = delivery.failed
           errors = delivery.errors
+          // See DrainOutboxResult.unsubscribed: a delivery that ran no handlers
+          // is indistinguishable from a successful one in the row's status.
+          if (delivery.attempted === 0) {
+            result.unsubscribed += 1
+            unsubscribedEventTypes.add(envelope.name)
+          }
         } else if (bus.emit) {
           // Third-party bus without failure reporting: emit is
           // fire-and-forget; count as success.
@@ -298,6 +328,7 @@ export async function drainOutbox(
 
   result.budgetExhausted ||=
     result.claimed >= maxEvents || result.batches >= maxBatches || Date.now() >= claimDeadline
+  result.unsubscribedEventTypes = [...unsubscribedEventTypes].sort()
   result.durationMs = Date.now() - startedAt
   return result
 }
