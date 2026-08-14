@@ -316,7 +316,7 @@ describe("Booking Session v1 owned tracer", () => {
     expect(
       await harness.module.renewSession(
         session.id,
-        { expectedRevision: revision(), extensionMs: 60_000, idempotencyKey: "renew_while_paying" },
+        { expectedRevision: revision(), extendBySeconds: 60, idempotencyKey: "renew_while_paying" },
         ANONYMOUS_ACCESS,
       ),
     ).toEqual({ kind: "rejected", error: frozen })

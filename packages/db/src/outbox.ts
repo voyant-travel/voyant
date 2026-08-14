@@ -2,6 +2,7 @@ import type { EventBus, EventEnvelope, EventMetadata, OutboxEventStore } from "@
 import { generateEventId } from "@voyant-travel/core"
 import { eq, sql } from "drizzle-orm"
 
+import { EVENT_DEAD_LETTERED, type EventDeadLetteredEvent } from "./outbox-events.js"
 import { type EventOutboxRow, eventOutboxTable } from "./schema/infra/event_outbox.js"
 import type { DrizzleClient } from "./types.js"
 
@@ -57,34 +58,10 @@ export interface DrainOutboxResult {
   budgetExhausted: boolean
 }
 
-/**
- * Emitted the moment a durable event exhausts its attempts and is
- * dead-lettered — the one point at which "this side effect did not happen"
- * becomes final rather than pending.
- *
- * Until this existed the row simply went `failed` and nothing looked at it:
- * eight failed settlements of a captured card payment left a customer charged
- * with no booking, and the only signal was the customer complaining
- * (voyant#4636). Subscribers decide what a given loss is worth — see the
- * stranded-payment staff alert in `@voyant-travel/notifications`.
- *
- * Carries the failure, not the payload: whoever cares re-reads the record,
- * because by the time this fires the payload is minutes to hours old.
- */
-export const EVENT_DEAD_LETTERED = "event.dead_lettered"
-
-export interface EventDeadLetteredEvent {
-  /** Outbox row id, so an operator can find the row this refers to. */
-  outboxId: string
-  /** The envelope's own id, as emitted. */
-  eventId: string
-  /** Name of the event that could not be delivered. */
-  name: string
-  attempts: number
-  error: string
-  /** The undelivered payload, so a resolver need not re-derive what it named. */
-  payload: unknown
-}
+export {
+  EVENT_DEAD_LETTERED,
+  type EventDeadLetteredEvent,
+} from "./outbox-events.js"
 
 /** Minimal delivery surface needed by the durable outbox drain. */
 export type OutboxEventDelivery = Pick<EventBus, "deliver"> & Partial<Pick<EventBus, "emit">>
