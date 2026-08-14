@@ -28,7 +28,7 @@ import {
   requestAvailabilityHoldExpiryWake,
 } from "@voyant-travel/operations"
 import { resolveBookingTaxSettings } from "@voyant-travel/operator-settings"
-import { and, asc, eq, inArray, or } from "drizzle-orm"
+import { and, asc, eq, inArray, isNotNull, or } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { ResolvedUnitPrice } from "./handler.js"
 import {
@@ -52,23 +52,56 @@ function asPostgresDb(db: unknown): PostgresJsDatabase {
 }
 
 /**
+ * The category ids this product's own prices name without owning.
+ *
+ * The pricing editor permits a shared/global category (all three scope
+ * columns null) on a unit-price row — "Double / Adult" where "Adult" is
+ * the operator-wide category. Such a category belongs to the product's
+ * traveler model by reference, so it must be resolved from the product
+ * alone: every caller derives band codes from `productId` and nothing
+ * else, and a set that varied per caller would hand the same category
+ * different codes (voyant#4571).
+ */
+async function loadReferencedCategoryIds(
+  db: PostgresJsDatabase,
+  productId: string,
+): Promise<string[]> {
+  const rows = await db
+    .selectDistinct({ id: optionUnitPriceRules.pricingCategoryId })
+    .from(optionUnitPriceRules)
+    .innerJoin(optionPriceRules, eq(optionPriceRules.id, optionUnitPriceRules.optionPriceRuleId))
+    .where(
+      and(
+        eq(optionPriceRules.productId, productId),
+        eq(optionPriceRules.active, true),
+        eq(optionUnitPriceRules.active, true),
+        isNotNull(optionUnitPriceRules.pricingCategoryId),
+      ),
+    )
+  return rows.flatMap((row) => (row.id ? [row.id] : []))
+}
+
+/**
  * The product's traveler types in the operator's own order.
  *
  * Operators add traveler types at the product, option or option-unit
  * level ("Adult" is often a per-room base type), so all three scopes are
- * collected. `id` breaks ties after sort order and name so two callers
- * running this separately — the band loader and the price resolver —
- * derive the same tier codes from the same rows.
+ * collected — plus the shared categories the product's own prices name
+ * (see `loadReferencedCategoryIds`). `id` breaks ties after sort order
+ * and name so two callers running this separately — the band loader and
+ * the price resolver — derive the same tier codes from the same rows.
  */
-export async function loadProductTravelerCategories(
+async function loadProductTravelerCategories(
   db: PostgresJsDatabase,
   productId: string,
-  referencedCategoryIds: readonly string[] = [],
 ): Promise<TravelerCategoryRow[]> {
-  const optionRows = await db
-    .select({ id: productOptions.id })
-    .from(productOptions)
-    .where(and(eq(productOptions.productId, productId), eq(productOptions.status, "active")))
+  const [optionRows, referencedCategoryIds] = await Promise.all([
+    db
+      .select({ id: productOptions.id })
+      .from(productOptions)
+      .where(and(eq(productOptions.productId, productId), eq(productOptions.status, "active"))),
+    loadReferencedCategoryIds(db, productId),
+  ])
   const optionIds = optionRows.map((row) => row.id)
   const unitRows =
     optionIds.length > 0
@@ -83,11 +116,7 @@ export async function loadProductTravelerCategories(
   if (optionIds.length > 0) scopeClauses.push(inArray(pricingCategories.optionId, optionIds))
   if (unitIds.length > 0) scopeClauses.push(inArray(pricingCategories.unitId, unitIds))
   if (referencedCategoryIds.length > 0) {
-    // The pricing editor permits shared/global categories (all three scope
-    // columns null) on a unit-price row. They are part of this product's
-    // sellable traveler model by reference even though they are not owned by
-    // the product hierarchy itself.
-    scopeClauses.push(inArray(pricingCategories.id, [...new Set(referencedCategoryIds)]))
+    scopeClauses.push(inArray(pricingCategories.id, referencedCategoryIds))
   }
 
   return db
@@ -565,15 +594,9 @@ export function registerProductBookingHandler(
         // what `loadPaxBands` builds the journey's bands from. Resolving a
         // subset would give the second "Child …" tier a different code here
         // than the shopper was offered, and its price would never match.
-        const referencedCategoryIds = unitPriceRows.flatMap((row) =>
-          row.pricingCategoryId ? [row.pricingCategoryId] : [],
-        )
-        const bandByCategoryId =
-          referencedCategoryIds.length > 0
-            ? paxBandCodesByCategoryId(
-                await loadProductTravelerCategories(db, args.productId, referencedCategoryIds),
-              )
-            : new Map<string, string>()
+        const bandByCategoryId = unitPriceRows.some((up) => up.pricingCategoryId !== null)
+          ? paxBandCodesByCategoryId(await loadProductTravelerCategories(db, args.productId))
+          : new Map<string, string>()
         // Annotated: the two branches below carry different `travelerCategory`
         // types (a resolved band code vs the age-derived category), which
         // otherwise widens the result to `unknown[]`.
