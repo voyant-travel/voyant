@@ -22,7 +22,7 @@ import {
   Label,
   Separator,
 } from "@voyant-travel/ui/components"
-import { Check, Copy, KeyRound, Plus, RefreshCw, Trash2, X } from "lucide-react"
+import { AlertTriangle, Check, Copy, KeyRound, Plus, RefreshCw, Trash2, X } from "lucide-react"
 import { useState } from "react"
 
 import { useAuthUiI18nOrDefault } from "../i18n/provider.js"
