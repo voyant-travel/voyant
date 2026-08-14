@@ -317,7 +317,7 @@
         "summary": "GET /v1/public/booking-requirements/products/{productId}/transport-requirements",
         "tags": ["booking-requirements"],
         "x-voyant-module": "booking-requirements",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     }
   },

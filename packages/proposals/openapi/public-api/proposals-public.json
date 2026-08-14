@@ -139,7 +139,7 @@
         "operationId": "getPublicProposalsByProposalVersionId",
         "tags": ["proposal-versions"],
         "x-voyant-module": "proposal-versions",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-unit-id": "@voyant-travel/proposals#presentation-extension",
         "x-voyant-package-name": "@voyant-travel/proposals"
       }
@@ -156,7 +156,7 @@
         "operationId": "postPublicProposalsByProposalVersionIdAccept",
         "tags": ["proposal-versions"],
         "x-voyant-module": "proposal-versions",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-unit-id": "@voyant-travel/proposals#presentation-extension",
         "x-voyant-package-name": "@voyant-travel/proposals"
       }
@@ -173,7 +173,7 @@
         "operationId": "postPublicProposalsByProposalVersionIdDecline",
         "tags": ["proposal-versions"],
         "x-voyant-module": "proposal-versions",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-unit-id": "@voyant-travel/proposals#presentation-extension",
         "x-voyant-package-name": "@voyant-travel/proposals"
       }
@@ -190,7 +190,7 @@
         "operationId": "postPublicProposalsByProposalVersionIdRequestEdits",
         "tags": ["proposal-versions"],
         "x-voyant-module": "proposal-versions",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-unit-id": "@voyant-travel/proposals#presentation-extension",
         "x-voyant-package-name": "@voyant-travel/proposals"
       }

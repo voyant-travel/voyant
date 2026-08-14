@@ -260,7 +260,7 @@
         "summary": "GET /v1/public/products/{productId}/offers",
         "tags": ["storefront"],
         "x-voyant-module": "storefront",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#api.public",
         "x-voyant-unit-id": "@voyant-travel/public-api",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -412,7 +412,7 @@
         "summary": "GET /v1/public/offers/{slug}",
         "tags": ["storefront"],
         "x-voyant-module": "storefront",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#api.public",
         "x-voyant-unit-id": "@voyant-travel/public-api",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -768,7 +768,7 @@
         "summary": "POST /v1/public/offers/{slug}/apply",
         "tags": ["storefront"],
         "x-voyant-module": "storefront",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#api.public",
         "x-voyant-unit-id": "@voyant-travel/public-api",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -1119,7 +1119,7 @@
         "summary": "POST /v1/public/offers/redeem",
         "tags": ["storefront"],
         "x-voyant-module": "storefront",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#api.public",
         "x-voyant-unit-id": "@voyant-travel/public-api",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -1347,7 +1347,7 @@
         "summary": "POST /v1/public/leads",
         "tags": ["storefront"],
         "x-voyant-module": "storefront",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#api.public",
         "x-voyant-unit-id": "@voyant-travel/public-api",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -1554,7 +1554,7 @@
         "summary": "POST /v1/public/newsletter/subscribe",
         "tags": ["storefront"],
         "x-voyant-module": "storefront",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#api.public",
         "x-voyant-unit-id": "@voyant-travel/public-api",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -1989,7 +1989,7 @@
         "summary": "GET /v1/public/settings",
         "tags": ["storefront"],
         "x-voyant-module": "storefront",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#api.public",
         "x-voyant-unit-id": "@voyant-travel/public-api",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -2293,7 +2293,7 @@
         "summary": "GET /v1/public/departures/{departureId}",
         "tags": ["storefront"],
         "x-voyant-module": "storefront",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#api.public",
         "x-voyant-unit-id": "@voyant-travel/public-api",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -2646,7 +2646,7 @@
         "summary": "GET /v1/public/products/{productId}/departures",
         "tags": ["storefront"],
         "x-voyant-module": "storefront",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#api.public",
         "x-voyant-unit-id": "@voyant-travel/public-api",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -2900,7 +2900,7 @@
         "summary": "GET /v1/public/products/{productId}/availability",
         "tags": ["storefront"],
         "x-voyant-module": "storefront",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#api.public",
         "x-voyant-unit-id": "@voyant-travel/public-api",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -3037,7 +3037,7 @@
         "summary": "GET /v1/public/products/{productId}/departures/{departureId}/itinerary",
         "tags": ["storefront"],
         "x-voyant-module": "storefront",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#api.public",
         "x-voyant-unit-id": "@voyant-travel/public-api",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -3266,7 +3266,7 @@
         "summary": "GET /v1/public/products/{productId}/extensions",
         "tags": ["storefront"],
         "x-voyant-module": "storefront",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#api.public",
         "x-voyant-unit-id": "@voyant-travel/public-api",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -4712,7 +4712,7 @@
         "summary": "POST /v1/public/shopping/search",
         "tags": ["shopping"],
         "x-voyant-module": "shopping",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-package-name": "@voyant-travel/public-api"
       }
     },
@@ -4977,7 +4977,7 @@
         "summary": "POST /v1/public/shopping/trip-selections",
         "tags": ["shopping"],
         "x-voyant-module": "shopping",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-package-name": "@voyant-travel/public-api"
       },
       "patch": {
@@ -5297,7 +5297,7 @@
         "summary": "PATCH /v1/public/shopping/trip-selections",
         "tags": ["shopping"],
         "x-voyant-module": "shopping",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-package-name": "@voyant-travel/public-api"
       }
     }

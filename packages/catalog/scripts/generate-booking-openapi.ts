@@ -41,6 +41,6 @@ await Promise.all([
   writeDocument("../openapi/admin/catalog-booking.json", selectSurface(complete, "admin")),
   writeDocument(
     "../openapi/public-api/catalog-booking.json",
-    selectSurface(complete, "storefront"),
+    selectSurface(complete, "public-api"),
   ),
 ])

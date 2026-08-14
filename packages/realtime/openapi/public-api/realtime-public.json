@@ -145,7 +145,7 @@
         "operationId": "postPublicRealtimeToken",
         "tags": ["realtime"],
         "x-voyant-module": "realtime",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-unit-id": "@voyant-travel/realtime",
         "x-voyant-package-name": "@voyant-travel/realtime"
       }

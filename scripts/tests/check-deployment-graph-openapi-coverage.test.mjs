@@ -83,7 +83,7 @@ describe("check-deployment-graph-openapi-coverage", () => {
     assert.match(result.stdout, /1 covered graph API bundles/)
   })
 
-  it("does not mistake package directories named admin or storefront for OpenAPI surfaces", async () => {
+  it("does not mistake package directories named admin or public-api for OpenAPI surfaces", async () => {
     const apiId = "@voyant-travel/bookings#api"
     const root = await createFixture({
       "graph.json": graph([
@@ -161,7 +161,7 @@ describe("check-deployment-graph-openapi-coverage", () => {
     assert.match(result.stdout, /2 covered graph API bundles/)
   })
 
-  it("normalizes graph public surface to the storefront OpenAPI surface", async () => {
+  it("normalizes graph public surface to the public-api OpenAPI surface", async () => {
     const apiId = "@voyant-travel/operator#charters.api.public"
     const root = await createFixture({
       "graph.json": graph([
@@ -184,7 +184,7 @@ describe("check-deployment-graph-openapi-coverage", () => {
           get: {
             responses: { 200: { description: "OK" } },
             "x-voyant-module": "charters",
-            "x-voyant-surface": "storefront",
+            "x-voyant-surface": "public-api",
             "x-voyant-api-id": apiId,
           },
         },

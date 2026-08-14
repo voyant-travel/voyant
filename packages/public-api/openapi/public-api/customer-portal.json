@@ -396,7 +396,7 @@
         "summary": "GET /v1/public/customer-portal/me",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -847,7 +847,7 @@
         "summary": "PATCH /v1/public/customer-portal/me",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -933,7 +933,7 @@
         "summary": "GET /v1/public/customer-portal/me/documents",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -1079,7 +1079,7 @@
         "summary": "POST /v1/public/customer-portal/me/documents",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -1188,7 +1188,7 @@
         "summary": "POST /v1/public/customer-portal/me/documents/{id}/set-primary",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -1345,7 +1345,7 @@
         "summary": "PATCH /v1/public/customer-portal/me/documents/{id}",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -1400,7 +1400,7 @@
         "summary": "DELETE /v1/public/customer-portal/me/documents/{id}",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -2295,7 +2295,7 @@
         "summary": "POST /v1/public/customer-portal/bootstrap",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -2482,7 +2482,7 @@
         "summary": "GET /v1/public/customer-portal/companions",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -2834,7 +2834,7 @@
         "summary": "POST /v1/public/customer-portal/companions",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -3066,7 +3066,7 @@
         "summary": "POST /v1/public/customer-portal/companions/import-booking-travelers",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -3445,7 +3445,7 @@
         "summary": "PATCH /v1/public/customer-portal/companions/{companionId}",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -3516,7 +3516,7 @@
         "summary": "DELETE /v1/public/customer-portal/companions/{companionId}",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -3636,7 +3636,7 @@
         "summary": "GET /v1/public/customer-portal/bookings",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -4193,7 +4193,7 @@
         "summary": "GET /v1/public/customer-portal/bookings/{bookingId}",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -4300,7 +4300,7 @@
         "summary": "GET /v1/public/customer-portal/bookings/{bookingId}/documents",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -4400,7 +4400,7 @@
         "summary": "GET /v1/public/customer-portal/bookings/{bookingId}/billing-contact",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#customer-portal",
         "x-voyant-package-name": "@voyant-travel/public-api"

@@ -595,7 +595,7 @@
         "summary": "POST /v1/public/catalog/search",
         "tags": ["catalog"],
         "x-voyant-module": "catalog",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/catalog/checkout/start": {
@@ -931,7 +931,7 @@
         "summary": "POST /v1/public/catalog/checkout/start",
         "tags": ["catalog"],
         "x-voyant-module": "catalog",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "parameters": [
           {
             "name": "X-Voyant-Checkout-Capability",

@@ -52,7 +52,7 @@
         "summary": "GET /v1/public/trips/health",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips": {
@@ -517,7 +517,7 @@
         "summary": "GET /v1/public/trips",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/trips#api.public",
@@ -906,7 +906,7 @@
         "summary": "POST /v1/public/trips",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips/{envelopeId}": {
@@ -1239,7 +1239,7 @@
         "summary": "GET /v1/public/trips/{envelopeId}",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/trips#api.public",
@@ -1497,7 +1497,7 @@
         "summary": "PATCH /v1/public/trips/{envelopeId}",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips/{envelopeId}/snapshots": {
@@ -1628,7 +1628,7 @@
         "summary": "GET /v1/public/trips/{envelopeId}/snapshots",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/trips#api.public",
@@ -1821,7 +1821,7 @@
         "summary": "POST /v1/public/trips/{envelopeId}/snapshots",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips/snapshots/{snapshotId}": {
@@ -1966,7 +1966,7 @@
         "summary": "GET /v1/public/trips/snapshots/{snapshotId}",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips/{envelopeId}/components": {
@@ -2310,7 +2310,7 @@
         "summary": "POST /v1/public/trips/{envelopeId}/components",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips/{envelopeId}/components/reorder": {
@@ -2597,7 +2597,7 @@
         "summary": "POST /v1/public/trips/{envelopeId}/components/reorder",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips/components/{componentId}": {
@@ -2930,7 +2930,7 @@
         "summary": "PATCH /v1/public/trips/components/{componentId}",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/trips#api.public",
@@ -3191,7 +3191,7 @@
         "summary": "DELETE /v1/public/trips/components/{componentId}",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips/components/{componentId}/refs": {
@@ -3503,7 +3503,7 @@
         "summary": "POST /v1/public/trips/components/{componentId}/refs",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips/{envelopeId}/requirements": {
@@ -3725,7 +3725,7 @@
         "summary": "POST /v1/public/trips/{envelopeId}/requirements",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       },
       "get": {
         "x-voyant-api-id": "@voyant-travel/trips#api.public",
@@ -3902,7 +3902,7 @@
         "summary": "GET /v1/public/trips/{envelopeId}/requirements",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips/requirements/{requirementId}/sourcing-operations/{operationId}": {
@@ -4093,7 +4093,7 @@
         "summary": "GET /v1/public/trips/requirements/{requirementId}/sourcing-operations/{operationId}",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips/requirements/{requirementId}/select": {
@@ -4529,7 +4529,7 @@
         "summary": "POST /v1/public/trips/requirements/{requirementId}/select",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips/{envelopeId}/price": {
@@ -4954,7 +4954,7 @@
         "summary": "POST /v1/public/trips/{envelopeId}/price",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips/{envelopeId}/reserve": {
@@ -5379,7 +5379,7 @@
         "summary": "POST /v1/public/trips/{envelopeId}/reserve",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips/{envelopeId}/checkout": {
@@ -5791,7 +5791,7 @@
         "summary": "POST /v1/public/trips/{envelopeId}/checkout",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips/{envelopeId}/cancellation-preview": {
@@ -6210,7 +6210,7 @@
         "summary": "POST /v1/public/trips/{envelopeId}/cancellation-preview",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     },
     "/v1/public/trips/{envelopeId}/cancel-components": {
@@ -6634,7 +6634,7 @@
         "summary": "POST /v1/public/trips/{envelopeId}/cancel-components",
         "tags": ["trips"],
         "x-voyant-module": "trips",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "public-api"
       }
     }
   },

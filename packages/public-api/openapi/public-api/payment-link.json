@@ -172,7 +172,7 @@
         "summary": "GET /v1/public/payment-link-config",
         "tags": ["payment-link"],
         "x-voyant-module": "payment-link",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#payment-link.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#payment-link",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -253,7 +253,7 @@
         "summary": "POST /v1/public/payment-link/{sessionId}/retry",
         "tags": ["payment-link"],
         "x-voyant-module": "payment-link",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#payment-link.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#payment-link",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -331,7 +331,7 @@
         "summary": "GET /v1/public/payment-link/resolve",
         "tags": ["payment-link"],
         "x-voyant-module": "payment-link",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#payment-link.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#payment-link",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -529,7 +529,7 @@
         "summary": "POST /v1/public/payment-link/{sessionId}/start-card",
         "tags": ["payment-link"],
         "x-voyant-module": "payment-link",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#payment-link.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#payment-link",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -668,7 +668,7 @@
         "summary": "GET /v1/public/payment-link/{sessionId}/trip-summary",
         "tags": ["payment-link"],
         "x-voyant-module": "payment-link",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#payment-link.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#payment-link",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -827,7 +827,7 @@
         "summary": "GET /v1/public/payment-link/{sessionId}/booking-summary",
         "tags": ["payment-link"],
         "x-voyant-module": "payment-link",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#payment-link.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#payment-link",
         "x-voyant-package-name": "@voyant-travel/public-api"
@@ -1016,7 +1016,7 @@
         "summary": "GET /v1/public/bookings/{bookingId}/checkout-status",
         "tags": ["payment-link"],
         "x-voyant-module": "payment-link",
-        "x-voyant-surface": "storefront",
+        "x-voyant-surface": "public-api",
         "x-voyant-api-id": "@voyant-travel/public-api#payment-link.api",
         "x-voyant-unit-id": "@voyant-travel/public-api#payment-link",
         "x-voyant-package-name": "@voyant-travel/public-api"
