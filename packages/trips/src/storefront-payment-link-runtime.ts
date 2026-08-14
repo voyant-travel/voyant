@@ -167,7 +167,7 @@ function resolvePublicCheckoutBaseUrl(bindings: Record<string, unknown>): string
 }
 
 async function resolvePaymentLinkUrlTemplate(c: Context): Promise<string | null> {
-  return resolveOperatorPaymentLinkUrlTemplate(getDb(c), c.env as PaymentConfigBindings)
+  return resolveOperatorPaymentLinkUrlTemplate(getDb(c), c.env as Readonly<Record<string, unknown>>)
 }
 
 function resolveEnvironmentBankTransferDetails(bindings: Record<string, unknown>) {
