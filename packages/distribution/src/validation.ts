@@ -1,10 +1,7 @@
 import { booleanQueryParam } from "@voyant-travel/db/helpers"
 import { z } from "zod"
 
-import {
-  CHANNEL_PRESET_KEY_DESCRIPTION,
-  isPersistableChannelPresetKey,
-} from "./channel-presets.js"
+import { CHANNEL_PRESET_KEY_DESCRIPTION, isPersistableChannelPresetKey } from "./channel-presets.js"
 
 export * from "./external-refs/validation.js"
 export * from "./publication-validation.js"
