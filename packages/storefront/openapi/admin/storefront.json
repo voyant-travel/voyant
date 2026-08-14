@@ -559,7 +559,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/storefront#api.admin",
         "x-voyant-unit-id": "@voyant-travel/storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "requestBody": {
@@ -1364,7 +1365,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/storefront#api.admin",
         "x-voyant-unit-id": "@voyant-travel/storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "secret"
       }
     }
   },

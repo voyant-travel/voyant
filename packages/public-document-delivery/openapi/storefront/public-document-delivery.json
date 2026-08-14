@@ -150,7 +150,8 @@
         "x-voyant-module": "documents",
         "x-voyant-surface": "storefront",
         "x-voyant-unit-id": "@voyant-travel/public-document-delivery",
-        "x-voyant-package-name": "@voyant-travel/public-document-delivery"
+        "x-voyant-package-name": "@voyant-travel/public-document-delivery",
+        "x-voyant-key-kind": "publishable"
       }
     }
   },

@@ -83,7 +83,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/webhooks/subscriptions": {
@@ -217,7 +218,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "operationId": "createOperatorWebhookSubscription",
@@ -432,7 +434,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/webhooks/subscriptions/{id}": {
@@ -591,7 +594,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "operationId": "updateOperatorWebhookSubscription",
@@ -804,7 +808,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "operationId": "deleteOperatorWebhookSubscription",
@@ -873,7 +878,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/webhooks/subscriptions/{id}/enable": {
@@ -1032,7 +1038,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/webhooks/subscriptions/{id}/disable": {
@@ -1191,7 +1198,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/webhooks/subscriptions/{id}/rotate-secret": {
@@ -1359,7 +1367,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/webhooks/subscriptions/{id}/test": {
@@ -1560,7 +1569,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/webhooks/deliveries": {
@@ -1709,7 +1719,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/webhooks/deliveries/{id}": {
@@ -1860,7 +1871,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/webhooks/deliveries/{id}/replay": {
@@ -2027,7 +2039,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     }
   }

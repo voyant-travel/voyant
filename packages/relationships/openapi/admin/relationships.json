@@ -349,7 +349,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -570,7 +571,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/organizations/{id}": {
@@ -716,7 +718,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -960,7 +963,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -1031,7 +1035,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/organizations/{id}/merge": {
@@ -1210,7 +1215,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/organizations/{id}/contact-methods": {
@@ -1306,7 +1312,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -1480,7 +1487,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/organizations/{id}/addresses": {
@@ -1604,7 +1612,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -1823,7 +1832,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/organizations/{id}/notes": {
@@ -1884,7 +1894,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -1990,7 +2001,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/organization-notes/{id}": {
@@ -2098,7 +2110,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -2153,7 +2166,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people": {
@@ -2390,7 +2404,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -2682,7 +2697,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people/{id}": {
@@ -2848,7 +2864,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -3163,7 +3180,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -3218,7 +3236,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people/{id}/merge": {
@@ -3417,7 +3436,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people/{id}/contact-methods": {
@@ -3513,7 +3533,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -3687,7 +3708,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people/{id}/addresses": {
@@ -3811,7 +3833,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -4030,7 +4053,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people/{id}/notes": {
@@ -4091,7 +4115,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -4197,7 +4222,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/person-notes/{id}": {
@@ -4305,7 +4331,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -4360,7 +4387,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people/{id}/payment-methods": {
@@ -4447,7 +4475,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -4640,7 +4669,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/person-payment-methods/{id}": {
@@ -4799,7 +4829,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -4854,7 +4885,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people/{id}/communications": {
@@ -4999,7 +5031,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -5151,7 +5184,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/segments": {
@@ -5213,7 +5247,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -5311,7 +5346,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/segments/{segmentId}": {
@@ -5368,7 +5404,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people/export": {
@@ -5392,7 +5429,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people/import": {
@@ -5463,7 +5501,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/contact-methods/{id}": {
@@ -5648,7 +5687,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -5703,7 +5743,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/addresses/{id}": {
@@ -5934,7 +5975,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -5989,7 +6031,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people/{id}/documents": {
@@ -6130,7 +6173,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -6314,7 +6358,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/person-documents/{id}": {
@@ -6429,7 +6474,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -6612,7 +6658,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -6667,7 +6714,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/person-documents/{id}/set-primary": {
@@ -6782,7 +6830,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people/{id}/travel-snapshot": {
@@ -6895,7 +6944,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people/{id}/profile-pii": {
@@ -7012,7 +7062,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people/{id}/documents/from-plaintext": {
@@ -7208,7 +7259,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/person-documents/{id}/from-plaintext": {
@@ -7403,7 +7455,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/person-documents/{id}/reveal": {
@@ -7503,7 +7556,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people/{id}/relationships": {
@@ -7678,7 +7732,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -7900,7 +7955,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/person-relationships/{id}": {
@@ -8036,7 +8092,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -8250,7 +8307,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -8305,7 +8363,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/customer-signals": {
@@ -8513,7 +8572,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -8720,7 +8780,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/customer-signals/{id}": {
@@ -8855,7 +8916,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -9067,7 +9129,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -9122,7 +9185,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/customer-signals/{id}/resolve": {
@@ -9290,7 +9354,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/people/{id}/signals": {
@@ -9426,7 +9491,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/activities": {
@@ -9597,7 +9663,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -9739,7 +9806,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/activities/{id}": {
@@ -9850,7 +9918,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -10017,7 +10086,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -10072,7 +10142,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/activities/{id}/links": {
@@ -10145,7 +10216,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -10270,7 +10342,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/activity-links/{id}": {
@@ -10327,7 +10400,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/activities/{id}/participants": {
@@ -10388,7 +10462,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -10480,7 +10555,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/relationships/activity-participants/{id}": {
@@ -10537,7 +10613,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
         "x-voyant-unit-id": "@voyant-travel/relationships",
-        "x-voyant-package-name": "@voyant-travel/relationships"
+        "x-voyant-package-name": "@voyant-travel/relationships",
+        "x-voyant-key-kind": "secret"
       }
     }
   },

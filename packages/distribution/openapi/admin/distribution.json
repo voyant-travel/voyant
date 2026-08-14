@@ -171,7 +171,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -345,7 +346,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/channels/batch-update": {
@@ -558,7 +560,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/channels/batch-delete": {
@@ -642,7 +645,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/channels/{id}": {
@@ -765,7 +769,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -964,7 +969,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -1012,7 +1018,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/channels/{id}/contact-points": {
@@ -1117,7 +1124,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -1284,7 +1292,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/channel-contact-points/{contactPointId}": {
@@ -1462,7 +1471,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -1510,7 +1520,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/channels/{id}/contacts": {
@@ -1619,7 +1630,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -1796,7 +1808,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/channel-contacts/{contactId}": {
@@ -1984,7 +1997,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -2032,7 +2046,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/contracts": {
@@ -2190,7 +2205,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -2350,7 +2366,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/contracts/batch-update": {
@@ -2549,7 +2566,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/contracts/batch-delete": {
@@ -2633,7 +2651,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/contracts/{id}": {
@@ -2757,7 +2776,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -2942,7 +2962,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -2990,7 +3011,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/commission-rules": {
@@ -3131,7 +3153,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -3275,7 +3298,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/commission-rules/batch-update": {
@@ -3458,7 +3482,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/commission-rules/batch-delete": {
@@ -3542,7 +3567,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/commission-rules/{id}": {
@@ -3649,7 +3675,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -3818,7 +3845,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -3866,7 +3894,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/product-mappings": {
@@ -4022,7 +4051,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -4189,7 +4219,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/product-mappings/batch-update": {
@@ -4391,7 +4422,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/product-mappings/batch-delete": {
@@ -4475,7 +4507,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/product-mappings/{id}": {
@@ -4597,7 +4630,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -4785,7 +4819,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -4833,7 +4868,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/product-publications": {
@@ -4962,7 +4998,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "put": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -5087,7 +5124,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/product-publications/{id}": {
@@ -5182,7 +5220,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -5320,7 +5359,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -5368,7 +5408,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/supplier-publications": {
@@ -5497,7 +5538,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "put": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -5625,7 +5667,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/supplier-publications/preview": {
@@ -5721,7 +5764,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/supplier-publications/{id}": {
@@ -5816,7 +5860,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -5957,7 +6002,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -6005,7 +6051,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/publications/effective": {
@@ -6105,7 +6152,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/publication-reindex-intents": {
@@ -6198,7 +6246,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/booking-links": {
@@ -6360,7 +6409,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -6529,7 +6579,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/booking-links/batch-update": {
@@ -6721,7 +6772,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/booking-links/batch-delete": {
@@ -6805,7 +6857,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/booking-links/{id}": {
@@ -6934,7 +6987,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -7112,7 +7166,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -7160,7 +7215,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/webhook-events": {
@@ -7289,7 +7345,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -7415,7 +7472,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/webhook-events/batch-update": {
@@ -7580,7 +7638,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/webhook-events/batch-delete": {
@@ -7664,7 +7723,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/webhook-events/{id}": {
@@ -7759,7 +7819,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -7910,7 +7971,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -7958,7 +8020,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/inventory-allotments": {
@@ -8125,7 +8188,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -8273,7 +8337,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/inventory-allotments/batch-update": {
@@ -8460,7 +8525,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/inventory-allotments/batch-delete": {
@@ -8544,7 +8610,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/inventory-allotments/{id}": {
@@ -8653,7 +8720,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -8826,7 +8894,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -8874,7 +8943,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/inventory-allotment-targets": {
@@ -9026,7 +9096,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -9161,7 +9232,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/inventory-allotment-targets/batch-update": {
@@ -9335,7 +9407,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/inventory-allotment-targets/batch-delete": {
@@ -9419,7 +9492,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/inventory-allotment-targets/{id}": {
@@ -9520,7 +9594,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -9680,7 +9755,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -9728,7 +9804,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/inventory-release-rules": {
@@ -9845,7 +9922,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -9961,7 +10039,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/inventory-release-rules/batch-update": {
@@ -10116,7 +10195,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/inventory-release-rules/batch-delete": {
@@ -10200,7 +10280,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/inventory-release-rules/{id}": {
@@ -10291,7 +10372,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -10432,7 +10514,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -10480,7 +10563,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/settlement-runs": {
@@ -10629,7 +10713,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -10789,7 +10874,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/settlement-runs/{id}": {
@@ -10904,7 +10990,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -11089,7 +11176,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -11137,7 +11225,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/settlement-items": {
@@ -11293,7 +11382,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -11451,7 +11541,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/settlement-items/{id}": {
@@ -11565,7 +11656,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -11748,7 +11840,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -11796,7 +11889,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/reconciliation-runs": {
@@ -11937,7 +12031,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -12082,7 +12177,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/reconciliation-runs/{id}": {
@@ -12189,7 +12285,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -12359,7 +12456,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -12407,7 +12505,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/reconciliation-items": {
@@ -12576,7 +12675,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -12729,7 +12829,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/reconciliation-items/{id}": {
@@ -12840,7 +12941,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -13018,7 +13120,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -13066,7 +13169,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/inventory-release-executions": {
@@ -13224,7 +13328,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -13370,7 +13475,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/inventory-release-executions/{id}": {
@@ -13478,7 +13584,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -13649,7 +13756,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -13697,7 +13805,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/settlement-policies": {
@@ -13851,7 +13960,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -14004,7 +14114,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/settlement-policies/{id}": {
@@ -14115,7 +14226,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -14293,7 +14405,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -14341,7 +14454,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/reconciliation-policies": {
@@ -14495,7 +14609,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -14649,7 +14764,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/reconciliation-policies/{id}": {
@@ -14760,7 +14876,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -14939,7 +15056,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -14987,7 +15105,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/release-schedules": {
@@ -15117,7 +15236,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -15240,7 +15360,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/release-schedules/{id}": {
@@ -15335,7 +15456,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -15483,7 +15605,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -15531,7 +15654,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/remittance-exceptions": {
@@ -15681,7 +15805,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -15828,7 +15953,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/remittance-exceptions/{id}": {
@@ -15936,7 +16062,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -16108,7 +16235,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -16156,7 +16284,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/settlement-approvals": {
@@ -16273,7 +16402,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -16387,7 +16517,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/settlement-approvals/{id}": {
@@ -16478,7 +16609,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -16617,7 +16749,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/distribution#api",
@@ -16665,7 +16798,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     }
   },

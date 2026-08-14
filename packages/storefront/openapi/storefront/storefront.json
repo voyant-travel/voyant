@@ -263,7 +263,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
         "x-voyant-unit-id": "@voyant-travel/storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/offers/{slug}": {
@@ -415,7 +416,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
         "x-voyant-unit-id": "@voyant-travel/storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/offers/{slug}/apply": {
@@ -771,7 +773,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
         "x-voyant-unit-id": "@voyant-travel/storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/offers/redeem": {
@@ -1122,7 +1125,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
         "x-voyant-unit-id": "@voyant-travel/storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/leads": {
@@ -1350,7 +1354,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
         "x-voyant-unit-id": "@voyant-travel/storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/public/newsletter/subscribe": {
@@ -1557,7 +1562,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
         "x-voyant-unit-id": "@voyant-travel/storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/public/settings": {
@@ -1992,7 +1998,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
         "x-voyant-unit-id": "@voyant-travel/storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/departures/{departureId}": {
@@ -2296,7 +2303,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
         "x-voyant-unit-id": "@voyant-travel/storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/products/{productId}/departures": {
@@ -2649,7 +2657,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
         "x-voyant-unit-id": "@voyant-travel/storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/products/{productId}/availability": {
@@ -2903,7 +2912,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
         "x-voyant-unit-id": "@voyant-travel/storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/products/{productId}/departures/{departureId}/itinerary": {
@@ -3040,7 +3050,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
         "x-voyant-unit-id": "@voyant-travel/storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/products/{productId}/extensions": {
@@ -3269,7 +3280,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
         "x-voyant-unit-id": "@voyant-travel/storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/shopping/search": {
@@ -4713,7 +4725,8 @@
         "tags": ["shopping"],
         "x-voyant-module": "shopping",
         "x-voyant-surface": "storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/shopping/trip-selections": {
@@ -4978,7 +4991,8 @@
         "tags": ["shopping"],
         "x-voyant-module": "shopping",
         "x-voyant-surface": "storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/storefront#api.public",
@@ -5298,7 +5312,8 @@
         "tags": ["shopping"],
         "x-voyant-module": "shopping",
         "x-voyant-surface": "storefront",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     }
   },

@@ -311,7 +311,8 @@
         "tags": ["external-refs"],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
+        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -479,7 +480,8 @@
         "tags": ["external-refs"],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
+        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/external-refs/refs/{id}": {
@@ -595,7 +597,8 @@
         "tags": ["external-refs"],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
+        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -788,7 +791,8 @@
         "tags": ["external-refs"],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
+        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -841,7 +845,8 @@
         "tags": ["external-refs"],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
+        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/external-refs/entities/{entityType}/{entityId}/refs": {
@@ -1044,7 +1049,8 @@
         "tags": ["external-refs"],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
+        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -1220,7 +1226,8 @@
         "tags": ["external-refs"],
         "x-voyant-module": "external-refs",
         "x-voyant-surface": "admin",
-        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs"
+        "x-voyant-api-id": "@voyant-travel/distribution#api.external-refs",
+        "x-voyant-key-kind": "secret"
       }
     }
   },

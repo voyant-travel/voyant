@@ -13,21 +13,32 @@
             "name": "envelopeId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           },
           {
             "name": "proposalVersionId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
-          "200": { "description": "The updated Proposal Version and frozen Trip snapshot." },
-          "404": { "description": "The Trip or Proposal Version was not found." },
-          "409": { "description": "The Trip or Proposal Version cannot be snapshotted." }
+          "200": {
+            "description": "The updated Proposal Version and frozen Trip snapshot."
+          },
+          "404": {
+            "description": "The Trip or Proposal Version was not found."
+          },
+          "409": {
+            "description": "The Trip or Proposal Version cannot be snapshotted."
+          }
         },
-        "x-voyant-api-id": "@voyant-travel/proposals#proposal-version-snapshot-extension.api"
+        "x-voyant-api-id": "@voyant-travel/proposals#proposal-version-snapshot-extension.api",
+        "x-voyant-key-kind": "secret"
       }
     }
   }

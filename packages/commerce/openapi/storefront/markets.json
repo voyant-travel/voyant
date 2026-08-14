@@ -218,7 +218,8 @@
         "summary": "GET /v1/public/markets",
         "tags": ["markets"],
         "x-voyant-module": "markets",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-key-kind": "publishable"
       }
     }
   },

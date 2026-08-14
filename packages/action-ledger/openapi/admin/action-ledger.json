@@ -772,7 +772,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
         "x-voyant-unit-id": "@voyant-travel/action-ledger",
-        "x-voyant-package-name": "@voyant-travel/action-ledger"
+        "x-voyant-package-name": "@voyant-travel/action-ledger",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/action-ledger/entries": {
@@ -1420,7 +1421,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
         "x-voyant-unit-id": "@voyant-travel/action-ledger",
-        "x-voyant-package-name": "@voyant-travel/action-ledger"
+        "x-voyant-package-name": "@voyant-travel/action-ledger",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/action-ledger/entries/{id}/reversals": {
@@ -2077,7 +2079,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
         "x-voyant-unit-id": "@voyant-travel/action-ledger",
-        "x-voyant-package-name": "@voyant-travel/action-ledger"
+        "x-voyant-package-name": "@voyant-travel/action-ledger",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/action-ledger/entries/{id}": {
@@ -2456,7 +2459,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
         "x-voyant-unit-id": "@voyant-travel/action-ledger",
-        "x-voyant-package-name": "@voyant-travel/action-ledger"
+        "x-voyant-package-name": "@voyant-travel/action-ledger",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/action-ledger/approvals": {
@@ -2778,7 +2782,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
         "x-voyant-unit-id": "@voyant-travel/action-ledger",
-        "x-voyant-package-name": "@voyant-travel/action-ledger"
+        "x-voyant-package-name": "@voyant-travel/action-ledger",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/action-ledger/approvals/request": {
@@ -3283,7 +3288,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
         "x-voyant-unit-id": "@voyant-travel/action-ledger",
-        "x-voyant-package-name": "@voyant-travel/action-ledger"
+        "x-voyant-package-name": "@voyant-travel/action-ledger",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/action-ledger/approvals/{id}": {
@@ -3739,7 +3745,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
         "x-voyant-unit-id": "@voyant-travel/action-ledger",
-        "x-voyant-package-name": "@voyant-travel/action-ledger"
+        "x-voyant-package-name": "@voyant-travel/action-ledger",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/action-ledger/approvals/{id}/decide": {
@@ -4228,7 +4235,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
         "x-voyant-unit-id": "@voyant-travel/action-ledger",
-        "x-voyant-package-name": "@voyant-travel/action-ledger"
+        "x-voyant-package-name": "@voyant-travel/action-ledger",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/action-ledger/delegations": {
@@ -4497,7 +4505,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
         "x-voyant-unit-id": "@voyant-travel/action-ledger",
-        "x-voyant-package-name": "@voyant-travel/action-ledger"
+        "x-voyant-package-name": "@voyant-travel/action-ledger",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/action-ledger/delegations/{id}": {
@@ -4608,7 +4617,8 @@
         "x-voyant-surface": "admin",
         "x-voyant-api-id": "@voyant-travel/action-ledger#api.admin",
         "x-voyant-unit-id": "@voyant-travel/action-ledger",
-        "x-voyant-package-name": "@voyant-travel/action-ledger"
+        "x-voyant-package-name": "@voyant-travel/action-ledger",
+        "x-voyant-key-kind": "secret"
       }
     }
   },

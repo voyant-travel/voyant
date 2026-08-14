@@ -221,7 +221,8 @@
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/bookings#extras",
-        "x-voyant-package-name": "@voyant-travel/bookings"
+        "x-voyant-package-name": "@voyant-travel/bookings",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "x-voyant-api-id": "@voyant-travel/bookings#extras.api",
@@ -449,7 +450,8 @@
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/bookings#extras",
-        "x-voyant-package-name": "@voyant-travel/bookings"
+        "x-voyant-package-name": "@voyant-travel/bookings",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/extras/booking-extras/{id}": {
@@ -599,7 +601,8 @@
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/bookings#extras",
-        "x-voyant-package-name": "@voyant-travel/bookings"
+        "x-voyant-package-name": "@voyant-travel/bookings",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/bookings#extras.api",
@@ -852,7 +855,8 @@
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/bookings#extras",
-        "x-voyant-package-name": "@voyant-travel/bookings"
+        "x-voyant-package-name": "@voyant-travel/bookings",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "x-voyant-api-id": "@voyant-travel/bookings#extras.api",
@@ -906,7 +910,8 @@
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/bookings#extras",
-        "x-voyant-package-name": "@voyant-travel/bookings"
+        "x-voyant-package-name": "@voyant-travel/bookings",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/extras/slot-manifests/{slotId}": {
@@ -1463,7 +1468,8 @@
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/bookings#extras",
-        "x-voyant-package-name": "@voyant-travel/bookings"
+        "x-voyant-package-name": "@voyant-travel/bookings",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/extras/slot-manifests/{slotId}/selections": {
@@ -1665,7 +1671,8 @@
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/bookings#extras",
-        "x-voyant-package-name": "@voyant-travel/bookings"
+        "x-voyant-package-name": "@voyant-travel/bookings",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/extras/slot-manifests/{slotId}/selections/bulk": {
@@ -1887,7 +1894,8 @@
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/bookings#extras",
-        "x-voyant-package-name": "@voyant-travel/bookings"
+        "x-voyant-package-name": "@voyant-travel/bookings",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/extras/slot-manifests/{slotId}/collections/bulk": {
@@ -2087,7 +2095,8 @@
         "x-voyant-module": "extras",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/bookings#extras",
-        "x-voyant-package-name": "@voyant-travel/bookings"
+        "x-voyant-package-name": "@voyant-travel/bookings",
+        "x-voyant-key-kind": "secret"
       }
     }
   },

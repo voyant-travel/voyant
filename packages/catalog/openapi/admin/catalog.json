@@ -595,7 +595,8 @@
         "summary": "POST /v1/admin/catalog/search",
         "tags": ["catalog"],
         "x-voyant-module": "catalog",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/package-offers": {
@@ -655,7 +656,8 @@
         "summary": "POST /v1/admin/catalog/package-offers",
         "tags": ["catalog"],
         "x-voyant-module": "catalog",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/package-detail": {
@@ -727,7 +729,8 @@
         "summary": "POST /v1/admin/catalog/package-detail",
         "tags": ["catalog"],
         "x-voyant-module": "catalog",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/package-search": {
@@ -807,7 +810,8 @@
         "summary": "POST /v1/admin/catalog/package-search",
         "tags": ["catalog"],
         "x-voyant-module": "catalog",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/departure-airports": {
@@ -854,7 +858,8 @@
         "summary": "POST /v1/admin/catalog/departure-airports",
         "tags": ["catalog"],
         "x-voyant-module": "catalog",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/cruise-price": {
@@ -909,7 +914,8 @@
         "summary": "POST /v1/admin/catalog/cruise-price",
         "tags": ["catalog"],
         "x-voyant-module": "catalog",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/cruise-sailing-pricing": {
@@ -982,7 +988,8 @@
         "summary": "POST /v1/admin/catalog/cruise-sailing-pricing",
         "tags": ["catalog"],
         "x-voyant-module": "catalog",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     }
   },

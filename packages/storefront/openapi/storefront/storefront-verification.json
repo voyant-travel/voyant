@@ -296,7 +296,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#verification.api",
         "x-voyant-unit-id": "@voyant-travel/storefront#verification",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/storefront-verification/sms/start": {
@@ -469,7 +470,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#verification.api",
         "x-voyant-unit-id": "@voyant-travel/storefront#verification",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/storefront-verification/email/confirm": {
@@ -648,7 +650,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#verification.api",
         "x-voyant-unit-id": "@voyant-travel/storefront#verification",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/storefront-verification/sms/confirm": {
@@ -828,7 +831,8 @@
         "x-voyant-surface": "storefront",
         "x-voyant-api-id": "@voyant-travel/storefront#verification.api",
         "x-voyant-unit-id": "@voyant-travel/storefront#verification",
-        "x-voyant-package-name": "@voyant-travel/storefront"
+        "x-voyant-package-name": "@voyant-travel/storefront",
+        "x-voyant-key-kind": "publishable"
       }
     }
   },

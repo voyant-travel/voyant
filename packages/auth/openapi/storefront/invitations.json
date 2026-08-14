@@ -16,7 +16,9 @@
             "name": "token",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "responses": {
@@ -29,7 +31,8 @@
           "410": {
             "description": "The invitation is expired or redeemed."
           }
-        }
+        },
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/invitations/{token}/redeem": {
@@ -43,7 +46,9 @@
             "name": "token",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -80,7 +85,8 @@
           "410": {
             "description": "The invitation is invalid, expired, or redeemed."
           }
-        }
+        },
+        "x-voyant-key-kind": "publishable"
       }
     }
   }

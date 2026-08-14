@@ -10,16 +10,44 @@
         "summary": "List channel booking links and status counts",
         "x-voyant-api-id": "@voyant-travel/distribution#channel-push-extension.api",
         "parameters": [
-          { "name": "status", "in": "query", "schema": { "type": "string" } },
-          { "name": "channelId", "in": "query", "schema": { "type": "string" } },
-          { "name": "bookingId", "in": "query", "schema": { "type": "string" } },
+          {
+            "name": "status",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "bookingId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "limit",
             "in": "query",
-            "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 50 }
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50
+            }
           }
         ],
-        "responses": { "200": { "description": "Channel booking links and counts" } }
+        "responses": {
+          "200": {
+            "description": "Channel booking links and counts"
+          }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/retry/{bookingId}": {
@@ -27,12 +55,24 @@
         "summary": "Retry channel delivery for a booking",
         "x-voyant-api-id": "@voyant-travel/distribution#channel-push-extension.api",
         "parameters": [
-          { "name": "bookingId", "in": "path", "required": true, "schema": { "type": "string" } }
+          {
+            "name": "bookingId",
+            "in": "path",
+            "required": true,
+            "schema": {
+              "type": "string"
+            }
+          }
         ],
         "responses": {
-          "200": { "description": "The retry attempt completed" },
-          "500": { "description": "The retry attempt failed" }
-        }
+          "200": {
+            "description": "The retry attempt completed"
+          },
+          "500": {
+            "description": "The retry attempt failed"
+          }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/deliveries": {
@@ -40,15 +80,37 @@
         "summary": "List channel webhook deliveries",
         "x-voyant-api-id": "@voyant-travel/distribution#channel-push-extension.api",
         "parameters": [
-          { "name": "bookingId", "in": "query", "schema": { "type": "string" } },
-          { "name": "channelId", "in": "query", "schema": { "type": "string" } },
+          {
+            "name": "bookingId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
+          {
+            "name": "channelId",
+            "in": "query",
+            "schema": {
+              "type": "string"
+            }
+          },
           {
             "name": "limit",
             "in": "query",
-            "schema": { "type": "integer", "minimum": 1, "maximum": 500, "default": 50 }
+            "schema": {
+              "type": "integer",
+              "minimum": 1,
+              "maximum": 500,
+              "default": 50
+            }
           }
         ],
-        "responses": { "200": { "description": "Matching webhook deliveries" } }
+        "responses": {
+          "200": {
+            "description": "Matching webhook deliveries"
+          }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/throttling": {
@@ -59,10 +121,19 @@
           {
             "name": "sinceMs",
             "in": "query",
-            "schema": { "type": "integer", "minimum": 0, "default": 3600000 }
+            "schema": {
+              "type": "integer",
+              "minimum": 0,
+              "default": 3600000
+            }
           }
         ],
-        "responses": { "200": { "description": "Per-channel throttling counts" } }
+        "responses": {
+          "200": {
+            "description": "Per-channel throttling counts"
+          }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/distribution/reconcile/{flow}": {
@@ -74,14 +145,24 @@
             "name": "flow",
             "in": "path",
             "required": true,
-            "schema": { "type": "string", "enum": ["bookings", "availability", "content"] }
+            "schema": {
+              "type": "string",
+              "enum": ["bookings", "availability", "content"]
+            }
           }
         ],
         "responses": {
-          "200": { "description": "The reconciliation flow completed" },
-          "400": { "description": "The flow name is unknown" },
-          "500": { "description": "The reconciliation flow failed" }
-        }
+          "200": {
+            "description": "The reconciliation flow completed"
+          },
+          "400": {
+            "description": "The flow name is unknown"
+          },
+          "500": {
+            "description": "The reconciliation flow failed"
+          }
+        },
+        "x-voyant-key-kind": "secret"
       }
     }
   }

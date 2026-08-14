@@ -334,7 +334,8 @@
         "summary": "GET /v1/admin/pricing/pricing-categories",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -530,7 +531,8 @@
         "summary": "POST /v1/admin/pricing/pricing-categories",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/pricing-categories/{id}": {
@@ -671,7 +673,8 @@
         "summary": "GET /v1/admin/pricing/pricing-categories/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -886,7 +889,8 @@
         "summary": "PATCH /v1/admin/pricing/pricing-categories/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -937,7 +941,8 @@
         "summary": "DELETE /v1/admin/pricing/pricing-categories/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/pricing-category-dependencies": {
@@ -1078,7 +1083,8 @@
         "summary": "GET /v1/admin/pricing/pricing-category-dependencies",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -1187,7 +1193,8 @@
         "summary": "POST /v1/admin/pricing/pricing-category-dependencies",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/pricing-category-dependencies/{id}": {
@@ -1285,7 +1292,8 @@
         "summary": "GET /v1/admin/pricing/pricing-category-dependencies/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -1417,7 +1425,8 @@
         "summary": "PATCH /v1/admin/pricing/pricing-category-dependencies/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -1468,7 +1477,8 @@
         "summary": "DELETE /v1/admin/pricing/pricing-category-dependencies/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/cancellation-policies": {
@@ -1615,7 +1625,8 @@
         "summary": "GET /v1/admin/pricing/cancellation-policies",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -1736,7 +1747,8 @@
         "summary": "POST /v1/admin/pricing/cancellation-policies",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/cancellation-policies/{id}": {
@@ -1839,7 +1851,8 @@
         "summary": "GET /v1/admin/pricing/cancellation-policies/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -1982,7 +1995,8 @@
         "summary": "PATCH /v1/admin/pricing/cancellation-policies/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -2033,7 +2047,8 @@
         "summary": "DELETE /v1/admin/pricing/cancellation-policies/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/cancellation-policy-rules": {
@@ -2161,7 +2176,8 @@
         "summary": "GET /v1/admin/pricing/cancellation-policy-rules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -2280,7 +2296,8 @@
         "summary": "POST /v1/admin/pricing/cancellation-policy-rules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/cancellation-policy-rules/{id}": {
@@ -2382,7 +2399,8 @@
         "summary": "GET /v1/admin/pricing/cancellation-policy-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -2523,7 +2541,8 @@
         "summary": "PATCH /v1/admin/pricing/cancellation-policy-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -2574,7 +2593,8 @@
         "summary": "DELETE /v1/admin/pricing/cancellation-policy-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/price-catalogs": {
@@ -2731,7 +2751,8 @@
         "summary": "GET /v1/admin/pricing/price-catalogs",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -2863,7 +2884,8 @@
         "summary": "POST /v1/admin/pricing/price-catalogs",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/price-catalogs/{id}": {
@@ -2974,7 +2996,8 @@
         "summary": "GET /v1/admin/pricing/price-catalogs/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -3128,7 +3151,8 @@
         "summary": "PATCH /v1/admin/pricing/price-catalogs/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -3179,7 +3203,8 @@
         "summary": "DELETE /v1/admin/pricing/price-catalogs/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/price-schedules": {
@@ -3334,7 +3359,8 @@
         "summary": "GET /v1/admin/pricing/price-schedules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -3498,7 +3524,8 @@
         "summary": "POST /v1/admin/pricing/price-schedules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/price-schedules/{id}": {
@@ -3619,7 +3646,8 @@
         "summary": "GET /v1/admin/pricing/price-schedules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -3806,7 +3834,8 @@
         "summary": "PATCH /v1/admin/pricing/price-schedules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -3857,7 +3886,8 @@
         "summary": "DELETE /v1/admin/pricing/price-schedules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/option-price-rules": {
@@ -4073,7 +4103,8 @@
         "summary": "GET /v1/admin/pricing/option-price-rules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -4274,7 +4305,8 @@
         "summary": "POST /v1/admin/pricing/option-price-rules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/option-price-rules/{id}": {
@@ -4423,7 +4455,8 @@
         "summary": "GET /v1/admin/pricing/option-price-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -4645,7 +4678,8 @@
         "summary": "PATCH /v1/admin/pricing/option-price-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -4696,7 +4730,8 @@
         "summary": "DELETE /v1/admin/pricing/option-price-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/option-unit-price-rules": {
@@ -4876,7 +4911,8 @@
         "summary": "GET /v1/admin/pricing/option-unit-price-rules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -5046,7 +5082,8 @@
         "summary": "POST /v1/admin/pricing/option-unit-price-rules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/option-unit-price-rules/{id}": {
@@ -5176,7 +5213,8 @@
         "summary": "GET /v1/admin/pricing/option-unit-price-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -5368,7 +5406,8 @@
         "summary": "PATCH /v1/admin/pricing/option-unit-price-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -5419,7 +5458,8 @@
         "summary": "DELETE /v1/admin/pricing/option-unit-price-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/option-start-time-rules": {
@@ -5572,7 +5612,8 @@
         "summary": "GET /v1/admin/pricing/option-start-time-rules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -5706,7 +5747,8 @@
         "summary": "POST /v1/admin/pricing/option-start-time-rules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/option-start-time-rules/{id}": {
@@ -5817,7 +5859,8 @@
         "summary": "GET /v1/admin/pricing/option-start-time-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -5974,7 +6017,8 @@
         "summary": "PATCH /v1/admin/pricing/option-start-time-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -6025,7 +6069,8 @@
         "summary": "DELETE /v1/admin/pricing/option-start-time-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/option-unit-tiers": {
@@ -6148,7 +6193,8 @@
         "summary": "GET /v1/admin/pricing/option-unit-tiers",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -6257,7 +6303,8 @@
         "summary": "POST /v1/admin/pricing/option-unit-tiers",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/option-unit-tiers/{id}": {
@@ -6354,7 +6401,8 @@
         "summary": "GET /v1/admin/pricing/option-unit-tiers/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -6486,7 +6534,8 @@
         "summary": "PATCH /v1/admin/pricing/option-unit-tiers/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -6537,7 +6586,8 @@
         "summary": "DELETE /v1/admin/pricing/option-unit-tiers/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/pickup-price-rules": {
@@ -6691,7 +6741,8 @@
         "summary": "GET /v1/admin/pricing/pickup-price-rules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -6821,7 +6872,8 @@
         "summary": "POST /v1/admin/pricing/pickup-price-rules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/pickup-price-rules/{id}": {
@@ -6933,7 +6985,8 @@
         "summary": "GET /v1/admin/pricing/pickup-price-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -7085,7 +7138,8 @@
         "summary": "PATCH /v1/admin/pricing/pickup-price-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -7136,7 +7190,8 @@
         "summary": "DELETE /v1/admin/pricing/pickup-price-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/dropoff-price-rules": {
@@ -7298,7 +7353,8 @@
         "summary": "GET /v1/admin/pricing/dropoff-price-rules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -7445,7 +7501,8 @@
         "summary": "POST /v1/admin/pricing/dropoff-price-rules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/dropoff-price-rules/{id}": {
@@ -7565,7 +7622,8 @@
         "summary": "GET /v1/admin/pricing/dropoff-price-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -7734,7 +7792,8 @@
         "summary": "PATCH /v1/admin/pricing/dropoff-price-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -7785,7 +7844,8 @@
         "summary": "DELETE /v1/admin/pricing/dropoff-price-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/extra-price-rules": {
@@ -7956,7 +8016,8 @@
         "summary": "GET /v1/admin/pricing/extra-price-rules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -8103,7 +8164,8 @@
         "summary": "POST /v1/admin/pricing/extra-price-rules",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/extra-price-rules/{id}": {
@@ -8224,7 +8286,8 @@
         "summary": "GET /v1/admin/pricing/extra-price-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -8393,7 +8456,8 @@
         "summary": "PATCH /v1/admin/pricing/extra-price-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -8444,7 +8508,8 @@
         "summary": "DELETE /v1/admin/pricing/extra-price-rules/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/departure-price-overrides": {
@@ -8600,7 +8665,8 @@
         "summary": "GET /v1/admin/pricing/departure-price-overrides",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -8728,7 +8794,8 @@
         "summary": "POST /v1/admin/pricing/departure-price-overrides",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/pricing/departure-price-overrides/{id}": {
@@ -8834,7 +8901,8 @@
         "summary": "GET /v1/admin/pricing/departure-price-overrides/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -8980,7 +9048,8 @@
         "summary": "PATCH /v1/admin/pricing/departure-price-overrides/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -9031,7 +9100,8 @@
         "summary": "DELETE /v1/admin/pricing/departure-price-overrides/{id}",
         "tags": ["pricing"],
         "x-voyant-module": "pricing",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     }
   },

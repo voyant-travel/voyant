@@ -332,7 +332,8 @@
         "summary": "GET /v1/admin/extras/product-extras",
         "tags": ["extras"],
         "x-voyant-module": "extras",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -550,7 +551,8 @@
         "summary": "POST /v1/admin/extras/product-extras",
         "tags": ["extras"],
         "x-voyant-module": "extras",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/extras/product-extras/{id}": {
@@ -694,7 +696,8 @@
         "summary": "GET /v1/admin/extras/product-extras/{id}",
         "tags": ["extras"],
         "x-voyant-module": "extras",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -937,7 +940,8 @@
         "summary": "PATCH /v1/admin/extras/product-extras/{id}",
         "tags": ["extras"],
         "x-voyant-module": "extras",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -988,7 +992,8 @@
         "summary": "DELETE /v1/admin/extras/product-extras/{id}",
         "tags": ["extras"],
         "x-voyant-module": "extras",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/extras/option-extra-configs": {
@@ -1176,7 +1181,8 @@
         "summary": "GET /v1/admin/extras/option-extra-configs",
         "tags": ["extras"],
         "x-voyant-module": "extras",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -1366,7 +1372,8 @@
         "summary": "POST /v1/admin/extras/option-extra-configs",
         "tags": ["extras"],
         "x-voyant-module": "extras",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/extras/option-extra-configs/{id}": {
@@ -1498,7 +1505,8 @@
         "summary": "GET /v1/admin/extras/option-extra-configs/{id}",
         "tags": ["extras"],
         "x-voyant-module": "extras",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -1713,7 +1721,8 @@
         "summary": "PATCH /v1/admin/extras/option-extra-configs/{id}",
         "tags": ["extras"],
         "x-voyant-module": "extras",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -1764,7 +1773,8 @@
         "summary": "DELETE /v1/admin/extras/option-extra-configs/{id}",
         "tags": ["extras"],
         "x-voyant-module": "extras",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     }
   },

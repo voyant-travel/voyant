@@ -264,7 +264,8 @@
         "summary": "GET /v1/public/legal/contracts/templates/default",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/legal/contracts/templates/{id}/preview": {
@@ -352,7 +353,8 @@
         "summary": "POST /v1/public/legal/contracts/templates/{id}/preview",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/legal/contracts/templates/{id}/render-preview": {
@@ -440,7 +442,8 @@
         "summary": "POST /v1/public/legal/contracts/templates/{id}/render-preview",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/legal/contracts/templates/by-slug/{slug}/preview": {
@@ -528,7 +531,8 @@
         "summary": "POST /v1/public/legal/contracts/templates/by-slug/{slug}/preview",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/legal/contracts/templates/by-slug/{slug}/render-preview": {
@@ -616,7 +620,8 @@
         "summary": "POST /v1/public/legal/contracts/templates/by-slug/{slug}/render-preview",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/legal/contracts/{id}": {
@@ -757,7 +762,8 @@
         "summary": "GET /v1/public/legal/contracts/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/legal/contracts/{id}/sign": {
@@ -932,7 +938,8 @@
         "summary": "POST /v1/public/legal/contracts/{id}/sign",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/legal/policies/{slug}": {
@@ -1096,7 +1103,8 @@
         "summary": "GET /v1/public/legal/policies/{slug}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/legal/policies/{id}/accept": {
@@ -1360,7 +1368,8 @@
         "summary": "POST /v1/public/legal/policies/{id}/accept",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/legal/terms": {
@@ -1627,7 +1636,8 @@
         "summary": "GET /v1/public/legal/terms",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/legal/terms/{id}": {
@@ -1786,7 +1796,8 @@
         "summary": "GET /v1/public/legal/terms/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-key-kind": "publishable"
       }
     }
   },

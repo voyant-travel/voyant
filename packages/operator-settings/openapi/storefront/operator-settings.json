@@ -296,7 +296,8 @@
         "summary": "GET /v1/public/operator-profile",
         "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/settings/operator": {
@@ -468,7 +469,8 @@
         "summary": "GET /v1/public/settings/operator",
         "tags": ["operator-settings"],
         "x-voyant-module": "operator-settings",
-        "x-voyant-surface": "storefront"
+        "x-voyant-surface": "storefront",
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/operator-branding/{slot}": {
@@ -495,7 +497,8 @@
           "503": {
             "description": "Media storage is not configured"
           }
-        }
+        },
+        "x-voyant-key-kind": "publishable"
       }
     }
   },

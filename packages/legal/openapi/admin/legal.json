@@ -286,7 +286,8 @@
         "summary": "GET /v1/admin/legal/contracts/templates",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -442,7 +443,8 @@
         "summary": "POST /v1/admin/legal/contracts/templates",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/templates/default": {
@@ -581,7 +583,8 @@
         "summary": "GET /v1/admin/legal/contracts/templates/default",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/templates/{id}": {
@@ -692,7 +695,8 @@
         "summary": "GET /v1/admin/legal/contracts/templates/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -873,7 +877,8 @@
         "summary": "PATCH /v1/admin/legal/contracts/templates/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -925,7 +930,8 @@
         "summary": "DELETE /v1/admin/legal/contracts/templates/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/templates/{id}/preview": {
@@ -1015,7 +1021,8 @@
         "summary": "POST /v1/admin/legal/contracts/templates/{id}/preview",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/templates/{id}/render-preview": {
@@ -1105,7 +1112,8 @@
         "summary": "POST /v1/admin/legal/contracts/templates/{id}/render-preview",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/templates/{id}/versions": {
@@ -1178,7 +1186,8 @@
         "summary": "GET /v1/admin/legal/contracts/templates/{id}/versions",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -1307,7 +1316,8 @@
         "summary": "POST /v1/admin/legal/contracts/templates/{id}/versions",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/template-versions/{id}": {
@@ -1393,7 +1403,8 @@
         "summary": "GET /v1/admin/legal/contracts/template-versions/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/number-series": {
@@ -1509,7 +1520,8 @@
         "summary": "GET /v1/admin/legal/contracts/number-series",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -1678,7 +1690,8 @@
         "summary": "POST /v1/admin/legal/contracts/number-series",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/number-series/{id}": {
@@ -1797,7 +1810,8 @@
         "summary": "GET /v1/admin/legal/contracts/number-series/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -1985,7 +1999,8 @@
         "summary": "PATCH /v1/admin/legal/contracts/number-series/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -2037,7 +2052,8 @@
         "summary": "DELETE /v1/admin/legal/contracts/number-series/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts": {
@@ -2421,7 +2437,8 @@
         "summary": "GET /v1/admin/legal/contracts",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -2909,7 +2926,8 @@
         "summary": "POST /v1/admin/legal/contracts",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/{id}": {
@@ -3153,7 +3171,8 @@
         "summary": "GET /v1/admin/legal/contracts/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -3660,7 +3679,8 @@
         "summary": "PATCH /v1/admin/legal/contracts/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -3728,7 +3748,8 @@
         "summary": "DELETE /v1/admin/legal/contracts/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/{id}/issue": {
@@ -3988,7 +4009,8 @@
         "summary": "POST /v1/admin/legal/contracts/{id}/issue",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/{id}/send": {
@@ -4264,7 +4286,8 @@
         "summary": "POST /v1/admin/legal/contracts/{id}/send",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/{id}/sign": {
@@ -4789,7 +4812,8 @@
         "summary": "POST /v1/admin/legal/contracts/{id}/sign",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/{id}/execute": {
@@ -5049,7 +5073,8 @@
         "summary": "POST /v1/admin/legal/contracts/{id}/execute",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/{id}/void": {
@@ -5309,7 +5334,8 @@
         "summary": "POST /v1/admin/legal/contracts/{id}/void",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/{id}/render": {
@@ -5399,7 +5425,8 @@
         "summary": "POST /v1/admin/legal/contracts/{id}/render",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/{id}/signatures": {
@@ -5535,7 +5562,8 @@
         "summary": "GET /v1/admin/legal/contracts/{id}/signatures",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/{id}/attachments": {
@@ -5650,7 +5678,8 @@
         "summary": "GET /v1/admin/legal/contracts/{id}/attachments",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -5939,7 +5968,8 @@
         "summary": "POST /v1/admin/legal/contracts/{id}/attachments",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/{id}/attachments/upload": {
@@ -6127,7 +6157,8 @@
         "summary": "POST /v1/admin/legal/contracts/{id}/attachments/upload",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/attachments/{attachmentId}": {
@@ -6417,7 +6448,8 @@
         "summary": "PATCH /v1/admin/legal/contracts/attachments/{attachmentId}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -6485,7 +6517,8 @@
         "summary": "DELETE /v1/admin/legal/contracts/attachments/{attachmentId}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/attachments/{attachmentId}/upload": {
@@ -6673,7 +6706,8 @@
         "summary": "PATCH /v1/admin/legal/contracts/attachments/{attachmentId}/upload",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/contracts/attachments/{attachmentId}/download": {
@@ -6729,7 +6763,8 @@
         "summary": "GET /v1/admin/legal/contracts/attachments/{attachmentId}/download",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/policies/{id}/versions": {
@@ -6819,7 +6854,8 @@
         "summary": "GET /v1/admin/legal/policies/{id}/versions",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -6965,7 +7001,8 @@
         "summary": "POST /v1/admin/legal/policies/{id}/versions",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/policies/versions/{versionId}": {
@@ -7068,7 +7105,8 @@
         "summary": "GET /v1/admin/legal/policies/versions/{versionId}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -7213,7 +7251,8 @@
         "summary": "PATCH /v1/admin/legal/policies/versions/{versionId}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/policies/versions/{versionId}/publish": {
@@ -7332,7 +7371,8 @@
         "summary": "POST /v1/admin/legal/policies/versions/{versionId}/publish",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/policies/versions/{versionId}/retire": {
@@ -7435,7 +7475,8 @@
         "summary": "POST /v1/admin/legal/policies/versions/{versionId}/retire",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/policies/versions/{versionId}/rules": {
@@ -7538,7 +7579,8 @@
         "summary": "GET /v1/admin/legal/policies/versions/{versionId}/rules",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "parameters": [
@@ -7722,7 +7764,8 @@
         "summary": "POST /v1/admin/legal/policies/versions/{versionId}/rules",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/policies/rules/{ruleId}": {
@@ -7906,7 +7949,8 @@
         "summary": "PATCH /v1/admin/legal/policies/rules/{ruleId}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -7957,7 +8001,8 @@
         "summary": "DELETE /v1/admin/legal/policies/rules/{ruleId}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/policies/assignments": {
@@ -8141,7 +8186,8 @@
         "summary": "GET /v1/admin/legal/policies/assignments",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -8296,7 +8342,8 @@
         "summary": "POST /v1/admin/legal/policies/assignments",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/policies/assignments/{id}": {
@@ -8478,7 +8525,8 @@
         "summary": "PATCH /v1/admin/legal/policies/assignments/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -8529,7 +8577,8 @@
         "summary": "DELETE /v1/admin/legal/policies/assignments/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/policies/acceptances": {
@@ -8760,7 +8809,8 @@
         "summary": "GET /v1/admin/legal/policies/acceptances",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -9011,7 +9061,8 @@
         "summary": "POST /v1/admin/legal/policies/acceptances",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/policies/resolve": {
@@ -9359,7 +9410,8 @@
         "summary": "GET /v1/admin/legal/policies/resolve",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/policies": {
@@ -9506,7 +9558,8 @@
         "summary": "GET /v1/admin/legal/policies",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -9649,7 +9702,8 @@
         "summary": "POST /v1/admin/legal/policies",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/policies/{id}": {
@@ -9753,7 +9807,8 @@
         "summary": "GET /v1/admin/legal/policies/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -9920,7 +9975,8 @@
         "summary": "PATCH /v1/admin/legal/policies/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -9987,7 +10043,8 @@
         "summary": "DELETE /v1/admin/legal/policies/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/policies/{id}/evaluate": {
@@ -10094,7 +10151,8 @@
         "summary": "POST /v1/admin/legal/policies/{id}/evaluate",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/terms": {
@@ -10360,7 +10418,8 @@
         "summary": "GET /v1/admin/legal/terms",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "requestBody": {
@@ -10684,7 +10743,8 @@
         "summary": "POST /v1/admin/legal/terms",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/legal/terms/{id}": {
@@ -10842,7 +10902,8 @@
         "summary": "GET /v1/admin/legal/terms/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "parameters": [
@@ -11191,7 +11252,8 @@
         "summary": "PATCH /v1/admin/legal/terms/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "parameters": [
@@ -11242,7 +11304,8 @@
         "summary": "DELETE /v1/admin/legal/terms/{id}",
         "tags": ["legal"],
         "x-voyant-module": "legal",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     }
   },

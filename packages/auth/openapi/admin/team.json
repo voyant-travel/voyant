@@ -10,7 +10,12 @@
         "operationId": "getTeamManagementCapabilities",
         "tags": ["Team"],
         "x-voyant-api-id": "@voyant-travel/auth#team.api.admin",
-        "responses": { "200": { "description": "Team-management capabilities." } }
+        "responses": {
+          "200": {
+            "description": "Team-management capabilities."
+          }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/team/members": {
@@ -18,7 +23,12 @@
         "operationId": "listTeamMembers",
         "tags": ["Team"],
         "x-voyant-api-id": "@voyant-travel/auth#team.api.admin",
-        "responses": { "200": { "description": "Team roster." } }
+        "responses": {
+          "200": {
+            "description": "Team roster."
+          }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/team/roles": {
@@ -26,7 +36,12 @@
         "operationId": "listTeamRoles",
         "tags": ["Team"],
         "x-voyant-api-id": "@voyant-travel/auth#team.api.admin",
-        "responses": { "200": { "description": "Available team roles." } }
+        "responses": {
+          "200": {
+            "description": "Available team roles."
+          }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/team/invitations": {
@@ -34,7 +49,12 @@
         "operationId": "listTeamInvitations",
         "tags": ["Team"],
         "x-voyant-api-id": "@voyant-travel/auth#team.api.admin",
-        "responses": { "200": { "description": "Team invitations." } }
+        "responses": {
+          "200": {
+            "description": "Team invitations."
+          }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "operationId": "createTeamInvitation",
@@ -48,15 +68,31 @@
                 "type": "object",
                 "required": ["email", "roleId"],
                 "properties": {
-                  "email": { "type": "string", "format": "email" },
-                  "roleId": { "type": "string", "minLength": 1, "maxLength": 120 },
-                  "expiresInDays": { "type": "integer", "minimum": 1, "maximum": 30 }
+                  "email": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "roleId": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 120
+                  },
+                  "expiresInDays": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "maximum": 30
+                  }
                 }
               }
             }
           }
         },
-        "responses": { "201": { "description": "Created team invitation." } }
+        "responses": {
+          "201": {
+            "description": "Created team invitation."
+          }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/team/invitations/{invitationId}": {
@@ -69,10 +105,17 @@
             "name": "invitationId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": { "204": { "description": "Invitation revoked." } }
+        "responses": {
+          "204": {
+            "description": "Invitation revoked."
+          }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/team/members/{memberId}/role": {
@@ -85,7 +128,9 @@
             "name": "memberId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
         "requestBody": {
@@ -95,12 +140,22 @@
               "schema": {
                 "type": "object",
                 "required": ["roleId"],
-                "properties": { "roleId": { "type": "string", "minLength": 1 } }
+                "properties": {
+                  "roleId": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                }
               }
             }
           }
         },
-        "responses": { "200": { "description": "Updated team member." } }
+        "responses": {
+          "200": {
+            "description": "Updated team member."
+          }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/team/members/{memberId}": {
@@ -113,10 +168,17 @@
             "name": "memberId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": { "200": { "description": "Deactivated team member." } }
+        "responses": {
+          "200": {
+            "description": "Deactivated team member."
+          }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/team/members/{memberId}/activation": {
@@ -129,10 +191,17 @@
             "name": "memberId",
             "in": "path",
             "required": true,
-            "schema": { "type": "string" }
+            "schema": {
+              "type": "string"
+            }
           }
         ],
-        "responses": { "200": { "description": "Activated team member." } }
+        "responses": {
+          "200": {
+            "description": "Activated team member."
+          }
+        },
+        "x-voyant-key-kind": "secret"
       }
     }
   }

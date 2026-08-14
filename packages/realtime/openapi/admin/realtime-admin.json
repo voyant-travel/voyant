@@ -147,7 +147,8 @@
         "x-voyant-module": "realtime",
         "x-voyant-surface": "admin",
         "x-voyant-unit-id": "@voyant-travel/realtime",
-        "x-voyant-package-name": "@voyant-travel/realtime"
+        "x-voyant-package-name": "@voyant-travel/realtime",
+        "x-voyant-key-kind": "secret"
       }
     }
   },

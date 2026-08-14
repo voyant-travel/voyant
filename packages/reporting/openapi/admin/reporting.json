@@ -167,7 +167,8 @@
           "403": {
             "$ref": "#/components/responses/ErrorResponse"
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/reporting/queries/parse": {
@@ -196,7 +197,8 @@
           "403": {
             "$ref": "#/components/responses/ErrorResponse"
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/reporting/queries/preview": {
@@ -225,7 +227,8 @@
           "403": {
             "$ref": "#/components/responses/ErrorResponse"
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/reporting/reports": {
@@ -265,7 +268,8 @@
           "403": {
             "$ref": "#/components/responses/ErrorResponse"
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "post": {
         "operationId": "createReport",
@@ -292,7 +296,8 @@
           "403": {
             "$ref": "#/components/responses/ErrorResponse"
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/reporting/reports/{id}": {
@@ -321,7 +326,8 @@
           "404": {
             "$ref": "#/components/responses/ErrorResponse"
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "operationId": "updateReport",
@@ -354,7 +360,8 @@
           "409": {
             "$ref": "#/components/responses/ErrorResponse"
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "delete": {
         "operationId": "deleteReport",
@@ -374,7 +381,8 @@
           "409": {
             "$ref": "#/components/responses/ErrorResponse"
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/reporting/reports/{id}/export": {
@@ -437,7 +445,8 @@
           "404": {
             "$ref": "#/components/responses/ErrorResponse"
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/reporting/templates/{id}/instantiate": {
@@ -479,7 +488,8 @@
           "404": {
             "$ref": "#/components/responses/ErrorResponse"
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     }
   }

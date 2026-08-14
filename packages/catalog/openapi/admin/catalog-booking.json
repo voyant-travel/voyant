@@ -13891,7 +13891,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/booking-sessions/{sessionId}": {
@@ -13938,7 +13939,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.admin",
@@ -14028,7 +14030,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/booking-sessions/{sessionId}/adopt": {
@@ -14097,7 +14100,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/booking-sessions/{sessionId}/renew": {
@@ -14170,7 +14174,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/booking-sessions/{sessionId}/quote": {
@@ -14258,7 +14263,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/booking-sessions/{sessionId}/hold": {
@@ -14355,7 +14361,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/booking-sessions/{sessionId}/abandon": {
@@ -14443,7 +14450,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/booking-sessions/{sessionId}/commit": {
@@ -14573,7 +14581,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/offers/preview": {
@@ -15213,7 +15222,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/booking-sessions/maintenance/expire": {
@@ -15254,7 +15264,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/booking-sessions/maintenance/purge": {
@@ -15299,7 +15310,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/supplier-operations": {
@@ -15375,7 +15387,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/supplier-operations/{operationId}": {
@@ -15422,7 +15435,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/supplier-operations/{operationId}/reconcile": {
@@ -15468,7 +15482,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/supplier-operations/{operationId}/resolve": {
@@ -15527,7 +15542,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/orders": {
@@ -15596,7 +15612,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/orders/{id}": {
@@ -15670,7 +15687,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/orders/{id}/cancel": {
@@ -15844,7 +15862,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/catalog/slots": {
@@ -15983,7 +16002,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/bookings/{id}/catalog-snapshot": {
@@ -16063,7 +16083,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "secret"
       }
     }
   },

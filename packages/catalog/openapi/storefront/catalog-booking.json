@@ -13891,7 +13891,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/catalog/booking-sessions/{sessionId}": {
@@ -13938,7 +13939,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "publishable"
       },
       "patch": {
         "x-voyant-api-id": "@voyant-travel/catalog#booking-engine.api.public",
@@ -14028,7 +14030,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/catalog/booking-sessions/{sessionId}/adopt": {
@@ -14097,7 +14100,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/catalog/booking-sessions/{sessionId}/renew": {
@@ -14170,7 +14174,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/catalog/booking-sessions/{sessionId}/quote": {
@@ -14258,7 +14263,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/catalog/booking-sessions/{sessionId}/hold": {
@@ -14355,7 +14361,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/catalog/booking-sessions/{sessionId}/abandon": {
@@ -14443,7 +14450,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/catalog/booking-sessions/{sessionId}/commit": {
@@ -14573,7 +14581,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/catalog/offers/preview": {
@@ -15213,7 +15222,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "publishable"
       }
     },
     "/v1/public/catalog/slots": {
@@ -15352,7 +15362,8 @@
               }
             }
           }
-        }
+        },
+        "x-voyant-key-kind": "publishable"
       }
     }
   },

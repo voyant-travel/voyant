@@ -7,25 +7,52 @@
   },
   "paths": {
     "/v1/admin/custom-fields/targets": {
-      "get": { "summary": "List selected target and field-type capabilities" }
+      "get": {
+        "summary": "List selected target and field-type capabilities",
+        "x-voyant-key-kind": "secret"
+      }
     },
     "/v1/admin/custom-fields": {
-      "get": { "summary": "List selected-target custom-field definitions" },
-      "post": { "summary": "Create an operator-owned custom-field definition" }
+      "get": {
+        "summary": "List selected-target custom-field definitions",
+        "x-voyant-key-kind": "secret"
+      },
+      "post": {
+        "summary": "Create an operator-owned custom-field definition",
+        "x-voyant-key-kind": "secret"
+      }
     },
     "/v1/admin/custom-fields/{id}": {
-      "get": { "summary": "Get a custom-field definition" },
-      "patch": { "summary": "Update a custom-field definition" },
-      "delete": { "summary": "Delete a custom-field definition" }
+      "get": {
+        "summary": "Get a custom-field definition",
+        "x-voyant-key-kind": "secret"
+      },
+      "patch": {
+        "summary": "Update a custom-field definition",
+        "x-voyant-key-kind": "secret"
+      },
+      "delete": {
+        "summary": "Delete a custom-field definition",
+        "x-voyant-key-kind": "secret"
+      }
     },
     "/v1/admin/custom-fields/values": {
-      "get": { "summary": "List custom-field values" }
+      "get": {
+        "summary": "List custom-field values",
+        "x-voyant-key-kind": "secret"
+      }
     },
     "/v1/admin/custom-fields/{id}/value": {
-      "put": { "summary": "Upsert a custom-field value" }
+      "put": {
+        "summary": "Upsert a custom-field value",
+        "x-voyant-key-kind": "secret"
+      }
     },
     "/v1/admin/custom-fields/values/{id}": {
-      "delete": { "summary": "Delete a custom-field value" }
+      "delete": {
+        "summary": "Delete a custom-field value",
+        "x-voyant-key-kind": "secret"
+      }
     }
   }
 }

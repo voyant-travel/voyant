@@ -681,7 +681,8 @@
         "operationId": "postAdminProductsCompose",
         "tags": ["products"],
         "x-voyant-module": "products",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     },
     "/v1/admin/products/{id}/duplicate": {
@@ -757,7 +758,8 @@
         "operationId": "postAdminProductsByIdDuplicate",
         "tags": ["products"],
         "x-voyant-module": "products",
-        "x-voyant-surface": "admin"
+        "x-voyant-surface": "admin",
+        "x-voyant-key-kind": "secret"
       }
     }
   },
