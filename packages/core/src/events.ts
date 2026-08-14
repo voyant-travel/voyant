@@ -185,14 +185,17 @@ export interface DeliveryResult {
    * alongside the first. Both are counted as failures, because a detached
    * handler may still fail and dropping the event would be worse, but they
    * should not read as the same event in diagnostics.
+   *
+   * Optional for the same reason `deliver` itself is: a third-party bus stays
+   * assignable without knowing about it. Absent reads as zero.
    */
-  timedOut: number
+  timedOut?: number
   /**
    * How many failures declared themselves permanent — see
    * {@link PermanentSubscriberError}. Non-zero means retrying cannot help and
    * the caller should dead-letter rather than reschedule.
    */
-  permanent: number
+  permanent?: number
   errors: string[]
 }
 
