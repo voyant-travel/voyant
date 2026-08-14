@@ -45,7 +45,6 @@ import type {
   createProposalsPublicRouteContribution,
   ProposalsPublicRouteRuntime,
 } from "@voyant-travel/proposals-react/public-routes"
-import { AdminWorkspaceRealtimeProvider } from "@voyant-travel/realtime-react"
 import { usePublicApiMessages } from "@voyant-travel/public-api-react/public-api/messages"
 import {
   createPublicApiMessagesProvider,
@@ -53,6 +52,7 @@ import {
   type PublicApiPresentationContribution,
   type PublicApiPresentationRuntime,
 } from "@voyant-travel/public-api-react/public-api/presentation-routes"
+import { AdminWorkspaceRealtimeProvider } from "@voyant-travel/realtime-react"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
 import { ConfirmDialogHost, PromptDialogHost } from "@voyant-travel/ui/components"
 import { TooltipProvider } from "@voyant-travel/ui/components/tooltip"

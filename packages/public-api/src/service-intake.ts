@@ -1,7 +1,7 @@
 import type { EventBus, EventSource } from "@voyant-travel/core"
 import type {
-  PublicApiIntakePersistence as SharedPublicApiIntakePersistence,
   PublicApiIntakeSignal,
+  PublicApiIntakePersistence as SharedPublicApiIntakePersistence,
 } from "@voyant-travel/relationships-contracts/storefront-intake"
 
 export type {
@@ -19,8 +19,7 @@ import type {
   PublicApiNewsletterSubscribeResponse,
 } from "./validation.js"
 
-export type PublicApiIntakePersistence =
-  SharedPublicApiIntakePersistence<PublicApiRequestContext>
+export type PublicApiIntakePersistence = SharedPublicApiIntakePersistence<PublicApiRequestContext>
 
 export const CUSTOMER_SIGNAL_CREATED_EVENT = "customer.signal.created" as const
 

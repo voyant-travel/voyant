@@ -27,9 +27,7 @@ export interface PublicApiActiveMarket {
  * permitted for the already-authenticated storefront/channel pair.
  */
 export interface PublicApiShoppingMarketProvider {
-  listActiveMarkets(input: {
-    channelId: string
-  }): Promise<readonly PublicApiActiveMarket[]>
+  listActiveMarkets(input: { channelId: string }): Promise<readonly PublicApiActiveMarket[]>
 }
 
 export interface PublicApiCatalogSliceSearchInput {

@@ -304,9 +304,7 @@ function ProvisionBusinessAccountForm({ api }: { api: CustomerBusinessAccountsAd
       <CardContent>
         <form className="grid gap-4 md:grid-cols-2" onSubmit={submit}>
           <div className="grid gap-2">
-            <Label htmlFor="customer-business-storefront-origin">
-              {copy.publicApiOriginLabel}
-            </Label>
+            <Label htmlFor="customer-business-storefront-origin">{copy.publicApiOriginLabel}</Label>
             <Input
               id="customer-business-storefront-origin"
               type="url"

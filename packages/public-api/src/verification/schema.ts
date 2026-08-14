@@ -67,8 +67,7 @@ export const customerVerificationChallengesRelations = relations(
 )
 
 export type CustomerVerificationChallenge = typeof customerVerificationChallenges.$inferSelect
-export type NewCustomerVerificationChallenge =
-  typeof customerVerificationChallenges.$inferInsert
+export type NewCustomerVerificationChallenge = typeof customerVerificationChallenges.$inferInsert
 
 export const publicApiVerificationLinkable: LinkableDefinition = {
   module: "storefront-verification",

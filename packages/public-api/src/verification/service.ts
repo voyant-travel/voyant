@@ -5,10 +5,10 @@ import { type CustomerVerificationChallenge, customerVerificationChallenges } fr
 import type {
   ConfirmEmailVerificationChallengeInput,
   ConfirmSmsVerificationChallengeInput,
-  StartEmailVerificationChallengeInput,
-  StartSmsVerificationChallengeInput,
   CustomerVerificationChallengeRecord,
   PublicApiVerificationChannel,
+  StartEmailVerificationChallengeInput,
+  StartSmsVerificationChallengeInput,
 } from "./validation.js"
 
 export interface PublicApiVerificationServiceOptions {
@@ -407,9 +407,7 @@ export function createPublicApiVerificationSendersFromProviders(
   }
 }
 
-export function createPublicApiVerificationService(
-  options?: PublicApiVerificationServiceOptions,
-) {
+export function createPublicApiVerificationService(options?: PublicApiVerificationServiceOptions) {
   return {
     async startEmailChallenge(
       db: PostgresJsDatabase,

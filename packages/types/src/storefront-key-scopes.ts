@@ -69,8 +69,6 @@ export function normalizePublicApiKeyScopes(
 }
 
 /** Flat `resource:action` strings, for an auth context's `scopes`. */
-export function publicApiKeyScopeStrings(
-  scopes: PublicApiKeyScopes | null | undefined,
-): string[] {
+export function publicApiKeyScopeStrings(scopes: PublicApiKeyScopes | null | undefined): string[] {
   return permissionsToStrings(scopes)
 }

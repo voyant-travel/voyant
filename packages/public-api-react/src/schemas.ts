@@ -133,9 +133,7 @@ export type PublicApiDeparturePricePreviewRecord = z.infer<
   typeof publicApiDeparturePricePreviewSchema
 >
 export type PublicApiDepartureItineraryRecord = z.infer<typeof publicApiDepartureItinerarySchema>
-export type PublicApiProductExtensionsQuery = z.input<
-  typeof publicApiProductExtensionsQuerySchema
->
+export type PublicApiProductExtensionsQuery = z.input<typeof publicApiProductExtensionsQuerySchema>
 export type PublicApiPromotionalOfferListQuery = z.input<
   typeof publicApiPromotionalOfferListQuerySchema
 >

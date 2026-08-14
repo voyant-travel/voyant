@@ -494,10 +494,7 @@ export const publicApiCustomerPortalTools = [
   updateMyCustomerPortalDocumentTool,
   setMyPrimaryCustomerPortalDocumentTool,
 ] as const
-export const publicApiPaymentLinkTools = [
-  getPaymentLinkTool,
-  createInvoicePaymentLinkTool,
-] as const
+export const publicApiPaymentLinkTools = [getPaymentLinkTool, createInvoicePaymentLinkTool] as const
 export const publicApiVerificationTools = [
   startMyEmailVerificationTool,
   confirmMyEmailVerificationTool,

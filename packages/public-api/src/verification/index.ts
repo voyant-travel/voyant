@@ -6,9 +6,9 @@ import { publicApiVerificationRuntimePort } from "../runtime-port.js"
 import {
   buildPublicApiVerificationSenderBundle,
   createPublicApiVerificationPublicRoutes,
-  STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY,
   type PublicApiVerificationChannelCoverage,
   type PublicApiVerificationRoutesOptions,
+  STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY,
 } from "./routes-public.js"
 import { publicApiVerificationModule } from "./schema.js"
 
@@ -35,8 +35,8 @@ export {
   STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY,
 } from "./routes-public.js"
 export type {
-  NewCustomerVerificationChallenge,
   CustomerVerificationChallenge,
+  NewCustomerVerificationChallenge,
 } from "./schema.js"
 export {
   customerVerificationChallenges,
@@ -65,24 +65,24 @@ export {
 export type {
   ConfirmEmailVerificationChallengeInput,
   ConfirmSmsVerificationChallengeInput,
-  StartEmailVerificationChallengeInput,
-  StartSmsVerificationChallengeInput,
   CustomerVerificationChallengeRecord,
   PublicApiVerificationChannel,
   PublicApiVerificationConfirmResult,
   PublicApiVerificationStartResult,
   PublicApiVerificationStatus,
+  StartEmailVerificationChallengeInput,
+  StartSmsVerificationChallengeInput,
 } from "./validation.js"
 export {
   confirmEmailVerificationChallengeSchema,
   confirmSmsVerificationChallengeSchema,
-  startEmailVerificationChallengeSchema,
-  startSmsVerificationChallengeSchema,
   publicApiVerificationChallengeRecordSchema,
   publicApiVerificationChannelSchema,
   publicApiVerificationConfirmResultSchema,
   publicApiVerificationStartResultSchema,
   publicApiVerificationStatusSchema,
+  startEmailVerificationChallengeSchema,
+  startSmsVerificationChallengeSchema,
 } from "./validation.js"
 
 /**

@@ -5,8 +5,8 @@ import {
   buildPublicApiVerificationSenderBundle,
   createPublicApiVerificationApiModule,
   createPublicApiVerificationSendersFromProviders,
-  resolvePublicApiVerificationChannelCoverage,
   PublicApiVerificationError,
+  resolvePublicApiVerificationChannelCoverage,
 } from "../../../src/verification/index.js"
 
 function emailOnlyProvider() {

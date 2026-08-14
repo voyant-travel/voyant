@@ -32,8 +32,8 @@ import {
 import type { Trip } from "./service-types.js"
 import {
   createPublicApiTripInTransaction,
-  resolvePublicApiTripAccess,
   type PublicApiTripScope,
+  resolvePublicApiTripAccess,
 } from "./storefront-access.js"
 import type { PublicApiTripOfferResolver } from "./storefront-trip-offer-resolver-port.js"
 import { type CreateTripComponentBodyInput, createTripComponentBodySchema } from "./validation.js"

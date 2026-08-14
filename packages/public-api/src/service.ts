@@ -79,9 +79,7 @@ export interface PublicApiServiceOptions {
       travelStartsOn?: string | null
       travelEndsOn?: string | null
     } & PublicApiRequestContext,
-  ) =>
-    | Promise<PublicApiTransportEligibilityRuleInput[]>
-    | PublicApiTransportEligibilityRuleInput[]
+  ) => Promise<PublicApiTransportEligibilityRuleInput[]> | PublicApiTransportEligibilityRuleInput[]
   intake?: PublicApiIntakeOptions
   publication?: PublicApiPublicationGuard
 }
@@ -258,9 +256,7 @@ function normalizeBankTransfer(
 
 function mergePaymentSchedule(
   current: PublicApiSettings["payment"]["defaultSchedule"],
-  patch: NonNullable<
-    NonNullable<PublicApiSettingsPatchInput["payment"]>["defaultSchedule"]
-  > | null,
+  patch: NonNullable<NonNullable<PublicApiSettingsPatchInput["payment"]>["defaultSchedule"]> | null,
 ) {
   if (patch === null) return null
 

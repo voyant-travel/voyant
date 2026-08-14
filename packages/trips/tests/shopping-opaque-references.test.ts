@@ -587,7 +587,7 @@ function matchesBoundary(
 ): boolean {
   return (
     reference.purpose === boundary.purpose &&
-        reference.channelId === boundary.channelId &&
+    reference.channelId === boundary.channelId &&
     reference.ownerUserId === boundary.ownerUserId &&
     reference.ownerBuyerAccountId === boundary.ownerBuyerAccountId &&
     reference.marketId === boundary.marketId &&

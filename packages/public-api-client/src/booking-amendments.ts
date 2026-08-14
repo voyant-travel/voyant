@@ -11,9 +11,9 @@ import {
 import { z } from "zod"
 
 import {
-  requestHeaders,
   type PublicApiRequestOptions,
   publicApiFetchWithValidation,
+  requestHeaders,
   type VoyantPublicApiClientOptions,
 } from "./client.js"
 

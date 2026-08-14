@@ -1,6 +1,6 @@
 import type { z } from "zod"
 
-import { parsePublicApiErrorEnvelope, type PublicApiErrorEnvelope } from "./errors.js"
+import { type PublicApiErrorEnvelope, parsePublicApiErrorEnvelope } from "./errors.js"
 
 export type VoyantPublicApiFetcher = (url: string, init?: RequestInit) => Promise<Response>
 

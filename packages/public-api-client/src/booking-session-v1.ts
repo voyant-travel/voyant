@@ -23,9 +23,9 @@ export type {
 } from "@voyant-travel/catalog-contracts/booking-engine/session-contracts"
 
 import {
-  requestHeaders,
   type PublicApiRequestOptions,
   publicApiFetchWithValidation,
+  requestHeaders,
   type VoyantPublicApiClientOptions,
 } from "./client.js"
 

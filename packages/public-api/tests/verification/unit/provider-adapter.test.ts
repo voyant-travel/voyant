@@ -4,10 +4,7 @@ import {
   type PublicApiVerificationNotificationProvider,
 } from "../../../src/verification/service.js"
 
-function fakeProvider(
-  name: string,
-  channels: string[],
-): PublicApiVerificationNotificationProvider {
+function fakeProvider(name: string, channels: string[]): PublicApiVerificationNotificationProvider {
   return {
     name,
     channels,

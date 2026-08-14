@@ -319,10 +319,7 @@ function flightRequest(intent: FlightIntent): FanOutFlightSearchOptions["request
   }
 }
 
-function stayRequest(
-  scope: PublicApiResolvedScope,
-  intent: StayIntent,
-): AvailabilitySearchRequest {
+function stayRequest(scope: PublicApiResolvedScope, intent: StayIntent): AvailabilitySearchRequest {
   const destination = {
     ...(intent.destination.query ? { query: intent.destination.query } : {}),
     ...(intent.destination.countryCode ? { countryCode: intent.destination.countryCode } : {}),
@@ -564,9 +561,7 @@ async function runPackageSource(
   }
 }
 
-function continuationMap(
-  continuation: PublicApiLiveContinuation | undefined,
-): Map<string, string> {
+function continuationMap(continuation: PublicApiLiveContinuation | undefined): Map<string, string> {
   return new Map(continuation?.sources.map(({ key, cursor }) => [key, cursor]) ?? [])
 }
 

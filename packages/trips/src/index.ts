@@ -84,15 +84,15 @@ export {
   type CreatePublicApiTripInput,
   createPublicApiTrip,
   createPublicApiTripCapability,
-  resolvePublicApiTripAccess,
-  STOREFRONT_TRIP_CAPABILITY_HEADER,
-  STOREFRONT_TRIP_CAPABILITY_TTL_MS,
   type PublicApiTripAccessOptions,
   type PublicApiTripAccessResolution,
   type PublicApiTripContext,
   type PublicApiTripHandle,
   type PublicApiTripScope,
   publicApiTripScopeSchema,
+  resolvePublicApiTripAccess,
+  STOREFRONT_TRIP_CAPABILITY_HEADER,
+  STOREFRONT_TRIP_CAPABILITY_TTL_MS,
 } from "./storefront-access.js"
 export {
   type PublicApiTripOfferResolutionInput,

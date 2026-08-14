@@ -8,9 +8,9 @@ import {
   type ProposalsNotificationsRuntime,
   proposalsNotificationsRuntimePort,
 } from "@voyant-travel/proposals/runtime-port"
-import { relationshipsPersonNotificationsRuntimePort } from "@voyant-travel/relationships/runtime-port"
 import { publicApiVerificationRuntimePort } from "@voyant-travel/public-api"
 import type { PublicApiVerificationRoutesOptions } from "@voyant-travel/public-api/verification"
+import { relationshipsPersonNotificationsRuntimePort } from "@voyant-travel/relationships/runtime-port"
 import {
   type DurableNotificationProviderRuntime,
   durableNotificationProviderPort,

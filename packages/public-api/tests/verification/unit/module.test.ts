@@ -5,8 +5,8 @@ import { describe, expect, it, vi } from "vitest"
 
 import {
   createPublicApiVerificationApiModule,
-  STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY,
   customerVerificationChallenges,
+  STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY,
 } from "../../../src/verification/index.js"
 
 describe("createPublicApiVerificationApiModule.bootstrap", () => {
@@ -70,9 +70,7 @@ describe("createPublicApiVerificationApiModule.bootstrap", () => {
       }
     }
 
-    expect(getTableName(customerVerificationChallenges)).toBe(
-      "customer_verification_challenges",
-    )
+    expect(getTableName(customerVerificationChallenges)).toBe("customer_verification_challenges")
     expect(packageJson.exports["./verification/schema"]).toBe("./src/verification/schema.ts")
     expect(packageJson.publishConfig.exports["./verification/schema"]).toMatchObject({
       import: "./dist/verification/schema.js",

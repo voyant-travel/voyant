@@ -15,11 +15,11 @@ import {
 import {
   confirmEmailVerificationChallengeSchema,
   confirmSmsVerificationChallengeSchema,
-  startEmailVerificationChallengeSchema,
-  startSmsVerificationChallengeSchema,
   publicApiVerificationConfirmResponseSchema,
   publicApiVerificationErrorResponseSchema,
   publicApiVerificationStartResponseSchema,
+  startEmailVerificationChallengeSchema,
+  startSmsVerificationChallengeSchema,
 } from "./validation.js"
 
 /**

@@ -55,8 +55,6 @@ export {
   initiateCheckoutCollectionSchema,
   initiatedCheckoutCollectionSchema,
   previewCheckoutCollectionSchema,
-  publicBookingOverviewLookupQuerySchema,
-  publicBookingOverviewSchema,
   publicApiDepartureItineraryQuerySchema,
   publicApiDepartureItinerarySchema,
   publicApiDepartureListQuerySchema,
@@ -86,6 +84,8 @@ export {
   publicApiPromotionalOfferListQuerySchema,
   publicApiPromotionalOfferSchema,
   publicApiSettingsSchema,
+  publicBookingOverviewLookupQuerySchema,
+  publicBookingOverviewSchema,
 }
 
 export const publicApiSettingsResponseSchema =
@@ -148,9 +148,7 @@ export type PublicApiDepartureItineraryRecord = z.infer<typeof publicApiDepartur
 export type PublicApiProductAvailabilitySummaryQuery = z.input<
   typeof publicApiProductAvailabilitySummaryQuerySchema
 >
-export type PublicApiProductExtensionsQuery = z.input<
-  typeof publicApiProductExtensionsQuerySchema
->
+export type PublicApiProductExtensionsQuery = z.input<typeof publicApiProductExtensionsQuerySchema>
 export type PublicApiPromotionalOfferListQuery = z.input<
   typeof publicApiPromotionalOfferListQuerySchema
 >

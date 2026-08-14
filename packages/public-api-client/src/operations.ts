@@ -1,7 +1,7 @@
 import {
-  requestHeaders,
   type PublicApiRequestOptions,
   publicApiFetchWithValidation,
+  requestHeaders,
   type VoyantPublicApiClientOptions,
   withPublicApiQueryParams,
 } from "./client.js"
@@ -14,10 +14,6 @@ import {
   initiateCheckoutCollectionSchema,
   initiatedCheckoutCollectionResponseSchema,
   type PreviewCheckoutCollectionInput,
-  type PublicBookingOverviewLookupQuery,
-  previewCheckoutCollectionSchema,
-  publicBookingOverviewLookupQuerySchema,
-  publicBookingOverviewResponseSchema,
   type PublicApiDepartureItineraryQuery,
   type PublicApiDepartureListQuery,
   type PublicApiDeparturePricePreviewInput,
@@ -26,6 +22,8 @@ import {
   type PublicApiProductAvailabilitySummaryQuery,
   type PublicApiProductExtensionsQuery,
   type PublicApiPromotionalOfferListQuery,
+  type PublicBookingOverviewLookupQuery,
+  previewCheckoutCollectionSchema,
   publicApiDepartureItineraryQuerySchema,
   publicApiDepartureItineraryResponseSchema,
   publicApiDepartureListQuerySchema,
@@ -45,6 +43,8 @@ import {
   publicApiPromotionalOfferListResponseSchema,
   publicApiPromotionalOfferResponseSchema,
   publicApiSettingsResponseSchema,
+  publicBookingOverviewLookupQuerySchema,
+  publicBookingOverviewResponseSchema,
 } from "./schemas.js"
 
 type ResolvedClientOptions = Required<Pick<VoyantPublicApiClientOptions, "baseUrl" | "fetcher">> &
@@ -183,10 +183,7 @@ export function listPublicApiProductOffers(
 ) {
   const parsed = query ? publicApiPromotionalOfferListQuerySchema.parse(query) : undefined
   return publicApiFetchWithValidation(
-    withPublicApiQueryParams(
-      `/v1/public/products/${encodeURIComponent(productId)}/offers`,
-      parsed,
-    ),
+    withPublicApiQueryParams(`/v1/public/products/${encodeURIComponent(productId)}/offers`, parsed),
     publicApiPromotionalOfferListResponseSchema,
     client,
   ).then((response) => response.data)

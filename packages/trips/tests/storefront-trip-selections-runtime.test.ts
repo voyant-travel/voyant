@@ -6,14 +6,14 @@ import { describe, expect, it, vi } from "vitest"
 import {
   type TripComponent,
   type TripEnvelope,
-  type TripSnapshot,
   type TripPublicAccess,
   type TripPublicApiBookingOperation,
+  type TripSnapshot,
   tripComponents,
   tripEnvelopes,
-  tripSnapshots,
   tripPublicAccess,
   tripPublicBookingOperations,
+  tripSnapshots,
 } from "../src/schema.js"
 import type { PublicApiTripOfferResolutionInput } from "../src/storefront-trip-offer-resolver-port.js"
 import {
@@ -455,9 +455,7 @@ describe("Storefront Trip selections runtime", () => {
         expectedRevision: 2,
         idempotencyKey: "book_trip_conflict",
       }),
-    ).rejects.toEqual(
-      new PublicApiTripBookingError("storefront_trip_booking_idempotency_conflict"),
-    )
+    ).rejects.toEqual(new PublicApiTripBookingError("storefront_trip_booking_idempotency_conflict"))
     expect(createValidatedTripSnapshotSession).toHaveBeenCalledOnce()
     expect(state.snapshots).toHaveLength(1)
   })

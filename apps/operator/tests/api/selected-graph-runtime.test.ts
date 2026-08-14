@@ -54,9 +54,6 @@ import {
   proposalsRuntimePort,
   proposalsSnapshotRuntimePort,
 } from "@voyant-travel/proposals"
-import { realtimeRuntimePort } from "@voyant-travel/realtime"
-import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
-import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import {
   publicApiCustomerPortalRuntimePort,
   publicApiIntakeRuntimePort,
@@ -64,6 +61,9 @@ import {
   publicApiPaymentLinkRuntimePort,
   publicApiVerificationRuntimePort,
 } from "@voyant-travel/public-api"
+import { realtimeRuntimePort } from "@voyant-travel/realtime"
+import { relationshipsRouteRuntimePort } from "@voyant-travel/relationships/voyant"
+import { storageMediaRuntimePort } from "@voyant-travel/storage/routes"
 import { TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY } from "@voyant-travel/trips/payment-subscribers"
 import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "@voyant-travel/trips/voyant"
 import { describe, expect, it, vi } from "vitest"

@@ -19,8 +19,8 @@ import {
 } from "@voyant-travel/db/schema/iam"
 import {
   normalizePublicApiKeyScopes,
-  STOREFRONT_SECRET_KEY_DEFAULT_SCOPES,
   type PublicApiKeyScopes,
+  STOREFRONT_SECRET_KEY_DEFAULT_SCOPES,
 } from "@voyant-travel/types/storefront-key-scopes"
 import { asc, desc, eq, sql } from "drizzle-orm"
 

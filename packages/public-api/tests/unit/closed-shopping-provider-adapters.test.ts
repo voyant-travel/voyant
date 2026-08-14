@@ -143,8 +143,7 @@ describe("closed storefront shopping market adapter", () => {
 
   it("keeps an active channel isolated to its trusted context", async () => {
     const provider = adapters({
-      active: (context) =>
-        context.channelId === storefront.channelId,
+      active: (context) => context.channelId === storefront.channelId,
     }).markets
 
     await expect(provider.listActiveMarkets(storefront)).resolves.toHaveLength(1)

@@ -198,10 +198,7 @@ describe("storefront deployment manifest", () => {
   })
 
   it("owns package-namespaced storefront fragments", () => {
-    expect([
-      publicApiCustomerPortalVoyantModule,
-      publicApiVerificationVoyantModule,
-    ]).toMatchObject([
+    expect([publicApiCustomerPortalVoyantModule, publicApiVerificationVoyantModule]).toMatchObject([
       {
         schemaVersion: "voyant.module.v1",
         id: "@voyant-travel/public-api#customer-portal",
@@ -326,9 +323,7 @@ describe("storefront deployment manifest", () => {
     expect(publicApiVerificationVoyantModule.actions).toHaveLength(2)
     expect(publicApiPaymentLinkVoyantModule.tools).toHaveLength(2)
     expect(publicApiPaymentLinkVoyantModule.actions).toHaveLength(2)
-    expect(publicApiVerificationVoyantModule.tools?.every(({ risk }) => risk === "high")).toBe(
-      true,
-    )
+    expect(publicApiVerificationVoyantModule.tools?.every(({ risk }) => risk === "high")).toBe(true)
     expect(
       publicApiPaymentLinkVoyantModule.tools?.find(
         ({ name }) => name === "create_invoice_payment_link",

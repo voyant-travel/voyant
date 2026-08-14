@@ -21,12 +21,12 @@ import { defaultPublicApiFetcher, type VoyantPublicApiClientOptions } from "./cl
 import {
   bootstrapCheckoutCollection,
   createPublicApiLead,
-  getPublicBookingOverview,
   getPublicApiDeparture,
   getPublicApiDepartureItinerary,
   getPublicApiOfferBySlug,
   getPublicApiProductAvailability,
   getPublicApiSettings,
+  getPublicBookingOverview,
   initiateCheckoutCollection,
   listPublicApiProductDepartures,
   listPublicApiProductExtensions,

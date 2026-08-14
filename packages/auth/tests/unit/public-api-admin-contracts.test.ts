@@ -114,7 +114,8 @@ describe("request contracts are closed", () => {
 
   it("refuses an unknown key on an issue request", () => {
     expect(
-      issuePublicApiKeyInputSchema.safeParse({ kind: "publishable", channelName: "Direct" }).success,
+      issuePublicApiKeyInputSchema.safeParse({ kind: "publishable", channelName: "Direct" })
+        .success,
     ).toBe(false)
   })
 
