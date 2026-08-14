@@ -14,9 +14,16 @@
 "@voyant-travel/public-api-client": major
 "@voyant-travel/voyant-connect-adapter": major
 "@voyant-travel/distribution": minor
-"@voyant-travel/hono": minor
+"@voyant-travel/hono": major
+"@voyant-travel/charters": patch
+"@voyant-travel/inventory": patch
+"@voyant-travel/legal": patch
+"@voyant-travel/operator-settings": patch
+"@voyant-travel/proposals": patch
+"@voyant-travel/public-document-delivery": patch
+"@voyant-travel/realtime": patch
 "@voyant-travel/core": minor
-"@voyant-travel/runtime": minor
+"@voyant-travel/runtime": major
 ---
 
 Retire the storefront entity: the key becomes the unit, customer accounts move to the deployment.
@@ -87,6 +94,11 @@ snake_case wire codes (`storefront_shopping_unavailable`), graph port ids, or ba
 literals. Graph port ids move separately and deliberately: `storefront.*` →
 `public-api.*`, and `trips.storefront-offer-resolver.runtime` →
 `trips.public-offer-resolver.runtime`.
+
+**Published OpenAPI:** every `/v1/public/*` operation was stamped
+`x-voyant-surface: "storefront"`; it is now `"public-api"`, across 17 documents.
+`ApiSurface` and `OperatorOpenApiDocuments` change with it — the latter's
+`storefront` key becomes `"public-api"`.
 
 The verification routes move with their mount: `/v1/public/storefront-verification/*` →
 `/v1/public/customer-verification/*`.
