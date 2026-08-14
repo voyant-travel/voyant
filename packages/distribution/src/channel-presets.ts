@@ -140,3 +140,25 @@ export function findChannelPreset(key: string): ChannelPreset | null {
 export function isPersistableChannelPresetKey(key: string): boolean {
   return PRESETS_BY_KEY.get(key)?.identity === "network"
 }
+
+/** The keys `channels.preset_key` accepts, in catalog order. */
+export const CHANNEL_NETWORK_PRESET_KEYS = CHANNEL_PRESETS.filter(
+  (preset) => preset.identity === "network",
+).map((preset) => preset.key)
+
+/**
+ * Field description for `presetKey`, built from the catalog so it cannot drift
+ * from what the refinement actually accepts.
+ *
+ * `z.toJSONSchema` drops `.refine`, so a rule expressed only there is invisible
+ * to an agent calling `create_distribution_channel` — it would learn which keys
+ * are valid by being rejected. Spelling them out here is what makes the rule
+ * readable at call time (`verify:tool-refinement-visibility`).
+ */
+export const CHANNEL_PRESET_KEY_DESCRIPTION = `Catalog entry this channel is created from, recorded as a stable identity for connectors. One of: ${CHANNEL_NETWORK_PRESET_KEYS.join(", ")}. Omit it for a channel you describe yourself. Partner-type presets (${CHANNEL_PRESETS.filter(
+  (preset) => preset.identity === "partner-type",
+)
+  .map((preset) => preset.key)
+  .join(
+    ", ",
+  )}) are rejected: they name a shape of relationship, not a counterparty, and an operator may have many channels of each.`

@@ -306,6 +306,9 @@ function ChannelSheet({
         name: channel.name,
         kind: channel.kind,
         status: channel.status,
+        // Carried so the form round-trips, though the picker is not rendered
+        // when editing — the catalog entry is fixed at creation.
+        presetKey: channel.presetKey ?? "",
         website: channel.website ?? "",
         contactName: channel.contactName ?? "",
         contactEmail: channel.contactEmail ?? "",
@@ -361,7 +364,10 @@ function ChannelSheet({
                 <Label id="channel-preset-label" htmlFor="channel-preset">
                   {page.presetLabel}
                 </Label>
-                <Select value={values.presetKey || CUSTOM_PRESET_VALUE} onValueChange={applyPreset}>
+                <Select
+                  value={values.presetKey || CUSTOM_PRESET_VALUE}
+                  onValueChange={(value) => applyPreset(value ?? CUSTOM_PRESET_VALUE)}
+                >
                   <SelectTrigger
                     id="channel-preset"
                     aria-labelledby="channel-preset-label"
