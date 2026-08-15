@@ -120,6 +120,55 @@ async function seedTour(suffix: string, sellAmountCents: number | null) {
   return { product, option, adult, single, double, catalog }
 }
 
+/**
+ * Add a second bookable option to a seeded tour, with its own room unit
+ * and its own future departure so it passes the projection's bookability
+ * check independently.
+ */
+async function seedSecondOption(productId: string, suffix: string) {
+  const [option] = await db
+    .insert(productOptions)
+    .values({ productId, name: `Option ${suffix}`, status: "active", isDefault: false })
+    .returning()
+  const [room] = await db
+    .insert(optionUnits)
+    .values({
+      optionId: option.id,
+      name: "DBL",
+      unitType: "room",
+      occupancyMin: 2,
+      occupancyMax: 2,
+      isHidden: false,
+    })
+    .returning()
+  const [startTime] = await db
+    .insert(availabilityStartTimes)
+    .values({
+      productId,
+      optionId: option.id,
+      label: "Departure",
+      startTimeLocal: "08:00",
+      durationMinutes: 480,
+      active: true,
+    })
+    .returning()
+  const departsAt = new Date(Date.now() + 45 * 24 * 60 * 60 * 1000)
+  await db.insert(availabilitySlots).values({
+    productId,
+    optionId: option.id,
+    startTimeId: startTime.id,
+    dateLocal: departsAt.toISOString().slice(0, 10),
+    startsAt: departsAt,
+    endsAt: new Date(departsAt.getTime() + 8 * 60 * 60 * 1000),
+    timezone: "Europe/Bucharest",
+    status: "open",
+    remainingPax: 30,
+    initialPax: 40,
+  })
+
+  return { option, room }
+}
+
 async function insertDefaultRule(input: {
   productId: string
   optionId: string
@@ -310,6 +359,73 @@ describe.skipIf(!DB_AVAILABLE)("price-from aggregate over occupancy pricing", ()
       optionId: tour.option.id,
       priceCatalogId: tour.catalog.id,
       occupancyPriceBasis: null,
+    })
+    await insertUnitPrice({
+      optionPriceRuleId: rule.id,
+      optionId: tour.option.id,
+      unitId: tour.double.id,
+      sellAmountCents: 33_000,
+    })
+
+    expect(await projectPricing(tour.product.id)).toEqual({
+      priceFromAmountCents: 33_000,
+      priceFromCurrency: "EUR",
+      hasPricing: true,
+    })
+  })
+
+  it("compares a supplement option's fare against another option's all-in room", async () => {
+    // Both amounts are payable, so the cheaper one is the "from" price —
+    // room prices do not outrank fares just for being room prices.
+    const tour = await seedTour("mixed-options", null)
+    const supplementRule = await insertDefaultRule({
+      productId: tour.product.id,
+      optionId: tour.option.id,
+      priceCatalogId: tour.catalog.id,
+      occupancyPriceBasis: "supplement",
+    })
+    await insertUnitPrice({
+      optionPriceRuleId: supplementRule.id,
+      optionId: tour.option.id,
+      unitId: tour.adult.id,
+      sellAmountCents: 16_500,
+    })
+    await insertUnitPrice({
+      optionPriceRuleId: supplementRule.id,
+      optionId: tour.option.id,
+      unitId: tour.single.id,
+      sellAmountCents: 10_000,
+    })
+
+    const second = await seedSecondOption(tour.product.id, "all-in")
+    const allInRule = await insertDefaultRule({
+      productId: tour.product.id,
+      optionId: second.option.id,
+      priceCatalogId: tour.catalog.id,
+      occupancyPriceBasis: "all_in",
+    })
+    await insertUnitPrice({
+      optionPriceRuleId: allInRule.id,
+      optionId: second.option.id,
+      unitId: second.room.id,
+      sellAmountCents: 30_000,
+    })
+
+    expect(await projectPricing(tour.product.id)).toEqual({
+      priceFromAmountCents: 16_500,
+      priceFromCurrency: "EUR",
+      hasPricing: true,
+    })
+  })
+
+  it("ignores the base amount of an all-in rule, which nobody is charged", async () => {
+    const tour = await seedTour("all-in-stale-base", null)
+    const rule = await insertDefaultRule({
+      productId: tour.product.id,
+      optionId: tour.option.id,
+      priceCatalogId: tour.catalog.id,
+      occupancyPriceBasis: "all_in",
+      baseSellAmountCents: 10_000,
     })
     await insertUnitPrice({
       optionPriceRuleId: rule.id,

@@ -75,8 +75,23 @@ interface PricingAggregate {
 }
 
 interface RatePlanPricing {
-  roomPrices: number[]
-  basePrices: number[]
+  /**
+   * Amounts a traveler can pay without a category or quantity condition
+   * attached — an adult or uncategorised row, no min/max quantity.
+   */
+  standardPrices: number[]
+  /**
+   * Amounts that only apply to some travelers or party sizes (child,
+   * infant, senior, quantity-gated). Used only when nothing standard is
+   * priced, so a child fare never undercuts an adult one.
+   */
+  conditionalPrices: number[]
+}
+
+/** One query's MIN over each half of `RatePlanPricing`. */
+interface PriceCandidates {
+  standard: number | null
+  conditional: number | null
 }
 
 interface ProductProjectionExtension {
@@ -94,19 +109,26 @@ const EMPTY_AGGREGATE: PricingAggregate = {
   hasPricing: false,
 }
 
+const EMPTY_RATE_PLAN_PRICING: RatePlanPricing = { standardPrices: [], conditionalPrices: [] }
+
 /**
- * Pure aggregation kernel. Room prices take precedence over base/unit
- * prices, which take precedence over the product-row fallback. Non-
- * positive values are treated as absent so stale `0` caches don't block
- * nullish fallbacks in catalog consumers.
+ * Pure aggregation kernel. Every payable amount competes in one MIN,
+ * whether it came from a room unit or a base/person unit — a product with
+ * a supplement-priced option next to an all-in one must not advertise the
+ * all-in room over a cheaper fare it really sells. Conditional amounts
+ * only apply when nothing standard is priced, and the product row is the
+ * last resort. Non-positive values are treated as absent so stale `0`
+ * caches don't block nullish fallbacks in catalog consumers.
  */
 function aggregatePricing(
   productPrice: number | null,
   currency: string | null,
-  roomPrices: ReadonlyArray<number>,
-  basePrices: ReadonlyArray<number>,
+  { standardPrices, conditionalPrices }: RatePlanPricing,
 ): PricingAggregate {
-  const min = firstPositiveMin(roomPrices) ?? firstPositiveMin(basePrices) ?? positive(productPrice)
+  const min =
+    firstPositiveMin(standardPrices) ??
+    firstPositiveMin(conditionalPrices) ??
+    positive(productPrice)
 
   if (min === null) {
     return { ...EMPTY_AGGREGATE, priceFromCurrency: currency }
@@ -140,17 +162,12 @@ export function createProductPricingProjectionExtension(
       // Without a product row currency we can't safely filter rules by
       // matching currency. Emit only the positive row-level fallback.
       if (!currency) {
-        const out = aggregatePricing(product.sellAmountCents, null, [], [])
+        const out = aggregatePricing(product.sellAmountCents, null, EMPTY_RATE_PLAN_PRICING)
         return toProjectionMap(out)
       }
 
       const ratePlans = await loadRatePlanPricing(db, productId, currency)
-      const out = aggregatePricing(
-        product.sellAmountCents,
-        currency,
-        ratePlans.roomPrices,
-        ratePlans.basePrices,
-      )
+      const out = aggregatePricing(product.sellAmountCents, currency, ratePlans)
       return toProjectionMap(out)
     },
   }
@@ -173,19 +190,19 @@ export async function loadProductPriceFrom(
 
   const ratePlans = await defaultLoadRatePlanPricing(db, productId, currency)
   const amountCents =
-    firstPositiveMin(ratePlans.roomPrices) ??
-    firstPositiveMin(ratePlans.basePrices) ??
+    firstPositiveMin(ratePlans.standardPrices) ??
+    firstPositiveMin(ratePlans.conditionalPrices) ??
     positive(product.sellAmountCents)
 
   return { amountCents, currency }
 }
 
 /**
- * Read positive prices from active default rules that have at least one
- * future bookable departure. Room prices are separated from base/unit
- * fallbacks so per-room pricing wins even when the product row contains
- * a stale zero or stale manual price — but only the room prices that are
- * complete prices rather than occupancy supplements.
+ * Read the positive amounts an active default rule with a future bookable
+ * departure actually charges: room amounts only where they are complete
+ * prices, and base/non-room-unit amounts only where the resolver still
+ * charges them. The two queries are separate because they answer different
+ * eligibility questions, but their results land in one MIN.
  */
 async function defaultLoadRatePlanPricing(
   db: AnyDrizzleDb,
@@ -193,51 +210,51 @@ async function defaultLoadRatePlanPricing(
   productCurrency: string,
 ): Promise<RatePlanPricing> {
   try {
-    const [roomPrice, basePrice] = await Promise.all([
+    const [room, base] = await Promise.all([
       fetchBookableRoomPrice(db, productId, productCurrency),
       fetchBookableBasePrice(db, productId, productCurrency),
     ])
 
     return {
-      roomPrices: roomPrice == null ? [] : [roomPrice],
-      basePrices: basePrice == null ? [] : [basePrice],
+      standardPrices: [room.standard, base.standard].filter(isNumber),
+      conditionalPrices: [room.conditional, base.conditional].filter(isNumber),
     }
   } catch (error) {
     // Slim test fixtures may omit availability_slots/product_options/
     // option_units. Keep reindex failure-isolated and fall back to the
     // product row only for those expected schema gaps.
     if (isMissingCatalogPricingDependencyError(error)) {
-      return { roomPrices: [], basePrices: [] }
+      return EMPTY_RATE_PLAN_PRICING
     }
     throw error
   }
 }
 
 /**
- * MIN across room-unit prices that are complete prices.
+ * The `active_rules` / `all_in_rules` CTE pair both price queries start
+ * from: the product's active default rules whose option is active and has
+ * a future bookable departure, and the subset of those whose room amounts
+ * are complete prices rather than occupancy supplements.
  *
- * `option_price_rules.occupancy_price_basis` decides whether a room amount
- * is the whole price (`all_in`) or a surcharge on top of the traveler
- * fares (`supplement`). A supplement is never an amount a customer can pay
- * on its own, so it must not reach a "from" badge: a 100 EUR single
- * supplement on a 165 EUR fare was being advertised as "from 100 EUR"
+ * `option_price_rules.occupancy_price_basis` decides which is which. Under
+ * `supplement` the room amount is a surcharge on top of the traveler
+ * fares, never something a customer pays on its own, so it belongs in
+ * neither the room MIN nor any "from" badge — advertising it turned a
+ * 165 EUR fare with a 100 EUR single supplement into "from 100 EUR"
  * ([#4675](https://github.com/voyant-travel/voyant/issues/4675)).
  *
- * An unset basis is resolved the way `classifyOccupancyPrice` resolves it —
- * `all_in` only when the rule prices no traveler at all. The traveler test
- * is widened past that helper's rule-level `base_sell_amount_cents` to
+ * An unset basis is resolved the way `classifyOccupancyPrice` resolves it:
+ * `all_in` only when the rule prices no traveler. The traveler test is
+ * widened past that helper's rule-level `base_sell_amount_cents` to
  * include positive per-person unit prices, because an operator can put the
- * fare on either and the room amount is a supplement in both shapes.
+ * fare on either. That is not a competing classifier — the resolver sums
+ * every requested unit and only drops the *rule's base amount* under
+ * `all_in`, so a person unit's fare is charged in both bases and a room
+ * amount is never charged instead of it.
  */
-async function fetchBookableRoomPrice(
-  db: AnyDrizzleDb,
-  productId: string,
-  productCurrency: string,
-): Promise<number | null> {
-  const rows = await executeRows(
-    db,
-    sql`
-    WITH active_rules AS (
+function bookableRules(productId: string, productCurrency: string) {
+  return sql`
+    active_rules AS (
       SELECT
         opr.id,
         opr.occupancy_price_basis::text AS occupancy_price_basis,
@@ -265,13 +282,6 @@ async function fetchBookableRoomPrice(
             AND (slot.option_id IS NULL OR slot.option_id = opr.option_id)
         )
     ),
-    -- A room amount is a complete price only when the rule's occupancy
-    -- pricing resolves to all_in; under supplement it is a surcharge added
-    -- on top of the traveler fares. Mirrors classifyOccupancyPrice from
-    -- @voyant-travel/products-contracts, widened to treat a positive
-    -- per-person unit price as a traveler fare alongside the rule's base
-    -- amount, because an unset basis is only unambiguously all_in when
-    -- nothing else on the rule prices a traveler.
     all_in_rules AS (
       SELECT rule.id
       FROM active_rules rule
@@ -296,7 +306,32 @@ async function fetchBookableRoomPrice(
               )
           )
         )
-    ),
+    )`
+}
+
+/**
+ * Shared tail of both price queries: the MIN of the standard candidates
+ * and the MIN of the conditional ones, kept apart so the aggregate can
+ * prefer a standard amount across *both* queries rather than letting one
+ * query's conditional amount win because it ran alone.
+ */
+const minCandidates = sql`
+    SELECT
+      MIN(price) FILTER (WHERE standard_price)::int AS standard_price_cents,
+      MIN(price) FILTER (WHERE NOT standard_price)::int AS conditional_price_cents
+    FROM candidates
+    WHERE price > 0`
+
+/** MIN across the room-unit prices that are complete prices. */
+async function fetchBookableRoomPrice(
+  db: AnyDrizzleDb,
+  productId: string,
+  productCurrency: string,
+): Promise<PriceCandidates> {
+  const rows = await executeRows(
+    db,
+    sql`
+    WITH ${bookableRules(productId, productCurrency)},
     candidates AS (
       SELECT
         unit_rule.sell_amount_cents AS price,
@@ -353,54 +388,34 @@ async function fetchBookableRoomPrice(
       WHERE unit_rule.active = true
         AND unit.unit_type = 'room'
     )
-    SELECT COALESCE(
-      MIN(price) FILTER (WHERE standard_price),
-      MIN(price) FILTER (WHERE NOT standard_price)
-    )::int AS price
-    FROM candidates
-    WHERE price > 0
+    ${minCandidates}
   `,
   )
 
-  return readNullableInt(rows[0], "price")
+  return readCandidates(rows[0])
 }
 
+/**
+ * MIN across the amounts a traveler is charged outside a room unit: the
+ * rule's base amount and every non-room unit price.
+ *
+ * The base amount is skipped for an `all_in` rule because the resolver
+ * zeroes it there — it is often a leftover per-person figure that nobody
+ * is charged, and advertising it would undercut the room price that is.
+ */
 async function fetchBookableBasePrice(
   db: AnyDrizzleDb,
   productId: string,
   productCurrency: string,
-): Promise<number | null> {
+): Promise<PriceCandidates> {
   const rows = await executeRows(
     db,
     sql`
-    WITH active_rules AS (
-      SELECT opr.id, opr.base_sell_amount_cents
-      FROM option_price_rules opr
-      INNER JOIN price_catalogs pc ON pc.id = opr.price_catalog_id
-      WHERE opr.product_id = ${productId}
-        AND opr.active = true
-        AND opr.is_default = true
-        AND pc.active = true
-        AND (pc.currency_code = ${productCurrency} OR pc.currency_code IS NULL)
-        AND EXISTS (
-          SELECT 1
-          FROM product_options po
-          WHERE po.id = opr.option_id
-            AND po.product_id = opr.product_id
-            AND po.status = 'active'
-        )
-        AND EXISTS (
-          SELECT 1
-          FROM availability_slots slot
-          WHERE slot.product_id = opr.product_id
-            AND slot.starts_at >= NOW()
-            AND slot.status::text IN ('open', 'planned', 'confirmed')
-            AND (slot.option_id IS NULL OR slot.option_id = opr.option_id)
-        )
-    ),
+    WITH ${bookableRules(productId, productCurrency)},
     candidates AS (
-      SELECT base_sell_amount_cents AS price, true AS standard_price
-      FROM active_rules
+      SELECT rule.traveler_base_amount_cents AS price, true AS standard_price
+      FROM active_rules rule
+      WHERE rule.id NOT IN (SELECT id FROM all_in_rules)
       UNION ALL
       SELECT
         unit_rule.sell_amount_cents AS price,
@@ -457,16 +472,22 @@ async function fetchBookableBasePrice(
       WHERE unit_rule.active = true
         AND unit.unit_type <> 'room'
     )
-    SELECT COALESCE(
-      MIN(price) FILTER (WHERE standard_price),
-      MIN(price) FILTER (WHERE NOT standard_price)
-    )::int AS price
-    FROM candidates
-    WHERE price > 0
+    ${minCandidates}
   `,
   )
 
-  return readNullableInt(rows[0], "price")
+  return readCandidates(rows[0])
+}
+
+function readCandidates(row: unknown): PriceCandidates {
+  return {
+    standard: readNullableInt(row, "standard_price_cents"),
+    conditional: readNullableInt(row, "conditional_price_cents"),
+  }
+}
+
+function isNumber(value: number | null): value is number {
+  return value !== null
 }
 
 async function executeRows(db: AnyDrizzleDb, query: ReturnType<typeof sql>): Promise<unknown[]> {
