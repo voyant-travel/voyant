@@ -52,6 +52,14 @@ const PRODUCT_PRICING_FIELD_POLICY: FieldPolicyInput[] = [
   // MIN across future bookable active default room prices first, then
   // base/unit fallbacks, then `products.sellAmountCents`. `null` when no
   // source has a positive amount.
+  //
+  // The MIN runs only over amounts a traveler could pay on their own. A
+  // room price whose rule carries an occupancy `supplement` basis is a
+  // surcharge added to the traveler fare, not a price, so it is excluded
+  // and the fare below it becomes the "from" value. Without that rule the
+  // MIN advertised a 100 EUR single supplement as the headline price of a
+  // 165 EUR tour (#4675). Room prices still win the MIN when their rule is
+  // `all_in`, where the room amount is the complete price.
   {
     path: "priceFromAmountCents",
     class: "structural",

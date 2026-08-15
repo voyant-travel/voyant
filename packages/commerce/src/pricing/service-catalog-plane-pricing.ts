@@ -13,6 +13,13 @@
  * Wire via `createProductDocumentBuilder({ extensions: [pricingExtension] })`
  * after composing `productPricingCatalogPolicy` into the registry.
  *
+ * Only amounts a traveler could actually pay on their own participate in
+ * the MIN. Room amounts under an occupancy `supplement` basis are
+ * surcharges added to the traveler fares, never standalone prices, so
+ * they are excluded — see `fetchBookableRoomPrice`. Including them
+ * advertised a single supplement as the headline price
+ * ([#4675](https://github.com/voyant-travel/voyant/issues/4675)).
+ *
  * Scope intentionally narrow:
  *   - **No schedule-aware rule resolution.** Only `is_default = true`
  *     rules contribute. Seasonal / promo rules with schedules don't
@@ -22,6 +29,11 @@
  *   - **Currency consistency.** Only rules whose catalog currency matches
  *     the product's `sellCurrency` (or whose catalog currency is null
  *     and therefore inherits the product's) are MIN'd together.
+ *   - **No supplement arithmetic.** A supplement-priced product reports
+ *     the traveler fare alone, which is the cheapest occupancy in the
+ *     standard model (the shared-room rows are supplement 0). An
+ *     operator who prices *every* occupancy at a positive supplement
+ *     gets the fare without the smallest supplement added.
  *
  * Document churn: this projection is `now()`-dependent because it only
  * considers future bookable departures. A product can move to "unpriced"
@@ -172,7 +184,8 @@ export async function loadProductPriceFrom(
  * Read positive prices from active default rules that have at least one
  * future bookable departure. Room prices are separated from base/unit
  * fallbacks so per-room pricing wins even when the product row contains
- * a stale zero or stale manual price.
+ * a stale zero or stale manual price — but only the room prices that are
+ * complete prices rather than occupancy supplements.
  */
 async function defaultLoadRatePlanPricing(
   db: AnyDrizzleDb,
@@ -200,6 +213,22 @@ async function defaultLoadRatePlanPricing(
   }
 }
 
+/**
+ * MIN across room-unit prices that are complete prices.
+ *
+ * `option_price_rules.occupancy_price_basis` decides whether a room amount
+ * is the whole price (`all_in`) or a surcharge on top of the traveler
+ * fares (`supplement`). A supplement is never an amount a customer can pay
+ * on its own, so it must not reach a "from" badge: a 100 EUR single
+ * supplement on a 165 EUR fare was being advertised as "from 100 EUR"
+ * ([#4675](https://github.com/voyant-travel/voyant/issues/4675)).
+ *
+ * An unset basis is resolved the way `classifyOccupancyPrice` resolves it —
+ * `all_in` only when the rule prices no traveler at all. The traveler test
+ * is widened past that helper's rule-level `base_sell_amount_cents` to
+ * include positive per-person unit prices, because an operator can put the
+ * fare on either and the room amount is a supplement in both shapes.
+ */
 async function fetchBookableRoomPrice(
   db: AnyDrizzleDb,
   productId: string,
@@ -209,7 +238,10 @@ async function fetchBookableRoomPrice(
     db,
     sql`
     WITH active_rules AS (
-      SELECT opr.id
+      SELECT
+        opr.id,
+        opr.occupancy_price_basis::text AS occupancy_price_basis,
+        COALESCE(opr.base_sell_amount_cents, 0) AS traveler_base_amount_cents
       FROM option_price_rules opr
       INNER JOIN price_catalogs pc ON pc.id = opr.price_catalog_id
       WHERE opr.product_id = ${productId}
@@ -233,6 +265,38 @@ async function fetchBookableRoomPrice(
             AND (slot.option_id IS NULL OR slot.option_id = opr.option_id)
         )
     ),
+    -- A room amount is a complete price only when the rule's occupancy
+    -- pricing resolves to all_in; under supplement it is a surcharge added
+    -- on top of the traveler fares. Mirrors classifyOccupancyPrice from
+    -- @voyant-travel/products-contracts, widened to treat a positive
+    -- per-person unit price as a traveler fare alongside the rule's base
+    -- amount, because an unset basis is only unambiguously all_in when
+    -- nothing else on the rule prices a traveler.
+    all_in_rules AS (
+      SELECT rule.id
+      FROM active_rules rule
+      WHERE rule.occupancy_price_basis = 'all_in'
+        OR (
+          rule.occupancy_price_basis IS NULL
+          AND rule.traveler_base_amount_cents <= 0
+          AND NOT EXISTS (
+            SELECT 1
+            FROM option_unit_price_rules traveler_rule
+            INNER JOIN option_units traveler_unit
+              ON traveler_unit.id = traveler_rule.unit_id
+            LEFT JOIN option_unit_tiers traveler_tier
+              ON traveler_tier.option_unit_price_rule_id = traveler_rule.id
+             AND traveler_tier.active = true
+            WHERE traveler_rule.option_price_rule_id = rule.id
+              AND traveler_rule.active = true
+              AND traveler_unit.unit_type = 'person'
+              AND (
+                COALESCE(traveler_rule.sell_amount_cents, 0) > 0
+                OR COALESCE(traveler_tier.sell_amount_cents, 0) > 0
+              )
+          )
+        )
+    ),
     candidates AS (
       SELECT
         unit_rule.sell_amount_cents AS price,
@@ -249,7 +313,7 @@ async function fetchBookableRoomPrice(
           AND COALESCE(unit_rule.min_quantity, 0) <= 1
           AND COALESCE(unit_rule.max_quantity, 0) = 0
         ) AS standard_price
-      FROM active_rules rule
+      FROM all_in_rules rule
       INNER JOIN option_unit_price_rules unit_rule
         ON unit_rule.option_price_rule_id = rule.id
       INNER JOIN option_units unit
@@ -276,7 +340,7 @@ async function fetchBookableRoomPrice(
           AND tier.min_quantity <= 1
           AND COALESCE(tier.max_quantity, 0) = 0
         ) AS standard_price
-      FROM active_rules rule
+      FROM all_in_rules rule
       INNER JOIN option_unit_price_rules unit_rule
         ON unit_rule.option_price_rule_id = rule.id
       INNER JOIN option_units unit
