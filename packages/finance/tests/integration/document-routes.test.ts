@@ -84,6 +84,26 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
     failNextGeneration = false
   })
 
+
+  /**
+   * `invoices.booking_id` is `notNull()`, so an invoice fixture needs a booking
+   * to hang off. These three cases care only about the rendition, not the
+   * booking, hence one throwaway per invoice.
+   */
+  async function seedBookingForInvoice() {
+    const [booking] = await db
+      .insert(bookings)
+      .values({
+        status: "confirmed",
+        bookingNumber: `BKG-${Math.floor(Math.random() * 1_000_000_000)}`,
+        sellCurrency: "EUR",
+        sellAmountCents: 5000,
+        startDate: "2026-06-01",
+      })
+      .returning()
+    return booking!
+  }
+
   it("generates and then regenerates a ready invoice rendition", async () => {
     const [booking] = await db
       .insert(bookings)
@@ -178,10 +198,13 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
     expect(renderedEvents).toEqual([
       expect.objectContaining({
         name: "invoice.rendered",
-        metadata: {
+        // `objectContaining`: the envelope's metadata gained `eventId`, and
+        // pinning it exactly asserted the envelope's shape rather than the
+        // event this test is about.
+        metadata: expect.objectContaining({
           category: "internal",
           source: "service",
-        },
+        }),
         data: expect.objectContaining({
           invoiceId: invoice.id,
           invoiceType: "invoice",
@@ -194,10 +217,13 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
       }),
       expect.objectContaining({
         name: "invoice.rendered",
-        metadata: {
+        // `objectContaining`: the envelope's metadata gained `eventId`, and
+        // pinning it exactly asserted the envelope's shape rather than the
+        // event this test is about.
+        metadata: expect.objectContaining({
           category: "internal",
           source: "service",
-        },
+        }),
         data: expect.objectContaining({
           invoiceId: invoice.id,
           invoiceType: "invoice",
@@ -212,10 +238,13 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
     expect(documentEvents).toEqual([
       expect.objectContaining({
         name: "invoice.document.generated",
-        metadata: {
+        // `objectContaining`: the envelope's metadata gained `eventId`, and
+        // pinning it exactly asserted the envelope's shape rather than the
+        // event this test is about.
+        metadata: expect.objectContaining({
           category: "internal",
           source: "service",
-        },
+        }),
         data: expect.objectContaining({
           invoiceId: invoice.id,
           invoiceType: "invoice",
@@ -225,10 +254,13 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
       }),
       expect.objectContaining({
         name: "invoice.document.generated",
-        metadata: {
+        // `objectContaining`: the envelope's metadata gained `eventId`, and
+        // pinning it exactly asserted the envelope's shape rather than the
+        // event this test is about.
+        metadata: expect.objectContaining({
           category: "internal",
           source: "service",
-        },
+        }),
         data: expect.objectContaining({
           invoiceId: invoice.id,
           invoiceType: "invoice",
@@ -249,10 +281,12 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
   })
 
   it("binds a ready rendition artifact and emits invoice.rendered", async () => {
+    const seededBooking = await seedBookingForInvoice()
     const [invoice] = await db
       .insert(invoices)
       .values({
         invoiceNumber: "INV-BIND-1",
+        bookingId: seededBooking.id,
         invoiceType: "invoice",
         status: "issued",
         currency: "EUR",
@@ -306,10 +340,13 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
     expect(events).toEqual([
       expect.objectContaining({
         name: "invoice.rendered",
-        metadata: {
+        // `objectContaining`: the envelope's metadata gained `eventId`, and
+        // pinning it exactly asserted the envelope's shape rather than the
+        // event this test is about.
+        metadata: expect.objectContaining({
           category: "internal",
           source: "service",
-        },
+        }),
         data: {
           invoiceId: invoice.id,
           invoiceStatus: "issued",
@@ -326,10 +363,12 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
   })
 
   it("does not emit rendition completion events when generation fails", async () => {
+    const seededBooking = await seedBookingForInvoice()
     const [invoice] = await db
       .insert(invoices)
       .values({
         invoiceNumber: "INV-FAIL-1",
+        bookingId: seededBooking.id,
         invoiceType: "invoice",
         status: "issued",
         currency: "EUR",
@@ -361,10 +400,12 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
   })
 
   it("preserves ready URL-only rendition artifacts", async () => {
+    const seededBooking = await seedBookingForInvoice()
     const [invoice] = await db
       .insert(invoices)
       .values({
         invoiceNumber: "INV-URL-1",
+        bookingId: seededBooking.id,
         invoiceType: "invoice",
         status: "issued",
         currency: "EUR",
