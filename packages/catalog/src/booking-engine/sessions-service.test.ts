@@ -1562,6 +1562,7 @@ describe("Booking Session v1 owned tracer", () => {
       // quote record here; a narrower stub degrades it to `{ id }` and the
       // fingerprint read below stops typechecking.
       setPrice(_next: typeof BASE_PRICING) {},
+      setPricePerCompose(_next: (() => PricingBreakdownV1) | null) {},
       setRequirements(_next: BookingRequirementsV1) {},
     }
     const { session, capability, quote, hold } = await createQuoteAndHold(harness)
