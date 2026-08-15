@@ -465,11 +465,21 @@ export const financeReferenceDataService = {
     db: PostgresJsDatabase,
     id: string,
     input: SupersedeInvoiceExternalRefInput,
+    // Reference ids are globally addressable, so a route that resolves one from
+    // its own path must also prove it belongs to the invoice in that path.
+    // Without this, superseding under invoice A can mutate a reference on
+    // invoice B — releasing B's duplicate-document guard from a request that
+    // never named it.
+    scope: { invoiceId?: string } = {},
   ) {
     const [existing] = await db
       .select()
       .from(invoiceExternalRefs)
-      .where(eq(invoiceExternalRefs.id, id))
+      .where(
+        scope.invoiceId
+          ? and(eq(invoiceExternalRefs.id, id), eq(invoiceExternalRefs.invoiceId, scope.invoiceId))
+          : eq(invoiceExternalRefs.id, id),
+      )
       .limit(1)
     if (!existing) return null
 

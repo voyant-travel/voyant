@@ -281,21 +281,38 @@ export function formatExternalDocumentLabel(document: {
  * cancelled document, and blindly overwriting it would lose the identity of the
  * document the operator's accounting system still has on file.
  */
-export const supersedeInvoiceExternalRefSchema = z.object({
-  reason: z.string().trim().min(3).max(1000),
-  replacement: z
-    .object({
-      externalId: z.string().trim().min(1).max(255).optional().nullable(),
-      externalNumber: z.string().trim().min(1).max(255).optional().nullable(),
-      externalUrl: z.string().trim().min(1).max(1000).optional().nullable(),
-      status: z.string().trim().min(1).max(100).optional().nullable(),
-      series: z.string().trim().min(1).max(100).optional().nullable(),
-    })
-    .optional()
-    .describe(
-      "The document that replaces the cancelled one. Omit it when the cancellation stands on its own — the reference is then marked cancelled and the booking may be invoiced again.",
-    ),
-})
+export const supersedeInvoiceExternalRefSchema = z
+  .object({
+    reason: z.string().trim().min(3).max(1000),
+    replacement: z
+      .object({
+        externalId: z.string().trim().min(1).max(255).optional().nullable(),
+        externalNumber: z.string().trim().min(1).max(255).optional().nullable(),
+        externalUrl: z.string().trim().min(1).max(1000).optional().nullable(),
+        status: z.string().trim().min(1).max(100).optional().nullable(),
+        series: z.string().trim().min(1).max(100).optional().nullable(),
+      })
+      .optional()
+      .describe(
+        "The document that replaces the cancelled one. Omit it when the cancellation stands on its own — the reference is then marked cancelled and the booking may be invoiced again.",
+      ),
+  })
+  .superRefine((value, ctx) => {
+    if (!value.replacement) return
+    // A replacement with no identity is the worst of both: the reference stops
+    // being marked cancelled, so it reads as live, while carrying no document
+    // number the guard can recognise — which silently releases the guard
+    // without anyone having said the old document was retracted. Omitting
+    // `replacement` is how you say "cancelled, nothing replaces it".
+    if (!value.replacement.externalId && !value.replacement.externalNumber) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message:
+          "A replacement document needs an externalId or an externalNumber. Omit `replacement` to record the cancellation on its own.",
+        path: ["replacement"],
+      })
+    }
+  })
 
 export const invoiceFromBookingSchema = z
   .object({

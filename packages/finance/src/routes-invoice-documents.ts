@@ -412,10 +412,12 @@ const externalRefRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationH
     return row ? c.json({ data: row }, 201) : c.json({ error: "Invoice not found" }, 404)
   })
   .openapi(supersedeExternalRefRoute, async (c) => {
+    const { id, refId } = c.req.valid("param")
     const row = await financeService.supersedeInvoiceExternalRef(
       c.get("db"),
-      c.req.valid("param").refId,
+      refId,
       c.req.valid("json"),
+      { invoiceId: id },
     )
     return row ? c.json({ data: row }, 200) : c.json({ error: "External ref not found" }, 404)
   })

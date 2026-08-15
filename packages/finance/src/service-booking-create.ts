@@ -2972,7 +2972,16 @@ export async function createBookingMutation(
   }
 
   const paidSchedules = (input.paymentSchedules ?? []).filter(isAlreadyPaidSchedule)
-  const shouldCreateInvoice = documentGeneration.invoiceDocument || paidSchedules.length > 0
+  // Declaring an external document is itself a reason to write the invoice.
+  // Without this, `externalInvoice` on a create that asked for no invoice
+  // document and has no already-paid schedule is silently dropped: no invoice,
+  // no external reference, and therefore nothing for the duplicate guard to
+  // find — so the next issuance mirrors exactly the document this field exists
+  // to prevent.
+  const shouldCreateInvoice =
+    documentGeneration.invoiceDocument ||
+    paidSchedules.length > 0 ||
+    documentGeneration.externalInvoice !== undefined
 
   if (shouldCreateInvoice) {
     const items = await tx

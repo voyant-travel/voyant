@@ -2,6 +2,7 @@ import {
   formatExternalDocumentLabel,
   invoiceFromBookingSchema,
   isCancelledExternalDocumentStatus,
+  supersedeInvoiceExternalRefSchema,
 } from "@voyant-travel/finance-contracts"
 import { describe, expect, it } from "vitest"
 
@@ -160,6 +161,45 @@ describe("invoiceFromBookingSchema external-document refinements", () => {
     expect(
       invoiceFromBookingSchema.safeParse({ ...base, acknowledgeExistingExternalDocument: false })
         .success,
+    ).toBe(false)
+  })
+})
+
+describe("supersedeInvoiceExternalRefSchema", () => {
+  it("accepts a cancellation on its own", () => {
+    expect(
+      supersedeInvoiceExternalRefSchema.safeParse({ reason: "Cancelled in the provider." }).success,
+    ).toBe(true)
+  })
+
+  it("accepts a replacement that names a document", () => {
+    expect(
+      supersedeInvoiceExternalRefSchema.safeParse({
+        reason: "Reissued under the correct series.",
+        replacement: { externalNumber: "1043" },
+      }).success,
+    ).toBe(true)
+  })
+
+  it("rejects a replacement with no identity", () => {
+    // An empty replacement leaves the reference reading as live while carrying
+    // no number the guard can match, which releases the guard without anyone
+    // recording that the old document was retracted.
+    const result = supersedeInvoiceExternalRefSchema.safeParse({
+      reason: "Cancelled in the provider.",
+      replacement: {},
+    })
+
+    expect(result.success).toBe(false)
+    expect(result.error?.issues.map((issue) => issue.path.join("."))).toContain("replacement")
+  })
+
+  it("rejects a replacement carrying only a status", () => {
+    expect(
+      supersedeInvoiceExternalRefSchema.safeParse({
+        reason: "Cancelled in the provider.",
+        replacement: { status: "issued" },
+      }).success,
     ).toBe(false)
   })
 })

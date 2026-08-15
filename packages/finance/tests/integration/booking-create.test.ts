@@ -6004,6 +6004,74 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       expect(outcome.status).toBe("issued")
     })
 
+    it("records the declaration even when no invoice document was asked for", async () => {
+      // The declaration is itself a reason to write the invoice. Dropping it
+      // because `invoiceDocument` defaulted to false would leave no external
+      // reference, so the guard would find nothing and the next issuance would
+      // mirror exactly the document this field exists to prevent.
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-external-only", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        documentGeneration: { externalInvoice: alreadyIssuedBySmartBill },
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, result.value.bookingId))
+      expect(invoice).toBeDefined()
+      expect(
+        await db
+          .select()
+          .from(invoiceExternalRefs)
+          .where(eq(invoiceExternalRefs.invoiceId, invoice!.id)),
+      ).toMatchObject([{ provider: "mapp_smartbill", externalNumber: "1042" }])
+
+      // And the guard can now see it.
+      const outcome = await issueInvoiceFromBookingCommand(db, {
+        bookingId: result.value.bookingId,
+        invoiceNumber: "INV-EXTERNAL-ONLY",
+        issueDate: "2026-08-15",
+        dueDate: "2026-08-15",
+        invoiceType: "invoice",
+      })
+      expect(outcome.status).toBe("duplicate_external_document")
+    })
+
+    it("refuses to supersede a reference belonging to another invoice", async () => {
+      // Reference ids are globally addressable, so the route must prove the
+      // reference belongs to the invoice in its own path — otherwise a request
+      // naming invoice A can release invoice B's guard.
+      const { invoice } = await backFillAlreadyInvoicedBooking(
+        "finance-booking-create-external-scope",
+        "BT-EXTERNAL-6",
+      )
+      const [ref] = await db
+        .select()
+        .from(invoiceExternalRefs)
+        .where(eq(invoiceExternalRefs.invoiceId, invoice.id))
+
+      await expect(
+        financeService.supersedeInvoiceExternalRef(
+          db,
+          ref!.id,
+          { reason: "Cancelled in SmartBill." },
+          { invoiceId: "inv_someone_elses" },
+        ),
+      ).resolves.toBeNull()
+
+      // Untouched: still live, still guarding.
+      const [unchanged] = await db
+        .select()
+        .from(invoiceExternalRefs)
+        .where(eq(invoiceExternalRefs.id, ref!.id))
+      expect(unchanged).toMatchObject({ status: "recorded_externally", externalNumber: "1042" })
+    })
+
     it("repoints a reference at the document that replaced the cancelled one", async () => {
       const { invoice } = await backFillAlreadyInvoicedBooking(
         "finance-booking-create-external-repoint",
