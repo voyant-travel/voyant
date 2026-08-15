@@ -4,7 +4,11 @@ import {
   type BookingSessionJourneyContinuation,
   commitBookingSessionJourneyV1,
 } from "./session-journey.js"
-import { BookingSessionJourneyError, unsatisfiedBookingRequirements } from "./session-outcomes.js"
+import {
+  BookingSessionJourneyError,
+  bookingSessionContinuationIsStale,
+  unsatisfiedBookingRequirements,
+} from "./session-outcomes.js"
 import { createBookingJourneyApi } from "./use-booking-journey-api.js"
 
 const REQUIREMENTS = {
@@ -75,6 +79,46 @@ describe("Booking Session v1 journey", () => {
       "manual-booking:stable:commit",
     ])
     expect(calls[2]?.body.quantity).toBe(2)
+  })
+
+  it("sends no Hold quantity when the host states none", async () => {
+    // The server derives the party size from the selection it was just sent.
+    // Inventing a `1` here is what made a two-traveler checkout unholdable —
+    // the server rejected its own invented quantity and asked for a retry that
+    // sent the same `1` again (voyant#4655).
+    const calls: Array<{ url: string; body: Record<string, unknown> }> = []
+    const fetcher = vi.fn(async (url: string, init?: RequestInit) => {
+      calls.push({ url, body: JSON.parse(String(init?.body)) as Record<string, unknown> })
+      if (url.endsWith("/booking-sessions")) {
+        return json({ kind: "session_created", session: session() })
+      }
+      if (url.endsWith("/quote")) return json(quote())
+      if (url.endsWith("/hold")) return json(hold())
+      return json({
+        kind: "commit_result",
+        outcome: {
+          kind: "committed",
+          nextAction: "none",
+          booking: { id: "book_1", status: "confirmed" },
+          allocationIds: ["bkac_1"],
+          consumedSessionId: "bses_1",
+          consumedQuoteId: "bsqu_1",
+          convertedHoldId: "bshd_1",
+        },
+      })
+    })
+
+    await expect(
+      commitBookingSessionJourneyV1(createBookingJourneyApi({ baseUrl: "", fetcher }), {
+        target: { kind: "product", productId: "prod_1" },
+        selection: { configure: { pax: { adult: 3 } } },
+        idempotencyKey: "storefront:stable",
+      }),
+    ).resolves.toEqual({ kind: "committed", bookingId: "book_1" })
+
+    const holdBody = calls.find((call) => call.url.endsWith("/hold"))?.body
+    expect(holdBody).toBeDefined()
+    expect("quantity" in (holdBody ?? {})).toBe(false)
   })
 
   it("returns the same Commit continuation when payment is required", async () => {
@@ -259,6 +303,48 @@ describe("Booking Session v1 journey", () => {
       "/v1/admin/catalog/booking-sessions/bses_1/commit",
       expect.objectContaining({ credentials: "include", method: "POST" }),
     )
+  })
+
+  it("classifies a failed Commit by its outcome rather than as unknown", async () => {
+    // The Commit envelope is `commit_result`, not `rejected`, so a mapper that
+    // only reads rejections hands the operator the generic fallback for a
+    // fully-structured failure (voyant#4662).
+    const fetcher = vi.fn(async (url: string) => {
+      if (url.endsWith("/booking-sessions")) {
+        return json({ kind: "session_created", session: session() })
+      }
+      if (url.endsWith("/quote")) return json(quote())
+      if (url.endsWith("/hold")) return json(hold())
+      return json({
+        kind: "commit_result",
+        outcome: {
+          kind: "quote_failure",
+          nextAction: "request_fresh_quote",
+          reason: "superseded",
+        },
+      })
+    })
+
+    const failure = await commitBookingSessionJourneyV1(
+      createBookingJourneyApi({ baseUrl: "", fetcher }),
+      {
+        target: { kind: "product", productId: "prod_1" },
+        selection: {},
+        quantity: 1,
+        idempotencyKey: "manual-booking:commit-quote-failure",
+      },
+    ).catch((error: unknown) => error)
+
+    expect(failure).toBeInstanceOf(BookingSessionJourneyError)
+    const error = failure as BookingSessionJourneyError
+    expect(error.recovery).toBe("quoteChanged")
+    expect(error.message).toBe("booking_session_quoteChanged")
+    // `rejected` is the only envelope carrying a lifecycle error, so this stays
+    // null — the Commit outcome is where the cause lives.
+    expect(error.error).toBeNull()
+    expect(error.commitOutcome).toMatchObject({ kind: "quote_failure", reason: "superseded" })
+    expect(error.nextAction).toBe("request_fresh_quote")
+    expect(bookingSessionContinuationIsStale(error.outcome)).toBe(true)
   })
 
   it("exposes typed recovery without embedding UI copy", async () => {
