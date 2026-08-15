@@ -55,6 +55,7 @@ export type BookingsUiCreateListMessages = {
         requirementsChanged: string
         commitRejected: string
         commitInFlight: string
+        alreadyCommitted: string
         supplierUnavailable: string
         proposalAcceptanceRequired: string
         notAuthorized: string

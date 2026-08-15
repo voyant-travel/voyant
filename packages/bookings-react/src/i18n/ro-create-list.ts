@@ -69,6 +69,8 @@ export const bookingsUiRoCreateList = {
         commitRejected: "Rezervarea nu a putut fi finalizata din selectia curenta.",
         commitInFlight:
           "Rezervarea este inca in curs de confirmare. Nu o trimite din nou - reincarca peste un moment pentru a vedea rezultatul.",
+        alreadyCommitted:
+          "Aceasta sesiune a fost deja finalizata printr-o alta incercare. Cauta rezervarea creata in loc sa trimiti din nou.",
         supplierUnavailable:
           "Furnizorul nu a putut confirma rezervarea. Alege alta disponibilitate sau trimite cazul spre verificare manuala.",
         proposalAcceptanceRequired:

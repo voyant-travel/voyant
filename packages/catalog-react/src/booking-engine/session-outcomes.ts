@@ -168,6 +168,7 @@ export type BookingSessionRecoveryV1 =
   | "requirementsChanged"
   | "commitRejected"
   | "commitInFlight"
+  | "alreadyCommitted"
   | "supplierUnavailable"
   | "proposalAcceptanceRequired"
   | "notAuthorized"
@@ -231,8 +232,16 @@ export function bookingSessionRecoveryV1(
      */
     case "payment_in_flight":
     case "supplier_operation_active":
-    case "commit_already_consumed":
       return "commitInFlight"
+    /**
+     * Terminal, not in flight. The server reaches this only after looking for
+     * a commit under *this* caller's idempotency key and finding none, so the
+     * Session was consumed by some other attempt: there is no result to wait
+     * for and no result this continuation can retrieve. The remedy is to go
+     * find the booking that already exists.
+     */
+    case "commit_already_consumed":
+      return "alreadyCommitted"
     case "not_authorized":
     case "capability_required":
     case "capability_scope_required":

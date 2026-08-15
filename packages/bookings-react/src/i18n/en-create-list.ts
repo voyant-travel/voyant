@@ -68,6 +68,8 @@ export const bookingsUiEnCreateList = {
         commitRejected: "The booking could not be committed from the current selection.",
         commitInFlight:
           "This booking is still being confirmed. Do not submit it again — refresh in a moment to see the result.",
+        alreadyCommitted:
+          "This booking session was already completed by another attempt. Find the booking it created instead of submitting again.",
         supplierUnavailable:
           "The supplier could not confirm this booking. Choose different inventory or send it for manual review.",
         proposalAcceptanceRequired:

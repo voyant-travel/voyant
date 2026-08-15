@@ -163,6 +163,26 @@ describe("bookingSessionRecoveryV1 over the commit_result envelope", () => {
   })
 })
 
+describe("bookingSessionRecoveryV1 over the rejected envelope", () => {
+  it("separates an already-consumed Session from work still in flight", () => {
+    // The server only answers `commit_already_consumed` after looking for a
+    // commit under *this* caller's key and finding none, so nothing is coming
+    // and waiting is not the remedy — the booking exists under another attempt.
+    expect(
+      bookingSessionRecoveryV1({
+        kind: "rejected",
+        error: { kind: "commit_already_consumed", nextAction: "return_idempotent_result" },
+      } as BookingSessionOutcomeV1),
+    ).toBe("alreadyCommitted")
+    expect(
+      bookingSessionRecoveryV1({
+        kind: "rejected",
+        error: { kind: "payment_in_flight", nextAction: "await_payment_outcome" },
+      } as BookingSessionOutcomeV1),
+    ).toBe("commitInFlight")
+  })
+})
+
 describe("the unknown fallback", () => {
   it("is loud outside production for a shape this build does not know", () => {
     const warn = vi.spyOn(console, "warn").mockImplementation(() => {})
