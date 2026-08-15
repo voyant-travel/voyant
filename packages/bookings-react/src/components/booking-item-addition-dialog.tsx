@@ -29,7 +29,7 @@ import {
   useBookingAmendmentFlow,
 } from "../hooks/use-booking-amendments.js"
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
-import { getBookableDepartureSlots } from "./booking-create-utils.js"
+import { formatDepartureLabel, getMoveTargetDepartureSlots } from "./booking-create-utils.js"
 import { ProductPickerSection, type ProductPickerValue } from "./product-picker-section.js"
 
 export interface BookingItemAdditionDialogProps {
@@ -72,6 +72,12 @@ export function BookingItemAdditionDialog({
   const [reason, setReason] = useState("")
   const [quoted, setQuoted] = useState<BookingAmendmentRecord | null>(null)
   const [blocked, setBlocked] = useState<RosterPreviewResult | null>(null)
+  /**
+   * A request that never returned an answer at all. Distinct from
+   * `blocked`, which is the server telling us why it will not quote —
+   * without this, a failed call left the sheet looking untouched.
+   */
+  const [failed, setFailed] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
 
   const isSourced = Boolean(product.sourceKind) && product.sourceKind !== "owned"
@@ -101,11 +107,16 @@ export function BookingItemAdditionDialog({
 
   const slots = useMemo(
     () =>
-      getBookableDepartureSlots(slotsQuery.data?.data ?? [], {
+      // Capacity-filtered like the move picker: offering a sold-out
+      // departure only to have the server refuse the quote wastes the
+      // call the operator is on.
+      getMoveTargetDepartureSlots(slotsQuery.data?.data ?? [], {
         nowIso: new Date().toISOString(),
         optionId: product.optionId,
+        quantity,
+        currentSlotId: null,
       }),
-    [slotsQuery.data?.data, product.optionId],
+    [slotsQuery.data?.data, product.optionId, quantity],
   )
   const selectedSlot = slots.find((slot) => slot.id === slotId) ?? null
 
@@ -143,21 +154,31 @@ export function BookingItemAdditionDialog({
 
   async function onQuote() {
     setBlocked(null)
-    const result = await previewItemAddition.mutateAsync({
-      input: {
-        expectedBookingRevision: bookingRevision,
-        reason: reason.trim(),
-        addition: {
-          type: "item_add",
-          productId: product.productId,
-          optionId: resolvedOptionId,
-          optionUnitId: unitId === UNIT_NONE ? null : unitId,
-          availabilitySlotId: slotId,
-          quantity,
+    setFailed(null)
+    let result: RosterPreviewResult
+    try {
+      result = await previewItemAddition.mutateAsync({
+        input: {
+          expectedBookingRevision: bookingRevision,
+          reason: reason.trim(),
+          addition: {
+            type: "item_add",
+            productId: product.productId,
+            optionId: resolvedOptionId,
+            optionUnitId: unitId === UNIT_NONE ? null : unitId,
+            availabilitySlotId: slotId,
+            quantity,
+          },
         },
-      },
-      idempotencyKey: `item-add-${bookingId}-${attempt}`,
-    })
+        idempotencyKey: `item-add-${bookingId}-${attempt}`,
+      })
+    } catch (error) {
+      // The request never produced an answer — a 500, a dropped
+      // connection. Saying so beats a button that flashes and leaves the
+      // sheet looking untouched.
+      setFailed(error instanceof Error ? error.message : messages.blocked.generic)
+      return
+    }
     if (result.status === "ok") {
       setQuoted(result.amendment)
       return
@@ -274,6 +295,7 @@ export function BookingItemAdditionDialog({
             />
           </div>
 
+          {failed ? <Notice text={failed} /> : null}
           {blocked ? <Notice text={blockedText(blocked, messages.blocked)} /> : null}
 
           {quoted ? (
@@ -323,28 +345,6 @@ export function BookingItemAdditionDialog({
       </SheetContent>
     </Sheet>
   )
-}
-
-/**
- * A departure as an operator says it out loud — "Aug 16, 2026 · 12 left" —
- * not the ISO instant the API returns. The raw timestamp is unreadable at
- * the speed someone takes a phone call.
- */
-export function formatDepartureLabel(
-  slot: { startsAt?: string | null; id: string; unlimited?: boolean; remainingPax?: number | null },
-  formatDate: (value: string, options?: Intl.DateTimeFormatOptions) => string,
-  messages: { fields: { seatsLeft: string } },
-): string {
-  if (!slot.startsAt) return slot.id
-  const date = formatDate(slot.startsAt, {
-    year: "numeric",
-    month: "short",
-    day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-  })
-  if (slot.unlimited || typeof slot.remainingPax !== "number") return date
-  return `${date} · ${messages.fields.seatsLeft.replace("{count}", String(slot.remainingPax))}`
 }
 
 function blockedText(

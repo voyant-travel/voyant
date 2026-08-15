@@ -387,3 +387,25 @@ export function itemLinesToRows(
 export function getSelectedSharedRoomUnitId(quantities: Record<string, number>): string | null {
   return Object.entries(quantities).find(([, quantity]) => quantity > 0)?.[0] ?? null
 }
+
+/**
+ * A departure as an operator says it out loud — "Aug 16, 2026 · 12 left" —
+ * not the ISO instant the API returns. The raw timestamp is unreadable at
+ * the speed someone takes a phone call.
+ */
+export function formatDepartureLabel(
+  slot: { startsAt?: string | null; id: string; unlimited?: boolean; remainingPax?: number | null },
+  formatDate: (value: string, options?: Intl.DateTimeFormatOptions) => string,
+  messages: { fields: { seatsLeft: string } },
+): string {
+  if (!slot.startsAt) return slot.id
+  const date = formatDate(slot.startsAt, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+  if (slot.unlimited || typeof slot.remainingPax !== "number") return date
+  return `${date} · ${messages.fields.seatsLeft.replace("{count}", String(slot.remainingPax))}`
+}

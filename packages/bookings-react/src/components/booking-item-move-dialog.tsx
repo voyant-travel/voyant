@@ -28,8 +28,7 @@ import {
 } from "../hooks/use-booking-amendments.js"
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
 import type { BookingItemRecord } from "../schemas.js"
-import { getMoveTargetDepartureSlots } from "./booking-create-utils.js"
-import { formatDepartureLabel } from "./booking-item-addition-dialog.js"
+import { formatDepartureLabel, getMoveTargetDepartureSlots } from "./booking-create-utils.js"
 
 export interface BookingItemMoveDialogProps {
   open: boolean
@@ -73,6 +72,12 @@ export function BookingItemMoveDialog({
   const [reason, setReason] = useState("")
   const [quoted, setQuoted] = useState<BookingAmendmentRecord | null>(null)
   const [blocked, setBlocked] = useState<RosterPreviewResult | null>(null)
+  /**
+   * A request that never returned an answer at all. Distinct from
+   * `blocked`, which is the server telling us why it will not quote —
+   * without this, a failed call left the sheet looking untouched.
+   */
+  const [failed, setFailed] = useState<string | null>(null)
   const [attempt, setAttempt] = useState(0)
 
   const slotsQuery = useSlots({
@@ -116,20 +121,30 @@ export function BookingItemMoveDialog({
   async function onQuote() {
     if (!slotId) return
     setBlocked(null)
-    const result = await previewItemMove.mutateAsync({
-      input: {
-        expectedBookingRevision: bookingRevision,
-        reason: reason.trim(),
-        move: {
-          type: "item_move",
-          bookingItemId: item.id,
-          availabilitySlotId: slotId,
-          changeFeeCents,
-          refundHandling,
+    setFailed(null)
+    let result: RosterPreviewResult
+    try {
+      result = await previewItemMove.mutateAsync({
+        input: {
+          expectedBookingRevision: bookingRevision,
+          reason: reason.trim(),
+          move: {
+            type: "item_move",
+            bookingItemId: item.id,
+            availabilitySlotId: slotId,
+            changeFeeCents,
+            refundHandling,
+          },
         },
-      },
-      idempotencyKey: `item-move-${item.id}-${attempt}`,
-    })
+        idempotencyKey: `item-move-${item.id}-${attempt}`,
+      })
+    } catch (error) {
+      // The request never produced an answer — a 500, a dropped
+      // connection. Saying so beats a button that flashes and leaves the
+      // sheet looking untouched.
+      setFailed(error instanceof Error ? error.message : messages.blocked.generic)
+      return
+    }
     if (result.status === "ok") {
       setQuoted(result.amendment)
       return
@@ -253,6 +268,7 @@ export function BookingItemMoveDialog({
             />
           </div>
 
+          {failed ? <Notice text={failed} /> : null}
           {blocked ? <Notice text={blockedText(blocked, messages.blocked)} /> : null}
           {quoted ? <MoveQuote amendment={quoted} formatCurrency={formatCurrency} /> : null}
         </SheetBody>

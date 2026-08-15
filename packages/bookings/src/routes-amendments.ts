@@ -424,6 +424,17 @@ adminApp.use(
   "/:bookingId/amendments/traveler-roster/preview",
   idempotencyKey<Env["Bindings"], Env["Variables"]>({ required: true }),
 )
+// Every Amendment mutation needs one, and the middleware is registered per
+// path — a new preview route that forgets this line 500s on its first real
+// request while every service-level test still passes.
+adminApp.use(
+  "/:bookingId/amendments/items/preview",
+  idempotencyKey<Env["Bindings"], Env["Variables"]>({ required: true }),
+)
+adminApp.use(
+  "/:bookingId/amendments/items/move/preview",
+  idempotencyKey<Env["Bindings"], Env["Variables"]>({ required: true }),
+)
 adminApp.use(
   "/:bookingId/amendments/:amendmentId/accept",
   idempotencyKey<Env["Bindings"], Env["Variables"]>({ required: true }),
