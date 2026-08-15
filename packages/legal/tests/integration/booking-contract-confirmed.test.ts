@@ -3,6 +3,7 @@ import { bookingItems, bookings, bookingTravelers } from "@voyant-travel/booking
 import { createEventBus } from "@voyant-travel/core"
 import { createDbClient } from "@voyant-travel/db"
 import { cleanupTestDb } from "@voyant-travel/db/test-utils"
+import { bookingPaymentSchedules, invoices, payments } from "@voyant-travel/finance/schema"
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterAll, beforeAll, beforeEach, describe, expect, it } from "vitest"
@@ -564,5 +565,190 @@ describe.skipIf(!DB_AVAILABLE)("booking-confirmed contract generation", () => {
     expect(detail!.summary).toContain('preferred language "en"')
     expect(detail!.summary).toContain('selected template "Contract de comercializare" in "ro"')
     expect(detail!.summary).toContain("booking channel none")
+  })
+
+  // voyant#4690: the auto-generated bag carried the booking's list price and
+  // nothing about settlement, so a payment clause branching on
+  // `booking.isPaidInFull` took the `else` arm on every contract and printed
+  // the missing-value placeholder for each amount — telling a customer who had
+  // paid in full that they owed "-". Drive the real subscriber so the
+  // assertion is on the persisted rendered body, not on a hand-built bag.
+  it("renders the payment clause from settlement on a booking paid in full", async () => {
+    const [booking] = await db
+      .insert(bookings)
+      .values({
+        bookingNumber: "BK-AUTO-CONTRACT-PAID",
+        status: "confirmed",
+        contactFirstName: "Ana",
+        contactLastName: "Pop",
+        contactEmail: "ana@example.test",
+        contactPreferredLanguage: "en",
+        sellCurrency: "EUR",
+        sellAmountCents: 500_00,
+        startDate: "2026-09-01",
+        endDate: "2026-09-07",
+        pax: 1,
+      })
+      .returning()
+    await db.insert(bookingItems).values({
+      bookingId: booking!.id,
+      title: "Autumn tour",
+      status: "confirmed",
+      productNameSnapshot: "Autumn tour",
+      quantity: 1,
+      sellCurrency: "EUR",
+      totalSellAmountCents: 500_00,
+    })
+    const [invoice] = await db
+      .insert(invoices)
+      .values({
+        invoiceNumber: "INV-4690-1",
+        bookingId: booking!.id,
+        status: "paid",
+        currency: "EUR",
+        subtotalCents: 500_00,
+        totalCents: 500_00,
+        paidCents: 500_00,
+        balanceDueCents: 0,
+        issueDate: "2026-08-01",
+        dueDate: "2026-08-10",
+      })
+      .returning()
+    // A voided invoice must not resurrect a balance the customer has settled.
+    await db.insert(invoices).values({
+      invoiceNumber: "PRO-4690-1",
+      bookingId: booking!.id,
+      invoiceType: "proforma",
+      status: "void",
+      currency: "EUR",
+      subtotalCents: 500_00,
+      totalCents: 500_00,
+      balanceDueCents: 500_00,
+      issueDate: "2026-07-20",
+      dueDate: "2026-08-10",
+    })
+    await db.insert(payments).values([
+      {
+        invoiceId: invoice!.id,
+        amountCents: 200_00,
+        currency: "EUR",
+        paymentMethod: "bank_transfer",
+        status: "completed",
+        paymentDate: "2026-08-02",
+      },
+      {
+        invoiceId: invoice!.id,
+        amountCents: 300_00,
+        currency: "EUR",
+        paymentMethod: "credit_card",
+        status: "completed",
+        paymentDate: "2026-08-05",
+      },
+      // Not completed, so it must not count toward what has been paid.
+      {
+        invoiceId: invoice!.id,
+        amountCents: 999_00,
+        currency: "EUR",
+        paymentMethod: "cash",
+        status: "pending",
+        paymentDate: "2026-08-06",
+      },
+    ])
+    await db.insert(bookingPaymentSchedules).values([
+      {
+        bookingId: booking!.id,
+        scheduleType: "deposit",
+        status: "paid",
+        dueDate: "2026-08-01",
+        currency: "EUR",
+        amountCents: 200_00,
+      },
+      {
+        bookingId: booking!.id,
+        scheduleType: "balance",
+        status: "paid",
+        dueDate: "2026-08-05",
+        currency: "EUR",
+        amountCents: 300_00,
+      },
+      // Withdrawn obligations are not something a contract may present.
+      {
+        bookingId: booking!.id,
+        scheduleType: "installment",
+        status: "cancelled",
+        dueDate: "2026-08-09",
+        currency: "EUR",
+        amountCents: 100_00,
+      },
+    ])
+
+    const body =
+      "{% if booking.isPaidInFull %}Paid in full: {{ booking.paidAmountCents | cents: booking.currency }}" +
+      "{% else %}Deposit {{ booking.paidAmountCents | cents: booking.currency }}, " +
+      "balance {{ booking.balanceDueCents | cents: booking.currency }} by {{ booking.balanceDueDate }}" +
+      "{% endif %} via {{ payment.method }} on {{ payment.latestCompleted.date }}" +
+      " over {{ payment.schedule.size }} installments"
+    const [template] = await db
+      .insert(contractTemplates)
+      .values({
+        name: "Customer agreement",
+        slug: "customer-agreement-settlement",
+        scope: "customer",
+        language: "en",
+        body,
+        active: true,
+        isDefault: true,
+      })
+      .returning()
+    const [version] = await db
+      .insert(contractTemplateVersions)
+      .values({ templateId: template!.id, version: 1, body, variableSchema: {} })
+      .returning()
+    await db
+      .update(contractTemplates)
+      .set({ currentVersionId: version!.id })
+      .where(eq(contractTemplates.id, template!.id))
+    await db.insert(contractNumberSeries).values({
+      name: "Customer contracts",
+      prefix: "CTR",
+      scope: "customer",
+      isDefault: true,
+      active: true,
+      currentSequence: 0,
+      padLength: 5,
+      separator: "-",
+      resetStrategy: "never",
+    })
+
+    const eventBus = createEventBus({ handlerTimeoutMs: false })
+    await createLegalBookingContractConfirmedSubscriber({
+      resolveDb: async () => db,
+      provider: provider(),
+    }).register({ bindings: {}, container: {} as never, eventBus })
+    await eventBus.emit(
+      "booking.confirmed",
+      {
+        bookingId: booking!.id,
+        bookingNumber: booking!.bookingNumber,
+        actorId: null,
+      } satisfies LegalBookingConfirmedPayload,
+      {
+        eventId: `evt_finance_booking_confirmed_${booking!.id}`,
+        category: "domain",
+        source: "service",
+      },
+    )
+
+    const contractRows = await db
+      .select()
+      .from(contracts)
+      .where(eq(contracts.bookingId, booking!.id))
+    expect(contractRows).toHaveLength(1)
+    // Two completed payments, the pending one excluded; the cancelled
+    // installment excluded from the schedule; the void proforma excluded from
+    // the balance.
+    expect(contractRows[0]!.renderedBody).toBe(
+      "Paid in full: €500.00 via Credit Card on 2026-08-05 over 2 installments",
+    )
   })
 })

@@ -22,6 +22,10 @@ import {
   resolveBookingContractLanguage,
 } from "./booking-contract-review.js"
 import {
+  type BookingContractSettlement,
+  resolveBookingContractSettlement,
+} from "./booking-contract-settlement.js"
+import {
   bookingContractAcceptanceContentDigest,
   isBookingContractAcceptanceContentDigest,
 } from "./contract-acceptance.js"
@@ -440,7 +444,15 @@ async function prepareBookingContractTarget(
   // had deliberately fallen back to, which on a single-language deployment is
   // the only template there is (voyant#4650).
   const language = selected.template.language
-  const variables = bookingContractVariables(booking, items, travelers)
+  // Settlement is read after the template is chosen because the payment
+  // method label is written in the contract's language, and the contract's
+  // language is the template's — not the shopper's preference.
+  const settlement = await resolveBookingContractSettlement(db, bookingId, {
+    currency: booking.sellCurrency,
+    totalAmountCents: booking.sellAmountCents,
+    language,
+  })
+  const variables = bookingContractVariables(booking, items, travelers, settlement)
   const missingPrerequisites = bookingContractPrerequisites({
     templateApplicable:
       reusable?.templateVersionId === selected.version.id ||
@@ -751,6 +763,7 @@ export function bookingContractVariables(
   booking: BookingContractReviewInput["booking"],
   items: BookingContractReviewInput["items"],
   travelers: Awaited<ReturnType<typeof bookingsService.listTravelers>>,
+  settlement: BookingContractSettlement,
   now = new Date(),
 ): Record<string, unknown> {
   const primaryProduct = items[0]
@@ -807,6 +820,18 @@ export function bookingContractVariables(
       currency: booking.sellCurrency,
       sellAmountCents: booking.sellAmountCents,
       totalAmountCents: booking.sellAmountCents,
+      // Settlement. `balanceDueCents` / `amountDueCents` are payment-aware and
+      // reach 0 once the booking is settled; `balanceAmountCents` is the gross
+      // scheduled balance installment and never moves. A payment clause that
+      // binds the wrong one bills a customer who has already paid.
+      paidAmountCents: settlement.paidAmountCents,
+      amountDueCents: settlement.amountDueCents,
+      balanceDueCents: settlement.amountDueCents,
+      isPaidInFull: settlement.isPaidInFull,
+      depositAmountCents: settlement.depositAmountCents,
+      depositDueDate: settlement.depositDueDate,
+      balanceAmountCents: settlement.balanceAmountCents,
+      balanceDueDate: settlement.balanceDueDate,
       items: normalizedItems,
     },
     customer: {
@@ -835,6 +860,14 @@ export function bookingContractVariables(
     payment: {
       amountCents: booking.sellAmountCents,
       currency: booking.sellCurrency,
+      isPaidInFull: settlement.isPaidInFull,
+      paidAmountCents: settlement.paidAmountCents,
+      balanceDueCents: settlement.amountDueCents,
+      method: settlement.latestCompleted?.methodLabel ?? "",
+      capturedAt: settlement.latestCompleted?.date ?? "",
+      createdAt: settlement.latestCompleted?.date ?? "",
+      latestCompleted: settlement.latestCompleted,
+      schedule: settlement.schedule,
     },
     product: {
       title: primaryProduct?.productNameSnapshot ?? primaryProduct?.title ?? null,
