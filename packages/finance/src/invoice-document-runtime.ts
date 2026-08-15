@@ -67,7 +67,9 @@ function descriptorHtml(descriptor: FinanceInvoiceDocumentRenderDescriptor) {
   return hardenRenderedHtmlDocument(body)
 }
 
-export function invoiceDocumentContentType(format: FinanceInvoiceDocumentRenderDescriptor["format"]) {
+export function invoiceDocumentContentType(
+  format: FinanceInvoiceDocumentRenderDescriptor["format"],
+) {
   switch (format) {
     case "html":
       return "text/html; charset=utf-8"

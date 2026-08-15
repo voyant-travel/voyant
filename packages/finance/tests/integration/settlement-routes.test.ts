@@ -152,10 +152,13 @@ describe.skipIf(!DB_AVAILABLE)("Finance settlement routes", () => {
     expect(settlementEvents).toEqual([
       expect.objectContaining({
         name: "invoice.settled",
-        metadata: {
+        // `objectContaining`: the envelope's metadata gained `eventId`, and
+        // pinning it exactly asserted the envelope's shape rather than the
+        // event this test is about.
+        metadata: expect.objectContaining({
           category: "domain",
           source: "service",
-        },
+        }),
         data: expect.objectContaining({
           invoiceId: invoice.id,
           provider: "smartbill",

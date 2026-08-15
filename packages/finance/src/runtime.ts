@@ -11,7 +11,6 @@ import {
   type ResolveInvoiceExchangeRate,
 } from "./invoice-fx.js"
 import { refreshPaymentAdapterStatus } from "./payment-adapter-status.js"
-import { createProviderBackedInvoiceDocumentGenerator } from "./service-documents.js"
 import { resolveEffectivePaymentLinkUrlTemplate } from "./payment-link.js"
 import { executeAdapterRefundSettlement } from "./refund-settlement-execution.js"
 import type {
@@ -28,6 +27,7 @@ import type {
   FinanceProposalsPaymentPolicyRuntime,
 } from "./runtime-port.js"
 import { financeService } from "./service.js"
+import { createProviderBackedInvoiceDocumentGenerator } from "./service-documents.js"
 import type { InvoiceSettlementPoller } from "./service-settlement.js"
 
 /** Compose Finance's main HTTP runtime from generic host and selected providers. */

@@ -346,6 +346,21 @@ export {
   resolvePaymentCallbackUrl,
   startPaymentAdapterCardPayment,
 } from "./card-payment.js"
+export type {
+  FinanceInvoiceDocumentArtifact,
+  FinanceInvoiceDocumentInspection,
+  FinanceInvoiceDocumentProvider,
+  FinanceInvoiceDocumentProviderIdentity,
+  FinanceInvoiceDocumentReference,
+  FinanceInvoiceDocumentRenderDescriptor,
+} from "./contracts/invoice-document-provider.js"
+export {
+  assertFinanceInvoiceDocumentProviderConformance,
+  checksumInvoiceDocumentBytes,
+  FINANCE_INVOICE_DOCUMENT_PROVIDER_PROTOCOL,
+  financeInvoiceDocumentProviderPort,
+  invoiceDocumentOperationKey,
+} from "./contracts/invoice-document-provider.js"
 export {
   type DocumentDownloadEnvelope,
   type DocumentDownloadResolution,
@@ -358,6 +373,18 @@ export {
   type ResolveFxMoneyBaseAmountOptions,
   resolveFxMoneyBaseAmount,
 } from "./fx-money.js"
+export type {
+  FulfilInvoiceRenditionOptions,
+  FulfilPendingInvoiceRenditionsOptions,
+  InvoiceRenditionFulfilmentOutcome,
+} from "./invoice-document-fulfilment.js"
+export {
+  fulfilInvoiceRendition,
+  fulfilPendingInvoiceRenditions,
+  hasPendingInvoiceRenditions,
+  INVOICE_DOCUMENT_MAX_ATTEMPTS,
+} from "./invoice-document-fulfilment.js"
+export { createStandardInvoiceDocumentProvider } from "./invoice-document-runtime.js"
 export {
   createInvoiceFxApiExtension,
   createInvoiceFxRoutes,
@@ -635,33 +662,6 @@ export {
   financeDocumentsService,
   prepareInvoiceDocument,
 } from "./service-documents.js"
-export type {
-  FinanceInvoiceDocumentArtifact,
-  FinanceInvoiceDocumentInspection,
-  FinanceInvoiceDocumentProvider,
-  FinanceInvoiceDocumentProviderIdentity,
-  FinanceInvoiceDocumentReference,
-  FinanceInvoiceDocumentRenderDescriptor,
-} from "./contracts/invoice-document-provider.js"
-export {
-  assertFinanceInvoiceDocumentProviderConformance,
-  checksumInvoiceDocumentBytes,
-  FINANCE_INVOICE_DOCUMENT_PROVIDER_PROTOCOL,
-  financeInvoiceDocumentProviderPort,
-  invoiceDocumentOperationKey,
-} from "./contracts/invoice-document-provider.js"
-export { createStandardInvoiceDocumentProvider } from "./invoice-document-runtime.js"
-export type {
-  FulfilInvoiceRenditionOptions,
-  FulfilPendingInvoiceRenditionsOptions,
-  InvoiceRenditionFulfilmentOutcome,
-} from "./invoice-document-fulfilment.js"
-export {
-  fulfilInvoiceRendition,
-  fulfilPendingInvoiceRenditions,
-  hasPendingInvoiceRenditions,
-  INVOICE_DOCUMENT_MAX_ATTEMPTS,
-} from "./invoice-document-fulfilment.js"
 export type {
   InvoiceIssuedEvent,
   InvoiceIssueRuntime,

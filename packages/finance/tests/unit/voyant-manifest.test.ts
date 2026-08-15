@@ -856,9 +856,7 @@ describe("invoice document production", () => {
   it("keeps the provider port optional so a deployment without one still boots", () => {
     expect(declaredRuntimePorts.has("finance.invoice-document-provider")).toBe(true)
     expect(
-      financeVoyantModule.runtimePorts.find(
-        ({ id }) => id === "finance.invoice-document-provider",
-      ),
+      financeVoyantModule.runtimePorts.find(({ id }) => id === "finance.invoice-document-provider"),
     ).toMatchObject({ optional: true })
   })
 })

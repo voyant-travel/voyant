@@ -53,8 +53,7 @@ export async function runDueInvoiceDocumentRenditionsJob(
   // failed, and must not raise: on an app-backed deployment they are pending by
   // design and would otherwise make this job fail every minute forever.
   const unavailable = outcomes.filter(
-    (outcome) =>
-      outcome.status === "failed" && outcome.reason === "document_renderer_unavailable",
+    (outcome) => outcome.status === "failed" && outcome.reason === "document_renderer_unavailable",
   )
   if (unavailable.length > 0) {
     throw new InvoiceDocumentRendererUnavailableError(

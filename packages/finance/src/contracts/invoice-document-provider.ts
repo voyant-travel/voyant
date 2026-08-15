@@ -46,7 +46,9 @@ export interface FinanceInvoiceDocumentProvider {
    * read from the database, resolve templates, allocate invoice numbers, or
    * upload — the fulfilment engine has already done all four.
    */
-  render(descriptor: FinanceInvoiceDocumentRenderDescriptor): Promise<FinanceInvoiceDocumentArtifact>
+  render(
+    descriptor: FinanceInvoiceDocumentRenderDescriptor,
+  ): Promise<FinanceInvoiceDocumentArtifact>
   /**
    * Persist at the exact operation key.
    *

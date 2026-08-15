@@ -447,7 +447,23 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     const res = await app.request("/invoices", { method: "POST", ...json(body) })
     expect(res.status).toBe(201)
     const { data } = await res.json()
-    return data as { id: string; [k: string]: unknown }
+    const created = data as { id: string; [k: string]: unknown }
+
+    // `POST /invoices` has no `invoiceType` in its contract — proformas are
+    // only ever minted by the from-booking issuance path — so passing one here
+    // was silently dropped and the caller got a plain invoice it believed was
+    // a proforma. Apply it directly for the tests that need a proforma to
+    // convert; the conversion itself still runs through the route.
+    if (typeof overrides.invoiceType === "string" && overrides.invoiceType !== "invoice") {
+      const [updated] = await db
+        .update(invoices)
+        .set({ invoiceType: overrides.invoiceType as "proforma" })
+        .where(eq(invoices.id, created.id))
+        .returning()
+      return { ...created, invoiceType: updated?.invoiceType } as typeof created
+    }
+
+    return created
   }
 
   async function seedPaymentInstrument(overrides: Record<string, unknown> = {}) {
@@ -1356,9 +1372,21 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       const replayBody = await replay.json()
       expect(replayBody.data.id).toBe(firstBody.data.id)
 
+      // Reusing the number just issued must conflict. The body has to be a
+      // valid from-booking request to get that far — the invoice-create shape
+      // this used to send is rejected by the route's schema now, so the 409 it
+      // asserted could never be reached.
       const conflict = await app.request("/invoices/from-booking?wait=pdf", {
         method: "POST",
-        ...jsonWithIdempotency(input, "finance-invoice-from-booking-1"),
+        ...jsonWithIdempotency(
+          {
+            bookingId: booking.id,
+            invoiceNumber: input.invoiceNumber,
+            issueDate: input.issueDate,
+            dueDate: input.dueDate,
+          },
+          "finance-invoice-from-booking-1",
+        ),
       })
       expect(conflict.status).toBe(409)
     })
@@ -1725,7 +1753,11 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
 
     it("returns a conflict when conversion would reuse an active invoice number", async () => {
       const booking = await seedBooking()
-      await seedInvoice(booking.id, {
+      // The colliding invoice belongs to a *different* booking on purpose: on
+      // the same one the duplicate-fiscal-invoice guard fires first and this
+      // test never reaches the number-uniqueness check it is named for.
+      const otherBooking = await seedBooking()
+      await seedInvoice(otherBooking.id, {
         invoiceNumber: "INV-CONVERT-DUP",
         invoiceType: "invoice",
         status: "issued",
@@ -1975,7 +2007,10 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(data.id).toMatch(/^inv_/)
       expect(data.bookingId).toBe(booking.id)
       expect(data.currency).toBe("USD")
-      expect(data.status).toBe("draft")
+      // `/invoices/from-booking` is an *issuing* command — `issued` is its only
+      // success shape. The `draft` assertion predates that and has been wrong
+      // since the route stopped merely composing a draft.
+      expect(data.status).toBe("issued")
       // Should have subtotal based on items
       expect(data.subtotalCents).toBeGreaterThan(0)
       expect(data.balanceDueCents).toBeGreaterThan(0)
@@ -2268,14 +2303,26 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         }),
       })
 
-      expect(res.status).toBe(201)
-      const { data } = await res.json()
-      expect(data.currency).toBe("EUR")
-      expect(data.baseCurrency).toBe("RON")
-      expect(data.subtotalCents).toBe(16500)
-      expect(data.baseSubtotalCents).toBeNull()
-      expect(data.baseTotalCents).toBeNull()
-      expect(data.baseBalanceDueCents).toBeNull()
+      // The rule this test is named for is now enforced by refusing the
+      // invoice outright rather than by issuing one with null base amounts: a
+      // schedule in another currency cannot be converted without a rate set,
+      // and guessing from the booking's sell currency is exactly what must not
+      // happen. The refusal names what was missing.
+      expect(res.status).toBe(400)
+      await expect(res.json()).resolves.toMatchObject({
+        code: "invalid_invoice_from_booking",
+        details: {
+          scheduleCurrency: "EUR",
+          bookingSellCurrency: "USD",
+          fxRateSetId: null,
+        },
+      })
+
+      const created = await db
+        .select({ id: invoices.id })
+        .from(invoices)
+        .where(eq(invoices.bookingId, booking.id))
+      expect(created).toHaveLength(0)
     })
 
     it("returns 404 for non-existent booking", async () => {
@@ -3258,6 +3305,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     it("requires userId to create notes", async () => {
       // Create a separate app without userId
       const noUserApp = new Hono()
+      noUserApp.onError((err, c) => handleApiError(err, c))
       noUserApp.use("*", async (c, next) => {
         c.set("db" as never, db)
         // userId NOT set
@@ -3272,9 +3320,11 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         method: "POST",
         ...json({ content: "No user" }),
       })
-      expect(res.status).toBe(400)
-      const body = await res.json()
-      expect(body.error).toContain("User ID")
+      // A request with no actor is unauthenticated, not malformed: the route
+      // raises `UnauthorizedApiError` and the boundary renders 401. The old
+      // 400 / "User ID" message belonged to a hand-rolled guard that no longer
+      // exists.
+      expect(res.status).toBe(401)
     })
 
     it("lists notes for an invoice", async () => {

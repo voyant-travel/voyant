@@ -8,9 +8,9 @@ import {
 } from "./contracts/invoice-document-provider.js"
 import { invoiceDocumentContentType } from "./invoice-document-runtime.js"
 import { invoiceNumberSeries, invoiceRenditions, invoices } from "./schema.js"
-import type { InvoiceRenderedEvent } from "./service-shared.js"
-import { prepareInvoiceDocument } from "./service-documents.js"
 import type { InvoiceDocumentRuntimeOptions } from "./service-documents.js"
+import { prepareInvoiceDocument } from "./service-documents.js"
+import type { InvoiceRenderedEvent } from "./service-shared.js"
 
 /**
  * How many times a rendition may be re-rendered before it is called failed.

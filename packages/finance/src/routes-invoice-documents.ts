@@ -17,6 +17,7 @@
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { openApiValidationHook } from "@voyant-travel/hono"
+import { fulfilInvoiceRendition } from "./invoice-document-fulfilment.js"
 import {
   errorResponseSchema,
   invoiceAttachmentSchema,
@@ -24,7 +25,6 @@ import {
   invoiceRenditionSchema,
   successResponseSchema,
 } from "./routes-invoice-schemas.js"
-import { fulfilInvoiceRendition } from "./invoice-document-fulfilment.js"
 import {
   buildInlineDownload,
   getFinanceRouteRuntime,
@@ -148,9 +148,7 @@ const renditionRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHoo
     let rendition = result.rendition
     if (rendition) {
       await fulfilInvoiceRendition(c.get("db"), rendition.id, {
-        ...(runtime?.invoiceDocumentProvider
-          ? { provider: runtime.invoiceDocumentProvider }
-          : {}),
+        ...(runtime?.invoiceDocumentProvider ? { provider: runtime.invoiceDocumentProvider } : {}),
         ...(runtime?.eventBus ? { eventBus: runtime.eventBus } : {}),
         ...(runtime?.resolveCustomFields
           ? { resolveCustomFields: runtime.resolveCustomFields }

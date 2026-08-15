@@ -40,6 +40,30 @@ function id(prefix: string) {
   return `${prefix}_chk_${counter}`
 }
 
+/**
+ * Assert that a database CHECK constraint fires. Drizzle wraps the driver
+ * error, so the constraint name is on the cause chain and never in
+ * `error.message` — matching the message asserted only that *something* failed,
+ * which a not-null violation or a typo in the fixture satisfies just as well.
+ */
+async function expectCheckViolation(operation: Promise<unknown>, constraint: string) {
+  try {
+    await operation
+  } catch (error) {
+    const seen: string[] = []
+    let current: unknown = error
+    while (current) {
+      if (current instanceof Error) seen.push(current.message)
+      const named = (current as { constraint_name?: string }).constraint_name
+      if (named) seen.push(named)
+      current = (current as { cause?: unknown }).cause
+    }
+    expect(seen.join(" | ")).toContain(constraint)
+    return
+  }
+  throw new Error(`Expected constraint ${constraint} to be violated, but the statement succeeded.`)
+}
+
 describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
   // biome-ignore lint/suspicious/noExplicitAny: test db -- owner: finance; existing suppression is intentional pending typed cleanup.
   let db: any
@@ -58,7 +82,7 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
 
   describe("bookings.bookings — base_currency + base_*_amount_cents", () => {
     it("rejects baseSellAmountCents without baseCurrency", async () => {
-      await expect(
+      await expectCheckViolation(
         db.insert(bookings).values({
           status: "confirmed",
           id: id("book"),
@@ -67,11 +91,12 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
           baseCurrency: null,
           baseSellAmountCents: 10000,
         }),
-      ).rejects.toThrow(/ck_bookings_base_currency_amounts/)
+        "ck_bookings_base_currency_amounts",
+      )
     })
 
     it("rejects baseCostAmountCents without baseCurrency", async () => {
-      await expect(
+      await expectCheckViolation(
         db.insert(bookings).values({
           status: "confirmed",
           id: id("book"),
@@ -80,7 +105,8 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
           baseCurrency: null,
           baseCostAmountCents: 5000,
         }),
-      ).rejects.toThrow(/ck_bookings_base_currency_amounts/)
+        "ck_bookings_base_currency_amounts",
+      )
     })
 
     it("accepts both base_*_amount_cents null with null baseCurrency", async () => {
@@ -126,7 +152,7 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
 
     it("rejects unitCostAmountCents without costCurrency", async () => {
       const bookingId = await insertBooking()
-      await expect(
+      await expectCheckViolation(
         db.insert(bookingItems).values({
           status: "confirmed",
           id: id("bkit"),
@@ -136,7 +162,8 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
           costCurrency: null,
           unitCostAmountCents: 5000,
         }),
-      ).rejects.toThrow(/ck_booking_items_cost_currency_amounts/)
+        "ck_booking_items_cost_currency_amounts",
+      )
     })
 
     it("accepts cost amounts with costCurrency set", async () => {
@@ -158,32 +185,37 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
 
   describe("finance.booking_guarantees — currency + amount XNOR", () => {
     it("rejects amount without currency", async () => {
-      await expect(
+      await expectCheckViolation(
         db.insert(bookingGuarantees).values({
+          guaranteeType: "deposit",
           id: id("bkgu"),
           bookingId: id("book"),
           status: "pending",
           currency: null,
           amountCents: 10000,
         }),
-      ).rejects.toThrow(/ck_booking_guarantees_currency_amount/)
+        "ck_booking_guarantees_currency_amount",
+      )
     })
 
     it("rejects currency without amount", async () => {
-      await expect(
+      await expectCheckViolation(
         db.insert(bookingGuarantees).values({
+          guaranteeType: "deposit",
           id: id("bkgu"),
           bookingId: id("book"),
           status: "pending",
           currency: "EUR",
           amountCents: null,
         }),
-      ).rejects.toThrow(/ck_booking_guarantees_currency_amount/)
+        "ck_booking_guarantees_currency_amount",
+      )
     })
 
     it("accepts both null", async () => {
       await expect(
         db.insert(bookingGuarantees).values({
+          guaranteeType: "deposit",
           id: id("bkgu"),
           bookingId: id("book"),
           status: "pending",
@@ -196,6 +228,7 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
     it("accepts both set", async () => {
       await expect(
         db.insert(bookingGuarantees).values({
+          guaranteeType: "deposit",
           id: id("bkgu"),
           bookingId: id("book"),
           status: "pending",
@@ -208,7 +241,7 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
 
   describe("finance.booking_item_commissions — currency + amount XNOR", () => {
     it("rejects amount without currency", async () => {
-      await expect(
+      await expectCheckViolation(
         db.insert(bookingItemCommissions).values({
           id: id("bcom"),
           bookingItemId: id("bkit"),
@@ -216,7 +249,8 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
           currency: null,
           amountCents: 1000,
         }),
-      ).rejects.toThrow(/ck_booking_item_commissions_currency_amount/)
+        "ck_booking_item_commissions_currency_amount",
+      )
     })
 
     it("accepts both null (commission-as-percentage row)", async () => {
@@ -248,7 +282,7 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
 
     it("rejects baseSubtotalCents without baseCurrency", async () => {
       const bid = await bookingId()
-      await expect(
+      await expectCheckViolation(
         db.insert(invoices).values({
           id: id("inv"),
           invoiceNumber: `INV-${counter}`,
@@ -260,7 +294,8 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
           issueDate: "2026-04-25",
           dueDate: "2026-05-25",
         }),
-      ).rejects.toThrow(/ck_invoices_base_currency_amounts/)
+        "ck_invoices_base_currency_amounts",
+      )
     })
 
     it("accepts every base_*_cents null with baseCurrency null", async () => {
@@ -304,7 +339,7 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
 
     it("rejects baseAmountCents without baseCurrency", async () => {
       const iid = await invoiceId()
-      await expect(
+      await expectCheckViolation(
         db.insert(payments).values({
           id: id("pay"),
           invoiceId: iid,
@@ -315,12 +350,13 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
           paymentMethod: "bank_transfer",
           paymentDate: "2026-04-25",
         }),
-      ).rejects.toThrow(/ck_payments_base_currency_amount/)
+        "ck_payments_base_currency_amount",
+      )
     })
 
     it("rejects baseCurrency without baseAmountCents", async () => {
       const iid = await invoiceId()
-      await expect(
+      await expectCheckViolation(
         db.insert(payments).values({
           id: id("pay"),
           invoiceId: iid,
@@ -331,7 +367,8 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
           paymentMethod: "bank_transfer",
           paymentDate: "2026-04-25",
         }),
-      ).rejects.toThrow(/ck_payments_base_currency_amount/)
+        "ck_payments_base_currency_amount",
+      )
     })
 
     it("accepts both null", async () => {

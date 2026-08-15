@@ -70,12 +70,7 @@ describe.skipIf(!DB_AVAILABLE)("invoice document fulfilment", () => {
 
   let seeded = 0
 
-  async function seedInvoice(
-    overrides: {
-      invoiceNumber?: string
-      seriesId?: string | null
-    } = {},
-  ) {
+  async function seedInvoice(overrides: { invoiceNumber?: string; seriesId?: string | null } = {}) {
     seeded += 1
     const suffix = `${seeded}-${Math.floor(Math.random() * 1_000_000)}`
     const [booking] = await db
@@ -171,9 +166,7 @@ describe.skipIf(!DB_AVAILABLE)("invoice document fulfilment", () => {
       .from(invoiceRenditions)
       .where(eq(invoiceRenditions.id, requested.rendition!.id))
     expect(row?.status).toBe("ready")
-    expect(row?.storageKey).toBe(
-      `invoices/${invoice.id}/renditions/${requested.rendition!.id}.pdf`,
-    )
+    expect(row?.storageKey).toBe(`invoices/${invoice.id}/renditions/${requested.rendition!.id}.pdf`)
     expect(row?.fileSize).toBeGreaterThan(0)
     expect(row?.checksum).toMatch(/^[a-f0-9]{64}$/)
     expect(row?.generatedAt).not.toBeNull()

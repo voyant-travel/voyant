@@ -84,7 +84,6 @@ describe.skipIf(!DB_AVAILABLE)("Finance document routes", () => {
     failNextGeneration = false
   })
 
-
   /**
    * `invoices.booking_id` is `notNull()`, so an invoice fixture needs a booking
    * to hang off. These three cases care only about the rendition, not the
