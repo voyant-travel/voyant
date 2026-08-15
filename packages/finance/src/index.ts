@@ -16,6 +16,7 @@ import {
   createFinanceCheckoutRoutes,
   FINANCE_CHECKOUT_ROUTE_RUNTIME_CONTAINER_KEY,
 } from "./checkout-routes.js"
+import { financeInvoiceDocumentProviderPort } from "./contracts/invoice-document-provider.js"
 import { createInvoiceFxRoutes } from "./invoice-fx.js"
 import { financeLinkable } from "./linkables.js"
 import {
@@ -238,6 +239,9 @@ export const createFinanceVoyantRuntime = defineGraphRuntimeFactory(
         await getPorts(financeInvoiceSettlementPollerRuntimePort),
         hasPort(paymentAdapterRuntimePort)
           ? await getPort<PaymentAdapter>(paymentAdapterRuntimePort)
+          : undefined,
+        hasPort(financeInvoiceDocumentProviderPort)
+          ? await getPort(financeInvoiceDocumentProviderPort)
           : undefined,
       ),
       // Finance accepts bookings too, so it consumes the same monthly booking
@@ -624,11 +628,40 @@ export type {
 } from "./service-documents.js"
 export {
   createPdfInvoiceDocumentGenerator,
+  createProviderBackedInvoiceDocumentGenerator,
   createStorageBackedInvoiceDocumentGenerator,
   defaultPdfInvoiceDocumentSerializer,
   defaultStorageBackedInvoiceDocumentSerializer,
   financeDocumentsService,
+  prepareInvoiceDocument,
 } from "./service-documents.js"
+export type {
+  FinanceInvoiceDocumentArtifact,
+  FinanceInvoiceDocumentInspection,
+  FinanceInvoiceDocumentProvider,
+  FinanceInvoiceDocumentProviderIdentity,
+  FinanceInvoiceDocumentReference,
+  FinanceInvoiceDocumentRenderDescriptor,
+} from "./contracts/invoice-document-provider.js"
+export {
+  assertFinanceInvoiceDocumentProviderConformance,
+  checksumInvoiceDocumentBytes,
+  FINANCE_INVOICE_DOCUMENT_PROVIDER_PROTOCOL,
+  financeInvoiceDocumentProviderPort,
+  invoiceDocumentOperationKey,
+} from "./contracts/invoice-document-provider.js"
+export { createStandardInvoiceDocumentProvider } from "./invoice-document-runtime.js"
+export type {
+  FulfilInvoiceRenditionOptions,
+  FulfilPendingInvoiceRenditionsOptions,
+  InvoiceRenditionFulfilmentOutcome,
+} from "./invoice-document-fulfilment.js"
+export {
+  fulfilInvoiceRendition,
+  fulfilPendingInvoiceRenditions,
+  hasPendingInvoiceRenditions,
+  INVOICE_DOCUMENT_MAX_ATTEMPTS,
+} from "./invoice-document-fulfilment.js"
 export type {
   InvoiceIssuedEvent,
   InvoiceIssueRuntime,
