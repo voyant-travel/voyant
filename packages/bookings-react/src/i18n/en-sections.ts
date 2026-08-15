@@ -475,6 +475,9 @@ export const bookingsUiEnSections = {
       seatsLeft: "{count} left",
       changeFee: "Change fee",
       changeFeeHint: "What you charge for making the change. Added on top of any price difference.",
+      fareDiscount: "Discount on the price difference",
+      fareDiscountHint:
+        "How much of any price increase you absorb. Capped at the increase — a pricier move never pays money back.",
       refundHandling: "If the new date is cheaper",
       refundHandlingHint: "Only applies when the move comes out cheaper than what was paid.",
       reason: "Reason",
@@ -495,6 +498,7 @@ export const bookingsUiEnSections = {
       fareDifference: "Price difference",
       changeFee: "Change fee",
       tax: "Tax",
+      discountApplied: "The price above already has your discount applied, capped at the increase.",
       collect: "Collect {amount} from the customer.",
       owedBack: "{amount} is owed back to the customer.",
       supplier: "The supplier must confirm the new date before it takes effect.",

@@ -478,6 +478,8 @@ export type BookingsUiSectionsMessages = {
       seatsLeft: string
       changeFee: string
       changeFeeHint: string
+      fareDiscount: string
+      fareDiscountHint: string
       refundHandling: string
       refundHandlingHint: string
       reason: string
@@ -498,6 +500,8 @@ export type BookingsUiSectionsMessages = {
       fareDifference: string
       changeFee: string
       tax: string
+      /** Shown when the operator absorbed part of a price increase. */
+      discountApplied: string
       /** `{amount}` is replaced with the money to collect. */
       collect: string
       /** `{amount}` is replaced with the money owed back. */

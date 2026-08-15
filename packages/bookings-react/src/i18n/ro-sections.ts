@@ -478,6 +478,9 @@ export const bookingsUiRoSections = {
       seatsLeft: "{count} locuri",
       changeFee: "Taxa de modificare",
       changeFeeHint: "Cat percepi pentru modificare. Se adauga peste diferenta de pret.",
+      fareDiscount: "Reducere din diferenta de pret",
+      fareDiscountHint:
+        "Cat din cresterea de pret suporti tu. Limitata la crestere — o mutare mai scumpa nu returneaza niciodata bani.",
       refundHandling: "Daca noua data e mai ieftina",
       refundHandlingHint: "Se aplica doar cand mutarea iese mai ieftin decat s-a platit.",
       reason: "Motiv",
@@ -498,6 +501,7 @@ export const bookingsUiRoSections = {
       fareDifference: "Diferenta de pret",
       changeFee: "Taxa de modificare",
       tax: "Taxa",
+      discountApplied: "Pretul de mai sus include deja reducerea ta, limitata la crestere.",
       collect: "Incaseaza {amount} de la client.",
       owedBack: "{amount} trebuie returnati clientului.",
       supplier: "Furnizorul trebuie sa confirme noua data inainte sa intre in vigoare.",

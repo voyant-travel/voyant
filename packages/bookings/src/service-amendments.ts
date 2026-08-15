@@ -976,6 +976,10 @@ async function buildItemMovePlan(
 
   const totalSellAmountCents = unitSellAmountCents * item.quantity
   const fareDeltaCents = totalSellAmountCents - item.totalSellAmountCents
+  // Capped at the increase. Absorbing more than the move costs would turn a
+  // pricier date into a payout, which is a refund decision rather than a
+  // discount one — `refundHandling` is where that lives.
+  const fareDiscountCents = Math.min(move.fareDiscountCents, Math.max(fareDeltaCents, 0))
 
   const snapshot = await resolveBookingItemSnapshot(db, {
     productId: item.productId,
@@ -1043,6 +1047,7 @@ async function buildItemMovePlan(
     unitSellAmountCents,
     totalSellAmountCents,
     fareDeltaCents,
+    fareDiscountCents,
     changeFeeCents: move.changeFeeCents,
     refundHandling: move.refundHandling,
     serviceDate: snapshot.serviceDate,
@@ -1578,7 +1583,9 @@ export const bookingAmendmentService = {
           {
             bookingItemId: plan.bookingItemId,
             productId: plan.productId,
-            subtotalDeltaCents: plan.fareDeltaCents,
+            // Discounted before quoting: tax follows what the customer is
+            // actually charged, not the list difference.
+            subtotalDeltaCents: plan.fareDeltaCents - plan.fareDiscountCents,
           },
         ],
         // The change fee is not a fare, so it is quoted as a fee rather than
@@ -1924,6 +1931,7 @@ function sameItemMoveRequest(row: BookingAmendmentRow, input: PreviewBookingItem
     requested.bookingItemId === input.move.bookingItemId &&
     requested.availabilitySlotId === input.move.availabilitySlotId &&
     requested.changeFeeCents === input.move.changeFeeCents &&
+    requested.fareDiscountCents === input.move.fareDiscountCents &&
     requested.refundHandling === input.move.refundHandling
   )
 }

@@ -68,6 +68,7 @@ export function BookingItemMoveDialog({
 
   const [slotId, setSlotId] = useState<string | null>(null)
   const [changeFeeCents, setChangeFeeCents] = useState<number>(0)
+  const [fareDiscountCents, setFareDiscountCents] = useState<number>(0)
   const [refundHandling, setRefundHandling] = useState<RefundHandling>("refund")
   const [reason, setReason] = useState("")
   const [quoted, setQuoted] = useState<BookingAmendmentRecord | null>(null)
@@ -102,6 +103,7 @@ export function BookingItemMoveDialog({
     if (!open) return
     setSlotId(null)
     setChangeFeeCents(0)
+    setFareDiscountCents(0)
     setRefundHandling("refund")
     setReason("")
     setQuoted(null)
@@ -133,6 +135,7 @@ export function BookingItemMoveDialog({
             bookingItemId: item.id,
             availabilitySlotId: slotId,
             changeFeeCents,
+            fareDiscountCents,
             refundHandling,
           },
         },
@@ -234,6 +237,20 @@ export function BookingItemMoveDialog({
           </div>
 
           <div className="flex flex-col gap-2">
+            <Label htmlFor="move-discount">{messages.fields.fareDiscount}</Label>
+            <CurrencyInput
+              id="move-discount"
+              value={fareDiscountCents}
+              onChange={(next) => {
+                setFareDiscountCents(next ?? 0)
+                setQuoted(null)
+              }}
+              currency={item.sellCurrency}
+            />
+            <p className="text-muted-foreground text-xs">{messages.fields.fareDiscountHint}</p>
+          </div>
+
+          <div className="flex flex-col gap-2">
             <Label htmlFor="move-refund-handling">{messages.fields.refundHandling}</Label>
             <Select
               value={refundHandling}
@@ -270,7 +287,13 @@ export function BookingItemMoveDialog({
 
           {failed ? <Notice text={failed} /> : null}
           {blocked ? <Notice text={blockedText(blocked, messages.blocked)} /> : null}
-          {quoted ? <MoveQuote amendment={quoted} formatCurrency={formatCurrency} /> : null}
+          {quoted ? (
+            <MoveQuote
+              amendment={quoted}
+              formatCurrency={formatCurrency}
+              requestedDiscountCents={fareDiscountCents}
+            />
+          ) : null}
         </SheetBody>
 
         <SheetFooter>
@@ -307,9 +330,11 @@ export function BookingItemMoveDialog({
 function MoveQuote({
   amendment,
   formatCurrency,
+  requestedDiscountCents,
 }: {
   amendment: BookingAmendmentRecord
   formatCurrency: (cents: number, currency: string) => string
+  requestedDiscountCents: number
 }) {
   const messages = useBookingsUiMessagesOrDefault().itemMoveDialog
   const price = amendment.priceDelta
@@ -333,6 +358,9 @@ function MoveQuote({
           </>
         ) : null}
       </dl>
+      {requestedDiscountCents > 0 ? (
+        <p className="text-muted-foreground text-xs">{messages.quote.discountApplied}</p>
+      ) : null}
       <ul className="list-inside list-disc text-muted-foreground text-xs">
         {price.collectionAmountCents > 0 ? (
           <li>{messages.quote.collect.replace("{amount}", money(price.collectionAmountCents))}</li>

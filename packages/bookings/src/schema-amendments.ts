@@ -157,8 +157,10 @@ export interface BookingAmendmentItemMovePlan {
   /** Per-unit fare on the target departure, from the catalog. */
   unitSellAmountCents: number
   totalSellAmountCents: number
-  /** Fare difference alone, before the change fee. */
+  /** Fare difference alone, before discount and change fee. */
   fareDeltaCents: number
+  /** Applied discount, already capped at the increase. */
+  fareDiscountCents: number
   changeFeeCents: number
   refundHandling: "refund" | "travel_credit" | "waive"
   serviceDate: string | null

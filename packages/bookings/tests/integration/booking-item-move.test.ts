@@ -225,6 +225,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking item move Amendments", () => {
     overrides: {
       slotId?: string
       changeFeeCents?: number
+      fareDiscountCents?: number
       refundHandling?: "refund" | "travel_credit" | "waive"
       key?: string
     } = {},
@@ -240,6 +241,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking item move Amendments", () => {
           bookingItemId: seeded.item.id,
           availabilitySlotId: overrides.slotId ?? seeded.to.id,
           changeFeeCents: overrides.changeFeeCents ?? 0,
+          fareDiscountCents: overrides.fareDiscountCents ?? 0,
           refundHandling: overrides.refundHandling ?? "refund",
         },
       },
@@ -401,6 +403,71 @@ describe.skipIf(!DB_AVAILABLE)("Booking item move Amendments", () => {
     expect(recorded.at(-1)).toMatchObject({ refundHandling: "travel_credit" })
   })
 
+  it("lets the operator absorb part of a price increase", async () => {
+    // New date is 2_000 dearer per seat (4_000 total); the operator only
+    // passes on 1_500 of it.
+    const seeded = await seed({ quantity: 2, unitPrice: 10_000, targetPrice: 12_000 })
+    const preview = await previewMove(seeded, { fareDiscountCents: 2_500 })
+
+    if (preview.status !== "ok") throw new Error("Expected a quote")
+    expect(preview.amendment.priceDelta).toMatchObject({
+      subtotalDeltaCents: 1_500,
+      amountCents: 1_500,
+      collectionAmountCents: 1_500,
+    })
+  })
+
+  it("lets the operator absorb the increase entirely", async () => {
+    const seeded = await seed({ quantity: 2, unitPrice: 10_000, targetPrice: 12_000 })
+    const preview = await previewMove(seeded, { fareDiscountCents: 4_000 })
+
+    if (preview.status !== "ok") throw new Error("Expected a quote")
+    expect(preview.amendment.priceDelta).toMatchObject({
+      amountCents: 0,
+      collectionAmountCents: 0,
+      refundAmountCents: 0,
+    })
+  })
+
+  it("caps the discount at the increase rather than paying the customer", async () => {
+    const seeded = await seed({ quantity: 2, unitPrice: 10_000, targetPrice: 12_000 })
+    const preview = await previewMove(seeded, { fareDiscountCents: 50_000 })
+
+    if (preview.status !== "ok") throw new Error("Expected a quote")
+    expect(preview.amendment.priceDelta).toMatchObject({
+      amountCents: 0,
+      refundAmountCents: 0,
+    })
+  })
+
+  it("still charges the change fee when the increase is fully absorbed", async () => {
+    const seeded = await seed({ quantity: 2, unitPrice: 10_000, targetPrice: 12_000 })
+    const preview = await previewMove(seeded, {
+      fareDiscountCents: 4_000,
+      changeFeeCents: 2_000,
+    })
+
+    if (preview.status !== "ok") throw new Error("Expected a quote")
+    expect(preview.amendment.priceDelta).toMatchObject({
+      feeDeltaCents: 2_000,
+      amountCents: 2_000,
+      collectionAmountCents: 2_000,
+    })
+  })
+
+  it("ignores a discount on a move that is already cheaper", async () => {
+    // Nothing to absorb — the cap floors it at zero and `refundHandling`
+    // stays in charge of the money owed back.
+    const seeded = await seed({ quantity: 2, unitPrice: 10_000, targetPrice: 6_000 })
+    const preview = await previewMove(seeded, {
+      fareDiscountCents: 3_000,
+      refundHandling: "refund",
+    })
+
+    if (preview.status !== "ok") throw new Error("Expected a quote")
+    expect(preview.amendment.priceDelta.refundAmountCents).toBe(8_000)
+  })
+
   it("replays an identical preview instead of quoting twice", async () => {
     const seeded = await seed()
     const first = await previewMove(seeded, { key: "same-move-key" })
@@ -414,7 +481,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking item move Amendments", () => {
     await previewMove(seeded, { key: "shared-move-key", changeFeeCents: 0 })
     const conflicting = await previewMove(seeded, {
       key: "shared-move-key",
-      changeFeeCents: 5_000,
+      fareDiscountCents: 5_000,
     })
     expect(conflicting.status).toBe("idempotency_conflict")
   })

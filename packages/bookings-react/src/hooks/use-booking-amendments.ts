@@ -58,6 +58,7 @@ export interface BookingItemMoveInput {
   bookingItemId: string
   availabilitySlotId: string
   changeFeeCents: number
+  fareDiscountCents: number
   refundHandling: "refund" | "travel_credit" | "waive"
 }
 

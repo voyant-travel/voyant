@@ -150,6 +150,17 @@ export const bookingItemMoveSchema = z.object({
    * charge for changing".
    */
   changeFeeCents: z.number().int().min(0).max(10_000_000).default(0),
+  /**
+   * How much of a price increase the operator absorbs rather than passes
+   * on — the goodwill lever for "the new date costs more, but we are only
+   * charging you part of it".
+   *
+   * Kept separate from the fare rather than letting the caller overwrite
+   * it, so the catalog price stays authoritative and visible and the
+   * concession is its own auditable line. Capped server-side at the
+   * increase: a move that costs more must not turn into a payout.
+   */
+  fareDiscountCents: z.number().int().min(0).max(10_000_000).default(0),
   refundHandling: bookingItemMoveRefundHandlingSchema.default("refund"),
 })
 
