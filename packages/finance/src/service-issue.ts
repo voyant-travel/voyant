@@ -4,7 +4,6 @@ import {
   buildIdempotencyFingerprint,
 } from "@voyant-travel/action-ledger"
 import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
-import { isCompanyFiscalBuyer } from "@voyant-travel/bookings-contracts"
 import {
   assertBookingFinanceInsertionAllowed,
   lockBookingFinanceInsertionFence,
@@ -283,11 +282,14 @@ export interface InvoiceIssuedEvent {
   clientCountry?: string | null
   clientPostalCode?: string | null
   /**
-   * Buyer's fiscal code, from the booking's `contact_tax_id` snapshot — but
-   * only when the buyer is a company. `contact_tax_id` is a fiscal identifier
-   * whichever party type it belongs to, and a private traveller's is personal
-   * data no accounting integration asked for; a company's is what the document
-   * legally has to carry.
+   * Buyer's fiscal code, from the booking's `contact_tax_id` snapshot,
+   * whenever one was recorded.
+   *
+   * Sent for either party type on purpose: e-invoicing downstream reads the
+   * buyer's taxpayer status off this field's presence, so withholding a code
+   * the operator did record would misclassify the party rather than protect
+   * anyone. Whether a buyer must *have* one before the invoice may be issued
+   * is the separate question `isCompanyFiscalBuyer` answers.
    */
   clientVatCode?: string | null
   /**
@@ -770,16 +772,18 @@ export async function buildInvoiceIssuedEvent(
     clientCounty: booking?.contactRegion ?? null,
     clientCountry: booking?.contactCountry ?? null,
     clientPostalCode: booking?.contactPostalCode ?? null,
-    // voyant#4653: both were hardcoded `null` while `bookings.contact_tax_id`
-    // sat on the row the line above already reads, so a B2B invoice reached
-    // the accounting integration with no fiscal code for the buyer and had to
-    // be corrected by hand. See the field docs on `InvoiceIssuedEvent` for why
-    // this is company-only and why `clientRegCom` stays null.
+    // The buyer's fiscal code, when the operator recorded one. A business buyer
+    // needs it on the invoice, and downstream e-invoicing derives the buyer's
+    // taxpayer status from its presence, so dropping it both loses a mandatory
+    // field and misclassifies the party (voyant#4653). `contactRegCom` has no
+    // column to read from, so that one stays null until there is one.
     //
-    // Shares `isCompanyFiscalBuyer` with the check that decided this invoice
-    // could be issued at all: reading `contactPartyType` alone here would emit
-    // null for exactly the organization bookings that check now catches.
-    clientVatCode: booking && isCompanyFiscalBuyer(booking) ? (booking.contactTaxId ?? null) : null,
+    // Deliberately unconditional, unlike `isCompanyFiscalBuyer` next door in
+    // the issuance gate. The two ask different questions: that one is "must we
+    // demand a fiscal code before this may be issued", which only a company
+    // owes, while this is "does the buyer have one", where withholding a
+    // recorded code would tell the integration the party is not a taxpayer.
+    clientVatCode: booking?.contactTaxId ?? null,
     clientRegCom: null,
     lineItems: lines.map((line) => {
       const taxMetadata =
