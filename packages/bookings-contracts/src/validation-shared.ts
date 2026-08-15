@@ -91,5 +91,30 @@ export const bookingDocumentTypeSchema = z.enum([
   "insurance",
   "health",
   "passport_copy",
+  "contract",
+  "invoice",
+  "proforma",
+  "credit_note",
   "other",
 ])
+
+/**
+ * The Booking Document kinds that stand in for commercial paperwork issued
+ * outside Voyant. Recording one never allocates a number from an internal
+ * series and never renders a template, so each must carry the issuer's own
+ * number and date (voyant#4657).
+ */
+export const issuedBookingDocumentTypeSchema = z.enum([
+  "contract",
+  "invoice",
+  "proforma",
+  "credit_note",
+])
+
+export type IssuedBookingDocumentType = z.infer<typeof issuedBookingDocumentTypeSchema>
+
+export function isIssuedBookingDocumentType(
+  type: z.infer<typeof bookingDocumentTypeSchema>,
+): type is IssuedBookingDocumentType {
+  return issuedBookingDocumentTypeSchema.safeParse(type).success
+}

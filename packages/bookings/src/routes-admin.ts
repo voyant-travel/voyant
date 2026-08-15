@@ -45,6 +45,8 @@ import type { Context } from "hono"
 import { z } from "zod"
 
 import {
+  BOOKING_DOCUMENT_LEDGER_ACTION_NAME,
+  BOOKING_DOCUMENT_LEDGER_ACTION_VERSION,
   BOOKING_PII_READ_CAPABILITY,
   BOOKING_STATUS_CAPABILITIES,
 } from "./action-ledger-capabilities.js"
@@ -65,7 +67,7 @@ import { bookingGroupRoutes } from "./routes-groups.js"
 import { bookingInquiryAdminRoutes } from "./routes-inquiries.js"
 import { createBookingsAdminRoute as createRoute } from "./routes-openapi.js"
 import type { publicBookingRoutes } from "./routes-public.js"
-import type { Env } from "./routes-shared.js"
+import { type Env, getActionLedgerRequestContext } from "./routes-shared.js"
 import { bookingPiiAccessLog } from "./schema.js"
 import { bookingsService } from "./service.js"
 import { bookingGroupsService } from "./service-groups.js"
@@ -298,24 +300,6 @@ function cacheDashboardAggregates(c: Context<Env>) {
   c.header("Cache-Control", DASHBOARD_AGGREGATES_CACHE_CONTROL)
   c.header("Vary", "Authorization", { append: true })
   c.header("Vary", "Cookie", { append: true })
-}
-
-function getActionLedgerRequestContext(c: Context<Env>): ActionLedgerRequestContextValues {
-  return {
-    userId: c.get("userId") ?? null,
-    agentId: c.get("agentId") ?? null,
-    workflowPrincipalId: c.get("workflowPrincipalId") ?? null,
-    principalSubtype: c.get("principalSubtype") ?? null,
-    sessionId: c.get("sessionId") ?? null,
-    apiTokenId: c.get("apiTokenId") ?? c.get("apiKeyId") ?? null,
-    callerType: c.get("callerType") ?? null,
-    actor: c.get("actor") ?? null,
-    isInternalRequest: c.get("isInternalRequest") ?? false,
-    organizationId: c.get("organizationId") ?? null,
-    workflowRunId: c.get("workflowRunId") ?? null,
-    workflowStepId: c.get("workflowStepId") ?? null,
-    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
-  }
 }
 
 async function validateBookingBillingPartyReferences<T extends Env>(
@@ -1489,6 +1473,12 @@ const bookingDocumentSchema = z.object({
   type: bookingDocumentTypeSchema,
   fileName: z.string(),
   fileUrl: z.string(),
+  // The identity the document's own issuer gave it. Populated for paperwork
+  // recorded from outside Voyant; null for an uploaded traveller document.
+  issuedBy: z.string().nullable(),
+  issuedSeries: z.string().nullable(),
+  issuedNumber: z.string().nullable(),
+  issuedAt: nullableIsoTimestamp,
   expiresAt: nullableIsoTimestamp,
   notes: z.string().nullable(),
   createdAt: isoTimestamp,
@@ -3599,15 +3589,29 @@ const documentsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHoo
     )
   })
   .openapi(createDocumentRoute, async (c) => {
-    const row = await bookingsService.createDocument(
-      c.get("db"),
-      c.req.valid("param").id,
-      c.req.valid("json"),
-    )
-    if (!row) {
+    const bookingId = c.req.valid("param").id
+    const result = await bookingsService.createDocument(c.get("db"), bookingId, c.req.valid("json"))
+    if (!result) {
       return c.json({ error: "Booking not found" }, 404)
     }
-    return c.json({ data: row }, 201)
+    // A replayed recording of the same issued document returns the row that
+    // already exists rather than a second copy of it, and is not a second
+    // event in the ledger either.
+    if (!result.replayed) {
+      await appendBookingMutationLedgerEntry(c, {
+        action: "create",
+        actionName: BOOKING_DOCUMENT_LEDGER_ACTION_NAME,
+        actionVersion: BOOKING_DOCUMENT_LEDGER_ACTION_VERSION,
+        targetType: "booking",
+        targetId: bookingId,
+        changedFields: [],
+        subject: "booking document",
+        routeOrToolName: "bookings.documents.create",
+        evaluatedRisk: "medium",
+        summary: `Recorded ${result.document.type} document`,
+      })
+    }
+    return c.json({ data: result.document }, 201)
   })
   .openapi(deleteDocumentRoute, async (c) => {
     const row = await bookingsService.deleteDocument(c.get("db"), c.req.valid("param").documentId)

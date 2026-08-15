@@ -85,6 +85,20 @@
       "when": 1786102200000,
       "tag": "20260807143000_booking_item_cancellation_terms_snapshot",
       "breakpoints": true
+    },
+    {
+      "idx": 12,
+      "version": "7",
+      "when": 1786968000000,
+      "tag": "20260815120000_booking_document_recorded_kinds",
+      "breakpoints": true
+    },
+    {
+      "idx": 13,
+      "version": "7",
+      "when": 1786968060000,
+      "tag": "20260815120100_booking_document_issued_identity",
+      "breakpoints": true
     }
   ]
 }
