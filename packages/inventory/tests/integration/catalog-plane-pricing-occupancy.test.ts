@@ -9,13 +9,13 @@
  */
 
 import type { IndexerSlice } from "@voyant-travel/catalog"
+import { createProductPricingProjectionExtension } from "@voyant-travel/commerce"
 import {
   optionPriceRules,
   optionUnitPriceRules,
   optionUnitTiers,
   priceCatalogs,
 } from "@voyant-travel/commerce/schema"
-import { createProductPricingProjectionExtension } from "@voyant-travel/commerce"
 import { cleanupTestDb, createTestDb } from "@voyant-travel/db/test-utils"
 import { availabilitySlots, availabilityStartTimes } from "@voyant-travel/operations"
 import { beforeEach, describe, expect, it } from "vitest"
