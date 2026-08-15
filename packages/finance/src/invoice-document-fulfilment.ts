@@ -24,12 +24,25 @@ export const INVOICE_DOCUMENT_MAX_ATTEMPTS = 5
 /** The `PENDING-<scope>-<uuid>` placeholder an external series leaves behind. */
 const PENDING_INVOICE_NUMBER_PREFIX = "PENDING-"
 
+/**
+ * How long a claim keeps other callers off a row.
+ *
+ * A process that dies mid-render leaves its claim behind, so the claim has to
+ * expire or the row would be stranded exactly as the orphan it replaced was.
+ * Comfortably longer than the renderer's own 30s navigation timeout.
+ */
+const CLAIM_LEASE_MS = 5 * 60 * 1000
+
 export type InvoiceRenditionFulfilmentOutcome =
   | { status: "fulfilled"; renditionId: string; storageKey: string }
   | {
       status: "skipped"
       renditionId: string
-      reason: "not_pending" | "invoice_not_found" | "awaiting_external_allocation"
+      reason:
+        | "not_pending"
+        | "claimed_elsewhere"
+        | "invoice_not_found"
+        | "awaiting_external_allocation"
     }
   | {
       status: "retry"
@@ -58,6 +71,8 @@ export interface FulfilInvoiceRenditionOptions {
 
 interface FulfilmentMetadata {
   attempts: number
+  claim?: string
+  claimedAt?: string
   lastError?: string
   lastAttemptAt?: string
 }
@@ -66,8 +81,26 @@ function readFulfilmentMetadata(metadata: unknown): FulfilmentMetadata {
   if (!metadata || typeof metadata !== "object") return { attempts: 0 }
   const fulfilment = (metadata as { fulfilment?: unknown }).fulfilment
   if (!fulfilment || typeof fulfilment !== "object") return { attempts: 0 }
-  const attempts = (fulfilment as { attempts?: unknown }).attempts
-  return { attempts: typeof attempts === "number" && attempts > 0 ? attempts : 0 }
+  const record = fulfilment as Record<string, unknown>
+  const attempts = record.attempts
+  return {
+    attempts: typeof attempts === "number" && attempts > 0 ? attempts : 0,
+    ...(typeof record.claim === "string" ? { claim: record.claim } : {}),
+    ...(typeof record.claimedAt === "string" ? { claimedAt: record.claimedAt } : {}),
+  }
+}
+
+/** SQL predicate: this row still carries the claim we wrote. */
+function heldClaim(token: string) {
+  return sql`${invoiceRenditions.metadata} -> 'fulfilment' ->> 'claim' = ${token}`
+}
+
+/** Is another caller already rendering this row, and not yet timed out? */
+function isClaimLive(metadata: unknown, at: Date): boolean {
+  const { claim, claimedAt } = readFulfilmentMetadata(metadata)
+  if (!claim || !claimedAt) return false
+  const held = Date.parse(claimedAt)
+  return Number.isFinite(held) && at.getTime() - held < CLAIM_LEASE_MS
 }
 
 function mergeMetadata(metadata: unknown, patch: Record<string, unknown>) {
@@ -114,9 +147,20 @@ export async function fulfilInvoiceRendition(
   options: FulfilInvoiceRenditionOptions = {},
 ): Promise<InvoiceRenditionFulfilmentOutcome> {
   const maxAttempts = options.maxAttempts ?? INVOICE_DOCUMENT_MAX_ATTEMPTS
+  const now = new Date()
 
   // Serialize the subscriber's fast path against the recovery job. Both are
   // allowed to reach the same row; only one may render it.
+  //
+  // The advisory lock is transaction-scoped and so ends here, well before
+  // `render`/`put` run — on its own it would let two callers both observe
+  // `pending`, both render, and both write the same operation key. Only one of
+  // them would win the closing compare-and-set, but the loser's upload could
+  // still land after the winner recorded its checksum and byte length, leaving
+  // a `ready` row describing bytes that are no longer there. So the claim is
+  // written into the row while the lock is held and outlives it: a second
+  // caller sees a live claim and never renders at all.
+  const claimToken = crypto.randomUUID()
   const claimed = await db.transaction(async (tx) => {
     await tx.execute(
       sql`select pg_advisory_xact_lock(hashtext(${`finance:invoice-rendition:${renditionId}`}))`,
@@ -127,16 +171,36 @@ export async function fulfilInvoiceRendition(
       .where(eq(invoiceRenditions.id, renditionId))
       .limit(1)
     if (!rendition || rendition.status !== "pending") return null
+    if (isClaimLive(rendition.metadata, now)) return "claimed_elsewhere" as const
+
+    const [held] = await tx
+      .update(invoiceRenditions)
+      .set({
+        updatedAt: now,
+        metadata: mergeMetadata(rendition.metadata, {
+          fulfilment: {
+            ...readFulfilmentMetadata(rendition.metadata),
+            claim: claimToken,
+            claimedAt: now.toISOString(),
+          },
+        }),
+      })
+      .where(and(eq(invoiceRenditions.id, renditionId), eq(invoiceRenditions.status, "pending")))
+      .returning()
+    if (!held) return null
 
     const [invoice] = await tx
       .select()
       .from(invoices)
-      .where(eq(invoices.id, rendition.invoiceId))
+      .where(eq(invoices.id, held.invoiceId))
       .limit(1)
-    return { rendition, invoice: invoice ?? null }
+    return { rendition: held, invoice: invoice ?? null }
   })
 
   if (!claimed) return { status: "skipped", renditionId, reason: "not_pending" }
+  if (claimed === "claimed_elsewhere") {
+    return { status: "skipped", renditionId, reason: "claimed_elsewhere" }
+  }
   const { rendition } = claimed
 
   if (!claimed.invoice) {
@@ -151,6 +215,7 @@ export async function fulfilInvoiceRendition(
   const invoice = claimed.invoice
 
   if (await awaitsExternalAllocation(db, invoice)) {
+    await releaseClaim(db, rendition, claimToken)
     return { status: "skipped", renditionId, reason: "awaiting_external_allocation" }
   }
 
@@ -238,10 +303,18 @@ export async function fulfilInvoiceRendition(
           fulfilment: { attempts, lastAttemptAt: new Date().toISOString() },
         }),
       })
-      .where(and(eq(invoiceRenditions.id, rendition.id), eq(invoiceRenditions.status, "pending")))
+      // Still ours: a claim that expired mid-render may have been taken over,
+      // and the row then belongs to whoever holds it now.
+      .where(
+        and(
+          eq(invoiceRenditions.id, rendition.id),
+          eq(invoiceRenditions.status, "pending"),
+          heldClaim(claimToken),
+        ),
+      )
       .returning()
 
-    if (!updated) return { status: "skipped", renditionId, reason: "not_pending" }
+    if (!updated) return { status: "skipped", renditionId, reason: "claimed_elsewhere" }
 
     await options.eventBus?.emit(
       "invoice.rendered",
@@ -277,12 +350,40 @@ export async function fulfilInvoiceRendition(
       .set({
         updatedAt: new Date(),
         metadata: mergeMetadata(rendition.metadata, {
+          // No `claim` here: dropping it is how a failed attempt hands the row
+          // back rather than making the next runner wait out the lease.
           fulfilment: { attempts, lastError: message, lastAttemptAt: new Date().toISOString() },
         }),
       })
-      .where(and(eq(invoiceRenditions.id, rendition.id), eq(invoiceRenditions.status, "pending")))
+      .where(
+        and(
+          eq(invoiceRenditions.id, rendition.id),
+          eq(invoiceRenditions.status, "pending"),
+          heldClaim(claimToken),
+        ),
+      )
     return { status: "retry", renditionId, attempts, message }
   }
+}
+
+/**
+ * Hand a row back without rendering it. The claim exists to stop a concurrent
+ * render, so a caller that decides not to render must not hold it for the rest
+ * of the lease.
+ */
+async function releaseClaim(
+  db: PostgresJsDatabase,
+  rendition: typeof invoiceRenditions.$inferSelect,
+  token: string,
+) {
+  const { attempts } = readFulfilmentMetadata(rendition.metadata)
+  await db
+    .update(invoiceRenditions)
+    .set({
+      updatedAt: new Date(),
+      metadata: mergeMetadata(rendition.metadata, { fulfilment: { attempts } }),
+    })
+    .where(and(eq(invoiceRenditions.id, rendition.id), heldClaim(token)))
 }
 
 async function markFailed(

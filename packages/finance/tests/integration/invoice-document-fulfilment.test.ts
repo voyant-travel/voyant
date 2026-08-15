@@ -316,6 +316,80 @@ describe.skipIf(!DB_AVAILABLE)("invoice document fulfilment", () => {
     expect(storage.objects.size).toBe(2)
   })
 
+  it("lets only one caller render a row two paths reach at once", async () => {
+    const invoice = await seedInvoice()
+    const requested = await financeService.renderInvoice(db, invoice.id, { format: "pdf" })
+    const provider = await buildProvider()
+
+    // The subscriber and the recovery job can both reach a pending row. The
+    // advisory lock ends with its transaction, so without a claim written into
+    // the row both would render and both would write the same key — and the
+    // loser's upload could land after the winner recorded its checksum.
+    const [first, second] = await Promise.all([
+      fulfilInvoiceRendition(db, requested.rendition!.id, { provider }),
+      fulfilInvoiceRendition(db, requested.rendition!.id, { provider }),
+    ])
+
+    const outcomes = [first.status, second.status].sort()
+    expect(outcomes).toEqual(["fulfilled", "skipped"])
+    expect(renderCalls).toBe(1)
+    expect(storage.objects.size).toBe(1)
+
+    const [row] = await db
+      .select()
+      .from(invoiceRenditions)
+      .where(eq(invoiceRenditions.id, requested.rendition!.id))
+    expect(row?.status).toBe("ready")
+    // The row describes the bytes that are actually stored.
+    const stored = storage.objects.get(row!.storageKey!)
+    expect(stored?.byteLength).toBe(row?.fileSize)
+  })
+
+  it("hands the row back when it declines to render it", async () => {
+    const [series] = await db
+      .insert(invoiceNumberSeries)
+      .values({
+        code: "ext-release",
+        name: "External fiscal series",
+        scope: "invoice",
+        prefix: "EXT",
+        externalProvider: "smartbill",
+        active: true,
+      })
+      .returning()
+    const invoice = await seedInvoice({
+      invoiceNumber: "PENDING-INVOICE-release",
+      seriesId: series!.id,
+    })
+    const requested = await financeService.renderInvoice(db, invoice.id, { format: "pdf" })
+    const provider = await buildProvider()
+
+    await fulfilInvoiceRendition(db, requested.rendition!.id, { provider })
+    // A skip must not hold the claim for the rest of its lease, or the row
+    // would sit out several job cycles after the app allocates its number.
+    const second = await fulfilInvoiceRendition(db, requested.rendition!.id, { provider })
+    expect(second).toMatchObject({ status: "skipped", reason: "awaiting_external_allocation" })
+  })
+
+  it("resolves custom fields the same way on every path", async () => {
+    const invoice = await seedInvoice()
+    const requested = await financeService.renderInvoice(db, invoice.id, { format: "pdf" })
+
+    const seen: string[] = []
+    await fulfilInvoiceRendition(db, requested.rendition!.id, {
+      provider: await buildProvider(),
+      resolveCustomFields: (_db, subject) => {
+        seen.push(subject.id)
+        return { loyaltyTier: "gold" }
+      },
+    })
+
+    // `prepareInvoiceDocument` only populates `variables.customFields` when a
+    // resolver is supplied, so a background path that omits it renders the same
+    // template without the customer's data.
+    expect(seen).toEqual([invoice.id])
+  })
+
   it("passes the port conformance harness against the deployment provider", async () => {
     await expect(
       assertFinanceInvoiceDocumentProviderConformance({

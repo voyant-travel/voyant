@@ -1,3 +1,7 @@
+import {
+  type CustomFieldsRuntime,
+  customFieldsRuntimePort,
+} from "@voyant-travel/core/custom-fields"
 import type { VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -5,6 +9,7 @@ import { createPrimitivesEventBus } from "./app-api-runtime.js"
 import { financeInvoiceDocumentProviderPort } from "./contracts/invoice-document-provider.js"
 import { fulfilPendingInvoiceRenditions } from "./invoice-document-fulfilment.js"
 import { financeHostRuntimePort } from "./runtime-port.js"
+import { createInvoiceCustomFieldsResolver } from "./service-documents.js"
 
 /**
  * Raised once, after the drain, when requested invoice documents could not be
@@ -42,10 +47,19 @@ export async function runDueInvoiceDocumentRenditionsJob(
   const provider = context.hasPort(financeInvoiceDocumentProviderPort)
     ? await context.getPort(financeInvoiceDocumentProviderPort)
     : undefined
+  // Same resolver the routes and the subscriber use: a template referencing
+  // `{{customFields.*}}` must not render differently depending on which path
+  // produced the document.
+  const customFields = context.hasPort(customFieldsRuntimePort)
+    ? await context.getPort<CustomFieldsRuntime>(customFieldsRuntimePort)
+    : undefined
 
   const eventBus = createPrimitivesEventBus(host.primitives, context.bindings)
   const outcomes = await fulfilPendingInvoiceRenditions(db, {
     ...(provider ? { provider } : {}),
+    ...(customFields
+      ? { resolveCustomFields: createInvoiceCustomFieldsResolver(customFields) }
+      : {}),
     ...(eventBus ? { eventBus } : {}),
   })
 

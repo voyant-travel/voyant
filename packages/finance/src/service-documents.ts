@@ -257,6 +257,39 @@ export function createPdfInvoiceDocumentGenerator(
  * inserts its rendition through `bindInvoiceRendition` *after* the artifact
  * exists, so there is no row to key on yet.
  */
+/**
+ * The one definition of "which custom fields does this invoice's template see".
+ *
+ * Shared by every path that renders a document, because `prepareInvoiceDocument`
+ * only populates `variables.customFields` when a resolver is supplied: when the
+ * HTTP route had one and the subscriber and recovery job did not, the same
+ * template rendered with the customer's fields interactively and without them
+ * in the background.
+ */
+export function createInvoiceCustomFieldsResolver(customFields: {
+  resolveVisibleValues(
+    db: PostgresJsDatabase,
+    subjectType: string,
+    subjectId: string,
+    surface: string,
+  ): Promise<Record<string, unknown>> | Record<string, unknown>
+}): NonNullable<InvoiceDocumentRuntimeOptions["resolveCustomFields"]> {
+  return async (db, invoice) => {
+    if (invoice.organizationId) {
+      return customFields.resolveVisibleValues(
+        db,
+        "organization",
+        invoice.organizationId,
+        "invoice",
+      )
+    }
+    if (invoice.personId) {
+      return customFields.resolveVisibleValues(db, "person", invoice.personId, "invoice")
+    }
+    return {}
+  }
+}
+
 export function createProviderBackedInvoiceDocumentGenerator(
   provider: FinanceInvoiceDocumentProvider,
 ): InvoiceDocumentGenerator {

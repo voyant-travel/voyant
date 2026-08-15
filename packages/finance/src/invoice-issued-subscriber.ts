@@ -1,4 +1,8 @@
 import type { EventEnvelope, SubscriberRuntimeDescriptor } from "@voyant-travel/core"
+import {
+  type CustomFieldsRuntime,
+  customFieldsRuntimePort,
+} from "@voyant-travel/core/custom-fields"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -6,8 +10,12 @@ import {
   type FinanceInvoiceDocumentProvider,
   financeInvoiceDocumentProviderPort,
 } from "./contracts/invoice-document-provider.js"
-import { fulfilPendingInvoiceRenditions } from "./invoice-document-fulfilment.js"
+import {
+  type FulfilInvoiceRenditionOptions,
+  fulfilPendingInvoiceRenditions,
+} from "./invoice-document-fulfilment.js"
 import { financeHostRuntimePort } from "./runtime-port.js"
+import { createInvoiceCustomFieldsResolver } from "./service-documents.js"
 
 export const FINANCE_INVOICE_ISSUED_DOCUMENT_SUBSCRIBER_ID =
   "@voyant-travel/finance#subscriber.invoice-issued-document"
@@ -21,6 +29,13 @@ export type InvoiceIssuedEventEnvelope = EventEnvelope<InvoiceIssuedPayload>
 export interface InvoiceIssuedDocumentSubscriberOptions {
   resolveDb(bindings: unknown): PostgresJsDatabase | Promise<PostgresJsDatabase>
   provider?: FinanceInvoiceDocumentProvider
+  /**
+   * Templates may reference `{{customFields.*}}`, and `prepareInvoiceDocument`
+   * only populates them when a resolver is supplied. Without it here the same
+   * template renders with the customer's fields interactively and without them
+   * in the background.
+   */
+  resolveCustomFields?: FulfilInvoiceRenditionOptions["resolveCustomFields"]
   logger?: Pick<Console, "error">
 }
 
@@ -55,6 +70,9 @@ export function createInvoiceIssuedDocumentSubscriber(
           await fulfilPendingInvoiceRenditions(db, {
             invoiceId,
             ...(options.provider ? { provider: options.provider } : {}),
+            ...(options.resolveCustomFields
+              ? { resolveCustomFields: options.resolveCustomFields }
+              : {}),
             eventBus,
           })
         } catch (error) {
@@ -82,9 +100,15 @@ export const createInvoiceIssuedDocumentSubscriberGraphRuntime = defineGraphRunt
     const provider = hasPort(financeInvoiceDocumentProviderPort)
       ? await getPort(financeInvoiceDocumentProviderPort)
       : undefined
+    const customFields = hasPort(customFieldsRuntimePort)
+      ? await getPort<CustomFieldsRuntime>(customFieldsRuntimePort)
+      : undefined
     return createInvoiceIssuedDocumentSubscriber({
       resolveDb: (bindings) => host.primitives.database.resolve<PostgresJsDatabase>(bindings),
       ...(provider ? { provider } : {}),
+      ...(customFields
+        ? { resolveCustomFields: createInvoiceCustomFieldsResolver(customFields) }
+        : {}),
     })
   },
 )

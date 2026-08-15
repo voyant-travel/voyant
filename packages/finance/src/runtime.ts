@@ -27,7 +27,10 @@ import type {
   FinanceProposalsPaymentPolicyRuntime,
 } from "./runtime-port.js"
 import { financeService } from "./service.js"
-import { createProviderBackedInvoiceDocumentGenerator } from "./service-documents.js"
+import {
+  createInvoiceCustomFieldsResolver,
+  createProviderBackedInvoiceDocumentGenerator,
+} from "./service-documents.js"
 import type { InvoiceSettlementPoller } from "./service-settlement.js"
 
 /** Compose Finance's main HTTP runtime from generic host and selected providers. */
@@ -55,20 +58,7 @@ export function createFinanceRuntime(
             createProviderBackedInvoiceDocumentGenerator(invoiceDocumentProvider),
         }
       : {}),
-    resolveCustomFields: async (db, invoice) => {
-      if (invoice.organizationId) {
-        return customFields.resolveVisibleValues(
-          db,
-          "organization",
-          invoice.organizationId,
-          "invoice",
-        )
-      }
-      if (invoice.personId) {
-        return customFields.resolveVisibleValues(db, "person", invoice.personId, "invoice")
-      }
-      return {}
-    },
+    resolveCustomFields: createInvoiceCustomFieldsResolver(customFields),
     resolveInvoiceExchangeRateResolver: (bindings) =>
       createExchangeRateResolver(primitives, bindings),
     invoiceSettlementPollers: aggregateFinanceInvoiceSettlementPollers(

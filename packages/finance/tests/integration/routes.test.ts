@@ -2366,6 +2366,25 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
   })
 
   describe("Invoice rendition wait", () => {
+    it("leaves the row pending when the caller did not ask to wait", async () => {
+      const booking = await seedBooking()
+      const invoice = await seedInvoice(booking.id)
+
+      const res = await app.request(`/invoices/${invoice.id}/render`, {
+        method: "POST",
+        ...json({ format: "pdf" }),
+      })
+
+      // `docs/architecture/invoice-rendition-wait.md`: the wait is additive, and
+      // omitting it preserves the historical response shape. Rendering inline
+      // regardless would hold a fire-and-forget request for the renderer's full
+      // navigation timeout.
+      expect(res.status).toBe(201)
+      const { data } = await res.json()
+      expect(data).toMatchObject({ invoiceId: invoice.id, format: "pdf", status: "pending" })
+      expect(data.errorMessage).toBeNull()
+    })
+
     it("records the miss when no document provider is configured", async () => {
       const booking = await seedBooking()
       const invoice = await seedInvoice(booking.id)

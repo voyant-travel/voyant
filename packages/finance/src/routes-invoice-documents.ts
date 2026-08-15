@@ -139,14 +139,16 @@ const renditionRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHoo
       return c.json({ error: "Invoice not found" }, 404)
     }
 
-    // Fulfil inline when the deployment selected a provider. The row is durable
-    // either way and the recovery job would eventually drain it, but a caller
-    // that passed `?wait=true` is holding a request open — making it wait a
-    // whole job cycle for a document this process can produce now is the
-    // behaviour voyant#4668 replaced.
+    // Fulfil inline only for a caller that asked to wait. `docs/architecture/
+    // invoice-rendition-wait.md` makes the wait additive — "omitted or `wait:
+    // "none"` preserves the historical response shape" — and rendering can hold
+    // the request for the renderer's full 30s navigation timeout, so doing it
+    // unconditionally would turn every fire-and-forget request into a blocking
+    // one. Without a wait the row is still durable and the subscriber and the
+    // recovery job produce the document; that is what they are for.
     const runtime = getFinanceRouteRuntime(c)
     let rendition = result.rendition
-    if (rendition) {
+    if (rendition && waitRequest.mode !== "none") {
       await fulfilInvoiceRendition(c.get("db"), rendition.id, {
         ...(runtime?.invoiceDocumentProvider ? { provider: runtime.invoiceDocumentProvider } : {}),
         ...(runtime?.eventBus ? { eventBus: runtime.eventBus } : {}),
@@ -154,9 +156,7 @@ const renditionRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHoo
           ? { resolveCustomFields: runtime.resolveCustomFields }
           : {}),
       })
-      // Report what the row *is*, not what it was a moment ago: a caller that
-      // did not pass `wait` still gets `ready` with its storage key rather than
-      // a `pending` row that has already been fulfilled.
+      // Report what the row *is*, not what it was a moment ago.
       rendition =
         (await financeService.getInvoiceRenditionById(c.get("db"), rendition.id)) ?? rendition
     }
