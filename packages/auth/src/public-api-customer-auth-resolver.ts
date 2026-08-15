@@ -12,7 +12,7 @@
  * The BFF must forward its browser origin explicitly (never derived from
  * Host/X-Forwarded-Host) plus the key, exactly like the managed broker.
  */
-import { classifyPublicApiKeyToken } from "@voyant-travel/core"
+import { classifyPublicApiKeyToken, PUBLIC_API_KEY_HEADER } from "@voyant-travel/core"
 import type { CustomerBuyerAccountPolicy } from "./customer-buyer-accounts.js"
 import type { CustomerAuthRuntimeContext } from "./node-runtime.js"
 import { enabledCustomerSocialProviders, isPublicApiOriginAllowed } from "./public-api-origins.js"
@@ -35,8 +35,15 @@ import type { CustomerAuthMethods } from "./server.js"
 export const PUBLIC_API_ORIGIN_HEADER = "x-voyant-public-origin"
 /** Standard browser header a direct (non-BFF) cross-origin client sends. */
 export const STANDARD_ORIGIN_HEADER = "origin"
-/** Default header carrying the publishable/secret access key. */
-export const PUBLIC_API_KEY_HEADER = "x-api-key"
+/**
+ * Default header carrying the publishable/secret access key.
+ *
+ * Re-exported rather than redeclared: this file and `@voyant-travel/core` had
+ * independently written `"x-api-key"`, and two copies of a header name are two
+ * places to change it. Core owns the value; auth keeps the export so its own
+ * consumers do not have to reach past it.
+ */
+export { PUBLIC_API_KEY_HEADER }
 
 const WILDCARD_ORIGIN_PREFIX = "https://*."
 

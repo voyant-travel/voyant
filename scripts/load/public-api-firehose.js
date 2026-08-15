@@ -5,7 +5,7 @@
 // and departures reads. Read-only: safe to run anywhere, but point it at
 // staging unless you mean it.
 //
-//   k6 run -e TARGET_URL=https://staging-tenant.example.com scripts/load/storefront-firehose.js
+//   k6 run -e TARGET_URL=https://staging-tenant.example.com scripts/load/public-api-firehose.js
 //
 // SLO budgets asserted (docs/architecture/performance-enterprise-scale-assessment.md §6):
 //   - http_req_failed rate < 1%

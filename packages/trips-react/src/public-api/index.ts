@@ -3,4 +3,4 @@ export {
   type PublicApiComposerGateMessages,
   type PublicApiComposerMessages,
   PublicApiComposerPage,
-} from "./storefront-composer-block.js"
+} from "./public-api-composer-block.js"

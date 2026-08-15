@@ -171,7 +171,7 @@ export interface PublicApiVerificationRoutesOptions
   ) => ReadonlyArray<PublicApiVerificationNotificationProvider>
 }
 
-export const STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY =
+export const PUBLIC_API_VERIFICATION_SENDERS_CONTAINER_KEY =
   "providers.publicApiVerification.senders"
 
 export interface PublicApiVerificationChannelCoverage {
@@ -277,7 +277,7 @@ function getSenders(
   if (resolveFromContainer) {
     try {
       return resolveFromContainer<PublicApiVerificationSenders>(
-        STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY,
+        PUBLIC_API_VERIFICATION_SENDERS_CONTAINER_KEY,
       )
     } catch {
       // Fall back to per-request sender construction when bootstrap has not run.

@@ -24,6 +24,7 @@ import {
 } from "@voyant-travel/finance/runtime-port"
 import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { createPublicApiIntakePersistence } from "./public-api-intake-runtime.js"
 import type { RelationshipsRouteRuntimeOptions } from "./route-runtime.js"
 import {
   type RelationshipsBookingEnrichmentDatabaseRuntime,
@@ -35,7 +36,6 @@ import {
   relationshipsRouteRuntimePort,
 } from "./runtime-port.js"
 import { relationshipsService } from "./service/index.js"
-import { createPublicApiIntakePersistence } from "./storefront-intake-runtime.js"
 
 const publicApiIntakeRuntimePortReference = {
   id: "public-api.intake.runtime",

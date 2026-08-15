@@ -15,7 +15,7 @@
 //   SLOT_ID             availability slot id (defaults to DEPARTURE_ID — storefront departure
 //                       ids ARE availability slot ids, see packages/public-api service-departures)
 //   CURRENCY            sell currency for quote payloads (default EUR)
-//   WARMUP_MS           cache-hit-ratio warmup window for storefront-firehose (default 60000)
+//   WARMUP_MS           cache-hit-ratio warmup window for public-api-firehose (default 60000)
 
 function requireEnv(name) {
   const value = __ENV[name]

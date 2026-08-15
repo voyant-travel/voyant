@@ -17,7 +17,7 @@ import { and, eq, gt, isNull } from "drizzle-orm"
 import { customerVerificationChallenges } from "./schema.js"
 
 /** Purpose marking a challenge as authorizing one self-service booking create. */
-export const STOREFRONT_VERIFICATION_BOOKING_CREATE_PURPOSE = "booking_create" as const
+export const PUBLIC_API_VERIFICATION_BOOKING_CREATE_PURPOSE = "booking_create" as const
 
 /** How long a verified challenge stays spendable. */
 const DEFAULT_CONSUMPTION_WINDOW_SECONDS = 30 * 60

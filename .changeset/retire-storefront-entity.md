@@ -103,6 +103,38 @@ literals. Graph port ids move separately and deliberately: `storefront.*` →
 The verification routes move with their mount: `/v1/public/storefront-verification/*` →
 `/v1/public/customer-verification/*`.
 
+**Filenames and constants:** 39 source files carrying `storefront` in their
+basename are renamed with their contents — `auth/src/storefront-credentials.ts`
+→ `public-api-credentials.ts`, `trips/src/storefront-access.ts` →
+`public-api-access.ts`, and so on. Six subpath exports move with them
+(`@voyant-travel/auth/storefront-credentials`,
+`@voyant-travel/flights/storefront-booking-lifecycle`,
+`@voyant-travel/relationships-contracts/storefront-intake`,
+`@voyant-travel/trips/storefront-trip-offer-resolver-port`,
+`.../storefront-trip-selections-runtime`, and
+`@voyant-travel/types/storefront-key-scopes`). All six packages are `private`,
+so there is no npm surface to deprecate.
+
+A further 12 `STOREFRONT_*` constants become `PUBLIC_API_*`. The earlier
+identifier sweep anchored on a following uppercase LETTER, so SCREAMING_SNAKE
+names — where the next character is an underscore — were never matched. Their
+VALUES are untouched; none of them contained the retired name.
+
+Three exceptions, each because the name is data rather than a name:
+
+- `env.STOREFRONT_BANK_BENEFICIARY|_IBAN|_NAME` stay. They are already legacy
+  fallbacks behind `BANK_TRANSFER_*`, so renaming them would drop the setting
+  of exactly the deployments they exist to serve.
+- `"storefront-trip-booking-v1"` stays. It is a version token hashed into the
+  operation digest recorded in `trip_public_booking_operations`; renaming it
+  changes every digest, so an in-flight idempotent retry would stop matching
+  its own recorded operation and book twice.
+- Migration filenames stay. A migration's name is its ledger identity.
+
+`PUBLIC_API_KEY_HEADER` had been written independently in `@voyant-travel/core`
+and `@voyant-travel/auth`, both as `"x-api-key"`. Auth now re-exports core's
+rather than declaring a second copy.
+
 **Environment:** `VOYANT_STOREFRONT_CHANNEL_ID` → `VOYANT_PUBLIC_API_CHANNEL_ID`. This one
 IS still read under its old name, which is a deliberate exception to the no-dual-spelling
 rule used for the request headers: an unset channel now resolves to the deployment's Direct

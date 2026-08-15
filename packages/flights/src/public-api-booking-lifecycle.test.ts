@@ -10,7 +10,7 @@ import {
   type PublicApiFlightMutationOutcome,
   type PublicApiFlightOperationClaimInput,
   type PublicApiFlightOperationStore,
-} from "./storefront-booking-lifecycle.js"
+} from "./public-api-booking-lifecycle.js"
 
 const now = new Date("2030-01-01T00:00:00.000Z")
 const authority = {

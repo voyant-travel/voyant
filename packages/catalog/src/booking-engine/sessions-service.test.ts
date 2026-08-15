@@ -29,13 +29,13 @@ const BASE_PRICING = {
 }
 
 const TEST_CAPABILITY = `bcap_${"a".repeat(43)}`
-const STOREFRONT_ACCESS = {
+const PUBLIC_API_ACCESS = {
   storefront: { channelId: "chan_public" },
 } as const
 const ANONYMOUS_ACCESS = {
   actorKind: "anonymous" as const,
   capability: TEST_CAPABILITY,
-  ...STOREFRONT_ACCESS,
+  ...PUBLIC_API_ACCESS,
 }
 let createCounter = 0
 
@@ -544,7 +544,7 @@ describe("Booking Session v1 owned tracer", () => {
     if (created.kind !== "session_created") throw new Error("session not created")
 
     expect(harness.repository.sessions.get(created.session.id)?.publicApiOrigin).toEqual(
-      STOREFRONT_ACCESS.storefront,
+      PUBLIC_API_ACCESS.storefront,
     )
     expect(JSON.stringify(created)).not.toContain("sf_public")
     expect(JSON.stringify(created)).not.toContain("chan_public")
@@ -1552,7 +1552,7 @@ describe("Booking Session v1 owned tracer", () => {
           actorKind: "customer",
           principalId: "customer_1",
           capability: TEST_CAPABILITY,
-          ...STOREFRONT_ACCESS,
+          ...PUBLIC_API_ACCESS,
         },
       ),
       harness.module.adoptSession(
@@ -1562,7 +1562,7 @@ describe("Booking Session v1 owned tracer", () => {
           actorKind: "customer",
           principalId: "customer_2",
           capability: TEST_CAPABILITY,
-          ...STOREFRONT_ACCESS,
+          ...PUBLIC_API_ACCESS,
         },
       ),
     ])
@@ -1572,7 +1572,7 @@ describe("Booking Session v1 owned tracer", () => {
     expect(harness.repository.sessions.get(created.session.id)).toMatchObject({
       actorKind: "customer",
       ownerPrincipalId: winningPrincipal,
-      publicApiOrigin: STOREFRONT_ACCESS.storefront,
+      publicApiOrigin: PUBLIC_API_ACCESS.storefront,
       capabilityHash: undefined,
       capabilityScopes: [],
       revision: 2,
@@ -1584,7 +1584,7 @@ describe("Booking Session v1 owned tracer", () => {
       harness.module.resumeSession(created.session.id, {
         actorKind: "customer",
         principalId: winningPrincipal,
-        ...STOREFRONT_ACCESS,
+        ...PUBLIC_API_ACCESS,
       }),
     ).resolves.toMatchObject({
       kind: "session_resumed",
@@ -1644,7 +1644,7 @@ describe("Booking Session v1 owned tracer", () => {
       actorKind: "customer" as const,
       principalId: "customer_purge_1",
       capability: TEST_CAPABILITY,
-      ...STOREFRONT_ACCESS,
+      ...PUBLIC_API_ACCESS,
     }
     await expect(
       harness.module.adoptSession(
@@ -1715,7 +1715,7 @@ describe("Booking Session v1 owned tracer", () => {
       actorKind: "customer" as const,
       principalId: "customer_1",
       organizationId: "org_1",
-      ...STOREFRONT_ACCESS,
+      ...PUBLIC_API_ACCESS,
     }
     const created = await harness.module.createSession(
       {
@@ -2226,7 +2226,7 @@ describe("Booking Session v1 authority under a publishable key", () => {
     await expect(
       harness.module.resumeSession(created.session.id, {
         actorKind: "anonymous",
-        ...STOREFRONT_ACCESS,
+        ...PUBLIC_API_ACCESS,
       }),
     ).resolves.toMatchObject({ kind: "rejected", error: { kind: "capability_required" } })
   })

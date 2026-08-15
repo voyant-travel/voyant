@@ -15,13 +15,13 @@
 import type { VoyantPublicApiKeyKind } from "./env.js"
 
 /** Token prefix per key kind. Deployed clients hold these; they never change. */
-export const STOREFRONT_KEY_PREFIXES = {
+export const PUBLIC_API_KEY_PREFIXES = {
   publishable: "vpk_",
   secret: "vsk_",
 } as const satisfies Record<VoyantPublicApiKeyKind, string>
 
 /** Header a storefront client presents its access key on. */
-export const STOREFRONT_KEY_HEADER = "x-api-key"
+export const PUBLIC_API_KEY_HEADER = "x-api-key"
 
 /**
  * SHA-256 hex digest of a storefront access token — the only value persisted,
@@ -53,8 +53,8 @@ export function classifyPublicApiKeyToken(
 ): VoyantPublicApiKeyKind | null {
   const value = token?.trim()
   if (!value) return null
-  for (const kind of Object.keys(STOREFRONT_KEY_PREFIXES) as VoyantPublicApiKeyKind[]) {
-    if (value.startsWith(STOREFRONT_KEY_PREFIXES[kind])) return kind
+  for (const kind of Object.keys(PUBLIC_API_KEY_PREFIXES) as VoyantPublicApiKeyKind[]) {
+    if (value.startsWith(PUBLIC_API_KEY_PREFIXES[kind])) return kind
   }
   return null
 }

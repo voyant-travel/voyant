@@ -6,7 +6,7 @@ import { describe, expect, it, vi } from "vitest"
 import {
   createPublicApiVerificationApiModule,
   customerVerificationChallenges,
-  STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY,
+  PUBLIC_API_VERIFICATION_SENDERS_CONTAINER_KEY,
 } from "../../../src/verification/index.js"
 
 describe("createPublicApiVerificationApiModule.bootstrap", () => {
@@ -48,7 +48,7 @@ describe("createPublicApiVerificationApiModule.bootstrap", () => {
         purpose: string
         expiresAt: Date
       }) => Promise<unknown>
-    }>(STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY)
+    }>(PUBLIC_API_VERIFICATION_SENDERS_CONTAINER_KEY)
 
     expect(resolveProviders).toHaveBeenCalledOnce()
     expect(senders.sendEmailChallenge).toBeTypeOf("function")

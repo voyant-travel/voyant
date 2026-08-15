@@ -67,14 +67,14 @@ function productIdFromAvailabilityEvent(data: unknown): string | null {
   return typeof productId === "string" && productId.trim() ? productId.trim() : null
 }
 
-export const STOREFRONT_AVAILABILITY_READ_MODEL_SUBSCRIBER_ID =
+export const PUBLIC_API_AVAILABILITY_READ_MODEL_SUBSCRIBER_ID =
   "@voyant-travel/public-api#subscriber.invalidate-departures-on-availability-change"
 
 export function createPublicApiAvailabilityReadModelInvalidationSubscriber(
   logger: Pick<Console, "warn"> = console,
 ): SubscriberRuntimeDescriptor {
   return {
-    id: STOREFRONT_AVAILABILITY_READ_MODEL_SUBSCRIBER_ID,
+    id: PUBLIC_API_AVAILABILITY_READ_MODEL_SUBSCRIBER_ID,
     eventType: "availability.slot.changed",
     register({ bindings, eventBus }: BootstrapContext) {
       eventBus.subscribe(

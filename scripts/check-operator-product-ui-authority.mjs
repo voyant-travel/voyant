@@ -33,7 +33,7 @@ for (const relativePath of [
   "packages/public-api-react/src/public-api/messages.tsx",
   "packages/public-api-react/src/public-api/scope.tsx",
   "packages/public-api-react/src/public-api/shell.tsx",
-  "packages/trips-react/src/public-api/storefront-composer-block.tsx",
+  "packages/trips-react/src/public-api/public-api-composer-block.tsx",
 ]) {
   const path = join(root, relativePath)
   if (!existsSync(path)) {

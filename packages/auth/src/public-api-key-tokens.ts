@@ -17,14 +17,14 @@
 import {
   classifyPublicApiKeyToken,
   hashPublicApiKeyToken,
-  STOREFRONT_KEY_PREFIXES,
+  PUBLIC_API_KEY_PREFIXES,
 } from "@voyant-travel/core"
 import type { PublicApiKeyKind } from "@voyant-travel/db/schema/iam"
 
 // The prefix table lives in `core` because the capability middleware in
 // `@voyant-travel/hono` classifies a token before this package is reachable,
 // and two copies of it drifting apart is an auth bypass (voyant#4625).
-const KEY_PREFIXES = STOREFRONT_KEY_PREFIXES satisfies Record<PublicApiKeyKind, string>
+const KEY_PREFIXES = PUBLIC_API_KEY_PREFIXES satisfies Record<PublicApiKeyKind, string>
 
 /** Bytes of entropy in the random portion of a key (256 bits). */
 const KEY_RANDOM_BYTES = 32

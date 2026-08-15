@@ -21,9 +21,9 @@ export {
   departuresDocKey,
   departuresDocPrefix,
   invalidateDeparturesReadModel,
+  PUBLIC_API_AVAILABILITY_READ_MODEL_SUBSCRIBER_ID,
   publicApiAvailabilityReadModelInvalidationSubscriber,
   readThroughDepartures,
-  STOREFRONT_AVAILABILITY_READ_MODEL_SUBSCRIBER_ID,
 } from "./departures-read-model.js"
 
 export type {

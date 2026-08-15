@@ -2,13 +2,13 @@ import type { EventBus, EventSource } from "@voyant-travel/core"
 import type {
   PublicApiIntakeSignal,
   PublicApiIntakePersistence as SharedPublicApiIntakePersistence,
-} from "@voyant-travel/relationships-contracts/storefront-intake"
+} from "@voyant-travel/relationships-contracts/public-api-intake"
 
 export type {
   PublicApiIntakeContext,
   PublicApiIntakePerson,
   PublicApiIntakeSignal,
-} from "@voyant-travel/relationships-contracts/storefront-intake"
+} from "@voyant-travel/relationships-contracts/public-api-intake"
 
 import type { PublicApiRequestContext } from "./service.js"
 import type {

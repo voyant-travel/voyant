@@ -1,6 +1,6 @@
 "use client"
 
-import { usePublicApiMarkets } from "../hooks/use-storefront-markets.js"
+import { usePublicApiMarkets } from "../hooks/use-public-api-markets.js"
 import { usePublicApiMessagesOrDefault } from "./messages.js"
 import { usePublicApiScope } from "./scope.js"
 

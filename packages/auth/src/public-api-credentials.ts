@@ -66,7 +66,7 @@ export interface PublicApiCredentialCipher {
 }
 
 // Storefront OAuth secrets are third-party integration credentials.
-const STOREFRONT_CREDENTIAL_KEY: KeyRef = { keyType: "integrations" }
+const PUBLIC_API_CREDENTIAL_KEY: KeyRef = { keyType: "integrations" }
 
 /**
  * Default cipher backed by the deployment's configured KMS (GCP/AWS/env/local),
@@ -79,13 +79,13 @@ export function createKmsPublicApiCredentialCipher(
   const provider = createKmsProviderFromEnv(env)
   return {
     async encrypt(plaintext) {
-      return { enc: await provider.encrypt(plaintext, STOREFRONT_CREDENTIAL_KEY) }
+      return { enc: await provider.encrypt(plaintext, PUBLIC_API_CREDENTIAL_KEY) }
     },
     async decrypt(envelope) {
       if (!envelope) {
         throw new PublicApiInputError("Stored storefront credential is empty.")
       }
-      return provider.decrypt(envelope.enc, STOREFRONT_CREDENTIAL_KEY)
+      return provider.decrypt(envelope.enc, PUBLIC_API_CREDENTIAL_KEY)
     },
   }
 }

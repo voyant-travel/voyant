@@ -2,17 +2,17 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { sha256Hex } from "@voyant-travel/hono"
 import { describe, expect, it } from "vitest"
 import {
+  createPublicApiTrip,
+  PUBLIC_API_TRIP_CAPABILITY_TTL_MS,
+  resolvePublicApiTripAccess,
+} from "../src/public-api-access.js"
+import {
   type TripEnvelope,
   type TripPublicAccess,
   tripComponents,
   tripEnvelopes,
   tripPublicAccess,
 } from "../src/schema.js"
-import {
-  createPublicApiTrip,
-  resolvePublicApiTripAccess,
-  STOREFRONT_TRIP_CAPABILITY_TTL_MS,
-} from "../src/storefront-access.js"
 
 const CAPABILITY = `tcap_${"a".repeat(64)}`
 const NOW = new Date("2026-08-08T10:00:00.000Z")
@@ -44,7 +44,7 @@ describe("public Trip access", () => {
       ...SCOPE,
       ownerUserId: null,
       revision: 1,
-      expiresAt: new Date(NOW.getTime() + STOREFRONT_TRIP_CAPABILITY_TTL_MS),
+      expiresAt: new Date(NOW.getTime() + PUBLIC_API_TRIP_CAPABILITY_TTL_MS),
     })
     expect(JSON.stringify(state.access)).not.toContain(CAPABILITY)
   })

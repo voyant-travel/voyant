@@ -4,9 +4,9 @@ import {
   type IdentityAccessRuntimeProvider,
   identityAccessRuntimePort,
 } from "./identity-access-runtime-port.js"
+import { createKmsPublicApiCredentialCipher } from "./public-api-credentials.js"
 import { createLocalPublicApiAdapter } from "./public-api-local-adapter.js"
 import { publicApiRuntimePort } from "./public-api-runtime-port.js"
-import { createKmsPublicApiCredentialCipher } from "./storefront-credentials.js"
 import { createCloudTeamManagementAdapter } from "./team-management-cloud-adapter.js"
 import { createLocalTeamManagementAdapter } from "./team-management-local-adapter.js"
 import { createGuardedTeamManagementProvider } from "./team-management-policy.js"

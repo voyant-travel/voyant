@@ -14,7 +14,12 @@ import {
 } from "@voyant-travel/public-api/shopping"
 import { and, eq, isNull } from "drizzle-orm"
 import { z } from "zod"
-
+import {
+  createPublicApiTripInTransaction,
+  type PublicApiTripScope,
+  resolvePublicApiTripAccess,
+} from "./public-api-access.js"
+import type { PublicApiTripOfferResolver } from "./public-api-trip-offer-resolver-port.js"
 import type { TripComponent, TripPublicAccess } from "./schema.js"
 import {
   type TripPublicApiBookingOperation,
@@ -30,12 +35,6 @@ import {
   updateTrip,
 } from "./service-trips.js"
 import type { Trip } from "./service-types.js"
-import {
-  createPublicApiTripInTransaction,
-  type PublicApiTripScope,
-  resolvePublicApiTripAccess,
-} from "./storefront-access.js"
-import type { PublicApiTripOfferResolver } from "./storefront-trip-offer-resolver-port.js"
 import { type CreateTripComponentBodyInput, createTripComponentBodySchema } from "./validation.js"
 
 const publicApiSelectionItemMetadataSchema = z
@@ -261,6 +260,12 @@ async function bookAuthorizedSelection(
     throw new PublicApiTripBookingError("storefront_trip_booking_pricing_unavailable")
   }
 
+  // `storefront-trip-booking-v1` keeps its spelling deliberately. It is a
+  // version token hashed into the operation digest recorded in
+  // `trip_public_booking_operations`; renaming it changes every digest, so an
+  // in-flight idempotent retry would stop matching its own recorded operation
+  // and book twice. The retired name costs nothing here — the `-v1` is what
+  // this string means.
   const operationDigest = await sha256Hex(
     ["storefront-trip-booking-v1", resolved.access.capabilityDigest, input.idempotencyKey].join(
       ":",

@@ -586,7 +586,7 @@ Both the catalog-bridge `captureSnapshotGraph` subscriber AND the promotions red
 
 ## 8. Storefront integration
 
-The existing placeholder hooks in `packages/public-api/src/service.ts` (`listApplicableOffers`, `getOfferBySlug`) get a real implementation in `packages/commerce/src/promotions/service-storefront.ts`. The same resolver surface owns customer-facing mutations:
+The existing placeholder hooks in `packages/public-api/src/service.ts` (`listApplicableOffers`, `getOfferBySlug`) get a real implementation in `packages/commerce/src/promotions/service-public-api.ts`. The same resolver surface owns customer-facing mutations:
 
 ```ts
 export function createPromotionsStorefrontResolvers(): StorefrontOfferResolvers {
@@ -772,7 +772,7 @@ Recorded here as the rationale trail. The two larger architectural threads have 
 - `packages/commerce/src/promotions/service-booking-confirmed.ts`: `createBookingConfirmedRedemptionSubscriber(env)` subscriber factory + `recordPromotionRedemptionsForBooking(db, bookingId)` core logic (idempotent upsert per §4.3).
 - Operator starter wires the evaluator into `quoteEntity` deps and registers the subscriber on the event bus alongside the existing `captureSnapshotGraph` subscriber.
 - Storefront DTO mapping (`packages/public-api/src/validation.ts:392`) verified to remain compatible — likely no changes.
-- `packages/commerce/src/promotions/service-storefront.ts`: `createPromotionsStorefrontResolvers()` factory.
+- `packages/commerce/src/promotions/service-public-api.ts`: `createPromotionsStorefrontResolvers()` factory.
 - Operator starter wires the resolver into its storefront service composition. **No new public routes** — the storefront already exposes `/v1/public/products/:productId/offers` and `/v1/public/offers/:slug` (`packages/public-api/src/routes-public.ts:99-120`); the resolver implementation makes those previously-empty endpoints functional.
 - Integration tests: end-to-end quote with valid code → discount applied; quote with invalid code → error; commit creates redemption row; snapshot round-trip preserves `appliedOffers`.
 

@@ -31,7 +31,7 @@ import type {
   PromotionRedemptionDatabaseRuntime,
   PromotionsBulkReindexRuntime,
 } from "./promotions/runtime-ports.js"
-import { createPromotionsPublicApiResolvers } from "./promotions/service-storefront.js"
+import { createPromotionsPublicApiResolvers } from "./promotions/service-public-api.js"
 import type {
   CommerceCardPaymentRuntime,
   CommerceInventoryRuntime,

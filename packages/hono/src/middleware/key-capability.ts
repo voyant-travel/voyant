@@ -36,7 +36,7 @@
  * route needs no customer session; `publishable` says a credential that ships
  * in a browser bundle may call it. A route can be both, either, or neither.
  */
-import { classifyPublicApiKeyToken, STOREFRONT_KEY_HEADER } from "@voyant-travel/core"
+import { classifyPublicApiKeyToken, PUBLIC_API_KEY_HEADER } from "@voyant-travel/core"
 import type { MiddlewareHandler } from "hono"
 
 import { extractBearerToken } from "../auth/session-jwt.js"
@@ -99,7 +99,7 @@ export function requireKeyCapability<TBindings extends VoyantBindings>(
 
     const kind = classifyPublicApiKeyToken(
       presentedPublicApiKey(
-        c.req.header(STOREFRONT_KEY_HEADER),
+        c.req.header(PUBLIC_API_KEY_HEADER),
         c.req.header("authorization") ?? c.req.header("Authorization"),
       ),
     )

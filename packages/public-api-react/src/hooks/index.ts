@@ -2,7 +2,7 @@ export {
   type UseAdminPublicApiSettingsOptions,
   useAdminPublicApiSettings,
   useAdminPublicApiSettingsMutation,
-} from "./use-admin-storefront-settings.js"
+} from "./use-admin-public-api-settings.js"
 export {
   useAbandonBookingSessionV1,
   useAdoptBookingSessionV1,
@@ -16,32 +16,32 @@ export {
 export {
   type UsePublicApiDepartureOptions,
   usePublicApiDeparture,
-} from "./use-storefront-departure.js"
+} from "./use-public-api-departure.js"
 export {
   type UsePublicApiDepartureItineraryOptions,
   usePublicApiDepartureItinerary,
-} from "./use-storefront-departure-itinerary.js"
-export { usePublicApiDeparturePricePreviewMutation } from "./use-storefront-departure-price-preview-mutation.js"
+} from "./use-public-api-departure-itinerary.js"
+export { usePublicApiDeparturePricePreviewMutation } from "./use-public-api-departure-price-preview-mutation.js"
 export {
   type UsePublicApiMarketsOptions,
   usePublicApiMarkets,
-} from "./use-storefront-markets.js"
-export { type UsePublicApiOfferOptions, usePublicApiOffer } from "./use-storefront-offer.js"
-export { usePublicApiOfferApplyMutation } from "./use-storefront-offer-apply-mutation.js"
-export { usePublicApiOfferRedeemMutation } from "./use-storefront-offer-redeem-mutation.js"
+} from "./use-public-api-markets.js"
+export { type UsePublicApiOfferOptions, usePublicApiOffer } from "./use-public-api-offer.js"
+export { usePublicApiOfferApplyMutation } from "./use-public-api-offer-apply-mutation.js"
+export { usePublicApiOfferRedeemMutation } from "./use-public-api-offer-redeem-mutation.js"
 export {
   type UsePublicApiProductDeparturesOptions,
   usePublicApiProductDepartures,
-} from "./use-storefront-product-departures.js"
+} from "./use-public-api-product-departures.js"
 export {
   type UsePublicApiProductExtensionsOptions,
   usePublicApiProductExtensions,
-} from "./use-storefront-product-extensions.js"
+} from "./use-public-api-product-extensions.js"
 export {
   type UsePublicApiProductOffersOptions,
   usePublicApiProductOffers,
-} from "./use-storefront-product-offers.js"
+} from "./use-public-api-product-offers.js"
 export {
   type UsePublicApiSettingsOptions,
   usePublicApiSettings,
-} from "./use-storefront-settings.js"
+} from "./use-public-api-settings.js"

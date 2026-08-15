@@ -1,4 +1,4 @@
-export const STOREFRONT_ROUTE_HOSTS = {
+export const PUBLIC_API_ROUTE_HOSTS = {
   "route.tsx": "layout",
   "shop.tsx": "shop",
   "shop_.account.tsx": "account",
@@ -23,7 +23,7 @@ export function checkStorefrontPresentationAuthority({
   const failures = []
   let hostLines = 0
 
-  for (const [file, routeKey] of Object.entries(STOREFRONT_ROUTE_HOSTS)) {
+  for (const [file, routeKey] of Object.entries(PUBLIC_API_ROUTE_HOSTS)) {
     const source = routeHosts[file]
     if (source === undefined) {
       failures.push(`${file} is required as a Storefront route host`)

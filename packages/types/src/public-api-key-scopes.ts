@@ -27,7 +27,7 @@ export type PublicApiKeyScopes = ApiKeyPermissions
  * to reach them, and a default that included them would make the narrow case
  * the one requiring effort.
  */
-export const STOREFRONT_SECRET_KEY_DEFAULT_SCOPES: PublicApiKeyScopes = Object.freeze({
+export const PUBLIC_API_SECRET_KEY_DEFAULT_SCOPES: PublicApiKeyScopes = Object.freeze({
   bookings: ["read", "write"],
   finance: ["read", "write"],
   legal: ["read"],
@@ -37,7 +37,7 @@ export const STOREFRONT_SECRET_KEY_DEFAULT_SCOPES: PublicApiKeyScopes = Object.f
 }) as PublicApiKeyScopes
 
 /** The unrestricted grant. Only ever set when an operator explicitly opts in. */
-export const STOREFRONT_KEY_WILDCARD_SCOPES: PublicApiKeyScopes = Object.freeze({
+export const PUBLIC_API_KEY_WILDCARD_SCOPES: PublicApiKeyScopes = Object.freeze({
   "*": ["*"],
 }) as PublicApiKeyScopes
 

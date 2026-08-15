@@ -5,7 +5,7 @@ import type {
   PublicApiTripSelectionCreate,
 } from "@voyant-travel/public-api/shopping"
 
-import type { PublicApiTripScope } from "./storefront-access.js"
+import type { PublicApiTripScope } from "./public-api-access.js"
 import type { CreateTripComponentBodyInput } from "./validation.js"
 
 type PublicApiOfferSelection = PublicApiTripSelectionCreate["offers"][number]

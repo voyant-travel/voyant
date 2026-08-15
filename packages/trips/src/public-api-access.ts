@@ -13,8 +13,8 @@ import {
 import { getTrip } from "./service-trips.js"
 import type { Trip } from "./service-types.js"
 
-export const STOREFRONT_TRIP_CAPABILITY_HEADER = "Voyant-Trip-Capability"
-export const STOREFRONT_TRIP_CAPABILITY_TTL_MS = 30 * 24 * 60 * 60 * 1000
+export const PUBLIC_API_TRIP_CAPABILITY_HEADER = "Voyant-Trip-Capability"
+export const PUBLIC_API_TRIP_CAPABILITY_TTL_MS = 30 * 24 * 60 * 60 * 1000
 
 const capabilitySchema = z.string().regex(/^tcap_[a-f0-9]{64}$/)
 
@@ -100,7 +100,7 @@ export async function createPublicApiTripInTransaction(
   capabilitySchema.parse(capability)
   const capabilityDigest = await sha256Hex(capability)
   const now = options.now?.() ?? new Date()
-  const expiresAt = new Date(now.getTime() + (options.ttlMs ?? STOREFRONT_TRIP_CAPABILITY_TTL_MS))
+  const expiresAt = new Date(now.getTime() + (options.ttlMs ?? PUBLIC_API_TRIP_CAPABILITY_TTL_MS))
 
   const actor = publicApiActor(context)
   const values: NewTripEnvelope = {

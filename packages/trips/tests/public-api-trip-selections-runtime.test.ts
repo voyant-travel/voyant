@@ -2,7 +2,14 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { sha256Hex } from "@voyant-travel/hono"
 import type { PublicApiShoppingContext } from "@voyant-travel/public-api/shopping"
 import { describe, expect, it, vi } from "vitest"
-
+import type { PublicApiTripOfferResolutionInput } from "../src/public-api-trip-offer-resolver-port.js"
+import {
+  createPublicApiTripSelectionsRuntime,
+  PublicApiTripBookingError,
+  PublicApiTripSelectionAccessError,
+  PublicApiTripSelectionConflictError,
+  PublicApiTripSelectionUnavailableError,
+} from "../src/public-api-trip-selections-runtime.js"
 import {
   type TripComponent,
   type TripEnvelope,
@@ -15,14 +22,6 @@ import {
   tripPublicBookingOperations,
   tripSnapshots,
 } from "../src/schema.js"
-import type { PublicApiTripOfferResolutionInput } from "../src/storefront-trip-offer-resolver-port.js"
-import {
-  createPublicApiTripSelectionsRuntime,
-  PublicApiTripBookingError,
-  PublicApiTripSelectionAccessError,
-  PublicApiTripSelectionConflictError,
-  PublicApiTripSelectionUnavailableError,
-} from "../src/storefront-trip-selections-runtime.js"
 
 const NOW = new Date("2026-08-08T10:00:00.000Z")
 const CAPABILITY = `tcap_${"a".repeat(64)}`

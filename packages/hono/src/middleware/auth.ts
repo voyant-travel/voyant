@@ -3,7 +3,7 @@ import type { Actor, VoyantAuthContext } from "@voyant-travel/core"
 import {
   classifyPublicApiKeyToken,
   hashPublicApiKeyToken,
-  STOREFRONT_KEY_HEADER,
+  PUBLIC_API_KEY_HEADER,
 } from "@voyant-travel/core"
 import {
   apikeyTable,
@@ -12,7 +12,7 @@ import {
   type SelectApikey,
 } from "@voyant-travel/db/schema/iam"
 import { API_KEY_AUDIENCES, permissionsToStrings } from "@voyant-travel/types/api-keys"
-import { STOREFRONT_SECRET_KEY_DEFAULT_SCOPES } from "@voyant-travel/types/storefront-key-scopes"
+import { PUBLIC_API_SECRET_KEY_DEFAULT_SCOPES } from "@voyant-travel/types/public-api-key-scopes"
 import type { KVStore } from "@voyant-travel/utils/cache"
 import { and, eq, isNull, or, sql } from "drizzle-orm"
 import type { MiddlewareHandler } from "hono"
@@ -358,7 +358,7 @@ export function requireAuth<TBindings extends VoyantBindings>(
     // A publishable key is never accepted: this is the grant half of the same
     // rule the capability middleware states, kept in the place that grants.
     const isAdminApi = p === "/v1/admin" || p.startsWith("/v1/admin/")
-    const publicApiKeyToken = c.req.header(STOREFRONT_KEY_HEADER)?.trim() || token
+    const publicApiKeyToken = c.req.header(PUBLIC_API_KEY_HEADER)?.trim() || token
     if (
       isAdminApi &&
       publicApiKeyToken &&
@@ -383,7 +383,7 @@ export function requireAuth<TBindings extends VoyantBindings>(
           // A secret key minted before scopes existed carries `null`. It never
           // had admin reach to preserve, so it gets the commerce-shaped default
           // rather than the unrestricted grant — new capability, narrow start.
-          scopes: permissionsToStrings(row.scopes ?? STOREFRONT_SECRET_KEY_DEFAULT_SCOPES),
+          scopes: permissionsToStrings(row.scopes ?? PUBLIC_API_SECRET_KEY_DEFAULT_SCOPES),
           callerType: "api_key",
           apiKeyId: row.id,
           actor: "staff",

@@ -6,7 +6,7 @@ vi.mock("@voyant-travel/connect-sdk", () => ({
   createVoyantConnectClient: vi.fn(() => ({ packages: { searchAcrossProviders } })),
 }))
 
-import { createVoyantConnectPublicApiPackageSourceProvider } from "./storefront-package-sources.js"
+import { createVoyantConnectPublicApiPackageSourceProvider } from "./public-api-package-sources.js"
 
 function primitives(env: Record<string, unknown>) {
   return {

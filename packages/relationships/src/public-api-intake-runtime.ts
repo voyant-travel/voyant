@@ -1,7 +1,7 @@
 import type {
   PublicApiIntakeContext,
   PublicApiIntakePersistence,
-} from "@voyant-travel/relationships-contracts/storefront-intake"
+} from "@voyant-travel/relationships-contracts/public-api-intake"
 import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { customerSignals } from "./schema.js"

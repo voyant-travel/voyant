@@ -11,6 +11,7 @@ import {
 import { publicApiVerificationRuntimePort } from "@voyant-travel/public-api"
 import type { PublicApiVerificationRoutesOptions } from "@voyant-travel/public-api/verification"
 import { relationshipsPersonNotificationsRuntimePort } from "@voyant-travel/relationships/runtime-port"
+import { toPublicApiVerificationNotificationProviders } from "./customer-verification-runtime.js"
 import {
   type DurableNotificationProviderRuntime,
   durableNotificationProviderPort,
@@ -21,7 +22,6 @@ import { createProposalsNotificationsRuntime } from "./proposals-runtime.js"
 import { notificationsReminderJobRuntimePort } from "./reminder-job-runtime-port.js"
 import { createNotificationsRuntime } from "./runtime.js"
 import { notificationsRuntimePort } from "./runtime-port.js"
-import { toPublicApiVerificationNotificationProviders } from "./storefront-verification-runtime.js"
 import type { NotificationProvider } from "./types.js"
 
 export interface NotificationsRuntimeContributorHost {

@@ -4,9 +4,8 @@ import {
   type PublicApiVerificationRoutesOptions,
 } from "@voyant-travel/public-api/verification"
 import { describe, expect, it, vi } from "vitest"
-
+import { toPublicApiVerificationNotificationProvider } from "../../src/customer-verification-runtime.js"
 import { createNotificationsRuntimePortContribution } from "../../src/runtime-contributor.js"
-import { toPublicApiVerificationNotificationProvider } from "../../src/storefront-verification-runtime.js"
 import type { NotificationProvider } from "../../src/types.js"
 
 function durableProvider(

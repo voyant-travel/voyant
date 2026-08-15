@@ -116,8 +116,8 @@
       "retiredBy": ["operator-smartbill-authority"]
     },
     {
-      "path": "apps/operator/src/api/runtime/storefront-intake-runtime.ts",
-      "retiredBy": ["storefront-presentation-authority"]
+      "path": "apps/operator/src/api/runtime/public-api-intake-runtime.ts",
+      "retiredBy": ["public-api-presentation-authority"]
     },
     {
       "path": "apps/operator/src/api/runtime/trips-catalog-runtime.ts",
@@ -172,7 +172,7 @@
       "retiredBy": ["operator-product-ui-authority"]
     },
     {
-      "path": "apps/operator/src/components/voyant/trips/storefront-composer-block.tsx",
+      "path": "apps/operator/src/components/voyant/trips/public-api-composer-block.tsx",
       "retiredBy": ["operator-product-ui-authority"]
     },
     {

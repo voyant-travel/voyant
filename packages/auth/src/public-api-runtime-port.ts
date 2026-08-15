@@ -7,7 +7,7 @@ import type {
   PublicApiKeyKind,
 } from "@voyant-travel/db/schema/iam"
 import type { VoyantDb } from "@voyant-travel/hono"
-import type { PublicApiKeyScopes } from "@voyant-travel/types/storefront-key-scopes"
+import type { PublicApiKeyScopes } from "@voyant-travel/types/public-api-key-scopes"
 
 /**
  * One issued public API key. The key is the unit: there is no storefront row

@@ -57,7 +57,7 @@ import {
 import type { BookingSessionAccessContext } from "./sessions-service.js"
 
 const PRODUCT_TARGET = { kind: "product", productId: "prod_selection" } as const
-const STOREFRONT_ACCESS = {
+const PUBLIC_API_ACCESS = {
   storefront: { channelId: "chan_public" },
 } as const
 const TEST_CAPABILITY = `bcap_${"a".repeat(43)}`
@@ -103,13 +103,13 @@ async function createAnonymousSession(
       target: PRODUCT_TARGET,
       selection,
     },
-    { actorKind: "anonymous", capability: TEST_CAPABILITY, ...STOREFRONT_ACCESS },
+    { actorKind: "anonymous", capability: TEST_CAPABILITY, ...PUBLIC_API_ACCESS },
   )
   if (created.kind !== "session_created") throw new Error("session not created")
   const access = {
     actorKind: "anonymous" as const,
     capability: TEST_CAPABILITY,
-    ...STOREFRONT_ACCESS,
+    ...PUBLIC_API_ACCESS,
   }
   return { created, access }
 }
@@ -430,7 +430,7 @@ describe("composite sourced target authority", () => {
       {
         actorKind: "anonymous",
         capability: TEST_CAPABILITY,
-        ...STOREFRONT_ACCESS,
+        ...PUBLIC_API_ACCESS,
       },
     )
 
@@ -473,7 +473,7 @@ describe("composite sourced target authority", () => {
     const access = {
       actorKind: "anonymous" as const,
       capability: TEST_CAPABILITY,
-      ...STOREFRONT_ACCESS,
+      ...PUBLIC_API_ACCESS,
     }
     let sourcedEntryReads = 0
     const sourcedEntryPredicates: Array<{ sql: string; params: unknown[] }> = []
@@ -647,7 +647,7 @@ describe("production Booking Session ports", () => {
     const access = {
       actorKind: "anonymous" as const,
       capability: TEST_CAPABILITY,
-      ...STOREFRONT_ACCESS,
+      ...PUBLIC_API_ACCESS,
     }
     const created = await module.createSession(
       {
@@ -697,7 +697,7 @@ describe("production Booking Session ports", () => {
     const access = {
       actorKind: "anonymous" as const,
       capability: TEST_CAPABILITY,
-      ...STOREFRONT_ACCESS,
+      ...PUBLIC_API_ACCESS,
     }
     const created = await module.createSession(
       {
@@ -730,7 +730,7 @@ describe("production Booking Session ports", () => {
     const access = {
       actorKind: "anonymous" as const,
       capability: TEST_CAPABILITY,
-      ...STOREFRONT_ACCESS,
+      ...PUBLIC_API_ACCESS,
     }
     const created = await module.createSession(
       {
@@ -766,7 +766,7 @@ describe("production Booking Session ports", () => {
     const access = {
       actorKind: "anonymous" as const,
       capability: TEST_CAPABILITY,
-      ...STOREFRONT_ACCESS,
+      ...PUBLIC_API_ACCESS,
     }
     const created = await module.createSession(
       committableCreateInput("create_promotion_failure"),
@@ -795,7 +795,7 @@ describe("production Booking Session ports", () => {
     const access = {
       actorKind: "anonymous" as const,
       capability: TEST_CAPABILITY,
-      ...STOREFRONT_ACCESS,
+      ...PUBLIC_API_ACCESS,
     }
     const created = await module.createSession(committableCreateInput("create_terms"), access)
     if (created.kind !== "session_created") throw new Error("session not created")
@@ -836,7 +836,7 @@ describe("production Booking Session ports", () => {
     const access = {
       actorKind: "anonymous" as const,
       capability: TEST_CAPABILITY,
-      ...STOREFRONT_ACCESS,
+      ...PUBLIC_API_ACCESS,
     }
     const created = await module.createSession(
       {
@@ -884,7 +884,7 @@ describe("production Booking Session ports", () => {
     const access = {
       actorKind: "anonymous" as const,
       capability: TEST_CAPABILITY,
-      ...STOREFRONT_ACCESS,
+      ...PUBLIC_API_ACCESS,
     }
     const created = await module.createSession(
       {
@@ -1087,14 +1087,14 @@ describe("production Booking Session ports", () => {
     const created = await module.createSession(committableCreateInput("create_adopted_customer"), {
       actorKind: "anonymous",
       capability: TEST_CAPABILITY,
-      ...STOREFRONT_ACCESS,
+      ...PUBLIC_API_ACCESS,
     })
     if (created.kind !== "session_created") throw new Error("session not created")
     const customerAccess = {
       actorKind: "customer" as const,
       principalId: "customer_1",
       capability: TEST_CAPABILITY,
-      ...STOREFRONT_ACCESS,
+      ...PUBLIC_API_ACCESS,
     }
     const adopted = await module.adoptSession(
       created.session.id,
@@ -1123,7 +1123,7 @@ describe("production Booking Session ports", () => {
     )
 
     expect(financeCreate.createFromSession).toHaveBeenCalledWith(
-      expect.objectContaining({ storefront: STOREFRONT_ACCESS.storefront }),
+      expect.objectContaining({ storefront: PUBLIC_API_ACCESS.storefront }),
     )
   })
 
@@ -1132,7 +1132,7 @@ describe("production Booking Session ports", () => {
     const anonymousAccess = {
       actorKind: "anonymous" as const,
       capability: TEST_CAPABILITY,
-      ...STOREFRONT_ACCESS,
+      ...PUBLIC_API_ACCESS,
     }
     const created = await module.createSession(
       committableCreateInput("create_staff_support"),
@@ -1164,7 +1164,7 @@ describe("production Booking Session ports", () => {
     )
 
     expect(financeCreate.createFromSession).toHaveBeenCalledWith(
-      expect.objectContaining({ storefront: STOREFRONT_ACCESS.storefront }),
+      expect.objectContaining({ storefront: PUBLIC_API_ACCESS.storefront }),
     )
   })
 

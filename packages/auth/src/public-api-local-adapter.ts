@@ -19,11 +19,19 @@ import {
 } from "@voyant-travel/db/schema/iam"
 import {
   normalizePublicApiKeyScopes,
+  PUBLIC_API_SECRET_KEY_DEFAULT_SCOPES,
   type PublicApiKeyScopes,
-  STOREFRONT_SECRET_KEY_DEFAULT_SCOPES,
-} from "@voyant-travel/types/storefront-key-scopes"
+} from "@voyant-travel/types/public-api-key-scopes"
 import { asc, desc, eq, sql } from "drizzle-orm"
-
+import {
+  type PublicApiCredentialCipher,
+  validatePublicApiCredentialBundle,
+} from "./public-api-credentials.js"
+import {
+  classifyPublicApiApiKey,
+  generatePublicApiApiKey,
+  hashPublicApiApiKey,
+} from "./public-api-key-tokens.js"
 import {
   enabledCustomerSocialProviders,
   isPublicApiOriginAllowed,
@@ -42,15 +50,6 @@ import type {
   PublicApiRuntimeProvider,
   ResolvedCustomerAccountCredentials,
 } from "./public-api-runtime-port.js"
-import {
-  type PublicApiCredentialCipher,
-  validatePublicApiCredentialBundle,
-} from "./storefront-credentials.js"
-import {
-  classifyPublicApiApiKey,
-  generatePublicApiApiKey,
-  hashPublicApiApiKey,
-} from "./storefront-keys.js"
 
 export { isPublicApiOriginAllowed } from "./public-api-origins.js"
 
@@ -186,7 +185,7 @@ export function createLocalPublicApiAdapter(options: {
     const grant =
       values.kind === "publishable"
         ? null
-        : (normalizePublicApiKeyScopes(scopes) ?? STOREFRONT_SECRET_KEY_DEFAULT_SCOPES)
+        : (normalizePublicApiKeyScopes(scopes) ?? PUBLIC_API_SECRET_KEY_DEFAULT_SCOPES)
     const [row] = await context.db
       .insert(publicApiKeys)
       .values({
@@ -252,7 +251,7 @@ export function createLocalPublicApiAdapter(options: {
           throw new PublicApiInputError("A publishable key cannot carry scopes.")
         }
         update.scopes =
-          normalizePublicApiKeyScopes(patch.scopes) ?? STOREFRONT_SECRET_KEY_DEFAULT_SCOPES
+          normalizePublicApiKeyScopes(patch.scopes) ?? PUBLIC_API_SECRET_KEY_DEFAULT_SCOPES
       }
       const [row] = await context.db
         .update(publicApiKeys)

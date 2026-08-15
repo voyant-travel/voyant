@@ -3,9 +3,9 @@ import { describe, expect, it } from "vitest"
 import {
   classifyPublicApiKeyToken,
   hashPublicApiKeyToken,
-  STOREFRONT_KEY_HEADER,
-  STOREFRONT_KEY_PREFIXES,
-} from "../../src/storefront-key-kind.js"
+  PUBLIC_API_KEY_HEADER,
+  PUBLIC_API_KEY_PREFIXES,
+} from "../../src/public-api-key-kind.js"
 
 /**
  * These live in `core` because two layers read them at different times — the
@@ -36,8 +36,8 @@ describe("storefront key classification", () => {
   })
 
   it("pins the deployed prefixes and header — clients hold these", () => {
-    expect(STOREFRONT_KEY_PREFIXES).toEqual({ publishable: "vpk_", secret: "vsk_" })
-    expect(STOREFRONT_KEY_HEADER).toBe("x-api-key")
+    expect(PUBLIC_API_KEY_PREFIXES).toEqual({ publishable: "vpk_", secret: "vsk_" })
+    expect(PUBLIC_API_KEY_HEADER).toBe("x-api-key")
   })
 })
 

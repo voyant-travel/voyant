@@ -4,7 +4,7 @@ import {
   classifyPublicApiApiKey,
   generatePublicApiApiKey,
   hashPublicApiApiKey,
-} from "../../src/storefront-keys.js"
+} from "../../src/public-api-key-tokens.js"
 
 describe("storefront access keys", () => {
   it("mints publishable keys with the vpk_ prefix and a stored hash", async () => {

@@ -7,13 +7,12 @@ import type {
 } from "@voyant-travel/public-api/shopping"
 import { and, eq, gt, isNull, sql } from "drizzle-orm"
 import { z } from "zod"
-
-import type { TripShoppingReference } from "./schema.js"
-import { tripShoppingReferences } from "./schema.js"
 import type {
   PublicApiTripOfferComponent,
   PublicApiTripOfferResolver,
-} from "./storefront-trip-offer-resolver-port.js"
+} from "./public-api-trip-offer-resolver-port.js"
+import type { TripShoppingReference } from "./schema.js"
+import { tripShoppingReferences } from "./schema.js"
 import { tripComponentPricingSnapshotSchema } from "./validation.js"
 
 const MAX_REFERENCE_TTL_SECONDS = 24 * 60 * 60

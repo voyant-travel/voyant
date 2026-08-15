@@ -4,7 +4,7 @@ import { beforeAll, beforeEach, describe, expect, it } from "vitest"
 
 import {
   consumeVerifiedChallenge,
-  STOREFRONT_VERIFICATION_BOOKING_CREATE_PURPOSE,
+  PUBLIC_API_VERIFICATION_BOOKING_CREATE_PURPOSE,
 } from "../../../src/verification/consume.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
@@ -78,7 +78,7 @@ describe.skipIf(!DB_AVAILABLE)("consumeVerifiedChallenge", () => {
 function input(patch: Record<string, unknown> = {}) {
   return {
     challengeId: "svch_1",
-    purpose: STOREFRONT_VERIFICATION_BOOKING_CREATE_PURPOSE,
+    purpose: PUBLIC_API_VERIFICATION_BOOKING_CREATE_PURPOSE,
     subjectRef: DRAFT_ID,
     destination: EMAIL,
     consumedRef: "book_1",
@@ -104,7 +104,7 @@ async function seed(
       (id, channel, destination, purpose, code_hash, status, expires_at, verified_at,
        subject_ref, consumed_at, consumed_ref)
     VALUES (
-      'svch_1', 'email', '${EMAIL}', '${STOREFRONT_VERIFICATION_BOOKING_CREATE_PURPOSE}',
+      'svch_1', 'email', '${EMAIL}', '${PUBLIC_API_VERIFICATION_BOOKING_CREATE_PURPOSE}',
       'hash', '${status}', now() + interval '10 minutes',
       ${verified ? `now() - interval '${minutesAgo} minutes'` : "NULL"},
       '${DRAFT_ID}',

@@ -9,9 +9,9 @@ import {
   publicApiTripSelectionsRuntimePort,
 } from "@voyant-travel/public-api/shopping/runtime-port"
 import { durableTripActionRuntimePort } from "./durable-action-runtime-port.js"
+import { publicApiTripOfferResolverPort } from "./public-api-trip-offer-resolver-port.js"
 import { tripsDatabaseRuntimePort, tripsRoutesRuntimePort } from "./runtime-port.js"
 import { tripsSourcingJobRuntimePort } from "./sourcing-job-runtime-port.js"
-import { publicApiTripOfferResolverPort } from "./storefront-trip-offer-resolver-port.js"
 
 const catalogRuntimeServicesPortReference = { id: "catalog.runtime-services" } as const
 const catalogCompositeBookingSessionRuntimePortReference = {

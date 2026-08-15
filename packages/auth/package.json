@@ -108,9 +108,9 @@
       "types": "./src/public-api-customer-auth-resolver.ts",
       "default": "./src/public-api-customer-auth-resolver.ts"
     },
-    "./storefront-credentials": {
-      "types": "./src/storefront-credentials.ts",
-      "default": "./src/storefront-credentials.ts"
+    "./public-api-credentials": {
+      "types": "./src/public-api-credentials.ts",
+      "default": "./src/public-api-credentials.ts"
     },
     "./tools": {
       "types": "./src/mcp-runtime.ts",
@@ -251,10 +251,10 @@
         "import": "./dist/public-api-customer-auth-resolver.js",
         "default": "./dist/public-api-customer-auth-resolver.js"
       },
-      "./storefront-credentials": {
-        "types": "./dist/storefront-credentials.d.ts",
-        "import": "./dist/storefront-credentials.js",
-        "default": "./dist/storefront-credentials.js"
+      "./public-api-credentials": {
+        "types": "./dist/public-api-credentials.d.ts",
+        "import": "./dist/public-api-credentials.js",
+        "default": "./dist/public-api-credentials.js"
       },
       "./team-management-runtime-port": {
         "types": "./dist/team-management-runtime-port.d.ts",

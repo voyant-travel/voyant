@@ -6,9 +6,9 @@ import { publicApiVerificationRuntimePort } from "../runtime-port.js"
 import {
   buildPublicApiVerificationSenderBundle,
   createPublicApiVerificationPublicRoutes,
+  PUBLIC_API_VERIFICATION_SENDERS_CONTAINER_KEY,
   type PublicApiVerificationChannelCoverage,
   type PublicApiVerificationRoutesOptions,
-  STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY,
 } from "./routes-public.js"
 import { publicApiVerificationModule } from "./schema.js"
 
@@ -18,8 +18,8 @@ export type {
 } from "./consume.js"
 export {
   consumeVerifiedChallenge,
+  PUBLIC_API_VERIFICATION_BOOKING_CREATE_PURPOSE,
   peekVerifiedChallengeDestination,
-  STOREFRONT_VERIFICATION_BOOKING_CREATE_PURPOSE,
 } from "./consume.js"
 export type {
   PublicApiVerificationChannelCoverage,
@@ -31,8 +31,8 @@ export {
   buildPublicApiVerificationSenderBundle,
   buildPublicApiVerificationSenders,
   createPublicApiVerificationPublicRoutes,
+  PUBLIC_API_VERIFICATION_SENDERS_CONTAINER_KEY,
   resolvePublicApiVerificationChannelCoverage,
-  STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY,
 } from "./routes-public.js"
 export type {
   CustomerVerificationChallenge,
@@ -126,7 +126,7 @@ export function createPublicApiVerificationApiModule(
         options,
       )
       warnUndeliverableChannels(coverage)
-      container.register(STOREFRONT_VERIFICATION_SENDERS_CONTAINER_KEY, senders)
+      container.register(PUBLIC_API_VERIFICATION_SENDERS_CONTAINER_KEY, senders)
     },
   }
 

@@ -7,12 +7,12 @@ import {
   publicApiKeys,
 } from "@voyant-travel/db/schema/iam"
 import { afterAll, beforeEach, describe, expect, it } from "vitest"
+import type { PublicApiCredentialCipher } from "../../src/public-api-credentials.js"
 import { createLocalPublicApiAdapter } from "../../src/public-api-local-adapter.js"
 import type {
   PublicApiRequestContext,
   PublicApiResolveContext,
 } from "../../src/public-api-runtime-port.js"
-import type { PublicApiCredentialCipher } from "../../src/storefront-credentials.js"
 
 const TEST_DATABASE_URL = process.env.TEST_DATABASE_URL
 
@@ -154,9 +154,11 @@ describe.skipIf(!TEST_DATABASE_URL)("local public API adapter", () => {
       channelId: "chan_b",
     })
 
-    expect(
-      await adapter.resolveApiKeysByOrigin(resolveContext, "https://shop.example.com"),
-    ).toEqual([])
+    const resolved = await adapter.resolveApiKeysByOrigin(
+      resolveContext,
+      "https://shop.example.com",
+    )
+    expect(resolved.map((key) => key.channelId).sort()).toEqual(["chan_a", "chan_b"])
   })
 
   it("keeps a revoked key out of origin resolution", async () => {
