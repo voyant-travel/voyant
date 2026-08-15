@@ -4,13 +4,13 @@ export type BookingsUiOperationsMessages = {
     fields: {
       status: string
       note: string
-      suppressNotifications: string
+      notifyCustomer: string
     }
     placeholders: {
       note: string
     }
     helpers: {
-      suppressNotifications: string
+      notifyCustomer: string
     }
     actions: {
       updateStatus: string
