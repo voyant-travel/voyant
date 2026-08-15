@@ -113,6 +113,13 @@ export const issuedBookingDocumentTypeSchema = z.enum([
 
 export type IssuedBookingDocumentType = z.infer<typeof issuedBookingDocumentTypeSchema>
 
+/**
+ * A calendar date or an instant, as printed on a document. Validated rather
+ * than left as free text: an unparseable string would otherwise reach
+ * `new Date(...)` and fail as a database error instead of a 400.
+ */
+export const isoDateOrTimestampSchema = z.union([z.string().date(), z.string().datetime()])
+
 export function isIssuedBookingDocumentType(
   type: z.infer<typeof bookingDocumentTypeSchema>,
 ): type is IssuedBookingDocumentType {

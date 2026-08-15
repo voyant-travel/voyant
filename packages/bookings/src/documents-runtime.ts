@@ -1,21 +1,16 @@
 /**
  * Tool-context contribution for the Booking Document Tools.
  *
- * Thin over `bookingsService`: it resolves the booking, records the document,
- * and writes the action-ledger entry that says who recorded it. It deliberately
- * reaches for no invoice series, no contract series, and no renderer — see
- * `tools-documents.ts` for why recording is not issuing (voyant#4657).
+ * Thin over `bookingsService` and `recordBookingDocument`: it resolves the
+ * booking, records the document, and serializes the row. The recording and its
+ * audit entry are one transaction inside `document-recording.ts`, shared with
+ * the admin route (voyant#4657).
  */
 
-import { appendActionLedgerMutation } from "@voyant-travel/action-ledger"
-import type { AnyDrizzleDb } from "@voyant-travel/db"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 
-import {
-  BOOKING_DOCUMENT_LEDGER_ACTION_NAME,
-  BOOKING_DOCUMENT_LEDGER_ACTION_VERSION,
-} from "./action-declarations.js"
+import { recordBookingDocument } from "./document-recording.js"
 import { type Env, getActionLedgerRequestContext } from "./routes-shared.js"
 import type { BookingDocument } from "./schema.js"
 import { bookingsService } from "./service.js"
@@ -54,44 +49,24 @@ export function contributeBookingDocumentsToolContext(input: {
         const rows = await bookingsService.listDocuments(db, bookingId)
         return { data: rows.map(toWire) }
       },
-      async recordBookingDocument(command) {
+      async recordBookingDocument(command, admitted) {
         const { bookingId, ...data } = command
-        const result = await bookingsService.createDocument(db, bookingId, {
-          ...data,
-          travelerId: data.travelerId ?? null,
+        const result = await recordBookingDocument(db, {
+          context: getActionLedgerRequestContext(c),
+          bookingId,
+          data: { ...data, travelerId: data.travelerId ?? null },
+          routeOrToolName: "record_booking_document",
+          authorizationSource: "bookings.tool",
+          // The admitted policy is the authority for what this command is
+          // allowed to be, so the ledger entry carries its identity rather
+          // than a literal restated here.
+          capabilityId: admitted.actionPolicy.capabilityId ?? admitted.actionPolicy.id,
+          capabilityVersion: admitted.actionPolicy.version,
+          idempotencyKey: admitted.invocation.idempotencyKey ?? null,
         })
         if (!result) return null
-
-        // Only the recording that actually happened is an event; a replay of a
-        // document already on the booking changed nothing and must not read as
-        // a second recording in the audit trail.
-        if (!result.replayed) {
-          await appendActionLedgerMutation(db as AnyDrizzleDb, {
-            context: getActionLedgerRequestContext(c),
-            actionName: BOOKING_DOCUMENT_LEDGER_ACTION_NAME,
-            actionVersion: BOOKING_DOCUMENT_LEDGER_ACTION_VERSION,
-            actionKind: "create",
-            evaluatedRisk: "medium",
-            targetType: "booking",
-            targetId: bookingId,
-            routeOrToolName: "record_booking_document",
-            authorizationSource: "bookings.tool",
-            mutationDetail: {
-              summary: describeRecording(result.document),
-              reversalKind: "none",
-            },
-          })
-        }
-
         return { document: toWire(result.document), replayed: result.replayed }
       },
     },
   }
-}
-
-function describeRecording(document: BookingDocument): string {
-  const identity = [document.issuedSeries, document.issuedNumber].filter(Boolean).join(" ")
-  return identity
-    ? `Recorded externally issued ${document.type} ${identity}`
-    : `Recorded ${document.type} document`
 }

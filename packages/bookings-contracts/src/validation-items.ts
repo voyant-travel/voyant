@@ -11,6 +11,7 @@ import {
   bookingItemTypeSchema,
   bookingRedemptionMethodSchema,
   isIssuedBookingDocumentType,
+  isoDateOrTimestampSchema,
   supplierConfirmationStatusSchema,
 } from "./validation-shared.js"
 
@@ -207,7 +208,7 @@ const bookingDocumentIssuedIdentityShape = {
   issuedBy: z.string().trim().min(1).max(255).optional().nullable(),
   issuedSeries: z.string().trim().min(1).max(64).optional().nullable(),
   issuedNumber: z.string().trim().min(1).max(128).optional().nullable(),
-  issuedAt: z.string().optional().nullable(),
+  issuedAt: isoDateOrTimestampSchema.optional().nullable(),
 }
 
 const bookingDocumentShape = {

@@ -45,12 +45,12 @@ import type { Context } from "hono"
 import { z } from "zod"
 
 import {
-  BOOKING_DOCUMENT_LEDGER_ACTION_NAME,
-  BOOKING_DOCUMENT_LEDGER_ACTION_VERSION,
+  BOOKING_DOCUMENT_CAPABILITIES,
   BOOKING_PII_READ_CAPABILITY,
   BOOKING_STATUS_CAPABILITIES,
 } from "./action-ledger-capabilities.js"
 import { BookingMonthlyLimitReachedError } from "./booking-plan-limit.js"
+import { recordBookingDocument } from "./document-recording.js"
 import { createBookingPiiService } from "./pii.js"
 import {
   redactBookingContact,
@@ -135,6 +135,12 @@ function hasPiiScope(scopes: string[] | null | undefined, action: "read" | "upda
 
 const BOOKING_PII_READ_ACTION_NAME = "booking.pii.read"
 const BOOKING_PII_READ_ACTION_VERSION = "v1"
+/**
+ * Ledger identity for reading a booking's documents. Distinct from
+ * `booking.pii.read`, which targets one traveller: this discloses the whole
+ * collection, including the file URLs of identity documents.
+ */
+const BOOKING_DOCUMENT_READ_ACTION_NAME = "booking.document.read"
 const BOOKING_PII_DECISION_POLICY = "bookings-pii-scope-or-staff-v1"
 const BOOKING_PII_AUTHORIZATION_SOURCE = "bookings.pii.route"
 const BOOKING_TRAVELER_LEDGER_ACTION_VERSION = "v1"
@@ -3586,33 +3592,44 @@ const deleteDocumentRoute = createRoute({
 
 const documentsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   .openapi(listDocumentsRoute, async (c) => {
-    return c.json(
-      { data: await bookingsService.listDocuments(c.get("db"), c.req.valid("param").id) },
-      200,
-    )
+    const bookingId = c.req.valid("param").id
+    const documents = await bookingsService.listDocuments(c.get("db"), bookingId)
+    // The collection carries traveller passports and visas, so the graph
+    // declares this a required-ledger sensitive read. Record it here, or the
+    // declaration would claim an audit the deployment never writes.
+    await appendActionLedgerSensitiveRead(c.get("db"), {
+      context: getActionLedgerRequestContext(c),
+      actionName: BOOKING_DOCUMENT_READ_ACTION_NAME,
+      actionVersion: BOOKING_DOCUMENT_CAPABILITIES.read.version,
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking_document",
+      targetId: bookingId,
+      routeOrToolName: "bookings.documents.list",
+      capabilityId: BOOKING_DOCUMENT_CAPABILITIES.read.id,
+      capabilityVersion: BOOKING_DOCUMENT_CAPABILITIES.read.version,
+      authorizationSource: BOOKING_PII_AUTHORIZATION_SOURCE,
+      disclosedFieldSet: ["fileName", "fileUrl", "travelerId"],
+      disclosureSummary: `Listed ${documents.length} booking document(s)`,
+      decisionPolicy: BOOKING_PII_DECISION_POLICY,
+    })
+    return c.json({ data: documents }, 200)
   })
   .openapi(createDocumentRoute, async (c) => {
     const bookingId = c.req.valid("param").id
-    const result = await bookingsService.createDocument(c.get("db"), bookingId, c.req.valid("json"))
+    // Shared with `record_booking_document`, so the row and its ledger entry
+    // commit together whichever surface recorded the document. A replayed
+    // recording of the same issued document returns the row that already
+    // exists rather than a second copy of it, and is not a second audit event.
+    const result = await recordBookingDocument(c.get("db"), {
+      context: getActionLedgerRequestContext(c),
+      bookingId,
+      data: c.req.valid("json"),
+      routeOrToolName: "bookings.documents.create",
+      authorizationSource: "bookings.route",
+    })
     if (!result) {
       return c.json({ error: "Booking not found" }, 404)
-    }
-    // A replayed recording of the same issued document returns the row that
-    // already exists rather than a second copy of it, and is not a second
-    // event in the ledger either.
-    if (!result.replayed) {
-      await appendBookingMutationLedgerEntry(c, {
-        action: "create",
-        actionName: BOOKING_DOCUMENT_LEDGER_ACTION_NAME,
-        actionVersion: BOOKING_DOCUMENT_LEDGER_ACTION_VERSION,
-        targetType: "booking",
-        targetId: bookingId,
-        changedFields: [],
-        subject: "booking document",
-        routeOrToolName: "bookings.documents.create",
-        evaluatedRisk: "medium",
-        summary: `Recorded ${result.document.type} document`,
-      })
     }
     return c.json({ data: result.document }, 201)
   })

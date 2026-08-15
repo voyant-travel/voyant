@@ -137,15 +137,20 @@ export const bookingDocuments = pgTable(
       sql`${table.type} NOT IN ('contract', 'invoice', 'proforma', 'credit_note') OR (${table.issuedNumber} IS NOT NULL AND ${table.issuedAt} IS NOT NULL)`,
     ),
     // Recording the same issued document twice would double it in the
-    // booking's audit trail. `coalesce` because a series is optional and
-    // PostgreSQL treats NULLs as distinct in a unique index.
+    // booking's audit trail. The key is the document's whole identity, not
+    // just its number: two issuers can both number an invoice 1042, and a
+    // series-less issuer reuses numbers across years. `coalesce` because
+    // issuer, series, and date are individually optional and PostgreSQL
+    // treats NULLs as distinct in a unique index.
     uniqueIndex("uq_booking_documents_issued_identity")
       .on(
         table.bookingId,
         table.type,
-        // agent-quality: raw-sql reviewed -- owner: bookings; the expression interpolates Drizzle column references only.
+        // agent-quality: raw-sql reviewed -- owner: bookings; the expressions interpolate Drizzle column references only.
+        sql`coalesce(${table.issuedBy}, '')`,
         sql`coalesce(${table.issuedSeries}, '')`,
         table.issuedNumber,
+        sql`coalesce(${table.issuedAt}, '-infinity'::timestamptz)`,
       )
       .where(sql`${table.issuedNumber} IS NOT NULL`),
   ],

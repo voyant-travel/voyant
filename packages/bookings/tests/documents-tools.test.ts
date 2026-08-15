@@ -1,13 +1,40 @@
-import { createToolRegistry, type ToolContext } from "@voyant-travel/tools"
+import {
+  createToolRegistry,
+  type ToolContext,
+  type ToolHandlerActionPolicyContext,
+} from "@voyant-travel/tools"
 import { describe, expect, it } from "vitest"
 
 import {
   type BookingDocumentsToolServices,
   bookingDocumentsTools,
+  RECORD_BOOKING_DOCUMENT_HANDLER_POLICY,
   recordBookingDocumentToolInputSchema,
 } from "../src/tools-documents.js"
 
-function context(service?: Partial<BookingDocumentsToolServices>): ToolContext & {
+/**
+ * `record_booking_document` owns its action policy, so a dispatch only reaches
+ * the handler when the registry has minted an admission for it. Mirrors the
+ * graph action declared in `action-declarations.ts`.
+ */
+const recordActionPolicy = {
+  ...RECORD_BOOKING_DOCUMENT_HANDLER_POLICY.actionPolicy,
+  enforcement: "handler",
+  invocation: { requiredFields: [], optionalFields: ["reasonCode", "confirmed"] },
+} as const
+
+const recordAdmission = {
+  capabilityId: RECORD_BOOKING_DOCUMENT_HANDLER_POLICY.capabilityId,
+  capabilityVersion: RECORD_BOOKING_DOCUMENT_HANDLER_POLICY.capabilityVersion,
+  canonicalName: RECORD_BOOKING_DOCUMENT_HANDLER_POLICY.canonicalName,
+  actionPolicy: recordActionPolicy,
+  invocation: {},
+} as unknown as ToolHandlerActionPolicyContext
+
+function context(
+  service?: Partial<BookingDocumentsToolServices>,
+  handlerActionPolicy: ToolHandlerActionPolicyContext | undefined = recordAdmission,
+): ToolContext & {
   bookingDocuments?: BookingDocumentsToolServices
 } {
   return {
@@ -17,12 +44,27 @@ function context(service?: Partial<BookingDocumentsToolServices>): ToolContext &
     tenantId: "default",
     resolverScope: { locale: "en-GB", audience: "staff", market: "default", actor: "staff" },
     bookingDocuments: service as BookingDocumentsToolServices | undefined,
+    ...(handlerActionPolicy ? { handlerActionPolicy } : {}),
   }
 }
 
 function registry() {
   const registry = createToolRegistry()
-  registry.registerAll(bookingDocumentsTools)
+  for (const tool of bookingDocumentsTools) {
+    if (tool.name !== "record_booking_document") {
+      registry.register(tool)
+      continue
+    }
+    registry.register(tool, {
+      capabilityId: tool.capabilityId,
+      owner: tool.owner,
+      capabilityVersion: tool.capabilityVersion,
+      name: tool.name,
+      requiredScopes: tool.requiredScopes,
+      deploymentRisk: "medium",
+      actionPolicy: recordActionPolicy,
+    })
+  }
   return registry
 }
 
@@ -110,6 +152,21 @@ describe("booking document tools", () => {
     }
   })
 
+  it("refuses an unparseable issue date instead of letting it reach the database", () => {
+    expect(
+      recordBookingDocumentToolInputSchema.safeParse({
+        ...externalInvoiceCommand,
+        issuedAt: "not-a-date",
+      }).success,
+    ).toBe(false)
+    for (const issuedAt of ["2026-03-04", "2026-03-04T09:00:00Z", "2026-03-04T09:00:00.000Z"]) {
+      expect(
+        recordBookingDocumentToolInputSchema.safeParse({ ...externalInvoiceCommand, issuedAt })
+          .success,
+      ).toBe(true)
+    }
+  })
+
   it("accepts a traveller document with no issuer identity at all", () => {
     expect(
       recordBookingDocumentToolInputSchema.safeParse({
@@ -125,16 +182,20 @@ describe("booking document tools", () => {
 
   it("passes the issuer's own identity through to the service unchanged", async () => {
     const calls: unknown[] = []
+    const keys: (string | undefined)[] = []
     const result = await registry().dispatch<{ replayed: boolean }>(
       "record_booking_document",
       externalInvoiceCommand,
       context({
-        async recordBookingDocument(input) {
+        async recordBookingDocument(input, admitted) {
           calls.push(input)
+          keys.push(admitted.invocation.idempotencyKey)
           return { document: recordedInvoice, replayed: false }
         },
       }),
     )
+    // The handler mints the key, so no token has to cross calls.
+    expect(keys[0]).toMatch(/^record-booking-document:v1:/)
 
     expect(calls).toEqual([externalInvoiceCommand])
     expect(result).toMatchObject({

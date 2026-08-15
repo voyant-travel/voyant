@@ -24,14 +24,20 @@
 
 import {
   bookingDocumentTypeSchema,
+  isoDateOrTimestampSchema,
   requireIssuedDocumentIdentity,
 } from "@voyant-travel/bookings-contracts"
 import {
+  admitHandlerActionPolicy,
   defineTool,
+  deriveCommandIdempotencyKey,
+  type HandlerActionPolicyExpectation,
   READ_ONLY_RISK,
   requireService,
   type ToolContext,
   ToolError,
+  type ToolHandlerActionPolicyContext,
+  withServerResolvedIdempotencyKey,
 } from "@voyant-travel/tools"
 import { z } from "zod"
 
@@ -45,8 +51,6 @@ const STAFF_AUDIENCE = { source: "grant", allowed: ["staff"] } as const
  */
 const DOCUMENT_READ_SCOPES = ["bookings:read", "bookings-pii:read"] as const
 const DOCUMENT_WRITE_SCOPES = ["bookings:write"] as const
-
-const isoDateOrTimestampSchema = z.union([z.string().date(), z.string().datetime()])
 
 export const bookingDocumentToolSchema = z.object({
   id: z.string(),
@@ -149,6 +153,7 @@ export interface BookingDocumentsToolServices {
   ): Promise<z.infer<typeof listBookingDocumentsToolOutputSchema> | null>
   recordBookingDocument(
     input: z.infer<typeof recordBookingDocumentToolInputSchema>,
+    admitted: ToolHandlerActionPolicyContext,
   ): Promise<{ document: unknown; replayed: boolean } | null>
 }
 
@@ -159,6 +164,39 @@ export type BookingDocumentsToolContext = ToolContext & {
 function bookingDocuments(ctx: BookingDocumentsToolContext): BookingDocumentsToolServices {
   return requireService(ctx.bookingDocuments, "bookingDocuments")
 }
+
+/**
+ * Handler-owned enforcement, deliberately.
+ *
+ * Under the generic gate a required-ledger execute action with a command
+ * target field keys its preflight on a fingerprint of the whole command, so an
+ * identical retry is refused as a duplicate dispatch before the handler runs —
+ * and this Tool's whole point is that an operator can replay a batch of
+ * historical bookings safely. Owning the policy here lets the recording itself
+ * be the replay authority: the unique index on the document's issued identity
+ * decides, and the caller gets `replayed: true` instead of an authorization
+ * error. `resolvesIdempotencyKeyServerSide` keeps the key off the wire, so no
+ * token has to cross calls.
+ */
+export const RECORD_BOOKING_DOCUMENT_HANDLER_POLICY = {
+  capabilityId: `${OWNER}#tool.record-booking-document`,
+  capabilityVersion: VERSION,
+  canonicalName: "record_booking_document",
+  actionPolicy: {
+    id: `${OWNER}#action.record-booking-document`,
+    capabilityId: "bookings:documents:record",
+    version: VERSION,
+    kind: "execute",
+    targetType: "booking_document",
+    commandTargetField: "bookingId",
+    targetLifecycle: "existing",
+    risk: "medium",
+    ledger: "required",
+    approval: "never",
+    reversible: true,
+    allowedActorTypes: ["staff"],
+  },
+} as const satisfies HandlerActionPolicyExpectation
 
 export const listBookingDocumentsTool = defineTool({
   owner: OWNER,
@@ -205,8 +243,14 @@ export const recordBookingDocumentTool = defineTool({
     sideEffects: ["data-write"],
   },
   annotations: { idempotentHint: true },
+  actionPolicyEnforcement: "handler",
+  resolvesIdempotencyKeyServerSide: true,
   async handler(input, ctx: BookingDocumentsToolContext) {
-    const result = await bookingDocuments(ctx).recordBookingDocument(input)
+    const admitted = withServerResolvedIdempotencyKey(
+      admitHandlerActionPolicy(ctx, RECORD_BOOKING_DOCUMENT_HANDLER_POLICY),
+      await deriveCommandIdempotencyKey("record-booking-document", input),
+    )
+    const result = await bookingDocuments(ctx).recordBookingDocument(input, admitted)
     if (!result) {
       throw new ToolError(`Booking "${input.bookingId}" was not found.`, "NOT_FOUND", {
         bookingId: input.bookingId,

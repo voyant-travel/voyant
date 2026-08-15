@@ -2037,6 +2037,25 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
         expect(rows).toHaveLength(1)
       })
 
+      it("keeps documents from different issuers apart", async () => {
+        const booking = await seedBooking()
+        await app.request(`/${booking.id}/documents`, {
+          method: "POST",
+          ...json(externalInvoice),
+        })
+        const other = await app.request(`/${booking.id}/documents`, {
+          method: "POST",
+          ...json({ ...externalInvoice, issuedBy: "Alt Accounting SRL" }),
+        })
+
+        expect(other.status).toBe(201)
+        const rows = await db
+          .select()
+          .from(bookingDocuments)
+          .where(eq(bookingDocuments.bookingId, booking.id))
+        expect(rows).toHaveLength(2)
+      })
+
       it("rejects an issued document that carries no number or date", async () => {
         const booking = await seedBooking()
         const res = await app.request(`/${booking.id}/documents`, {
@@ -2046,6 +2065,15 @@ describe.skipIf(!DB_AVAILABLE)("Booking routes", () => {
             fileName: "scan.pdf",
             fileUrl: "https://example.com/scan.pdf",
           }),
+        })
+        expect(res.status).toBe(400)
+      })
+
+      it("rejects an unparseable issue date", async () => {
+        const booking = await seedBooking()
+        const res = await app.request(`/${booking.id}/documents`, {
+          method: "POST",
+          ...json({ ...externalInvoice, issuedAt: "not-a-date" }),
         })
         expect(res.status).toBe(400)
       })

@@ -5322,14 +5322,17 @@ const bookingsServiceInternal = {
     }
 
     const issuedNumber = data.issuedNumber ?? null
-    const existing = issuedNumber
-      ? await findBookingDocumentByIssuedIdentity(db, {
+    const identity = issuedNumber
+      ? {
           bookingId,
           type: data.type,
+          issuedBy: data.issuedBy ?? null,
           issuedSeries: data.issuedSeries ?? null,
           issuedNumber,
-        })
+          issuedAt: data.issuedAt ? new Date(data.issuedAt) : null,
+        }
       : null
+    const existing = identity ? await findBookingDocumentByIssuedIdentity(db, identity) : null
     if (existing) {
       return { document: existing, replayed: true }
     }
@@ -5345,7 +5348,7 @@ const bookingsServiceInternal = {
         issuedBy: data.issuedBy ?? null,
         issuedSeries: data.issuedSeries ?? null,
         issuedNumber,
-        issuedAt: data.issuedAt ? new Date(data.issuedAt) : null,
+        issuedAt: identity?.issuedAt ?? (data.issuedAt ? new Date(data.issuedAt) : null),
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
         notes: data.notes ?? null,
       })
@@ -5360,14 +5363,7 @@ const bookingsServiceInternal = {
       return { document: row, replayed: false }
     }
 
-    const winner = issuedNumber
-      ? await findBookingDocumentByIssuedIdentity(db, {
-          bookingId,
-          type: data.type,
-          issuedSeries: data.issuedSeries ?? null,
-          issuedNumber,
-        })
-      : null
+    const winner = identity ? await findBookingDocumentByIssuedIdentity(db, identity) : null
     if (!winner) {
       throw new Error(
         `Recording a ${data.type} document on booking ${bookingId} inserted no row and found no conflicting record.`,
@@ -5405,8 +5401,10 @@ async function findBookingDocumentByIssuedIdentity(
   identity: {
     bookingId: string
     type: BookingDocument["type"]
+    issuedBy: string | null
     issuedSeries: string | null
     issuedNumber: string
+    issuedAt: Date | null
   },
 ): Promise<BookingDocument | null> {
   const [row] = await db
@@ -5416,8 +5414,10 @@ async function findBookingDocumentByIssuedIdentity(
       and(
         eq(bookingDocuments.bookingId, identity.bookingId),
         eq(bookingDocuments.type, identity.type),
+        sql`coalesce(${bookingDocuments.issuedBy}, '') = ${identity.issuedBy ?? ""}`,
         sql`coalesce(${bookingDocuments.issuedSeries}, '') = ${identity.issuedSeries ?? ""}`,
         eq(bookingDocuments.issuedNumber, identity.issuedNumber),
+        sql`coalesce(${bookingDocuments.issuedAt}, '-infinity'::timestamptz) = coalesce(${identity.issuedAt}::timestamptz, '-infinity'::timestamptz)`,
       ),
     )
     .limit(1)
