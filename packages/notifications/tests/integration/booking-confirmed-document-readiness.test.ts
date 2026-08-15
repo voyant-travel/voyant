@@ -101,13 +101,17 @@ describe.skipIf(!DB_AVAILABLE)("Booking-confirmed document readiness", () => {
     return run
   }
 
-  async function seedReadyInvoiceDocument(bookingId: string, suffix: string) {
+  async function seedReadyInvoiceDocument(
+    bookingId: string,
+    suffix: string,
+    status: "issued" | "draft" = "issued",
+  ) {
     await ctx.db.insert(invoices).values({
       id: `inv_ready_${suffix}`,
       invoiceNumber: `INV-READY-${suffix}`,
       invoiceType: "invoice",
       bookingId,
-      status: "issued",
+      status,
       currency: "EUR",
       subtotalCents: 120_000,
       taxCents: 0,
@@ -157,6 +161,26 @@ describe.skipIf(!DB_AVAILABLE)("Booking-confirmed document readiness", () => {
       status: "queued",
       recipient: "ana@example.com",
       errorMessage: null,
+    })
+  })
+
+  it("never attaches a draft invoice, however ready its document is", async () => {
+    // A draft is an invoice that was not issued — including one booking
+    // create refused to issue because the buyer was fiscally incomplete. Its
+    // document must not reach the customer, so the confirmation keeps
+    // waiting rather than mailing the quarantined one.
+    const bookingId = await seedBooking("draft")
+    await seedRule("draft", ["invoice"])
+    await seedReadyInvoiceDocument(bookingId, "draft", "draft")
+
+    await dispatchReminderEventRules(ctx.db, dispatcher, {
+      targetType: "booking_confirmed",
+      bookingId,
+    })
+
+    expect(await runFor(bookingId)).toMatchObject({
+      status: "failed",
+      errorMessage: `${DOCUMENT_BUNDLE_NOT_READY_PREFIX}invoice`,
     })
   })
 

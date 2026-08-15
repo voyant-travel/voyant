@@ -41,10 +41,17 @@ export type FiscalBillingField =
 export interface FiscalBillingContact {
   /**
    * `individual` or `company`. Typed as plain text because the booking column
-   * is: narrowing it here would make the booking row itself uncallable, and
-   * only `"company"` changes the answer anyway.
+   * is: narrowing it here would make the booking row itself uncallable.
+   *
+   * Not sufficient on its own — see {@link isCompanyFiscalBuyer}.
    */
   contactPartyType?: string | null
+  /**
+   * The organization being billed, when it is one. Mutually exclusive with
+   * `personId` (`validateExclusiveBillingParty`), so its presence is a fact
+   * about the buyer rather than a hint.
+   */
+  organizationId?: string | null
   contactFirstName?: string | null
   contactLastName?: string | null
   contactAddressLine1?: string | null
@@ -55,6 +62,24 @@ export interface FiscalBillingContact {
 
 function isBlank(value: string | null | undefined) {
   return typeof value !== "string" || value.trim().length === 0
+}
+
+/**
+ * Whether this buyer is a company, and so owes a fiscal code.
+ *
+ * Both signals are consulted because `contactPartyType` alone is not
+ * trustworthy: it is an independently optional column, and the booking-create
+ * command lets a caller set `organizationId` without it. The manual form
+ * always sets both, but `create_booking`, `book_product` (whose
+ * `billingContact.partyType` is optional) and the storefront need not — and a
+ * booking billed to an organization with `contactPartyType` left null would
+ * otherwise be judged an individual, never asked for a fiscal code, and issued
+ * as a B2B invoice carrying none. `organizationId` cannot be set on a booking
+ * billed to a person, so reading it here cannot make an individual look like a
+ * company.
+ */
+export function isCompanyFiscalBuyer(contact: FiscalBillingContact) {
+  return contact.contactPartyType === "company" || !isBlank(contact.organizationId)
 }
 
 /**
@@ -75,7 +100,7 @@ export function missingFiscalBillingFields(
   if (isBlank(contact.contactAddressLine1)) missing.push("contactAddressLine1")
   if (isBlank(contact.contactCity)) missing.push("contactCity")
   if (isBlank(contact.contactCountry)) missing.push("contactCountry")
-  if (contact.contactPartyType === "company" && isBlank(contact.contactTaxId)) {
+  if (isCompanyFiscalBuyer(contact) && isBlank(contact.contactTaxId)) {
     missing.push("contactTaxId")
   }
   return missing

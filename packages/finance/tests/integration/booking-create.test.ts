@@ -1688,6 +1688,11 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       productId,
       bookingNumber: nextBookingNumber(),
       ...bookingParty(),
+      // voyant#4654: a rendition is only requested for an invoice that could
+      // be issued, so this case needs a buyer a fiscal document can name.
+      contactAddressLine1: "Strada Lipscani 12",
+      contactCity: "Bucuresti",
+      contactCountry: "RO",
       documentGeneration: {
         contractDocument: false,
         invoiceDocument: true,
@@ -5528,6 +5533,81 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       expect((await outboxByName()).get("invoice.issued")).toMatchObject({
         payload: expect.objectContaining({ clientVatCode: "RO12345678" }),
       })
+    })
+
+    it("treats an organization booking as a company even with no party type", async () => {
+      // `contactPartyType` is independently optional and only the manual form
+      // always sets it. Judging the buyer by it alone let an organization
+      // booking through as an individual — never asked for a fiscal code, and
+      // issued as a B2B invoice carrying none.
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-issue-org-no-type", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        personId: null,
+        organizationId: "org_booking_create",
+        documentGeneration: { contractDocument: false, invoiceDocument: true },
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, result.value.bookingId))
+      expect(invoice?.status).toBe("draft")
+      expect((await outboxByName()).has("invoice.issued")).toBe(false)
+    })
+
+    it("renders nothing for an invoice it refused to issue", async () => {
+      // A rendition that later turned `ready` would put the quarantined
+      // document into the booking's notification bundle and mail it.
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-issue-no-render", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...bookingParty(),
+        documentGeneration: { contractDocument: false, invoiceDocument: true },
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, result.value.bookingId))
+      expect(invoice?.status).toBe("draft")
+      expect(
+        await db
+          .select()
+          .from(invoiceRenditions)
+          .where(eq(invoiceRenditions.invoiceId, invoice!.id)),
+      ).toHaveLength(0)
+    })
+
+    it("still renders the invoice it did issue", async () => {
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-issue-renders", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        documentGeneration: { contractDocument: false, invoiceDocument: true },
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, result.value.bookingId))
+      expect(invoice?.status).toBe("issued")
+      expect(
+        await db
+          .select()
+          .from(invoiceRenditions)
+          .where(eq(invoiceRenditions.invoiceId, invoice!.id)),
+      ).toHaveLength(1)
     })
 
     it("captures invoice.payment.recorded for a schedule already marked paid", async () => {

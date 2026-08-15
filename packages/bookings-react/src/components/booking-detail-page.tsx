@@ -786,6 +786,10 @@ export function BookingBillingContextCard({
   const missingFiscalFields = hasFiscalDocument
     ? missingFiscalBillingFields({
         contactPartyType: booking.contactPartyType,
+        // A booking billed to an organization is a company buyer even when
+        // `contactPartyType` was never set, which callers other than the
+        // manual form are free to leave null.
+        organizationId: booking.organizationId,
         contactFirstName: booking.contactFirstName ?? payerName,
         contactLastName: booking.contactLastName,
         contactTaxId: taxId,

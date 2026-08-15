@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest"
 
-import { isFiscalBillingComplete, missingFiscalBillingFields } from "./fiscal-billing.js"
+import {
+  isCompanyFiscalBuyer,
+  isFiscalBillingComplete,
+  missingFiscalBillingFields,
+} from "./fiscal-billing.js"
 
 const completeIndividual = {
   contactPartyType: "individual",
@@ -67,6 +71,30 @@ describe("missingFiscalBillingFields", () => {
     // An individual is never asked for one, so the same booking without a tax
     // id is complete when it is billed to a person.
     expect(missingFiscalBillingFields({ ...completeIndividual, contactTaxId: null })).toEqual([])
+  })
+
+  it("treats a booking billed to an organization as a company, party type or not", () => {
+    // `contactPartyType` is an independently optional column and only the
+    // manual form always sets it; `create_booking`, `book_product` and the
+    // storefront may set `organizationId` alone. Reading the party type by
+    // itself judged those an individual, never asked for a fiscal code, and
+    // issued a B2B invoice carrying none.
+    const orgBooking = {
+      ...completeIndividual,
+      contactPartyType: null,
+      organizationId: "org_1",
+      contactFirstName: "Acme SRL",
+      contactLastName: null,
+    }
+    expect(missingFiscalBillingFields(orgBooking)).toEqual(["contactTaxId"])
+    expect(missingFiscalBillingFields({ ...orgBooking, contactTaxId: "RO12345678" })).toEqual([])
+    expect(isCompanyFiscalBuyer(orgBooking)).toBe(true)
+  })
+
+  it("does not read a blank organization id as a company", () => {
+    expect(isCompanyFiscalBuyer({ ...completeIndividual, organizationId: "" })).toBe(false)
+    expect(isCompanyFiscalBuyer({ ...completeIndividual, organizationId: null })).toBe(false)
+    expect(isCompanyFiscalBuyer(completeIndividual)).toBe(false)
   })
 
   it("treats an unrecognised party type as an individual", () => {

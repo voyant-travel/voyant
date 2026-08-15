@@ -3006,12 +3006,23 @@ export async function createBookingMutation(
       }
 
       let invoiceDocument: BookingCreateResult["invoiceDocument"] = { status: "not_requested" }
+      // Nothing is rendered for an invoice we just refused to issue. Asking
+      // for the PDF of a document we decided must not become a fiscal record
+      // contradicts the decision, and a rendition that later turns `ready`
+      // would put that document in the booking's notification bundle and mail
+      // it to the customer — the retry this change added is what would carry
+      // it. `not_available` says the document was wanted and withheld, which
+      // `not_requested` (nobody asked) does not.
       if (documentGeneration.invoiceDocument) {
-        const requested = await financeService.renderInvoice(tx, invoice.id, { format: "pdf" })
-        invoiceDocument =
-          requested.status === "requested"
-            ? { status: "requested", renditionId: requested.rendition?.id ?? null }
-            : { status: "failed" }
+        if (!issuance) {
+          invoiceDocument = { status: "not_available" }
+        } else {
+          const requested = await financeService.renderInvoice(tx, invoice.id, { format: "pdf" })
+          invoiceDocument =
+            requested.status === "requested"
+              ? { status: "requested", renditionId: requested.rendition?.id ?? null }
+              : { status: "failed" }
+        }
       }
 
       result = {

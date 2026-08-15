@@ -4,6 +4,7 @@ import {
   buildIdempotencyFingerprint,
 } from "@voyant-travel/action-ledger"
 import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
+import { isCompanyFiscalBuyer } from "@voyant-travel/bookings-contracts"
 import {
   assertBookingFinanceInsertionAllowed,
   lockBookingFinanceInsertionFence,
@@ -774,7 +775,11 @@ export async function buildInvoiceIssuedEvent(
     // the accounting integration with no fiscal code for the buyer and had to
     // be corrected by hand. See the field docs on `InvoiceIssuedEvent` for why
     // this is company-only and why `clientRegCom` stays null.
-    clientVatCode: booking?.contactPartyType === "company" ? (booking?.contactTaxId ?? null) : null,
+    //
+    // Shares `isCompanyFiscalBuyer` with the check that decided this invoice
+    // could be issued at all: reading `contactPartyType` alone here would emit
+    // null for exactly the organization bookings that check now catches.
+    clientVatCode: booking && isCompanyFiscalBuyer(booking) ? (booking.contactTaxId ?? null) : null,
     clientRegCom: null,
     lineItems: lines.map((line) => {
       const taxMetadata =
