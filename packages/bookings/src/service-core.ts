@@ -1048,7 +1048,15 @@ function isUndefinedTableError(error: unknown) {
  * OTA deployment) just yields `null` for that piece — the caller's
  * explicit values still win.
  */
-async function resolveBookingItemSnapshot(
+/**
+ * Catalog names and departure timing for a Booking Item's foreign ids.
+ *
+ * Exported so the Amendment engine snapshots an item it is about to create
+ * exactly the way `createItem` snapshots one — the same columns, resolved
+ * the same way, so "what did the customer buy?" reads identically whether
+ * the line arrived at booking time or through a later change.
+ */
+export async function resolveBookingItemSnapshot(
   db: PostgresJsDatabase,
   input: {
     productId: string | null
@@ -1738,6 +1746,7 @@ async function releaseAllocationCapacity(
     "availabilitySlotId" | "bookingId" | "quantity" | "status" | "id"
   >,
   source: SlotChangeSource = "cancel",
+  options: { allowTerminalCapacityRelease?: boolean } = {},
 ): Promise<AvailabilitySlotChangedEventPayload | undefined> {
   if (!allocation.availabilitySlotId) {
     return undefined
@@ -1752,7 +1761,15 @@ async function releaseAllocationCapacity(
     allocation.availabilitySlotId,
     allocation.quantity,
     source,
-    { allowTerminalCapacityRelease: source === "cancel" || source === "expire" },
+    {
+      // Giving capacity back is always safe on a closed or cancelled
+      // departure — the seat stops being consumed either way. Callers
+      // that release (cancel, expire, or dropping the line item that
+      // held it) must not be blocked by the slot's terminal status,
+      // or the capacity leaks with no row left to reconcile from.
+      allowTerminalCapacityRelease:
+        options.allowTerminalCapacityRelease ?? (source === "cancel" || source === "expire"),
+    },
   )
   if (result.status === "slot_not_found") {
     await db.insert(bookingActivityLog).values({
@@ -1774,6 +1791,86 @@ async function releaseAllocationCapacity(
     throw new BookingServiceError(result.status)
   }
   return result.slotChange
+}
+
+/**
+ * Move an item's capacity allocation by `delta` seats and adjust the
+ * availability slot to match.
+ *
+ * Only meaningful when the item has exactly one allocation that still
+ * consumes capacity — that is the shape every allocation-creating path
+ * produces, and the same precondition `bookingAmendmentService` enforces
+ * for roster changes. Items with no such allocation (manually authored
+ * lines, sourced inventory with no slot) are left alone: there is no
+ * local capacity to move.
+ *
+ * Throws `BookingServiceError("insufficient_capacity")` rather than
+ * overselling the slot.
+ */
+async function syncAllocationQuantity(
+  db: PostgresJsDatabase,
+  bookingItemId: string,
+  delta: number,
+): Promise<AvailabilitySlotChangedEventPayload | undefined> {
+  if (delta === 0) return undefined
+
+  const allocations = await db
+    .select()
+    .from(bookingAllocations)
+    .where(eq(bookingAllocations.bookingItemId, bookingItemId))
+
+  const active = allocations.filter((allocation) =>
+    allocationStatusConsumesSlotCapacity(allocation.status),
+  )
+  if (active.length !== 1) return undefined
+
+  const allocation = active[0]!
+  const nextQuantity = allocation.quantity + delta
+  if (nextQuantity < 0) {
+    throw new BookingServiceError("insufficient_capacity")
+  }
+
+  let slotChange: AvailabilitySlotChangedEventPayload | undefined
+  if (allocation.availabilitySlotId) {
+    // Slot capacity moves opposite the allocation: consuming one more
+    // seat leaves one fewer remaining.
+    const result = await adjustSlotCapacity(
+      db,
+      allocation.availabilitySlotId,
+      -delta,
+      "modify",
+      // Releasing back into a closed departure is fine; taking more
+      // from one is not, and `adjustSlotCapacity` still refuses that.
+      { allowTerminalCapacityRelease: delta < 0 },
+    )
+    if (result.status === "slot_not_found") {
+      await db.insert(bookingActivityLog).values({
+        bookingId: allocation.bookingId,
+        actorId: "system",
+        activityType: "system_action",
+        description:
+          "Allocation quantity change requires reconciliation: availability slot missing",
+        metadata: {
+          kind: "allocation_capacity_sync_reconciliation",
+          allocationId: allocation.id,
+          availabilitySlotId: allocation.availabilitySlotId,
+          delta,
+          problem: "slot_not_found",
+        },
+      })
+    } else if (result.status !== "ok") {
+      throw new BookingServiceError(result.status)
+    } else {
+      slotChange = result.slotChange
+    }
+  }
+
+  await db
+    .update(bookingAllocations)
+    .set({ quantity: nextQuantity, updatedAt: new Date() })
+    .where(eq(bookingAllocations.id, allocation.id))
+
+  return slotChange
 }
 
 async function autoIssueFulfillmentsForBooking(
@@ -4353,10 +4450,29 @@ const bookingsServiceInternal = {
     })
   },
 
-  async updateItem(db: PostgresJsDatabase, itemId: string, data: UpdateBookingItemInput) {
-    return db.transaction(async (tx) => {
+  /**
+   * Update a Booking Item, keeping any capacity allocation it holds in
+   * step with its `quantity`.
+   *
+   * A quantity change on an allocation-backed item is a capacity change:
+   * leaving `booking_allocations.quantity` behind desynchronises the
+   * ledger from what the booking actually consumes. Increases are
+   * checked against the slot and fail with `insufficient_capacity`
+   * rather than overselling.
+   *
+   * This is the ad-hoc correction path. Priced, consented, supplier-aware
+   * quantity changes belong in `bookingAmendmentService`.
+   */
+  async updateItem(
+    db: PostgresJsDatabase,
+    itemId: string,
+    data: UpdateBookingItemInput,
+    runtime: BookingServiceRuntime = {},
+  ) {
+    const slotChanges: AvailabilitySlotChangedEventPayload[] = []
+    const result = await db.transaction(async (tx) => {
       const [parent] = await tx
-        .select({ status: bookings.status })
+        .select({ status: bookings.status, quantity: bookingItems.quantity })
         .from(bookingItems)
         .innerJoin(bookings, eq(bookings.id, bookingItems.bookingId))
         .where(eq(bookingItems.id, itemId))
@@ -4364,6 +4480,15 @@ const bookingsServiceInternal = {
 
       if (!parent || !bookingAllowsItemMutation(parent.status)) {
         return null
+      }
+
+      if (data.quantity !== undefined && data.quantity !== parent.quantity) {
+        const change = await syncAllocationQuantity(
+          tx as PostgresJsDatabase,
+          itemId,
+          data.quantity - parent.quantity,
+        )
+        if (change) slotChanges.push(change)
       }
 
       // Refresh snapshots only when the foreign IDs change. Existing
@@ -4467,10 +4592,29 @@ const bookingsServiceInternal = {
       await bookingsService.recomputeBookingTotal(tx as PostgresJsDatabase, row.bookingId)
       return row
     })
+
+    await emitSlotChanges(runtime, slotChanges)
+    return result
   },
 
-  async deleteItem(db: PostgresJsDatabase, itemId: string, userId?: string) {
-    return db.transaction(async (tx) => {
+  /**
+   * Delete a Booking Item, returning any capacity its allocations still
+   * consume.
+   *
+   * `booking_allocations.booking_item_id` is `ON DELETE CASCADE`, so the
+   * allocation rows disappear with the item. Releasing BEFORE the delete
+   * is therefore not an optimisation — it is the only chance to give the
+   * seats back. Skipping it leaks `availability_slots.remaining_pax`
+   * permanently, with no allocation row left to reconcile from.
+   */
+  async deleteItem(
+    db: PostgresJsDatabase,
+    itemId: string,
+    userId?: string,
+    runtime: BookingServiceRuntime = {},
+  ) {
+    const slotChanges: AvailabilitySlotChangedEventPayload[] = []
+    const result = await db.transaction(async (tx) => {
       // Look up the parent booking BEFORE the delete so we can roll up
       // afterwards.
       const [item] = await tx
@@ -4489,6 +4633,25 @@ const bookingsServiceInternal = {
         return null
       }
 
+      const allocations = await tx
+        .select()
+        .from(bookingAllocations)
+        .where(eq(bookingAllocations.bookingItemId, itemId))
+
+      const releasedAllocationIds: string[] = []
+      for (const allocation of allocations) {
+        const change = await releaseAllocationCapacity(
+          tx as PostgresJsDatabase,
+          allocation,
+          "modify",
+          { allowTerminalCapacityRelease: true },
+        )
+        if (allocationStatusConsumesSlotCapacity(allocation.status)) {
+          releasedAllocationIds.push(allocation.id)
+        }
+        if (change) slotChanges.push(change)
+      }
+
       const [row] = await tx
         .delete(bookingItems)
         .where(eq(bookingItems.id, itemId))
@@ -4501,12 +4664,19 @@ const bookingsServiceInternal = {
           actorId: userId ?? "system",
           activityType: "item_update",
           description: `Booking item "${item.title}" deleted`,
-          metadata: { bookingItemId: itemId, itemType: item.itemType },
+          metadata: {
+            bookingItemId: itemId,
+            itemType: item.itemType,
+            releasedAllocationIds,
+          },
         })
       }
 
       return row ?? null
     })
+
+    await emitSlotChanges(runtime, slotChanges)
+    return result
   },
 
   listItemParticipants(db: PostgresJsDatabase, itemId: string) {
