@@ -1794,6 +1794,29 @@ async function releaseAllocationCapacity(
 }
 
 /**
+ * Take a row lock on a Booking Item before its capacity is recomputed.
+ *
+ * Every mutation that moves capacity — resize, delete — has to read the
+ * item's current quantity, decide a delta, and then adjust the slot. Two
+ * of those running concurrently would read the same starting value and
+ * both apply their delta to availability, while only one of them survives
+ * on the row. Serialising on the item makes the read-decide-write one
+ * atomic step.
+ *
+ * Returns `null` when the item is gone, which a concurrent delete makes
+ * an ordinary outcome rather than an error.
+ */
+async function lockBookingItemForCapacityChange(db: PostgresJsDatabase, itemId: string) {
+  const [row] = await db
+    .select({ id: bookingItems.id })
+    .from(bookingItems)
+    .where(eq(bookingItems.id, itemId))
+    .for("update")
+    .limit(1)
+  return row ?? null
+}
+
+/**
  * Move an item's capacity allocation by `delta` seats and adjust the
  * availability slot to match.
  *
@@ -1818,6 +1841,7 @@ async function syncAllocationQuantity(
     .select()
     .from(bookingAllocations)
     .where(eq(bookingAllocations.bookingItemId, bookingItemId))
+    .for("update")
 
   const active = allocations.filter((allocation) =>
     allocationStatusConsumesSlotCapacity(allocation.status),
@@ -4471,6 +4495,13 @@ const bookingsServiceInternal = {
   ) {
     const slotChanges: AvailabilitySlotChangedEventPayload[] = []
     const result = await db.transaction(async (tx) => {
+      // Lock the item before reading the quantity the delta is computed
+      // from. Two concurrent updates that both read the same old value
+      // would each adjust the slot while only one survives on the row,
+      // leaving allocation and capacity permanently out of step.
+      const locked = await lockBookingItemForCapacityChange(tx as PostgresJsDatabase, itemId)
+      if (!locked) return null
+
       const [parent] = await tx
         .select({ status: bookings.status, quantity: bookingItems.quantity })
         .from(bookingItems)
@@ -4617,6 +4648,11 @@ const bookingsServiceInternal = {
     const result = await db.transaction(async (tx) => {
       // Look up the parent booking BEFORE the delete so we can roll up
       // afterwards.
+      // Same lock as `updateItem`: two concurrent deletes would otherwise
+      // both read the live allocation and release its capacity twice.
+      const locked = await lockBookingItemForCapacityChange(tx as PostgresJsDatabase, itemId)
+      if (!locked) return null
+
       const [item] = await tx
         .select({
           bookingId: bookingItems.bookingId,
@@ -4637,6 +4673,7 @@ const bookingsServiceInternal = {
         .select()
         .from(bookingAllocations)
         .where(eq(bookingAllocations.bookingItemId, itemId))
+        .for("update")
 
       const releasedAllocationIds: string[] = []
       for (const allocation of allocations) {

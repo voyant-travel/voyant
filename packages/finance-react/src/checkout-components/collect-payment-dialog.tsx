@@ -199,7 +199,13 @@ export function CollectPaymentDialog({
       return
     }
     try {
-      const data = await collect.mutateAsync({ choice: { type: "hold" }, amountCents })
+      const data = await collect.mutateAsync({
+        choice: { type: "hold" },
+        amountCents,
+        // Bind the payment to the schedule the operator actually picked.
+        // Left unset, checkout settles the earliest open one instead.
+        scheduleId: scheduleId === FULL_AMOUNT_VALUE ? null : scheduleId,
+      })
       setResult(data)
       toast.success(messages.validation.linkReady)
     } catch (err) {

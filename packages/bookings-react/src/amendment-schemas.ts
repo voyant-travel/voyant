@@ -27,6 +27,7 @@ export const bookingAmendmentKindSchema = z.enum([
   "traveler_correction",
   "traveler_add",
   "traveler_drop",
+  "item_add",
 ])
 
 export type BookingAmendmentKind = z.infer<typeof bookingAmendmentKindSchema>
@@ -74,7 +75,8 @@ export const bookingAmendmentRevisionSchema = z.object({
 export const bookingAmendmentRecordSchema = z.object({
   id: z.string(),
   bookingId: z.string(),
-  travelerId: z.string(),
+  /** Null for `item_add`, which concerns a service rather than a person. */
+  travelerId: z.string().nullable(),
   kind: bookingAmendmentKindSchema,
   status: bookingAmendmentStatusSchema,
   baseBookingRevision: z.number().int(),
@@ -112,6 +114,19 @@ export const bookingAmendmentPreviewResponse = z.union([
 ])
 
 export const bookingAmendmentResponse = z.object({ data: bookingAmendmentRecordSchema })
+
+/**
+ * Apply answers with an outcome wrapper, not a bare record: a successful
+ * apply is `{ data: { status: "ok", amendment } }`, and the supplier-pending
+ * and refused outcomes reuse the same shape with a different `status`.
+ * Accept, by contrast, returns the record directly.
+ */
+export const bookingAmendmentApplyResponse = z.object({
+  data: z.object({
+    status: z.string(),
+    amendment: bookingAmendmentRecordSchema,
+  }),
+})
 export const bookingAmendmentListResponse = z.object({
   data: z.array(bookingAmendmentRecordSchema),
 })

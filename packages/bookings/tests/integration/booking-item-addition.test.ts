@@ -339,6 +339,84 @@ describe.skipIf(!DB_AVAILABLE)("Booking item addition Amendments", () => {
     expect(conflicting.status).toBe("idempotency_conflict")
   })
 
+  it("refuses a departure that belongs to a different product", async () => {
+    // Pairing product A with product B's departure would decrement B's
+    // capacity while writing an item that claims A.
+    const seeded = await seed()
+    const other = await seed()
+
+    const preview = await bookingAmendmentService.previewItemAddition(
+      db,
+      seeded.booking.id,
+      {
+        expectedBookingRevision: 1,
+        reason: "Cross-product departure",
+        addition: {
+          type: "item_add",
+          productId: seeded.product.id,
+          optionId: seeded.option.id,
+          availabilitySlotId: other.slot!.id,
+          quantity: 1,
+        },
+      },
+      context("cross-product"),
+      { finance: financeRuntime() },
+    )
+
+    expect(preview.status).toBe("not_found")
+    const [slot] = await db
+      .select()
+      .from(availabilitySlotsRef)
+      .where(eq(availabilitySlotsRef.id, other.slot!.id))
+    expect(slot?.remainingPax).toBe(10)
+  })
+
+  it("refuses to add a departure-sold product without picking a departure", async () => {
+    const seeded = await seed()
+    const preview = await bookingAmendmentService.previewItemAddition(
+      db,
+      seeded.booking.id,
+      {
+        expectedBookingRevision: 1,
+        reason: "No departure picked",
+        addition: {
+          type: "item_add",
+          productId: seeded.product.id,
+          optionId: seeded.option.id,
+          availabilitySlotId: null,
+          quantity: 1,
+        },
+      },
+      context("no-departure"),
+      { finance: financeRuntime() },
+    )
+
+    expect(preview.status).toBe("unsupported_configuration")
+  })
+
+  it("adds a product that has no departures at all without one", async () => {
+    const seeded = await seed({ withSlot: false })
+    const preview = await bookingAmendmentService.previewItemAddition(
+      db,
+      seeded.booking.id,
+      {
+        expectedBookingRevision: 1,
+        reason: "Unscheduled service",
+        addition: {
+          type: "item_add",
+          productId: seeded.product.id,
+          optionId: seeded.option.id,
+          availabilitySlotId: null,
+          quantity: 1,
+        },
+      },
+      context("unscheduled"),
+      { finance: financeRuntime() },
+    )
+
+    expect(preview.status).toBe("ok")
+  })
+
   it("refuses a stale booking revision", async () => {
     const seeded = await seed()
     await db.update(bookings).set({ revision: 7 }).where(eq(bookings.id, seeded.booking.id))

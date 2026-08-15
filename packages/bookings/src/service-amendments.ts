@@ -641,6 +641,63 @@ function mapPlanError(error: RosterPlanError): PreviewTravelerRosterChangeResult
  * already has an `upstreamRef`. Quoting one would promise capacity nobody
  * reserved.
  */
+/**
+ * Load the departure an addition targets, scoped to the product that
+ * claims it.
+ *
+ * Scoping is the point. Looking a slot up by id alone lets a caller pair
+ * product A with a departure belonging to product B: apply would then
+ * decrement B's capacity while writing an item and allocation that say A,
+ * corrupting both inventory views at once. Not found and wrong-product are
+ * deliberately the same answer.
+ */
+async function loadAdditionSlot(db: PostgresJsDatabase, slotId: string, productId: string) {
+  const [slot] = await db
+    .select({
+      id: availabilitySlotsRef.id,
+      status: availabilitySlotsRef.status,
+      unlimited: availabilitySlotsRef.unlimited,
+      remainingPax: availabilitySlotsRef.remainingPax,
+      pastCutoff: availabilitySlotsRef.pastCutoff,
+      tooEarly: availabilitySlotsRef.tooEarly,
+    })
+    .from(availabilitySlotsRef)
+    .where(and(eq(availabilitySlotsRef.id, slotId), eq(availabilitySlotsRef.productId, productId)))
+    .limit(1)
+  if (!slot) {
+    throw new RosterPlanError("not_found", "Departure does not exist for this product")
+  }
+  return slot
+}
+
+/**
+ * The catalog price for `quantity` of a unit, honouring quantity tiers.
+ *
+ * Tiers are ordered by the pricing snapshot; the matching one is the tier
+ * whose `[minQuantity, maxQuantity]` window contains the requested
+ * quantity. With no tiers — or none that match — the rule's own price
+ * stands.
+ */
+function resolveTieredUnitPrice(
+  unitPrice: {
+    sellAmountCents: number | null
+    tiers?: Array<{
+      minQuantity: number
+      maxQuantity: number | null
+      sellAmountCents: number | null
+    }>
+  },
+  quantity: number,
+): number | null {
+  const tier = (unitPrice.tiers ?? []).find(
+    (entry) =>
+      quantity >= entry.minQuantity &&
+      (entry.maxQuantity == null || quantity <= entry.maxQuantity) &&
+      entry.sellAmountCents != null,
+  )
+  return tier?.sellAmountCents ?? unitPrice.sellAmountCents ?? null
+}
+
 async function buildItemAddPlan(
   db: PostgresJsDatabase,
   booking: BookingRow,
@@ -670,8 +727,40 @@ async function buildItemAddPlan(
     )
   }
 
+  // The departure has to be resolved BEFORE pricing: a slot can carry
+  // `departure_price_overrides`, and quoting without it charges the base
+  // catalog rate for a date the operator has deliberately repriced.
+  const slot = addition.availabilitySlotId
+    ? await loadAdditionSlot(db, addition.availabilitySlotId, addition.productId)
+    : null
+
+  if (!slot) {
+    // A product that sells by departure has no meaning without one:
+    // writing an item with a null slot would consume no capacity while
+    // looking confirmed. Treat "this product has bookable departures" as
+    // the signal, since that is the same thing the booking-create flow
+    // requires the operator to pick from.
+    const [anySlot] = await db
+      .select({ id: availabilitySlotsRef.id })
+      .from(availabilitySlotsRef)
+      .where(
+        and(
+          eq(availabilitySlotsRef.productId, addition.productId),
+          eq(availabilitySlotsRef.status, "open"),
+        ),
+      )
+      .limit(1)
+    if (anySlot) {
+      throw new RosterPlanError(
+        "unsupported_configuration",
+        "This product sells by departure — pick one for the added service",
+      )
+    }
+  }
+
   const pricing = await resolveSessionPricingSnapshot(db, addition.productId, {
     optionId: addition.optionId ?? undefined,
+    departureId: addition.availabilitySlotId ?? undefined,
     requirePublicProduct: false,
   })
   if (!pricing) {
@@ -695,7 +784,23 @@ async function buildItemAddPlan(
     if (!unitPrice) {
       throw new RosterPlanError("unsupported_configuration", "Unit has no price in this catalog")
     }
-    unitSellAmountCents = unitPrice.sellAmountCents ?? null
+    // A unit may only be sold in the quantities the catalog permits.
+    if (unitPrice.minQuantity != null && addition.quantity < unitPrice.minQuantity) {
+      throw new RosterPlanError(
+        "unsupported_configuration",
+        `This unit sells in quantities of at least ${unitPrice.minQuantity}`,
+      )
+    }
+    if (unitPrice.maxQuantity != null && addition.quantity > unitPrice.maxQuantity) {
+      throw new RosterPlanError(
+        "unsupported_configuration",
+        `This unit sells in quantities of at most ${unitPrice.maxQuantity}`,
+      )
+    }
+    // Quantity tiers are the authoritative price when one matches — the
+    // rule's own `sellAmountCents` is the untiered fallback, and quoting
+    // it for a group-sized addition would charge the wrong rate.
+    unitSellAmountCents = resolveTieredUnitPrice(unitPrice, addition.quantity)
     unitName = unitPrice.unitName
   } else {
     const rule =
@@ -709,19 +814,7 @@ async function buildItemAddPlan(
     )
   }
 
-  if (addition.availabilitySlotId) {
-    const [slot] = await db
-      .select({
-        status: availabilitySlotsRef.status,
-        unlimited: availabilitySlotsRef.unlimited,
-        remainingPax: availabilitySlotsRef.remainingPax,
-        pastCutoff: availabilitySlotsRef.pastCutoff,
-        tooEarly: availabilitySlotsRef.tooEarly,
-      })
-      .from(availabilitySlotsRef)
-      .where(eq(availabilitySlotsRef.id, addition.availabilitySlotId))
-      .limit(1)
-    if (!slot) throw new RosterPlanError("not_found", "Departure does not exist")
+  if (slot) {
     const room = slot.unlimited || (slot.remainingPax ?? 0) >= addition.quantity
     if (slot.status !== "open" || slot.pastCutoff || slot.tooEarly || !room) {
       throw new RosterPlanError("availability_changed", "Departure cannot take this addition")
@@ -1825,6 +1918,10 @@ async function finalizeItemAddApply(
           .where(
             and(
               eq(availabilitySlotsRef.id, plan.availabilitySlotId),
+              // Re-asserted at apply, not just at preview: the decrement
+              // must land on the product the item claims, or capacity
+              // moves on one product while the booking records another.
+              eq(availabilitySlotsRef.productId, plan.productId),
               eq(availabilitySlotsRef.status, "open"),
               eq(availabilitySlotsRef.pastCutoff, false),
               eq(availabilitySlotsRef.tooEarly, false),

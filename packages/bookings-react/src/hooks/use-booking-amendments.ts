@@ -5,6 +5,7 @@ import type { z } from "zod"
 
 import {
   type BookingAmendmentRecord,
+  bookingAmendmentApplyResponse,
   bookingAmendmentListResponse,
   bookingAmendmentPreviewResponse,
   bookingAmendmentResponse,
@@ -224,7 +225,7 @@ export function useBookingAmendmentFlow(bookingId: string) {
     }) => {
       const { data } = await fetchWithValidation(
         `/v1/admin/bookings/${bookingId}/amendments/${amendmentId}/apply`,
-        bookingAmendmentResponse,
+        bookingAmendmentApplyResponse,
         { baseUrl, fetcher },
         {
           method: "POST",
@@ -232,7 +233,7 @@ export function useBookingAmendmentFlow(bookingId: string) {
           headers: idempotencyHeaders(idempotencyKey),
         },
       )
-      return data
+      return data.amendment
     },
     onSuccess: () => invalidateAmendmentQueries(queryClient, bookingId),
   })
