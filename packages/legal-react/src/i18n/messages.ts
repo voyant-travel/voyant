@@ -117,6 +117,26 @@ export type LegalUiMessages = {
       send: string
     }
   }
+  bookingContractReviewDialog: {
+    title: string
+    description: string
+    unavailable: string
+    loadFailed: string
+    fields: {
+      booking: string
+      customer: string
+      template: string
+      revision: string
+      total: string
+      products: string
+    }
+    bodyHeading: string
+    bodyUnavailable: string
+    actions: {
+      cancel: string
+      issue: string
+    }
+  }
   contractDialog: {
     titleNew: string
     titleEdit: string
