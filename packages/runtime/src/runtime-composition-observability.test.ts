@@ -95,4 +95,27 @@ describe("Voyant observability composition", () => {
 
     expect(mocks.consoleReporter).not.toHaveBeenCalled()
   })
+
+  /**
+   * Selecting a reporter and not handing it to the application is the failure
+   * this whole PR is about, one layer up: `createApp` falls back to
+   * `noopReporter` when its config carries none, so the 5xx boundary and every
+   * other catch point it owns would discard exceptions while the composition
+   * looked correctly wired. Nothing had ever passed one.
+   */
+  it("hands the reporter to the application, not only to auth and the webhook loops", async () => {
+    const projectReporter = { captureException: vi.fn() }
+
+    await composeProject({ reporter: projectReporter })
+
+    const [runtimeOptions] = mocks.loadVoyantNodeRuntime.mock.calls.at(0) ?? []
+    expect(runtimeOptions?.app?.reporter).toBe(projectReporter)
+  })
+
+  it("hands the console reporter to the application when the project supplies none", async () => {
+    await composeProject()
+
+    const [runtimeOptions] = mocks.loadVoyantNodeRuntime.mock.calls.at(0) ?? []
+    expect(runtimeOptions?.app?.reporter).toBe(mocks.consoleReporter.mock.results.at(0)?.value)
+  })
 })

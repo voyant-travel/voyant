@@ -508,6 +508,13 @@ export async function loadVoyantProject(
     env: authEnv,
     app: {
       linkDefinitions: projectLinks,
+      // Without this the app config carries no reporter at all, so `createApp`
+      // falls back to `noopReporter` and every catch point it owns — the 5xx
+      // boundary, `c.set("reporter")`, module bootstrap, event-bus subscribers
+      // — discards its exception. That was true of the hard-coded console
+      // reporter too: the only paths ever reporting anything were the auth
+      // runtime and the two webhook loops below.
+      reporter,
       auth: {
         handler: () => ({
           fetch: (request, requestEnv, ctx) =>
