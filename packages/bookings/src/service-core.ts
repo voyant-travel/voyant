@@ -1266,7 +1266,10 @@ async function rollupBaseTotals(
     const key = `${from}->${to}`
     if (rateCache.has(key)) return rateCache.get(key) ?? null
     const [direct] = await db
-      .select({ rate: exchangeRatesRef.rateDecimal })
+      .select({
+        rate: exchangeRatesRef.rateDecimal,
+        effectiveRate: exchangeRatesRef.effectiveRateDecimal,
+      })
       .from(exchangeRatesRef)
       .where(
         and(
@@ -1277,7 +1280,9 @@ async function rollupBaseTotals(
       )
       .limit(1)
     if (direct) {
-      const value = Number.parseFloat(direct.rate)
+      // Prefer the applied rate: it already carries the operator's margin, and
+      // it is the rate the invoice raised from this booking will use.
+      const value = Number.parseFloat(direct.effectiveRate ?? direct.rate)
       rateCache.set(key, value)
       return value
     }

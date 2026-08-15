@@ -28,6 +28,7 @@ import {
   publishFinanceDomainEvent,
   recomputeInvoiceTotalsAfterPaymentChange,
   resolveFxMoneyBaseAmount,
+  resolveReportingStamp,
   settleCoveredBookingPaymentSchedules,
   shouldNormalizeBaseAmount,
   sql,
@@ -325,14 +326,28 @@ export const financeInvoicePaymentService = {
     await assertInvoiceAcceptsNewPayment(db, invoice)
 
     const { idempotencyKey: requestedIdempotencyKey, ...paymentInput } = data
-    const paymentData = await resolveFxMoneyBaseAmount(db, paymentInput, {
+    const settlement = await resolveFxMoneyBaseAmount(db, paymentInput, {
       ...runtime,
       targetBaseCurrency: invoice.currency,
       fallbackFxRateSetId: invoice.fxRateSetId ?? null,
       date: data.paymentDate,
     })
 
-    assertPaymentCanSettleInvoice(invoice.currency, paymentData)
+    assertPaymentCanSettleInvoice(invoice.currency, settlement)
+
+    // Stamped at the payment's own date, not at read time: an advance is worth
+    // what it was worth the day it landed, and that figure has to hold for the
+    // period return long after the rate moved on (voyant#4703).
+    const reporting = await resolveReportingStamp(
+      db,
+      {
+        amountCents: settlement.amountCents,
+        currency: settlement.currency,
+        date: data.paymentDate,
+      },
+      runtime,
+    )
+    const paymentData = { ...settlement, ...(reporting ?? {}) }
 
     const paymentId = newId("payments")
 
@@ -516,7 +531,8 @@ export const financeInvoicePaymentService = {
       paymentDate: data.paymentDate ?? existing.paymentDate,
     }
 
-    const normalized = shouldNormalizeBaseAmount(data)
+    const shouldRenormalize = shouldNormalizeBaseAmount(data)
+    const normalized = shouldRenormalize
       ? await resolveFxMoneyBaseAmount(db, merged, {
           ...runtime,
           targetBaseCurrency: invoice.currency,
@@ -527,6 +543,18 @@ export const financeInvoicePaymentService = {
 
     assertPaymentCanSettleInvoice(invoice.currency, normalized as CreatePaymentInput)
 
+    const reporting = shouldRenormalize
+      ? await resolveReportingStamp(
+          db,
+          {
+            amountCents: merged.amountCents,
+            currency: merged.currency,
+            date: merged.paymentDate,
+          },
+          runtime,
+        )
+      : null
+
     return db.transaction(async (tx) => {
       const writePatch: Record<string, unknown> = { ...data, updatedAt: new Date() }
       // resolveFxMoneyBaseAmount may have filled in baseCurrency / baseAmountCents /
@@ -534,6 +562,13 @@ export const financeInvoicePaymentService = {
       writePatch.baseCurrency = normalized.baseCurrency ?? null
       writePatch.baseAmountCents = normalized.baseAmountCents ?? null
       writePatch.fxRateSetId = normalized.fxRateSetId ?? null
+      // Amount, currency or date moved, so the reporting figure moved with
+      // them. Re-derived from the payment's own (possibly new) date.
+      if (reporting) {
+        writePatch.reportingCurrency = reporting.reportingCurrency
+        writePatch.reportingAmountCents = reporting.reportingAmountCents
+        writePatch.reportingFxRateSetId = reporting.reportingFxRateSetId
+      }
 
       const [payment] = await tx
         .update(payments)
