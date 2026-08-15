@@ -60,6 +60,7 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
     it("rejects baseSellAmountCents without baseCurrency", async () => {
       await expect(
         db.insert(bookings).values({
+          status: "confirmed",
           id: id("book"),
           bookingNumber: `BK-${counter}`,
           sellCurrency: "EUR",
@@ -72,6 +73,7 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
     it("rejects baseCostAmountCents without baseCurrency", async () => {
       await expect(
         db.insert(bookings).values({
+          status: "confirmed",
           id: id("book"),
           bookingNumber: `BK-${counter}`,
           sellCurrency: "EUR",
@@ -84,6 +86,7 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
     it("accepts both base_*_amount_cents null with null baseCurrency", async () => {
       await expect(
         db.insert(bookings).values({
+          status: "confirmed",
           id: id("book"),
           bookingNumber: `BK-${counter}`,
           sellCurrency: "EUR",
@@ -97,6 +100,7 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
     it("accepts base amounts when baseCurrency is set", async () => {
       await expect(
         db.insert(bookings).values({
+          status: "confirmed",
           id: id("book"),
           bookingNumber: `BK-${counter}`,
           sellCurrency: "EUR",
@@ -112,6 +116,7 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
     async function insertBooking() {
       const bookingId = id("book")
       await db.insert(bookings).values({
+        status: "confirmed",
         id: bookingId,
         bookingNumber: `BK-${counter}`,
         sellCurrency: "EUR",
@@ -123,6 +128,7 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
       const bookingId = await insertBooking()
       await expect(
         db.insert(bookingItems).values({
+          status: "confirmed",
           id: id("bkit"),
           bookingId,
           title: "Test",
@@ -137,6 +143,7 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
       const bookingId = await insertBooking()
       await expect(
         db.insert(bookingItems).values({
+          status: "confirmed",
           id: id("bkit"),
           bookingId,
           title: "Test",
@@ -231,6 +238,7 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
     async function bookingId() {
       const bid = id("book")
       await db.insert(bookings).values({
+        status: "confirmed",
         id: bid,
         bookingNumber: `BK-${counter}`,
         sellCurrency: "EUR",
@@ -276,6 +284,7 @@ describe.skipIf(!DB_AVAILABLE)("currency/amount CHECK constraints", () => {
     async function invoiceId() {
       const bid = id("book")
       await db.insert(bookings).values({
+        status: "confirmed",
         id: bid,
         bookingNumber: `BK-${counter}`,
         sellCurrency: "EUR",

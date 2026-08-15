@@ -1,6 +1,7 @@
 // agent-quality: file-size exception -- owner: finance; existing coverage file stays co-located until a dedicated split preserves behavior and tests.
 import { bookingItems, bookings } from "@voyant-travel/bookings/schema"
 import { createEventBus } from "@voyant-travel/core"
+import { handleApiError } from "@voyant-travel/hono"
 import { prepareExternalWebhookEvent } from "@voyant-travel/webhook-delivery"
 import { eq, sql } from "drizzle-orm"
 import { Hono } from "hono"
@@ -95,6 +96,17 @@ async function cleanupFinanceTestData(
   db: any,
 ) {
   const tableNames = [
+    // The action ledger carries the idempotency records these routes replay
+    // against. Leaving them behind meant a rerun against the same database
+    // matched a stored key with a different payload fingerprint and answered
+    // 409 to the *first* request of a test, not the second.
+    "idempotency_keys",
+    "action_approvals",
+    "action_mutation_details",
+    "action_sensitive_read_details",
+    "action_ledger_payloads",
+    "action_delegations",
+    "action_ledger_entries",
     "payment_sessions",
     "supplier_payments",
     "payments",
@@ -353,6 +365,12 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       c.set("container" as never, containerStub)
       await next()
     })
+    // The routes signal validation and conflict failures by throwing; turning
+    // those into status codes is `createApp`'s job, not each route's. Mounting
+    // them on a bare Hono without it made every such case a default 500, so
+    // these tests asserted 400/409 against a harness that could not produce
+    // one.
+    app.onError((err, c) => handleApiError(err, c))
     app.route("/", financeRoutes)
   })
 
@@ -380,6 +398,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     const [row] = await db
       .insert(bookings)
       .values({
+        status: "confirmed",
         bookingNumber: nextBookingNumber(),
         sellCurrency: "USD",
         sellAmountCents: 100000,
@@ -399,6 +418,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
     const [row] = await db
       .insert(bookingItems)
       .values({
+        status: "confirmed",
         bookingId,
         title: "Test Service",
         quantity: 2,
@@ -721,7 +741,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       // `invoice.settled` so plugin callbacks (Netopia and friends) don't
       // need a separate poller — see issue #357.
       expect(settlementEvents).toHaveLength(1)
-      expect(settlementEvents[0]).toMatchObject({
+      expect(settlementEvents[0]?.data).toMatchObject({
         invoiceId: invoice.id,
         paymentId: data.paymentId,
         provider: "netopia",
@@ -730,7 +750,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         balanceDueCents: 0,
       })
       expect(invoicePaymentRecordedEvents).toHaveLength(1)
-      expect(invoicePaymentRecordedEvents[0]).toMatchObject({
+      expect(invoicePaymentRecordedEvents[0]?.data).toMatchObject({
         invoiceId: invoice.id,
         invoiceNumber: invoice.invoiceNumber,
         invoiceType: "invoice",
@@ -808,7 +828,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(storedInvoice?.balanceDueCents).toBe(0)
       expect(storedInvoice?.status).toBe("paid")
       expect(schedulePaidEvents).toHaveLength(1)
-      expect(schedulePaidEvents[0]).toMatchObject({
+      expect(schedulePaidEvents[0]?.data).toMatchObject({
         bookingId: booking.id,
         bookingPaymentScheduleId: schedule.id,
         paymentSessionId: session.id,
@@ -819,7 +839,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         provider: "netopia",
       })
       expect(paymentCompletedEvents).toHaveLength(1)
-      expect(paymentCompletedEvents[0]).toMatchObject({
+      expect(paymentCompletedEvents[0]?.data).toMatchObject({
         paymentSessionId: session.id,
         targetType: "booking_payment_schedule",
         targetId: schedule.id,
@@ -2152,7 +2172,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
       expect(res.status).toBe(201)
       const { data } = await res.json()
       expect(data.invoiceNumber).toBe("INV-0042")
-      expect(data.seriesId).toMatch(/^ins_/)
+      expect(data.seriesId).toMatch(/^invs_/)
       expect(data.sequence).toBe(42)
       expect(data.totalCents).toBe(16500)
     })
@@ -2299,7 +2319,7 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
   })
 
   describe("Invoice rendition wait", () => {
-    it("returns 202 with the pending rendition when render wait times out", async () => {
+    it("records the miss when no document provider is configured", async () => {
       const booking = await seedBooking()
       const invoice = await seedInvoice(booking.id)
 
@@ -2308,13 +2328,19 @@ describe.skipIf(!DB_AVAILABLE)("Finance routes", () => {
         ...json({ format: "pdf" }),
       })
 
+      // This route used to answer 202 with a `pending` row and leave it there
+      // forever — the orphan voyant#4668 was filed for. These routes are built
+      // without a provider, so the request cannot be served; saying so on the
+      // row is what releases every waiter, because `failed` is terminal for
+      // `waitForInvoiceRendition` and `pending` is not.
       expect(res.status).toBe(202)
       const { data } = await res.json()
       expect(data.rendition).toMatchObject({
         invoiceId: invoice.id,
         format: "pdf",
-        status: "pending",
+        status: "failed",
       })
+      expect(data.rendition.errorMessage).toMatch(/no document renderer is available/i)
 
       const rows = await db
         .select()

@@ -150,6 +150,7 @@ describe.skipIf(!DB_AVAILABLE)("Public finance routes", () => {
     const [row] = await db
       .insert(bookings)
       .values({
+        status: "confirmed",
         bookingNumber: nextBookingNumber(),
         sellCurrency: "USD",
         sellAmountCents: 100000,

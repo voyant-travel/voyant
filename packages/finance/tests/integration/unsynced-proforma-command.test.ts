@@ -56,6 +56,7 @@ describe.skipIf(!DB_AVAILABLE)("unsynced proforma command", () => {
     const [booking] = await db
       .insert(bookings)
       .values({
+        status: "confirmed",
         bookingNumber: "BK-UNSYNCED-PROFORMA",
         sellCurrency: "EUR",
         sellAmountCents: 80_000,
@@ -67,6 +68,7 @@ describe.skipIf(!DB_AVAILABLE)("unsynced proforma command", () => {
     const [item] = await db
       .insert(bookingItems)
       .values({
+        status: "confirmed",
         bookingId: booking!.id,
         title: "Coastal day cruise",
         quantity: 2,
