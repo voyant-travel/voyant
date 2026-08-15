@@ -1,5 +1,45 @@
 # @voyant-travel/finance
 
+## 0.251.0
+
+### Minor Changes
+
+- 0fe4ce8: Make changing a live booking a first-class operation instead of free-text data entry.
+
+  - **Deleting or resizing a Booking Item now returns the inventory it held.** `booking_allocations.booking_item_id` cascades, so deleting an item destroyed its allocation without giving the seats back — `availability_slots.remaining_pax` stayed decremented permanently with no row left to reconcile from. `deleteItem` now releases before the cascade, and `updateItem` keeps the allocation in step with a `quantity` change, refusing to oversell rather than silently desyncing.
+  - **The Booking Amendment engine is reachable from the operator.** Adding or removing a traveller on a confirmed booking runs preview → accept → apply: the change is priced, the departure is capacity-checked, and the supplier consequence is shown before anything is written.
+  - **A new `item_add` Amendment adds a catalog-linked service** — an extra excursion, a transfer — priced from the catalog and holding a real allocation. Supplier-sourced products are refused, since adding one needs a supplier reservation this system cannot make.
+  - **The money follows.** Applying an Amendment that owes money now raises a payment schedule for the difference, so "Generate payment link" pre-fills the delta instead of the booking total, and the generated link can be emailed to the customer from the same dialog.
+
+### Patch Changes
+
+- dccec4b: Follow-ups from the review of the core-operator-writes change. The MCP rate
+  limiter now picks its bucket from the tool a request will DISPATCH rather than
+  the name on the envelope, so a write reached through `call_tool` — the ordinary
+  way to reach anything non-eager — is charged to the tight write bucket instead
+  of the loose read one, and a client namespace prefix (`functions.x`) can no
+  longer downgrade it either. `record_payment` accepts only the two recordable
+  payment states: `failed` and `refunded` were inserted and then ignored by the
+  balance recomputation, so the agent reported success against an invoice that
+  never moved. The server instructions and the `discovery` guide topic now name
+  the eager writes this caller actually received rather than the configured
+  default, so a read-only key, an opted-out deployment, or a graph without those
+  tools is no longer told a resident tool it cannot see.
+- a414f2c: Send the buyer's fiscal code on `invoice.issued`
+
+  `buildInvoiceIssuedPayload` hardcoded `clientVatCode: null`, so a tax id an
+  operator had recorded on the booking never reached the event. An accounting
+  integration consuming `invoice.issued` therefore issued every invoice without
+  the buyer's fiscal code, and — where the integration derives taxpayer status
+  from that field's presence — classified every business buyer as a non-taxpayer.
+
+  The value is read from `bookings.contact_tax_id`, which is on the row the
+  payload is already built from. `clientRegCom` stays null: no column feeds it.
+
+- Updated dependencies [0fe4ce8]
+  - @voyant-travel/bookings@0.243.0
+  - @voyant-travel/bookings-contracts@0.115.0
+
 ## 0.250.0
 
 ### Minor Changes
