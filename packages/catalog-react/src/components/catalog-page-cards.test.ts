@@ -53,4 +53,95 @@ describe("product card departure note", () => {
     })
     expect(note).toContain("3 departures")
   })
+
+  it("shows the time of day for an instant, which is what distinguishes it", () => {
+    const note = card.footerNote?.({
+      nextDepartureDate: "2026-09-25T09:30:00Z",
+      departureTimezone: "UTC",
+    })
+    expect(note).toMatch(/09:30/)
+  })
+
+  it("shows no time of day for a bare date, which has no clock reading", () => {
+    const note = card.footerNote?.({ nextDepartureDate: "2026-09-26" })
+    expect(note).not.toMatch(/\d{2}:\d{2}/)
+  })
+})
+
+/**
+ * The noun for a schedule entry is resolved once upstream (`scheduleTerm` on
+ * the catalog document) so every surface agrees. Calling a timed Activity's
+ * slots "departures" is the specific thing this guards against.
+ */
+describe("product card schedule term", () => {
+  const noteFor = (scheduleTerm: string | undefined, count: number) =>
+    card.footerNote?.({
+      availableDeparturesCount: count,
+      ...(scheduleTerm ? { scheduleTerm } : {}),
+    })
+
+  it("names each term with its own noun", () => {
+    expect(noteFor("departure", 6)).toBe("6 departures")
+    expect(noteFor("session", 6)).toBe("6 sessions")
+    expect(noteFor("occurrence", 6)).toBe("6 dates")
+  })
+
+  it("singularizes each term", () => {
+    expect(noteFor("departure", 1)).toBe("1 departure")
+    expect(noteFor("session", 1)).toBe("1 session")
+    expect(noteFor("occurrence", 1)).toBe("1 date")
+  })
+
+  it("falls back to departures for a document with no term or an unknown one", () => {
+    expect(noteFor(undefined, 2)).toBe("2 departures")
+    expect(noteFor("sailing", 2)).toBe("2 departures")
+  })
+})
+
+describe("product card duration", () => {
+  it("omits the nights on a single-day product rather than showing 0n", () => {
+    expect(card.meta?.({ durationDays: 1 })).toBe("1d")
+  })
+
+  it("spans days and nights once there is an overnight", () => {
+    expect(card.meta?.({ durationDays: 3 })).toBe("3d / 2n")
+  })
+})
+
+/**
+ * A timed departure has a wall clock in two places at once, and the card has
+ * room for one. The other lives in the hover.
+ */
+describe("product card departure tooltip", () => {
+  const viewerZone = Intl.DateTimeFormat().resolvedOptions().timeZone
+
+  it("gives both frames for an instant in a zone other than the reader's", () => {
+    const away = viewerZone === "Pacific/Auckland" ? "America/Denver" : "Pacific/Auckland"
+    const tooltip = card.footerNoteTooltip?.({
+      nextDepartureDate: "2026-09-25T09:30:00Z",
+      departureTimezone: away,
+    })
+    const lines = tooltip?.split("\n") ?? []
+    expect(lines).toHaveLength(2)
+    expect(lines[0]).toContain(away)
+    expect(lines[1]).toContain(viewerZone)
+  })
+
+  it("offers nothing for a bare date, which has no time to convert", () => {
+    expect(
+      card.footerNoteTooltip?.({
+        nextDepartureDate: "2026-09-26",
+        departureTimezone: "Pacific/Auckland",
+      }),
+    ).toBeNull()
+  })
+
+  it("offers nothing when the reader is already in the departure's zone", () => {
+    expect(
+      card.footerNoteTooltip?.({
+        nextDepartureDate: "2026-09-25T09:30:00Z",
+        departureTimezone: viewerZone,
+      }),
+    ).toBeNull()
+  })
 })

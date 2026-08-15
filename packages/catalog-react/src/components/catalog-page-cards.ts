@@ -19,6 +19,7 @@ export function makeProductCard(
     subtitle: (fields) => productSubtitle(fields, locale),
     meta: (fields) => durationMeta(fields, messages),
     footerNote: (fields) => departureNote(fields, messages, locale),
+    footerNoteTooltip: (fields) => departureNoteTooltip(fields, messages, locale),
     // Transport + board basis lead the chips, then categories/themes.
     chips: (fields) =>
       [
@@ -97,6 +98,8 @@ export function makeCruiseCard(
         countField: "departureCount",
         withYear: true,
       }),
+    footerNoteTooltip: (fields) =>
+      departureNoteTooltip(fields, messages, locale, { dateField: "earliestDepartureCached" }),
     chips: (fields) =>
       [...asStringArray(fields.themes), ...asStringArray(fields.regions)].slice(0, 3),
     badges: (fields) => supplierBadge(fields, "lineSupplierId", formatSupplier),
@@ -167,6 +170,9 @@ export function durationMeta(
   const days = asNumber(fields.durationDays)
   if (days == null || days < 1) return null
   const nights = Math.max(0, days - 1)
+  // A single-day product has no nights, and "1d / 0n" reads as a missing value
+  // rather than as "no overnight". Only span the nights when there are some.
+  if (nights === 0) return messages.card.days.replace("{days}", String(days))
   return messages.card.daysNights
     .replace("{days}", String(days))
     .replace("{nights}", String(nights))
@@ -176,6 +182,33 @@ function nightsMeta(fields: Record<string, unknown>, messages: CatalogPageMessag
   const nights = asNumber(fields.nights)
   if (nights == null || nights < 1) return null
   return messages.card.nights.replace("{nights}", String(nights))
+}
+
+/**
+ * The operator-facing noun for one entry on a product's schedule. Resolved
+ * once, upstream, from the product's duration (`resolveScheduleTerm` in
+ * `@voyant-travel/inventory`) and carried on the catalog document, so the card
+ * agrees with every other surface instead of calling everything a departure.
+ *
+ * "6 departures" is right for a Tour and wrong for a timed Activity or a
+ * one-night Event — a gig has dates, a sixty-minute sail has sessions.
+ */
+type ScheduleTerm = "session" | "occurrence" | "departure"
+
+function resolveScheduleTerm(fields: Record<string, unknown>): ScheduleTerm {
+  const raw = asString(fields.scheduleTerm)
+  return raw === "session" || raw === "occurrence" ? raw : "departure"
+}
+
+function scheduleCountLabel(
+  term: ScheduleTerm,
+  count: number,
+  messages: CatalogPageMessages,
+): string {
+  const card = messages.card
+  const one = { session: card.oneSession, occurrence: card.oneDate, departure: card.oneDeparture }
+  const many = { session: card.sessions, occurrence: card.dates, departure: card.departures }
+  return count === 1 ? one[term] : many[term].replace("{count}", String(count))
 }
 
 function departureNote(
@@ -198,13 +231,69 @@ function departureNote(
       ),
     )
   if (count != null && count > 0) {
-    parts.push(
-      count === 1
-        ? messages.card.oneDeparture
-        : messages.card.departures.replace("{count}", String(count)),
-    )
+    parts.push(scheduleCountLabel(resolveScheduleTerm(fields), count, messages))
   }
   return parts.length > 0 ? parts.join(" · ") : null
+}
+
+/**
+ * Hover text for the footer note's date — the same instant in the departure's
+ * own zone and in the reader's.
+ *
+ * Only an instant has a time of day to disagree about. A bare `YYYY-MM-DD` is a
+ * calendar date in the departure's zone with no clock reading, so there is
+ * nothing to convert and no tooltip is offered rather than inventing a midnight.
+ */
+function departureNoteTooltip(
+  fields: Record<string, unknown>,
+  messages: CatalogPageMessages,
+  locale: string,
+  opts: { dateField?: string } = {},
+): string | null {
+  const next = asString(fields[opts.dateField ?? "nextDepartureDate"])
+  if (!next || isBareCalendarDate(next)) return null
+  const date = new Date(next)
+  if (Number.isNaN(date.getTime())) return null
+  const venueZone = asString(fields.departureTimezone)
+  const viewerZone = resolveViewerTimeZone()
+  // Nothing to compare against: the document declares no zone, so the card
+  // already showed the only reading there is.
+  if (!venueZone) return null
+  const there = formatZonedDateTime(date, locale, venueZone)
+  const yours = formatZonedDateTime(date, locale, viewerZone)
+  // The reader is in the departure's zone (or one that keeps the same clock),
+  // so the two frames agree and printing both says nothing twice.
+  if (there === yours) return null
+  return [
+    messages.card.timeThere.replace("{time}", there).replace("{zone}", venueZone),
+    messages.card.timeYours.replace("{time}", yours).replace("{zone}", viewerZone),
+  ].join("\n")
+}
+
+function isBareCalendarDate(iso: string): boolean {
+  return /^\d{4}-\d{2}-\d{2}$/.test(iso)
+}
+
+function resolveViewerTimeZone(): string {
+  try {
+    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+  } catch {
+    return "UTC"
+  }
+}
+
+function formatZonedDateTime(date: Date, locale: string, timeZone: string): string {
+  const options: Intl.DateTimeFormatOptions = {
+    day: "numeric",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
+  }
+  try {
+    return new Intl.DateTimeFormat(locale, { ...options, timeZone }).format(date)
+  } catch {
+    return new Intl.DateTimeFormat(locale, { ...options, timeZone: "UTC" }).format(date)
+  }
 }
 
 function supplierBadge(
@@ -230,6 +319,10 @@ function supplierBadge(
  * UTC. Bare dates are therefore formatted in UTC — round-tripping the
  * same calendar day — and instants in the departure's zone when the
  * document declares one.
+ *
+ * An instant also carries a time of day, and for a timed product that time is
+ * the distinguishing fact — a 09:00 and an 18:00 sailing are different
+ * departures. It is shown; a bare date has no clock reading to show.
  */
 function formatShortDate(
   iso: string,
@@ -239,12 +332,13 @@ function formatShortDate(
 ): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso
-  const isBareDate = /^\d{4}-\d{2}-\d{2}$/.test(iso)
+  const isBareDate = isBareCalendarDate(iso)
   const resolvedZone = isBareDate ? "UTC" : (timeZone ?? "UTC")
   const options: Intl.DateTimeFormatOptions = {
     day: "numeric",
     month: "short",
     ...(withYear ? { year: "numeric" } : {}),
+    ...(isBareDate ? {} : { hour: "2-digit", minute: "2-digit" }),
   }
   try {
     return new Intl.DateTimeFormat(locale, { ...options, timeZone: resolvedZone }).format(date)
