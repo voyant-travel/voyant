@@ -41,18 +41,22 @@ export interface BookingSettlementInstallment {
 export interface BookingSettlement {
   /** Currency every amount below is expressed in. */
   currency: string
-  /** Sum of completed payments against the booking's non-void invoices. */
+  /**
+   * Completed payments against the booking's non-void invoices, net of money
+   * moved back out against a credit note.
+   */
   paidAmountCents: number
   /**
-   * Remaining balance across the booking's non-void invoices, or `null` when
-   * the booking has no invoice at all. An absent invoice is not a zero
-   * balance, and callers that flatten it to one report settled bookings that
-   * were never billed.
+   * Net receivable across the booking's non-void invoices — credit notes
+   * subtract — or `null` when the booking has no invoice at all. An absent
+   * invoice is not a zero balance, and callers that flatten it to one report
+   * settled bookings that were never billed.
    */
   balanceDueCents: number | null
   /** Amount still owed: the invoice balance, or the total less payments. */
   amountDueCents: number
   isPaidInFull: boolean
+  /** Most recent customer payment. Never a credit-note refund. */
   latestCompletedPayment: BookingSettlementPayment | null
   /** Installments that still stand, oldest due date first. */
   installments: BookingSettlementInstallment[]
@@ -99,6 +103,7 @@ export const financeBookingSettlementService = {
     const [invoiceRows, scheduleRows] = await Promise.all([
       db
         .select({
+          invoiceType: invoices.invoiceType,
           currency: invoices.currency,
           baseCurrency: invoices.baseCurrency,
           balanceDueCents: invoices.balanceDueCents,
@@ -117,6 +122,7 @@ export const financeBookingSettlementService = {
 
     const completedPayments = await db
       .select({
+        invoiceType: invoices.invoiceType,
         amountCents: payments.amountCents,
         currency: payments.currency,
         baseCurrency: payments.baseCurrency,
@@ -135,13 +141,22 @@ export const financeBookingSettlementService = {
       )
       .orderBy(desc(payments.paymentDate), desc(payments.createdAt))
 
-    const paidAmountCents = completedPayments.reduce(
-      (sum, payment) => sum + paymentAmountInCurrency(payment, currency),
+    const paidAmountCents = Math.max(
       0,
+      completedPayments.reduce(
+        (sum, payment) =>
+          sum + receivableSign(payment.invoiceType) * paymentAmountInCurrency(payment, currency),
+        0,
+      ),
     )
     const balanceDueCents =
       invoiceRows.length > 0
-        ? invoiceRows.reduce((sum, invoice) => sum + invoiceBalanceInCurrency(invoice, currency), 0)
+        ? invoiceRows.reduce(
+            (sum, invoice) =>
+              sum +
+              receivableSign(invoice.invoiceType) * invoiceBalanceInCurrency(invoice, currency),
+            0,
+          )
         : null
     const bookingTotalCents = options.bookingTotalCents ?? 0
     // An invoice is the authority on what is owed. Without one, fall back to
@@ -156,7 +171,7 @@ export const financeBookingSettlementService = {
     const standing = scheduleRows.filter((row) => STANDING_SCHEDULE_STATUSES.has(row.status))
     const deposit = standing.find((row) => row.scheduleType === "deposit")
     const balance = standing.find((row) => row.scheduleType === "balance")
-    const latest = completedPayments[0]
+    const latest = completedPayments.find((payment) => receivableSign(payment.invoiceType) === 1)
 
     return {
       currency,
@@ -196,6 +211,16 @@ type SettlementInvoiceRow = Pick<
   InvoiceRow,
   "currency" | "baseCurrency" | "balanceDueCents" | "baseBalanceDueCents"
 >
+
+/**
+ * Which way a document moves the receivable. A credit note is a negative
+ * receivable — `service-profitability` applies the same sign to its totals —
+ * so summing its balance as debt would tell a customer whose invoice was
+ * credited that they still owe the credited amount.
+ */
+function receivableSign(invoiceType: InvoiceRow["invoiceType"]): 1 | -1 {
+  return invoiceType === "credit_note" ? -1 : 1
+}
 
 function paymentAmountInCurrency(payment: SettlementPaymentRow, currency: string): number {
   if (!currency || payment.currency === currency) return payment.amountCents

@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest"
 import { bookingContractVariables } from "../../src/booking-contract-confirmed.js"
 import {
   type BookingContractSettlement,
+  bookingContractPreviewSettlement,
   EMPTY_BOOKING_CONTRACT_SETTLEMENT,
   toBookingContractSettlement,
 } from "../../src/booking-contract-settlement.js"
@@ -195,6 +196,57 @@ describe("automatic booking contract settlement variables", () => {
         variables,
       }),
     ).toBe("€0.00")
+  })
+
+  // The acceptance evidence is a digest over the body the shopper reviewed,
+  // and the shopper reviewed it before paying. Rendering the settled bag with
+  // identity stripped is not that body, so a card booking's acceptance would
+  // stop being recoverable the moment a template bound the payment clause.
+  it("re-renders the shopper's reading of the payment clause for acceptance matching", () => {
+    const settled: BookingContractSettlement = {
+      ...EMPTY_BOOKING_CONTRACT_SETTLEMENT,
+      paidAmountCents: 120_00,
+      amountDueCents: 0,
+      isPaidInFull: true,
+      latestCompleted: { method: "credit_card", methodLabel: "Credit Card", date: "2026-08-05" },
+      schedule: [
+        {
+          index: 1,
+          type: "balance",
+          status: "paid",
+          amountCents: 120_00,
+          currency: "EUR",
+          dueDate: "2026-08-20",
+        },
+      ],
+    }
+
+    expect(
+      contractsService.renderPreview({
+        body: PAYMENT_CLAUSE,
+        variables: variablesWithSettlement(settled),
+      }),
+    ).toBe("Paid in full: €120.00")
+
+    const preview = bookingContractPreviewSettlement(settled, 120_00)
+    expect(
+      contractsService.renderPreview({
+        body: PAYMENT_CLAUSE,
+        variables: variablesWithSettlement(preview),
+      }),
+    ).toBe("Deposit paid: €0.00. Balance €120.00 due by -.")
+    // The storefront preview shows every installment as still pending.
+    expect(preview.schedule).toEqual([
+      {
+        index: 1,
+        type: "balance",
+        status: "pending",
+        amountCents: 120_00,
+        currency: "EUR",
+        dueDate: "2026-08-20",
+      },
+    ])
+    expect(preview.latestCompleted).toBeNull()
   })
 })
 

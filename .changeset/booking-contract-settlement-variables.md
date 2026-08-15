@@ -19,3 +19,12 @@ expired rows excluded). Legal reads it through that service and emits
 `isPaidInFull`, the deposit/balance installments, and `payment.method` /
 `latestCompleted` / `schedule`, so the auto-generated contract and the agent
 path now render the same clause.
+
+A credit note is a negative receivable, so `getBookingSettlement` nets it out
+of the balance rather than summing it as debt, and never presents a
+credit-note refund as the customer's latest payment.
+
+The acceptance-evidence digest is matched against a third candidate rendered
+with preview-time settlement — nothing paid, the whole price outstanding —
+because the shopper accepted the terms before paying, and a card booking is
+settled by the time `booking.confirmed` lands.

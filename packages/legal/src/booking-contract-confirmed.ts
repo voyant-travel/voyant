@@ -23,6 +23,7 @@ import {
 } from "./booking-contract-review.js"
 import {
   type BookingContractSettlement,
+  bookingContractPreviewSettlement,
   resolveBookingContractSettlement,
 } from "./booking-contract-settlement.js"
 import {
@@ -503,6 +504,23 @@ async function prepareBookingContractTarget(
     body: selected.version.body,
     variables: bookingContractAcceptanceVariables(variables),
   })
+  // Settlement moves between the two too, and stripping identity does not
+  // undo it: a card booking is paid by the time `booking.confirmed` lands, so
+  // a template that binds the payment clause renders "paid in full" here and
+  // rendered "nothing paid yet" for the shopper. Offer that reading as a
+  // third candidate so the acceptance stays recoverable on exactly the
+  // bookings the storefront settles up front.
+  const acceptancePreviewRenderedBody = contractsService.renderPreview({
+    body: selected.version.body,
+    variables: bookingContractAcceptanceVariables(
+      bookingContractVariables(
+        booking,
+        items,
+        travelers,
+        bookingContractPreviewSettlement(settlement, booking.sellAmountCents),
+      ),
+    ),
+  })
   const priorMetadata = record(reusable?.metadata)
   const pendingAcceptance = await bookingContractAcceptanceMetadata({
     internalNotes: booking.internalNotes,
@@ -510,7 +528,7 @@ async function prepareBookingContractTarget(
     templateVersionId: selected.version.id,
     templateSlug: selected.template.slug,
     renderedBody,
-    additionalRenderedBodies: [acceptanceRenderedBody],
+    additionalRenderedBodies: [acceptanceRenderedBody, acceptancePreviewRenderedBody],
   })
   const acceptance = priorMetadata.acceptance ?? pendingAcceptance ?? undefined
   const paymentConfirmation =

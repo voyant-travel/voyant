@@ -58,6 +58,36 @@ export const EMPTY_BOOKING_CONTRACT_SETTLEMENT: BookingContractSettlement = {
 }
 
 /**
+ * Settlement as the shopper saw it when they accepted the terms at checkout:
+ * nothing paid, the whole price outstanding, and every installment still
+ * pending. That is what `resolveContractVariables` emits in the storefront
+ * preview, and the acceptance evidence is a digest over the body rendered
+ * from it.
+ *
+ * The canonical contract must state the truth at confirmation — a booking
+ * paid by card is paid by the time `booking.confirmed` lands. So the two
+ * bodies legitimately differ, and matching the stored digest needs a
+ * candidate rendered the shopper's way, not the settled bag with a few
+ * fields deleted (voyant#4700 review).
+ */
+export function bookingContractPreviewSettlement(
+  settlement: BookingContractSettlement,
+  totalAmountCents: number | null | undefined,
+): BookingContractSettlement {
+  return {
+    ...settlement,
+    paidAmountCents: 0,
+    amountDueCents: totalAmountCents ?? 0,
+    isPaidInFull: false,
+    latestCompleted: null,
+    schedule: settlement.schedule.map((installment) => ({
+      ...installment,
+      status: "pending",
+    })),
+  }
+}
+
+/**
  * Read the booking's settlement state through Finance and shape it for the
  * contract renderer. Finance owns what is paid and what is owed; this only
  * localizes the method label and flattens nulls to the empty string the
