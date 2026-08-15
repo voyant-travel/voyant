@@ -105,10 +105,10 @@ export interface DepartureResourceCounters {
   /** Every `allocation_resources` row on the slot, parents included. */
   total: number
   /**
-   * `product_option_resource_templates` declared for the departure's option —
+   * `product_option_resource_templates` this departure would materialize from —
    * the catalog's statement that this product is *supposed* to have rooms or
-   * seats. Zero on a departure whose option declares none, and on a departure
-   * with no option at all.
+   * seats. Resolved like the materializer does: its own option when it has one,
+   * every option of its product when it does not.
    *
    * This is what separates "the rooming list has not been laid out yet" from
    * "this product allocates nothing" (a day excursion). Without it, every
@@ -213,7 +213,7 @@ export async function getDepartureCapacityCounters(
       loadTravelerCounts(db, slotId),
       countSlotHolds(db, slotId, now),
       getSlotResourceAvailability(db, slotId),
-      countOptionResourceTemplates(db, slot.optionId),
+      countResourceTemplates(db, { optionId: slot.optionId, productId: slot.productId }),
     ])
 
   const allocations = rollUpAllocations(allocationRows)
@@ -399,21 +399,34 @@ function rollUpTravelers(
 }
 
 /**
- * How many resource templates the departure's option declares. A departure with
- * no `option_id` cannot inherit any, and answers zero without a query.
+ * How many resource templates this departure would materialize from.
+ *
+ * Resolved exactly the way `materializeSlotResourcesFromTemplateDefaultsLocked`
+ * resolves it, because the two have to agree on what "this departure has a
+ * declared plan" means: an option-scoped slot draws from its own option, and a
+ * **product-level slot** (`option_id IS NULL`) draws from every option of its
+ * product. Counting only the slot's own option reported zero for every
+ * product-level departure and hid a rooming plan that the materializer would
+ * happily have created.
  */
-async function countOptionResourceTemplates(
+async function countResourceTemplates(
   db: PostgresJsDatabase,
-  optionId: string | null,
+  slot: { optionId: string | null; productId: string },
 ): Promise<number> {
-  if (!optionId) return 0
   const rows = await executeRows<{ template_count: number }>(
     db,
-    sql`
-      SELECT COUNT(*)::int AS template_count
-      FROM product_option_resource_templates
-      WHERE product_option_id = ${optionId}
-    `,
+    slot.optionId
+      ? sql`
+          SELECT COUNT(*)::int AS template_count
+          FROM product_option_resource_templates
+          WHERE product_option_id = ${slot.optionId}
+        `
+      : sql`
+          SELECT COUNT(*)::int AS template_count
+          FROM product_option_resource_templates t
+          JOIN product_options o ON o.id = t.product_option_id
+          WHERE o.product_id = ${slot.productId}
+        `,
   )
   return rows[0]?.template_count ?? 0
 }
