@@ -62,7 +62,7 @@ export function BookingItemAdditionDialog({
   onApplied,
 }: BookingItemAdditionDialogProps) {
   const messages = useBookingsUiMessagesOrDefault().itemAdditionDialog
-  const { formatCurrency } = useBookingsUiI18nOrDefault()
+  const { formatCurrency, formatDate } = useBookingsUiI18nOrDefault()
   const { previewItemAddition, accept, apply } = useBookingAmendmentFlow(bookingId)
 
   const [product, setProduct] = useState<ProductPickerValue>({ productId: "", optionId: null })
@@ -125,6 +125,21 @@ export function BookingItemAdditionDialog({
 
   const canQuote =
     Boolean(product.productId) && !isSourced && quantity > 0 && reason.trim().length > 0
+
+  /**
+   * Why the quote button is disabled, in the operator's words.
+   *
+   * A dead button with no explanation is the same as a broken one: the
+   * reason field is required but nothing on the form said so, so the sheet
+   * looked like it had failed rather than like it was waiting.
+   */
+  const missing = !product.productId
+    ? messages.missing.product
+    : isSourced
+      ? null
+      : reason.trim().length === 0
+        ? messages.missing.reason
+        : null
 
   async function onQuote() {
     setBlocked(null)
@@ -206,7 +221,7 @@ export function BookingItemAdditionDialog({
                     items={slots}
                     selectedItem={selectedSlot}
                     getKey={(slot) => slot.id}
-                    getLabel={(slot) => slot.startsAt ?? slot.id}
+                    getLabel={(slot) => formatDepartureLabel(slot, formatDate, messages)}
                     placeholder={messages.fields.departurePlaceholder}
                     emptyText={messages.fields.departureEmpty}
                     triggerClassName="w-full"
@@ -248,7 +263,9 @@ export function BookingItemAdditionDialog({
           )}
 
           <div className="flex flex-col gap-2">
-            <Label htmlFor="item-add-reason">{messages.fields.reason}</Label>
+            <Label htmlFor="item-add-reason">
+              {messages.fields.reason} <span className="text-destructive">*</span>
+            </Label>
             <Textarea
               id="item-add-reason"
               value={reason}
@@ -292,15 +309,42 @@ export function BookingItemAdditionDialog({
               {messages.actions.apply}
             </Button>
           ) : (
-            <Button type="button" size="sm" disabled={!canQuote || busy} onClick={onQuote}>
-              {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-              {messages.actions.quote}
-            </Button>
+            <>
+              {missing ? (
+                <span className="mr-auto text-muted-foreground text-xs">{missing}</span>
+              ) : null}
+              <Button type="button" size="sm" disabled={!canQuote || busy} onClick={onQuote}>
+                {busy && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+                {messages.actions.quote}
+              </Button>
+            </>
           )}
         </SheetFooter>
       </SheetContent>
     </Sheet>
   )
+}
+
+/**
+ * A departure as an operator says it out loud — "Aug 16, 2026 · 12 left" —
+ * not the ISO instant the API returns. The raw timestamp is unreadable at
+ * the speed someone takes a phone call.
+ */
+export function formatDepartureLabel(
+  slot: { startsAt?: string | null; id: string; unlimited?: boolean; remainingPax?: number | null },
+  formatDate: (value: string, options?: Intl.DateTimeFormatOptions) => string,
+  messages: { fields: { seatsLeft: string } },
+): string {
+  if (!slot.startsAt) return slot.id
+  const date = formatDate(slot.startsAt, {
+    year: "numeric",
+    month: "short",
+    day: "numeric",
+    hour: "2-digit",
+    minute: "2-digit",
+  })
+  if (slot.unlimited || typeof slot.remainingPax !== "number") return date
+  return `${date} · ${messages.fields.seatsLeft.replace("{count}", String(slot.remainingPax))}`
 }
 
 function blockedText(

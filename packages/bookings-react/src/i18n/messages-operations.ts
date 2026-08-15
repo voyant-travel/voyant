@@ -83,6 +83,7 @@ export type BookingsUiOperationsMessages = {
       viewItem: string
       editItem: string
       deleteItem: string
+      moveItem: string
     }
     snapshot: {
       title: string

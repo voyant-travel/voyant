@@ -64,6 +64,39 @@ export interface DepartureSlotSearchRecord {
   status?: string
 }
 
+/** A departure plus the capacity fields a move has to respect. */
+export interface DepartureSlotCapacityRecord extends DepartureSlotSearchRecord {
+  unlimited?: boolean
+  remainingPax?: number | null
+}
+
+/**
+ * Departures a Booking Item could actually move onto.
+ *
+ * Narrower than `getBookableDepartureSlots` by two rules that only matter
+ * once a booking already exists: a departure without room for the seats
+ * being carried over is not a choice, and neither is the one the item is
+ * already on. Offering either would put the operator in front of a
+ * selection the server is obliged to refuse.
+ */
+export function getMoveTargetDepartureSlots<TSlot extends DepartureSlotCapacityRecord>(
+  slots: readonly TSlot[],
+  options: {
+    nowIso: string
+    optionId: string | null
+    /** Seats the move has to carry across. */
+    quantity: number
+    /** The departure the item is on today. */
+    currentSlotId: string | null
+  },
+): TSlot[] {
+  return getBookableDepartureSlots(slots, options).filter((slot) => {
+    if (slot.id === options.currentSlotId) return false
+    if (slot.unlimited) return true
+    return (slot.remainingPax ?? 0) >= options.quantity
+  })
+}
+
 export interface BookingCreateUnitLineRecord {
   optionId: string | null
   optionUnitId: string
