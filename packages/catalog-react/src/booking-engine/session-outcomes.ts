@@ -158,6 +158,18 @@ export function bookingSessionOf(
  * never a replacement for it: the error itself stays on
  * `BookingSessionJourneyError.error` so a host that wants
  * `unsatisfied[]` — or `revision_conflict.actualRevision` — can still reach it.
+ *
+ * **A host that sees the same class repeatedly must stop and tell the shopper.**
+ * These name a remedy, not a promise that retrying applies it: several classes
+ * are deterministic for a given Session state, so re-running the same remedy is
+ * rejected identically every time. One shopper retried a checkout for eleven
+ * minutes — 30 holds, no commit — and saw a spinner throughout, because nothing
+ * between the rejection and the screen ever concluded that it would not work
+ * (voyant#4655, voyant#4683). Where to give up is a host decision and these
+ * hooks deliberately do not make it: a library that silently declined a call
+ * the host asked for would be a worse failure than the loop. But something must
+ * make it, and a terminal "we could not complete this — please contact us" is
+ * the only part of that eleven minutes the shopper would have valued.
  */
 export type BookingSessionRecoveryV1 =
   | "revisionConflict"
