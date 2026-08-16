@@ -92,6 +92,10 @@ export type SuppliersUiMessages = {
       publish: string
       hide: string
       clear: string
+      confirm: string
+      cancel: string
+      impact: string
+      channelsTruncated: string
       reindexNote: string
     }
     contact: string
