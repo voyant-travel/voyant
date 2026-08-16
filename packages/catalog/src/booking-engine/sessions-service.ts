@@ -501,6 +501,35 @@ export interface BookingSessionPaymentPorts {
     now: Date
   }): Promise<BookingPaymentPlanV1 | null>
   /**
+   * Persist the collection plan the Quote published, against the Booking that
+   * was just written, inside the same Commit transaction.
+   *
+   * A confirmed Booking owes money on a schedule. Until voyant#4743 the only
+   * thing that wrote those rows was the asynchronous `booking.confirmed`
+   * subscriber, so the Booking existed as `confirmed` with nothing recording
+   * what was owed or when — nothing for the reminder runs to anchor to, and
+   * nothing the guest portal could offer to pay. A bank-transfer Commit made
+   * it visible because it also has nothing else to charge, but the gap is the
+   * schedule's, not the intent's.
+   *
+   * Establishing it here makes the plan atomic with the Booking. The
+   * subscriber stays as the safety net for every path this one does not reach
+   * (sourced and composite targets), and is idempotent: it returns early once
+   * any schedule row exists.
+   *
+   * Called for every checkout intent, before {@link establishBankTransfer},
+   * which collects against the row this writes.
+   */
+  establishPaymentSchedule?(input: {
+    tx: unknown
+    session: BookingSessionInternalRecord
+    quote: BookingQuoteInternalRecord
+    commit: CommitBookingSessionV1
+    access: BookingSessionAccessContext
+    bookingId: string
+    now: Date
+  }): Promise<void>
+  /**
    * Establish the durable offline-payment record after the Booking id exists
    * but before the surrounding Commit transaction is consumed.
    */
@@ -2284,6 +2313,15 @@ async function consumeCommittedSources(input: {
         })
       }
     }
+    await input.ports.payments?.establishPaymentSchedule?.({
+      tx: input.tx,
+      session: currentSession,
+      quote: currentQuote,
+      commit: input.input,
+      access: input.access,
+      bookingId: input.bookingId,
+      now: currentAt,
+    })
     const bankTransfer =
       input.input.checkoutIntent === "bank_transfer"
         ? await input.ports.payments?.establishBankTransfer?.({
@@ -2441,6 +2479,15 @@ async function consumeCompositeCommittedSources(input: {
         reason: currentHold === "expired" ? "expired" : "missing",
       })
     }
+    await input.ports.payments?.establishPaymentSchedule?.({
+      tx: input.tx,
+      session: currentSession,
+      quote: currentQuote,
+      commit: input.input,
+      access: input.access,
+      bookingId: primary.bookingId,
+      now: currentAt,
+    })
     const bankTransfer =
       input.input.checkoutIntent === "bank_transfer"
         ? await input.ports.payments?.establishBankTransfer?.({
