@@ -54,8 +54,7 @@ describe("port check and contracts helper agree", () => {
       // whatever a deployment wrote. Every case below is something that is not
       // an `InsuranceProviderAdapter`.
       const viaPort = rejects(
-        (candidate) =>
-          insuranceProviderSourcePort.test?.(candidate as InsuranceProviderAdapter),
+        (candidate) => insuranceProviderSourcePort.test?.(candidate as InsuranceProviderAdapter),
         value,
       )
       const viaContracts = rejects(assertInsuranceProviderAdapter, value)
