@@ -15,7 +15,7 @@ import { availabilitySlotsRef } from "../../src/availability-ref.js"
 import { optionPriceRulesRef, priceCatalogsRef } from "../../src/pricing-ref.js"
 import { productOptionsRef, productsRef } from "../../src/products-ref.js"
 import type { BookingsFinanceRuntime } from "../../src/runtime-port.js"
-import { bookingAllocations, bookingItems, bookings } from "../../src/schema.js"
+import { bookingAllocations, bookingAmendments, bookingItems, bookings } from "../../src/schema.js"
 import { bookingAmendmentService } from "../../src/service-amendments.js"
 
 const DB_AVAILABLE = Boolean(process.env.TEST_DATABASE_URL)
@@ -383,6 +383,66 @@ describe.skipIf(!DB_AVAILABLE)("Booking item move Amendments", () => {
       collectionAmountCents: 2_500,
       refundAmountCents: 0,
     })
+  })
+
+  it("waives the fare reduction even when the change fee exceeds it", async () => {
+    // The reduction (1_000) is smaller than the fee (1_500), so the net is
+    // positive. Testing the net rather than the fare read that as "not a
+    // reduction", dropped the waive, and charged 500 — the fare discount
+    // the operator explicitly declined to give, handed over anyway.
+    const seeded = await seed({ quantity: 2, unitPrice: 10_000, targetPrice: 9_500 })
+    const preview = await previewMove(seeded, { refundHandling: "waive", changeFeeCents: 1_500 })
+
+    if (preview.status !== "ok") throw new Error("Expected a quote")
+    expect(preview.amendment.priceDelta).toMatchObject({
+      subtotalDeltaCents: 0,
+      feeDeltaCents: 1_500,
+      amountCents: 1_500,
+      collectionAmountCents: 1_500,
+      refundAmountCents: 0,
+    })
+  })
+
+  it("refuses to move a service that holds no capacity allocation", async () => {
+    // `updateItem` still lets an operator schedule a product-linked line
+    // without claiming a seat. Moving one would credit the old departure
+    // capacity it never consumed and leave the target's claim untracked.
+    const seeded = await seed()
+    await db
+      .update(bookingAllocations)
+      .set({ status: "released" })
+      .where(eq(bookingAllocations.id, seeded.allocation.id))
+
+    const preview = await previewMove(seeded)
+    expect(preview.status).toBe("unsupported_configuration")
+
+    // And nothing was taken from the target on the way to refusing.
+    expect((await readSlot(seeded.to.id))?.remainingPax).toBe(8)
+  })
+
+  it("returns the failed amendment, not the pre-failure one, on manual review", async () => {
+    const seeded = await seed({ quantity: 2, targetPax: 2 })
+    const preview = await previewMove(seeded)
+    if (preview.status !== "ok") throw new Error("Expected a quote")
+
+    // Stand the amendment up as one the supplier already secured, then take
+    // the target away so local projection fails after the supplier moved.
+    await db
+      .update(bookingAmendments)
+      .set({ effects: { ...preview.amendment.effects, supplier: "secured" } })
+      .where(eq(bookingAmendments.id, preview.amendment.id))
+    await db
+      .update(availabilitySlotsRef)
+      .set({ remainingPax: 0, status: "sold_out" })
+      .where(eq(availabilitySlotsRef.id, seeded.to.id))
+
+    const applied = await applyMove(preview.amendment, "apply-move-manual")
+    if (applied.status !== "manual_review") throw new Error("Expected manual review")
+
+    // The embedded amendment must agree with the outer verdict rather than
+    // still reading `applying` with no failure code.
+    expect(applied.amendment.status).toBe("manual_review")
+    expect(applied.amendment.failureCode).toBe("local_projection_failed_after_supplier_secured")
   })
 
   it("records money owed back when the operator refunds it", async () => {

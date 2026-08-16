@@ -148,7 +148,12 @@ export interface BookingAmendmentItemAddPlan {
 export interface BookingAmendmentItemMovePlan {
   kind: "item_move"
   bookingItemId: string
-  allocationId: string | null
+  /**
+   * The allocation being moved. Never null: a line that holds no capacity
+   * has nothing to move, and planning refuses it rather than crediting a
+   * seat back to a departure that never consumed one.
+   */
+  allocationId: string
   quantity: number
   productId: string | null
   /** Departure the item is leaving. Null when it was never scheduled. */

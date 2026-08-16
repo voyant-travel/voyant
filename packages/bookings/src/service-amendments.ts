@@ -993,14 +993,26 @@ async function buildItemMovePlan(
       allocation.bookingItemId === item.id &&
       (allocation.status === "held" || allocation.status === "confirmed"),
   )
-  if (activeAllocations.length > 1) {
+  // Exactly one, not "at most one". A move is an inventory operation before
+  // it is a price one: apply restores the old departure's capacity and claims
+  // the target's, and both halves are only true of a line that actually holds
+  // an allocation. Moving one that does not would credit the old departure a
+  // seat it never consumed and leave the target's decrement with no row
+  // pointing at it, so cancelling later would never give it back.
+  //
+  // The state is reachable — `updateItem` still lets an operator schedule a
+  // product-linked line without claiming capacity — so this refuses rather
+  // than silently inventing an allocation the operator never asked for.
+  if (activeAllocations.length !== 1) {
     throw new RosterPlanError(
       "unsupported_configuration",
-      "Moving a service requires at most one active capacity allocation",
+      activeAllocations.length === 0
+        ? "This service holds no seat on its current departure, so there is nothing to move. Set its departure directly instead."
+        : "Moving a service requires exactly one active capacity allocation",
       item.id,
     )
   }
-  const allocation = activeAllocations[0] ?? null
+  const allocation = activeAllocations[0]!
 
   const itemMetadata = asRecord(item.metadata)
   const allocationMetadata = asRecord(allocation?.metadata)
@@ -1039,7 +1051,7 @@ async function buildItemMovePlan(
   return {
     kind: "item_move",
     bookingItemId: item.id,
-    allocationId: allocation?.id ?? null,
+    allocationId: allocation.id,
     quantity: item.quantity,
     productId: item.productId,
     fromAvailabilitySlotId: item.availabilitySlotId ?? null,
@@ -1906,14 +1918,21 @@ function settleMoveDirection(
   price: BookingAmendmentPrice,
   handling: BookingItemMoveRefundHandling,
 ): BookingAmendmentPrice {
-  if (handling !== "waive" || price.amountCents >= 0) return price
+  // Tested on the fare alone, not on the net. `amountCents` already has the
+  // change fee folded in, so a 1,000-cent cheaper departure carrying a
+  // 1,500-cent fee nets +500 and would have read as "not a reduction" — the
+  // waive silently dropped, charging 500 where the fee alone is payable.
+  // Finance taxes only the fare lines, so subtracting the fee leaves exactly
+  // the fare-and-tax component.
+  const fareComponentCents = price.amountCents - price.feeDeltaCents
+  if (handling !== "waive" || fareComponentCents >= 0) return price
+  const feeOnlyCents = Math.max(price.feeDeltaCents, 0)
   return {
     ...price,
     subtotalDeltaCents: 0,
-    feeDeltaCents: price.feeDeltaCents,
     taxDeltaCents: 0,
-    amountCents: Math.max(price.feeDeltaCents, 0),
-    collectionAmountCents: Math.max(price.feeDeltaCents, 0),
+    amountCents: feeOnlyCents,
+    collectionAmountCents: feeOnlyCents,
     refundAmountCents: 0,
     taxLines: [],
   }
@@ -2415,12 +2434,10 @@ async function finalizeItemMoveApply(
           .where(eq(availabilitySlotsRef.id, plan.fromAvailabilitySlotId))
       }
 
-      if (plan.allocationId) {
-        await tx
-          .update(bookingAllocations)
-          .set({ availabilitySlotId: plan.toAvailabilitySlotId, updatedAt: now })
-          .where(eq(bookingAllocations.id, plan.allocationId))
-      }
+      await tx
+        .update(bookingAllocations)
+        .set({ availabilitySlotId: plan.toAvailabilitySlotId, updatedAt: now })
+        .where(eq(bookingAllocations.id, plan.allocationId))
 
       await tx
         .update(bookingItems)
@@ -2491,7 +2508,17 @@ async function finalizeItemMoveApply(
         dependencies.now?.() ?? new Date(),
       )
       if (supplierAlreadySecured && current) {
-        const amendment = await hydrateAmendment(db, current)
+        // Re-read rather than hydrating `current`: it was loaded before
+        // `setAmendmentFailure` wrote the new status, so returning it would
+        // hand back a `manual_review` result whose embedded amendment still
+        // says `applying` and carries no failure code.
+        const [failed] = await db
+          .select()
+          .from(bookingAmendments)
+          .where(eq(bookingAmendments.id, amendmentId))
+          .limit(1)
+        if (!failed) return { status: "not_found" }
+        const amendment = await hydrateAmendment(db, failed)
         return { status: "manual_review", amendment }
       }
       return { status: "availability_changed", bookingItemId: error.bookingItemId ?? "unknown" }
