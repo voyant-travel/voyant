@@ -34,7 +34,7 @@ export interface SupplierPublicationSectionProps {
  * authority, same endpoints; this only puts the control where the intent forms.
  */
 export function SupplierPublicationSection({ supplierId }: SupplierPublicationSectionProps) {
-  const messages = useSuppliersUiMessagesOrDefault().detail.publication
+  const messages = useSuppliersUiMessagesOrDefault().supplierDetailPage.publication
   const channelsQuery = useChannels({ limit: 100 })
   const rulesQuery = useSupplierPublications({ supplierId })
   const { upsertSupplier, removeSupplier } = usePublicationMutation()
@@ -101,7 +101,7 @@ function ChannelRow({
   onSet: (decision: "include" | "exclude") => void
   onClear: () => void
 }) {
-  const messages = useSuppliersUiMessagesOrDefault().detail.publication
+  const messages = useSuppliersUiMessagesOrDefault().supplierDetailPage.publication
   const inactive = row.state === "channel_inactive"
 
   return (
