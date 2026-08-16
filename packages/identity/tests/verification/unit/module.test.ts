@@ -85,7 +85,15 @@ describe("createCustomerVerificationApiModule.bootstrap", () => {
       "managed-cloud",
       "self-hosted",
     ])
-    expect(packageJson.voyant.schema).toBe("./verification/schema")
+    // In public-api this package's ENTIRE schema was verification, so the
+    // declared entrypoint was "./verification/schema" itself. Identity has its
+    // own tables too, so the declaration stays "./schema" and that barrel
+    // re-exports verification — which is what keeps the challenges table
+    // reachable for an explicit Drizzle schema array (voyant#4627).
+    expect(packageJson.voyant.schema).toBe("./schema")
+    expect(readFileSync(new URL("../../../src/schema.ts", import.meta.url), "utf8")).toContain(
+      'export * from "./verification/schema.js"',
+    )
     expect(packageJson.voyant.requiresSchemas).toEqual(["@voyant-travel/db"])
   })
 })

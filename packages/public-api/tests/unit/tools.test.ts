@@ -5,13 +5,13 @@ import {
   type PublicApiToolContext,
   publicApiCustomerPortalTools,
   publicApiPaymentLinkTools,
-  publicApiVerificationTools,
+  publicApiCustomerVerificationTools,
 } from "../../src/tools.js"
 
 const allTools = [
   ...publicApiCustomerPortalTools,
   ...publicApiPaymentLinkTools,
-  ...publicApiVerificationTools,
+  ...publicApiCustomerVerificationTools,
 ]
 
 function context(
@@ -35,7 +35,7 @@ describe("storefront Tools", () => {
 
     expect(publicApiCustomerPortalTools).toHaveLength(13)
     expect(publicApiPaymentLinkTools).toHaveLength(2)
-    expect(publicApiVerificationTools).toHaveLength(4)
+    expect(publicApiCustomerVerificationTools).toHaveLength(4)
     expect(manifest).toHaveLength(19)
     expect(new Set(manifest.map(({ capabilityId }) => capabilityId))).toHaveProperty("size", 19)
     for (const tool of publicApiCustomerPortalTools) {
@@ -44,7 +44,7 @@ describe("storefront Tools", () => {
     for (const tool of publicApiPaymentLinkTools) {
       expect(tool.owner).toBe("@voyant-travel/public-api#payment-link")
     }
-    for (const tool of publicApiVerificationTools) {
+    for (const tool of publicApiCustomerVerificationTools) {
       expect(tool.owner).toBe("@voyant-travel/public-api#verification")
     }
     for (const tool of manifest) {

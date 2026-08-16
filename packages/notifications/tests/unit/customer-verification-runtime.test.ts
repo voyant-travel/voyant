@@ -1,8 +1,8 @@
+import { customerVerificationRuntimePort } from "@voyant-travel/identity/runtime-port"
 import {
   buildCustomerVerificationSenders,
   type CustomerVerificationRoutesOptions,
 } from "@voyant-travel/identity/verification"
-import { customerVerificationRuntimePort } from "@voyant-travel/public-api/runtime-port"
 import { describe, expect, it, vi } from "vitest"
 import { toCustomerVerificationNotificationProvider } from "../../src/customer-verification-runtime.js"
 import { createNotificationsRuntimePortContribution } from "../../src/runtime-contributor.js"
@@ -42,7 +42,7 @@ function contributionOptions(
   return contribution[customerVerificationRuntimePort.id] as CustomerVerificationRoutesOptions
 }
 
-describe("storefront verification notification providers", () => {
+describe("customer verification notification providers", () => {
   it("delivers an email challenge through durable delivery (voyant#3923)", async () => {
     const send = vi.fn(async () => ({ id: "ntf_1", provider: "voyant-cloud" }))
     const senders = buildCustomerVerificationSenders(
