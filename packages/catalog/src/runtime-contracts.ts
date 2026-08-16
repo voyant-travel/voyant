@@ -265,19 +265,22 @@ export interface CatalogInventoryRuntimeExtension {
    * slot-based product is the listing's own window and has nothing to do with
    * the departure being sold (voyant#4740).
    *
-   * Resolves the same way the Booking does: the selected slot's local date
-   * wins, then a date stated inline on the selection, then the product row as
-   * the last resort for a product that genuinely has no departures. A slot id
-   * that does not belong to this product is ignored — the Commit refuses that
-   * combination outright, so its date is not this product's departure.
+   * Resolves **exactly** as the Booking records it — `slot?.dateLocal ??
+   * product.startDate`, per `convertProductToBooking` — so checkout and
+   * `generatePaymentScheduleForBooking` cannot compute two plans from one
+   * policy. A slot id that does not belong to this product is ignored, because
+   * the Commit refuses that combination outright.
+   *
+   * A `configure.departureDate` stated inline is deliberately **not** consulted,
+   * even though quoting prices against it. The self-service command carries only
+   * `slotId` (`deriveSelfServiceCommand`), so an inline date never reaches
+   * `bookings.startDate` — measuring checkout from something the Booking will
+   * not record is how the two schedules diverge, which is the whole bug.
+   * Honouring it here means persisting it there first.
    */
   resolveSelectedDepartureDate(
     db: AnyDrizzleDb,
-    input: {
-      productId: string
-      departureSlotId?: string | null
-      departureDate?: string | null
-    },
+    input: { productId: string; departureSlotId?: string | null },
   ): Promise<string | null>
   buildSnapshotInput(
     db: AnyDrizzleDb,

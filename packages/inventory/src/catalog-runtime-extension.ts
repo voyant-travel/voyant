@@ -125,7 +125,7 @@ export const catalogInventoryRuntimeExtension = {
       name: pickTranslatedName(translations, options?.locale) ?? product.name,
     }
   },
-  async resolveSelectedDepartureDate(db, { productId, departureSlotId, departureDate }) {
+  async resolveSelectedDepartureDate(db, { productId, departureSlotId }) {
     if (departureSlotId) {
       // Through availability's own service, not its table: the slot belongs to
       // `operations`, and a departure date is exactly what that module is the
@@ -133,7 +133,6 @@ export const catalogInventoryRuntimeExtension = {
       const slot = await availabilityService.getSlotById(db as PostgresJsDatabase, departureSlotId)
       if (slot?.productId === productId && slot.dateLocal) return slot.dateLocal
     }
-    if (isCalendarDate(departureDate)) return departureDate
     const [product] = await db
       .select({ startDate: products.startDate })
       .from(products)
@@ -143,18 +142,6 @@ export const catalogInventoryRuntimeExtension = {
   },
   buildSnapshotInput: (db, productId, options) => buildProductSnapshotInput(db, productId, options),
 } satisfies CatalogInventoryRuntimeExtension
-
-/**
- * A date-only selection value the payment policy can measure from.
- *
- * The selection is normalized but not date-validated at the Session edge, and
- * a policy gate that parses garbage answers "0 days to departure" — which is
- * the collapse-to-full-payment failure voyant#4740 was about. Anything that is
- * not a plain `YYYY-MM-DD` falls through to the product row instead.
- */
-function isCalendarDate(value: string | null | undefined): value is string {
-  return typeof value === "string" && /^\d{4}-\d{2}-\d{2}$/.test(value)
-}
 
 /**
  * Resolve a product's name in `locale` from its translation rows.

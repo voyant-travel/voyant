@@ -109,7 +109,7 @@ export function createProductionBookingSessionPaymentPorts(
         }),
         deps.inventory.resolveSelectedDepartureDate(deps.db, {
           productId: session.target.productId,
-          ...selectedDeparture(session.statePayload),
+          departureSlotId: selectedDepartureSlotId(session.statePayload),
         }),
       ])
       if (!context) throw new Error("booking_session_payment_product_not_found")
@@ -355,23 +355,15 @@ function customerReference(session: {
 }
 
 /**
- * Which departure the Session's selection names, as the shopper stated it.
+ * Which departure the Session's selection names.
  *
- * Both halves are carried because they are two different claims: a slot id
- * names a row the operator publishes and is the authority on, while an inline
- * `departureDate` is a bare date for a product that sells without slots. The
- * resolver decides between them — this only reads the Session's own
- * `configure` step, the same place quoting and the Commit read it from.
+ * The slot id and nothing else, read off the Session's own `configure` step —
+ * the same place the Commit reads it from, and the only part of the selection
+ * that reaches `bookings.startDate`. `configure.departureDate` sits right next
+ * to it and is deliberately left behind: see `resolveSelectedDepartureDate`.
  */
-function selectedDeparture(payload: Record<string, unknown>): {
-  departureSlotId: string | null
-  departureDate: string | null
-} {
-  const configure = record(payload.configure)
-  return {
-    departureSlotId: stringValue(configure?.departureSlotId),
-    departureDate: stringValue(configure?.departureDate),
-  }
+function selectedDepartureSlotId(payload: Record<string, unknown>): string | null {
+  return stringValue(record(payload.configure)?.departureSlotId)
 }
 
 function hasStaffPaymentSchedule(payload: Record<string, unknown>): boolean {

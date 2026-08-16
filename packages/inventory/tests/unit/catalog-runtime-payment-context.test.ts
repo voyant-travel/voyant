@@ -115,8 +115,8 @@ describe("loadProductPaymentPolicyContext product name", () => {
  * has nothing to do with the departure being bought, and reading it as one
  * collapsed a 50% deposit policy to full payment on a departure five weeks out
  * (voyant#4740). Resolution mirrors what the Booking itself records —
- * `slot?.dateLocal ?? product.startDate` in `convertProductToBooking` — with an
- * inline selection date in between for products that sell without slots.
+ * `slot?.dateLocal ?? product.startDate` in `convertProductToBooking` — because
+ * agreeing with that by construction is the point.
  */
 describe("resolveSelectedDepartureDate", () => {
   const SLOT = {
@@ -138,26 +138,11 @@ describe("resolveSelectedDepartureDate", () => {
       catalogInventoryRuntimeExtension.resolveSelectedDepartureDate(db, {
         productId: "prod_1",
         departureSlotId: "avsl_01k",
-        departureDate: "2026-10-01",
       }),
     ).resolves.toBe("2026-09-20")
   })
 
-  it("falls back to a date stated inline when no slot was selected", async () => {
-    const db = fakeDb([
-      [availabilitySlots, []],
-      [products, [{ startDate: "2026-08-16" }]],
-    ])
-
-    await expect(
-      catalogInventoryRuntimeExtension.resolveSelectedDepartureDate(db, {
-        productId: "prod_1",
-        departureDate: "2026-10-01",
-      }),
-    ).resolves.toBe("2026-10-01")
-  })
-
-  it("falls back to the product row when the selection names no departure", async () => {
+  it("falls back to the product row when the selection names no slot", async () => {
     const db = fakeDb([
       [availabilitySlots, []],
       [products, [{ startDate: "2026-08-16" }]],
@@ -165,22 +150,6 @@ describe("resolveSelectedDepartureDate", () => {
 
     await expect(
       catalogInventoryRuntimeExtension.resolveSelectedDepartureDate(db, { productId: "prod_1" }),
-    ).resolves.toBe("2026-08-16")
-  })
-
-  // A policy gate that parses garbage answers "0 days to departure", which is
-  // the collapse-to-full-payment this issue was about, arrived at differently.
-  it("ignores a selection date that is not a calendar date", async () => {
-    const db = fakeDb([
-      [availabilitySlots, []],
-      [products, [{ startDate: "2026-08-16" }]],
-    ])
-
-    await expect(
-      catalogInventoryRuntimeExtension.resolveSelectedDepartureDate(db, {
-        productId: "prod_1",
-        departureDate: "next Tuesday",
-      }),
     ).resolves.toBe("2026-08-16")
   })
 

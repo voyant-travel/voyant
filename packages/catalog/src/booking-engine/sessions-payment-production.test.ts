@@ -4,11 +4,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest"
 import { createProductionBookingSessionPaymentPorts } from "./sessions-payment-production.js"
 
 /** Every departure resolution the port asked for, in order. Reset per `prepare`. */
-const resolveCalls: Array<{
-  productId: string
-  departureSlotId?: string | null
-  departureDate?: string | null
-}> = []
+const resolveCalls: Array<{ productId: string; departureSlotId?: string | null }> = []
 
 const startPaymentAdapterCardPayment = vi.hoisted(() => vi.fn(async (..._args: unknown[]) => null))
 
@@ -435,16 +431,6 @@ describe("production Booking Session payment policy departure", () => {
     expect(scheduleInput().departureDate).toBe("2026-09-20")
   })
 
-  it("measures from a date stated inline when the product sells without slots", async () => {
-    await prepare({
-      locale: "en-GB",
-      departureDate: "2026-08-16",
-      selection: { departureDate: "2026-09-20" },
-    })
-
-    expect(scheduleInput().departureDate).toBe("2026-09-20")
-  })
-
   it("falls back to the product row when the selection names no departure", async () => {
     await prepare({ locale: "en-GB", departureDate: "2026-08-16" })
 
@@ -455,14 +441,31 @@ describe("production Booking Session payment policy departure", () => {
     await prepare({
       locale: "en-GB",
       departureDate: null,
-      selection: { departureSlotId: "avsl_01k", departureDate: "2026-09-20" },
+      selection: { departureSlotId: "avsl_01k" },
     })
 
-    expect(resolveArgs()).toEqual({
-      productId: "prod_1",
-      departureSlotId: "avsl_01k",
-      departureDate: "2026-09-20",
+    expect(resolveArgs()).toEqual({ productId: "prod_1", departureSlotId: "avsl_01k" })
+  })
+
+  /**
+   * `configure.departureDate` sits next to the slot id on the same selection
+   * step and quoting does price against it, so consulting it here looks
+   * obviously right. It is not: `deriveSelfServiceCommand` carries only
+   * `slotId`, so an inline date never reaches `bookings.startDate`, and
+   * `generatePaymentScheduleForBooking` would go on reading the product row.
+   * Measuring checkout from a date the Booking will not record is the same
+   * two-plans-from-one-policy divergence this issue is about, arrived at from
+   * the other side. Honouring it means persisting it on the Booking first.
+   */
+  it("does not measure from a departure date the Booking will never record", async () => {
+    await prepare({
+      locale: "en-GB",
+      departureDate: "2026-08-16",
+      selection: { departureDate: "2026-09-20" },
     })
+
+    expect(resolveArgs()).toEqual({ productId: "prod_1", departureSlotId: null })
+    expect(scheduleInput().departureDate).toBe("2026-08-16")
   })
 
   // The line item is the only product-shaped thing a hosted provider renders,
@@ -532,7 +535,7 @@ async function prepare(input: {
   departureDate: string | null
   /** What the shopper selected, as it sits on the Session's `configure` step. */
   selection?: { departureSlotId?: string; departureDate?: string }
-  /** Resolver answers keyed by slot id; anything else falls to `departureDate`. */
+  /** Resolver answers keyed by slot id; anything else falls to the product row. */
   slotDates?: Record<string, string>
   name?: string
   personId?: string
@@ -570,14 +573,14 @@ async function prepare(input: {
         supplierId: null,
         name: input.name ?? "Danube Delta tour",
       }),
-      // Stands in for inventory's resolver with the same precedence: the
-      // selected slot's date, then an inline one, then the product row.
+      // Stands in for inventory's resolver with the same precedence it has:
+      // the selected slot's date, then the product row. Nothing else.
       resolveSelectedDepartureDate: async (_db, resolve) => {
         resolveCalls.push(resolve)
         const slotDate = resolve.departureSlotId
           ? input.slotDates?.[resolve.departureSlotId]
           : undefined
-        return slotDate ?? resolve.departureDate ?? input.departureDate
+        return slotDate ?? input.departureDate
       },
     },
     distribution: { loadSupplierPaymentPolicy: async () => null },
