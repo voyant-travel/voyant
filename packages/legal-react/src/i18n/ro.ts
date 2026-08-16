@@ -123,6 +123,8 @@ export const legalUiRo = {
       total: "Total",
       products: "Produse",
     },
+    templateSummary: "{name} (versiunea {version}, {language})",
+    productLine: "{quantity} x {title}",
     bodyHeading: "Continutul contractului",
     bodyUnavailable: "Aceasta revizie nu are inca un continut generat.",
     actions: {

@@ -1375,7 +1375,17 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
   const issueContractRoute = createRoute({
     method: "post",
     path: "/{id}/issue",
-    request: { params: idParamSchema },
+    // Declared but not required: the handler parses with
+    // `parseOptionalJsonBody`, so an ordinary contract still issues with no
+    // body at all. Declaring it is what lets a generated client discover the
+    // approval a managed booking revision has to carry (voyant#4706).
+    request: {
+      params: idParamSchema,
+      body: {
+        required: false,
+        content: { "application/json": { schema: bookingContractReviewApprovalSchema } },
+      },
+    },
     responses: {
       200: {
         description: "The issued contract",
@@ -1390,7 +1400,13 @@ export function createContractsAdminRoutes(options: ContractsRouteOptions = {}) 
   const sendContractRoute = createRoute({
     method: "post",
     path: "/{id}/send",
-    request: { params: idParamSchema },
+    request: {
+      params: idParamSchema,
+      body: {
+        required: false,
+        content: { "application/json": { schema: sendContractInputSchema } },
+      },
+    },
     responses: {
       200: {
         description: "The sent contract",

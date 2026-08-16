@@ -123,6 +123,8 @@ export const legalUiEn = {
       total: "Total",
       products: "Products",
     },
+    templateSummary: "{name} (version {version}, {language})",
+    productLine: "{quantity} x {title}",
     bodyHeading: "Contract content",
     bodyUnavailable: "This revision has no rendered content yet.",
     actions: {

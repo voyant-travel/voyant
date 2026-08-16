@@ -1,5 +1,6 @@
 "use client"
 
+import { formatMessage } from "@voyant-travel/i18n"
 import {
   Badge,
   Button,
@@ -124,7 +125,11 @@ function BookingContractReviewBody({ review }: { review: LegalBookingContractRev
           {review.booking.customerName ?? i18n.messages.common.noResultsDash}
         </ReviewField>
         <ReviewField label={messages.fields.template}>
-          {review.template.name} (v{review.template.version}, {review.template.language})
+          {formatMessage(messages.templateSummary, {
+            name: review.template.name,
+            version: review.template.version,
+            language: review.template.language,
+          })}
         </ReviewField>
         <ReviewField label={messages.fields.revision}>
           <Badge variant="outline">{review.revision}</Badge>
@@ -140,7 +145,10 @@ function BookingContractReviewBody({ review }: { review: LegalBookingContractRev
               // biome-ignore lint/suspicious/noArrayIndexKey: positional review snapshot -- owner: legal-react; the frozen product list has no identifier of its own and is never reordered or filtered.
               <li key={`${product.title}-${index}`} className="flex justify-between gap-2">
                 <span className="truncate">
-                  {product.quantity} x {product.title}
+                  {formatMessage(messages.productLine, {
+                    quantity: product.quantity,
+                    title: product.title,
+                  })}
                 </span>
                 <span className="shrink-0 text-muted-foreground">
                   {product.amountCents === null

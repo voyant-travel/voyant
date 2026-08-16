@@ -130,6 +130,8 @@ export type LegalUiMessages = {
       total: string
       products: string
     }
+    templateSummary: string
+    productLine: string
     bodyHeading: string
     bodyUnavailable: string
     actions: {
