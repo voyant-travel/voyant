@@ -68,6 +68,11 @@ export function createCruisesAdminExtension(
         id: "cruises-ships-index",
         path,
         title: ships,
+        // This module owns both ship surfaces, so each destination maps 1:1
+        // onto one route and the host derives its resolver from the mount
+        // path. Without the binding `useAdminHref` has nothing to resolve and
+        // degrades to "#": the cards stop opening and the breadcrumb unlinks.
+        destination: "cruiseShip.list",
         page: () =>
           import("./ships-hosts.js").then((module) =>
             adminRoutePageModule((props: AdminRoutePageProps) => (
@@ -87,6 +92,9 @@ export function createCruisesAdminExtension(
         id: "cruises-ships-detail",
         path: `${path}/$shipId`,
         title: ships,
+        // The route param is already named `shipId`, so no destinationParams
+        // mapping is needed.
+        destination: "cruiseShip.detail",
         page: () =>
           import("./ships-hosts.js").then((module) =>
             adminRoutePageModule((props: AdminRoutePageProps) => (
