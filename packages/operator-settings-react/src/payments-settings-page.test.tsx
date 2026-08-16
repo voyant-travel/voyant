@@ -10,6 +10,7 @@ import {
   paymentActivationControlState,
   paymentConnectionStatusLabel,
   paymentProviderSetupMode,
+  paymentProviderStatus,
   requestPaymentOnboardingSession,
   resumablePaymentProviderConnection,
 } from "./payments-settings-page.js"
@@ -332,5 +333,84 @@ describe("payments settings contract", () => {
         summary: { connectionId: "c3", readiness: "not_ready", active: false, readOnly: false },
       }),
     ).toBe("gated")
+  })
+})
+
+describe("processor status", () => {
+  const provider = { id: "voyant-pay", availability: "available" as const }
+  const connection = (state: string, providerId = "voyant-pay") =>
+    ({ providerId, state }) as Parameters<typeof paymentProviderStatus>[0]["connections"][number]
+
+  it("reports a processor nobody has set up with no status at all", () => {
+    // The badge for `not_connected` is deliberately absent: it is the default
+    // state of most rows, and labelling it makes every row shout.
+    expect(paymentProviderStatus({ provider, connections: [], activeProviderId: null })).toBe(
+      "not_connected",
+    )
+  })
+
+  it("collapses ready + connected into the single fact they always agreed on", () => {
+    // `paymentConnectionReadiness` is `state === "connected"`, so a separate
+    // readiness badge could never disagree with the lifecycle badge.
+    expect(
+      paymentProviderStatus({
+        provider,
+        connections: [connection("connected")],
+        activeProviderId: null,
+      }),
+    ).toBe("connected")
+  })
+
+  it("marks the active processor without needing a second badge", () => {
+    expect(
+      paymentProviderStatus({
+        provider,
+        connections: [connection("connected")],
+        activeProviderId: "voyant-pay",
+      }),
+    ).toBe("active")
+  })
+
+  it("lets a broken or blocked connection outrank being active", () => {
+    // An active processor that cannot take money is the one thing an operator
+    // must not miss, so `error`/`action_required` win over `active`.
+    for (const [state, expected] of [
+      ["error", "error"],
+      ["pending_requirements", "action_required"],
+      ["restricted", "action_required"],
+    ] as const) {
+      expect(
+        paymentProviderStatus({
+          provider,
+          connections: [connection(state)],
+          activeProviderId: "voyant-pay",
+        }),
+      ).toBe(expected)
+    }
+  })
+
+  it("ignores connections belonging to another processor", () => {
+    expect(
+      paymentProviderStatus({
+        provider,
+        connections: [connection("error", "netopia")],
+        activeProviderId: null,
+      }),
+    ).toBe("not_connected")
+  })
+
+  it("stops calling a processor coming soon once it has a connection", () => {
+    const soon = { id: "voyant-pay", availability: "coming_soon" as const }
+
+    expect(paymentProviderStatus({ provider: soon, connections: [], activeProviderId: null })).toBe(
+      "coming_soon",
+    )
+    expect(
+      paymentProviderStatus({
+        provider: soon,
+        connections: [connection("connected")],
+        activeProviderId: null,
+      }),
+    ).toBe("connected")
   })
 })
