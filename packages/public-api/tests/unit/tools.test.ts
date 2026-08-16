@@ -4,8 +4,8 @@ import { describe, expect, it } from "vitest"
 import {
   type PublicApiToolContext,
   publicApiCustomerPortalTools,
-  publicApiPaymentLinkTools,
   publicApiCustomerVerificationTools,
+  publicApiPaymentLinkTools,
 } from "../../src/tools.js"
 
 const allTools = [

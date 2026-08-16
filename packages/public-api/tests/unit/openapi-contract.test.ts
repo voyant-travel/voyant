@@ -1,3 +1,8 @@
+import type { CustomerVerificationChallengeRecord } from "@voyant-travel/identity/verification/validation"
+import {
+  customerVerificationConfirmResponseSchema,
+  customerVerificationStartResponseSchema,
+} from "@voyant-travel/identity/verification/validation"
 import { describe, expect, it } from "vitest"
 import type { z } from "zod"
 import {
@@ -23,11 +28,6 @@ import {
   publicApiNewsletterSubscribeEnvelopeSchema,
 } from "../../src/validation/intake.js"
 import { publicApiSettingsSchema } from "../../src/validation-settings.js"
-import type { CustomerVerificationChallengeRecord } from "@voyant-travel/identity/verification/validation"
-import {
-  customerVerificationConfirmResponseSchema,
-  customerVerificationStartResponseSchema,
-} from "@voyant-travel/identity/verification/validation"
 
 /**
  * Contract tests (api-route-authoring.md §17): the declared response schema is
