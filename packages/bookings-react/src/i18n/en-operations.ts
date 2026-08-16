@@ -14,6 +14,8 @@ export const bookingsUiEnOperations = {
     helpers: {
       notifyCustomer:
         "Sends the confirmation or cancellation email and any document bundle that would normally go out. Turning it off silences this booking permanently, including future reminders — it cannot be switched back on.",
+      notificationsAlreadySilenced:
+        "This booking was silenced earlier, so nothing will be sent to the customer. That cannot be undone.",
     },
     actions: {
       updateStatus: "Update status",

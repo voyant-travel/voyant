@@ -50,6 +50,12 @@ export interface StatusChangeDialogProps {
   onOpenChange: (open: boolean) => void
   bookingId: string
   currentStatus: BookingRecord["status"]
+  /**
+   * The Booking's persisted suppression latch. Once set, the service ignores
+   * anything this dialog sends, so the control is shown off and disabled
+   * rather than promising a send that will not happen.
+   */
+  notificationsSuppressed?: boolean
   onSuccess?: () => void
 }
 
@@ -58,6 +64,7 @@ export function StatusChangeDialog({
   onOpenChange,
   bookingId,
   currentStatus,
+  notificationsSuppressed = false,
   onSuccess,
 }: StatusChangeDialogProps) {
   const mutation = useBookingStatusMutation(bookingId)
@@ -79,7 +86,7 @@ export function StatusChangeDialog({
     defaultValues: {
       status: "confirmed",
       note: "",
-      notifyCustomer: true,
+      notifyCustomer: !notificationsSuppressed,
     },
   })
 
@@ -88,10 +95,10 @@ export function StatusChangeDialog({
       form.reset({
         status: currentStatus,
         note: "",
-        notifyCustomer: true,
+        notifyCustomer: !notificationsSuppressed,
       })
     }
-  }, [currentStatus, form, open])
+  }, [currentStatus, form, notificationsSuppressed, open])
 
   // Customer lifecycle messages can be silenced for cancellation and for
   // an exceptional correction back to confirmed.
@@ -164,11 +171,14 @@ export function StatusChangeDialog({
                   <Switch
                     id="notify-customer"
                     checked={notifyCustomer}
+                    disabled={notificationsSuppressed}
                     onCheckedChange={(checked) => form.setValue("notifyCustomer", checked === true)}
                   />
                 </div>
                 <p className="text-muted-foreground text-xs">
-                  {messages.statusChangeDialog.helpers.notifyCustomer}
+                  {notificationsSuppressed
+                    ? messages.statusChangeDialog.helpers.notificationsAlreadySilenced
+                    : messages.statusChangeDialog.helpers.notifyCustomer}
                 </p>
               </div>
             ) : null}

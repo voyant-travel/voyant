@@ -11,6 +11,7 @@ export type BookingsUiOperationsMessages = {
     }
     helpers: {
       notifyCustomer: string
+      notificationsAlreadySilenced: string
     }
     actions: {
       updateStatus: string

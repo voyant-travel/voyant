@@ -23,8 +23,12 @@ vi.mock("@voyant-travel/ui/components", () => ({
   SelectValue: () => <span />,
   // Surfaces the resolved `checked` prop so the default polarity is assertable
   // from static markup.
-  Switch: ({ id, checked }: { id?: string; checked?: boolean }) => (
-    <span data-switch={id} data-checked={String(checked === true)} />
+  Switch: ({ id, checked, disabled }: { id?: string; checked?: boolean; disabled?: boolean }) => (
+    <span
+      data-switch={id}
+      data-checked={String(checked === true)}
+      data-disabled={String(disabled === true)}
+    />
   ),
   Textarea: () => <textarea />,
 }))
@@ -45,13 +49,14 @@ beforeEach(() => {
   })
 })
 
-function render(currentStatus: "confirmed" | "cancelled") {
+function render(currentStatus: "confirmed" | "cancelled", notificationsSuppressed = false) {
   return renderToStaticMarkup(
     <StatusChangeDialog
       open
       onOpenChange={() => {}}
       bookingId="book_1"
       currentStatus={currentStatus}
+      notificationsSuppressed={notificationsSuppressed}
     />,
   )
 }
@@ -82,5 +87,15 @@ describe("StatusChangeDialog notification toggle", () => {
 
     expect(html).toContain("permanently")
     expect(html).toContain("cannot be switched back on")
+  })
+
+  // A Booking latched silent by an earlier action ignores whatever this dialog
+  // sends, so showing the toggle on would promise a send that never happens.
+  it("shows the toggle off and disabled when the booking is already silenced", () => {
+    const html = render("cancelled", true)
+
+    expect(html).toContain('data-checked="false"')
+    expect(html).toContain('data-disabled="true"')
+    expect(html).toContain("This booking was silenced earlier")
   })
 })
