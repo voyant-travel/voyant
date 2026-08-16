@@ -115,7 +115,10 @@ function insurer(options: { script: readonly IssueStep[] }) {
           email: "ana@example.test",
         },
         covers: [],
-      } as const
+        // Deliberately NOT `as const`: it makes `covers` a `readonly []`, and a
+        // readonly array is not assignable to the mutable one `InsurancePolicy`
+        // declares. `build` never sees this — only `typecheck` reads `tests/**`.
+      } satisfies Partial<InsurancePolicy>
 
       if (step.kind === "refuses") {
         return {
