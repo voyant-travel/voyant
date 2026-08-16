@@ -6,6 +6,8 @@ import { FLIGHT_CAPABILITIES, type FlightCapability } from "./types.js"
 const decimalStringSchema = z.string().regex(/^\d+(\.\d+)?$/)
 const signedDecimalStringSchema = z.string().regex(/^-?\d+(\.\d+)?$/)
 const iataCodeSchema = z.string().length(3)
+/** Calendar-day precision. The fare calendar iterates these, so shape matters. */
+const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
 const carrierCodeSchema = z.string().min(2).max(3)
 const currencyCodeSchema = z.string().length(3)
 const providerDataSchema = z.record(z.string(), z.unknown())
@@ -213,6 +215,42 @@ export const flightSearchRequestSchema = z.object({
 export const flightSearchResponseSchema = z.object({
   offers: z.array(flightOfferSchema),
   pagination: flightSearchPaginationMetaSchema.optional(),
+  providerData: providerDataSchema.optional(),
+})
+
+export const fareCalendarRequestSchema = z.object({
+  origin: iataCodeSchema,
+  destination: iataCodeSchema,
+  from: isoDateSchema,
+  to: isoDateSchema,
+  passengers: passengerCountsSchema,
+  cabin: cabinClassSchema.optional(),
+  returnAfterDays: z.number().int().min(0).optional(),
+  searchOptions: z
+    .object({
+      directOnly: z.boolean().optional(),
+      maxStops: z.number().int().min(0).optional(),
+    })
+    .optional(),
+})
+
+export const fareCalendarDaySchema = z.object({
+  date: isoDateSchema,
+  available: z.boolean(),
+  cheapestPrice: moneySchema.optional(),
+  offerCount: z.number().int().min(0).optional(),
+})
+
+export const fareCalendarResponseSchema = z.object({
+  days: z.array(fareCalendarDaySchema),
+  expiresAt: z.string().optional(),
+  providerData: providerDataSchema.optional(),
+})
+
+export const servedMarketsResponseSchema = z.object({
+  origins: z.array(iataCodeSchema),
+  destinations: z.array(iataCodeSchema).optional(),
+  expiresAt: z.string().optional(),
   providerData: providerDataSchema.optional(),
 })
 
