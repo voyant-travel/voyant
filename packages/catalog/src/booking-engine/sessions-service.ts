@@ -539,7 +539,20 @@ export interface BookingSessionPaymentPorts {
     quote: BookingQuoteInternalRecord
     commit: CommitBookingSessionV1
     access: BookingSessionAccessContext
+    /** The Booking a single collection is established against. */
     bookingId: string
+    /**
+     * Every Booking this Commit confirmed, `bookingId` first.
+     *
+     * A composite target commits one Booking per component, and the outcome
+     * carries a single `bankTransfer` block — one document, one instruction
+     * set. So the implementation has to be told that `bookingId` is not the
+     * whole debt, rather than inferring completeness from a Booking id it was
+     * handed. Establishing against the primary alone would leave the other
+     * components confirmed with nothing collecting them, while the shopper
+     * reads instructions that look like the full amount.
+     */
+    bookingIds: readonly string[]
     now: Date
   }): Promise<BookingSessionBankTransferV1 | null>
   transferToBooking(input: {
@@ -2331,6 +2344,7 @@ async function consumeCommittedSources(input: {
             commit: input.input,
             access: input.access,
             bookingId: input.bookingId,
+            bookingIds: [input.bookingId],
             now: currentAt,
           })
         : undefined
@@ -2497,6 +2511,7 @@ async function consumeCompositeCommittedSources(input: {
             commit: input.input,
             access: input.access,
             bookingId: primary.bookingId,
+            bookingIds: input.bookings.map((booking) => booking.bookingId),
             now: currentAt,
           })
         : undefined

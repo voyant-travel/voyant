@@ -57,8 +57,16 @@ const createOrReuseBookingSessionPayment = vi.hoisted(() =>
 const listBookingPaymentSchedules = vi.hoisted(() =>
   vi.fn(async (..._args: unknown[]) => [] as unknown[]),
 )
-const applyComputedPaymentSchedule = vi.hoisted(() => vi.fn(async (..._args: unknown[]) => []))
-const stampPolicySourceOnBooking = vi.hoisted(() => vi.fn(async (..._args: unknown[]) => {}))
+/**
+ * Finance's own schedule write — rows, cascade-source marker, and the
+ * `payment_schedule_regenerated` activity entry the operator's payment-policy
+ * card reads. Asserted as one call rather than its parts: writing the rows
+ * without the audit entry is exactly the half-write this path must not do,
+ * because the subscriber returns early once rows exist and never backfills it.
+ */
+const persistResolvedBookingPaymentSchedule = vi.hoisted(() =>
+  vi.fn(async (..._args: unknown[]) => {}),
+)
 
 /**
  * Finance's own bank-transfer collection. Echoes an invoice + instruction block
@@ -98,14 +106,13 @@ vi.mock("@voyant-travel/finance", () => ({
   financeService: {
     getPaymentSessionById,
     listBookingPaymentSchedules,
-    applyComputedPaymentSchedule,
   },
   findEstablishedBookingSessionPayment: async () => null,
   initiateCheckoutCollection,
   noDepositPolicy: { kind: "no_deposit" },
+  persistResolvedBookingPaymentSchedule,
   resolveEffectivePaymentPolicy,
   resolvePaymentCallbackUrl: () => undefined,
-  stampPolicySourceOnBooking,
   startPaymentAdapterCardPayment,
   transferBookingSessionPaymentToBooking: vi.fn(),
 }))
@@ -897,28 +904,38 @@ describe("production Booking Session commit-time collection plan", () => {
   beforeEach(() => {
     listBookingPaymentSchedules.mockClear()
     listBookingPaymentSchedules.mockResolvedValue([])
-    applyComputedPaymentSchedule.mockClear()
-    stampPolicySourceOnBooking.mockClear()
+    persistResolvedBookingPaymentSchedule.mockClear()
     computePaymentSchedule.mockClear()
     initiateCheckoutCollection.mockClear()
   })
 
-  it("persists the quoted plan against the Booking's own total and stamps its source", async () => {
+  /**
+   * Through finance's own writer, not by assembling the pieces here: the rows,
+   * the cascade-source marker and the operator-facing audit entry travel
+   * together, and the subscriber returns early once rows exist, so a partial
+   * write is never repaired.
+   */
+  it("persists the quoted plan against the Booking's own total, through finance's writer", async () => {
     const payments = commitPorts()
 
     await payments.establishPaymentSchedule?.(commitInput())
 
     expect(scheduleInput()).toMatchObject({ totalCents: 37_800, departureDate: "2026-09-20" })
-    expect(applyComputedPaymentSchedule).toHaveBeenCalledWith(
+    expect(persistResolvedBookingPaymentSchedule).toHaveBeenCalledWith(
       expect.anything(),
       "book_4743",
-      [{ amountCents: 10_000, currency: "EUR", scheduleType: "deposit", dueDate: "2026-08-05" }],
-      { replace: false },
-    )
-    expect(stampPolicySourceOnBooking).toHaveBeenCalledWith(
-      expect.anything(),
-      "book_4743",
-      "operator_default",
+      {
+        policy: { kind: "deposit" },
+        source: "operator_default",
+        entries: [
+          { amountCents: 10_000, currency: "EUR", scheduleType: "deposit", dueDate: "2026-08-05" },
+        ],
+      },
+      {
+        replace: false,
+        description:
+          "Payment schedule established at booking commit from operator_default policy (1 row)",
+      },
     )
   })
 
@@ -933,8 +950,7 @@ describe("production Booking Session commit-time collection plan", () => {
 
     await payments.establishPaymentSchedule?.(commitInput())
 
-    expect(applyComputedPaymentSchedule).not.toHaveBeenCalled()
-    expect(stampPolicySourceOnBooking).not.toHaveBeenCalled()
+    expect(persistResolvedBookingPaymentSchedule).not.toHaveBeenCalled()
   })
 
   it("states no plan for a Booking that owes nothing", async () => {
@@ -942,7 +958,7 @@ describe("production Booking Session commit-time collection plan", () => {
 
     await payments.establishPaymentSchedule?.(commitInput(0))
 
-    expect(applyComputedPaymentSchedule).not.toHaveBeenCalled()
+    expect(persistResolvedBookingPaymentSchedule).not.toHaveBeenCalled()
   })
 })
 
@@ -1014,6 +1030,22 @@ describe("production Booking Session bank-transfer establishment", () => {
     expect(establishBankTransfer).toHaveBeenCalled()
     expect(initiateCheckoutCollection).not.toHaveBeenCalled()
   })
+
+  /**
+   * A composite target commits one Booking per component, and the outcome
+   * carries a single document and instruction block. Collecting against the
+   * primary alone would strand the rest while showing the shopper an amount
+   * that reads like the whole trip — worse than establishing nothing, because
+   * it looks settled.
+   */
+  it("establishes nothing when the Commit confirmed more than one Booking", async () => {
+    const payments = commitPorts()
+
+    await expect(
+      payments.establishBankTransfer?.(commitInput(37_800, ["book_4743", "book_4744"])),
+    ).resolves.toBeNull()
+    expect(initiateCheckoutCollection).not.toHaveBeenCalled()
+  })
 })
 
 /**
@@ -1055,7 +1087,7 @@ function commitPorts(
 }
 
 /** The Commit-transaction call shape, with the Booking row the ports read back. */
-function commitInput(sellAmountCents = 37_800) {
+function commitInput(sellAmountCents = 37_800, bookingIds: readonly string[] = ["book_4743"]) {
   return {
     tx: bookingReaderDb({
       bookingNumber: "BK-2608-841893",
@@ -1072,6 +1104,7 @@ function commitInput(sellAmountCents = 37_800) {
     commit: { checkoutIntent: "bank_transfer" },
     access: { actorKind: "anonymous" },
     bookingId: "book_4743",
+    bookingIds,
     now: new Date("2026-08-05T09:30:05Z"),
   } as never
 }

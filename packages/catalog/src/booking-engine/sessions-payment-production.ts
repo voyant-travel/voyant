@@ -13,9 +13,9 @@ import {
   hasInFlightBookingSessionPayment,
   initiateCheckoutCollection,
   noDepositPolicy,
+  persistResolvedBookingPaymentSchedule,
   resolveEffectivePaymentPolicy,
   resolvePaymentCallbackUrl,
-  stampPolicySourceOnBooking,
   startPaymentAdapterCardPayment,
   transferBookingSessionPaymentToBooking,
 } from "@voyant-travel/finance"
@@ -331,6 +331,7 @@ export function createProductionBookingSessionPaymentPorts(
       if (deps.establishBankTransfer) return (await deps.establishBankTransfer(input)) ?? null
       return establishBankTransferDocument(deps, input.tx as PostgresJsDatabase, {
         bookingId: input.bookingId,
+        bookingIds: input.bookingIds,
         now: input.now,
       })
     },
@@ -400,14 +401,25 @@ async function establishBookingPaymentSchedule(
   )
   if (!plan || plan.entries.length === 0) return
 
-  await financeService.applyComputedPaymentSchedule(db, input.bookingId, plan.entries, {
-    replace: false,
-  })
-  // The marker the contract resolver reads back as `booking.paymentPolicy.source`,
-  // and the same one `generatePaymentScheduleForBooking` writes — so a Booking
-  // scheduled here is indistinguishable downstream from one scheduled by the
-  // subscriber.
-  await stampPolicySourceOnBooking(db, input.bookingId, plan.resolved.source)
+  // Finance's own write, so a Booking scheduled here is indistinguishable
+  // downstream from one scheduled by the subscriber: the rows, the
+  // `__payment_policy_source__` marker the contract resolver echoes, and the
+  // activity entry the operator's payment-policy card reads to explain why
+  // these terms apply. Writing only the rows would leave that card permanently
+  // empty for the booking — the subscriber returns early once rows exist, so
+  // nothing backfills it.
+  await persistResolvedBookingPaymentSchedule(
+    db,
+    input.bookingId,
+    { policy: plan.resolved.policy, source: plan.resolved.source, entries: plan.entries },
+    {
+      // Nothing to replace: this only runs when the Booking has no schedule.
+      replace: false,
+      description: `Payment schedule established at booking commit from ${plan.resolved.source} policy (${plan.entries.length} row${
+        plan.entries.length === 1 ? "" : "s"
+      })`,
+    },
+  )
 }
 
 /**
@@ -430,14 +442,25 @@ async function establishBookingPaymentSchedule(
  * established the collection falls back to the Booking total, which is the
  * honest statement of what is owed.
  *
- * Null — no document, no instructions on the Commit outcome — when the operator
- * has configured no account to receive the transfer.
+ * Null — no document, no instructions on the Commit outcome — in two cases:
+ *
+ * - **the operator has configured no account** to receive the transfer
+ * - **the Commit confirmed more than one Booking.** A composite target commits
+ *   one Booking per component and `BookingSessionBankTransferV1` carries a
+ *   single document and a single instruction block, so anything established
+ *   here would collect the primary component and silently strand the rest —
+ *   while presenting the shopper an amount that reads like the whole trip.
+ *   Partial collection dressed as complete is worse than none, so this stays
+ *   exactly where it was before voyant#4743 until the outcome contract can
+ *   state several collections, or a genuine aggregate document exists.
  */
 async function establishBankTransferDocument(
   deps: ProductionBookingSessionPaymentDeps,
   db: PostgresJsDatabase,
-  input: { bookingId: string; now: Date },
+  input: { bookingId: string; bookingIds: readonly string[]; now: Date },
 ): Promise<BookingSessionBankTransferV1 | null> {
+  if (input.bookingIds.length > 1) return null
+
   const details = await deps.resolveBankTransferInstructions?.(db)
   if (!details) return null
 

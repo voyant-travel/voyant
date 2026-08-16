@@ -474,6 +474,11 @@ export {
   stampPolicySourceOnBooking,
 } from "./payment-policy-cascade.js"
 export {
+  type PersistBookingPaymentScheduleOptions,
+  persistResolvedBookingPaymentSchedule,
+  type ResolvedBookingPaymentSchedule,
+} from "./payment-schedule/persist-schedule.js"
+export {
   type BookingScheduleRoutesOptions,
   createBookingScheduleAdminRoutes,
   createBookingScheduleApiExtension,
