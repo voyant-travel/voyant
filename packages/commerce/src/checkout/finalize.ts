@@ -1,6 +1,7 @@
 // agent-quality: file-size exception -- owner: commerce; checkout finalization
 // (confirm booking, issue invoice, and link payments) is one cohesive
 // domain operation.
+import { listBookingPassThroughItems } from "@voyant-travel/bookings"
 import { bookings } from "@voyant-travel/bookings/schema"
 import {
   type CheckoutFinalizeDeps,
@@ -16,6 +17,8 @@ import {
 import { and, desc, eq, isNull, ne } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { fulfillBookingAncillaries } from "./ancillary-commit.js"
+import type { AncillaryOfferSource } from "./ancillary-ports.js"
 import {
   type CheckoutFinalizationIdentity,
   ensureCheckoutFinalization,
@@ -31,8 +34,29 @@ export function buildCheckoutFinalizeDeps(
   eventBus: EventBus,
   identity: CheckoutFinalizationIdentity,
   _monthlyBookingLimit?: number | null,
+  /**
+   * Whatever the deployment bound to `commerce.ancillary-offer-source`. Empty
+   * — the normal case — leaves the saga's `fulfill_ancillaries` step with no
+   * dep at all, which it treats as "skipped".
+   */
+  ancillaryOfferSources: readonly AncillaryOfferSource[] = [],
 ): CheckoutFinalizeDeps {
+  const fulfillAncillaries: CheckoutFinalizeDeps["fulfillAncillaries"] =
+    ancillaryOfferSources.length > 0
+      ? async ({ bookingId }) => {
+          const result = await fulfillBookingAncillaries({
+            db,
+            bookingId,
+            sources: ancillaryOfferSources,
+            listPassThroughItems: listBookingPassThroughItems,
+          })
+          if (result.outcomes.length === 0) return null
+          return { outcomes: result.outcomes }
+        }
+      : undefined
+
   return {
+    ...(fulfillAncillaries ? { fulfillAncillaries } : {}),
     db,
     eventBus,
     assertBookingCommitted: async (bookingId) => {
@@ -294,6 +318,8 @@ export interface FinalizeCheckoutParams {
   eventBus: EventBus
   input: CheckoutFinalizeInput
   monthlyBookingLimit?: number | null
+  /** Bound ancillary sources, so a paid premium can become an issued artifact. */
+  ancillaryOfferSources?: readonly AncillaryOfferSource[]
 }
 
 /**
@@ -316,6 +342,7 @@ export async function finalizeCheckout(params: FinalizeCheckoutParams): Promise<
     params.eventBus,
     identity,
     params.monthlyBookingLimit,
+    params.ancillaryOfferSources ?? [],
   )
   await runCheckoutFinalize(params.input, deps)
   await withCheckoutFinalizationLock(params.db, identity, async (tx) => {

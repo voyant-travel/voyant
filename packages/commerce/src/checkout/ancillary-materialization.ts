@@ -37,6 +37,15 @@ export interface MaterializeAncillaryPassThroughItemInput {
    * whoever knows the treatment; commerce writes it through untouched.
    */
   taxTreatmentCode?: string | null
+  /**
+   * The offer this line came from, as `sourceId::providerId::offerId`.
+   *
+   * Stamped so re-entering checkout can recognise a selection it has already
+   * charged for. `applicationRef` cannot answer that question: it is minted by
+   * `prepare`, so it only exists once the insurer has already been asked, and
+   * asking twice is the thing being prevented.
+   */
+  selectionKey?: string | null
 }
 
 export interface MaterializedAncillaryItem {
@@ -68,9 +77,49 @@ export async function materializeAncillaryPassThroughItem(
         providerId: selection.providerId,
         applicationRef: selection.applicationRef,
         expiresAt: selection.expiresAt,
+        ...(input.selectionKey ? { selectionKey: input.selectionKey } : {}),
       },
     },
   })
+}
+
+/** What a pass-through line records about the ancillary that produced it. */
+export interface AncillaryItemMarker {
+  sourceId: string
+  providerId: string
+  applicationRef: string
+  selectionKey?: string
+}
+
+/**
+ * Read the marker back off a pass-through line's metadata.
+ *
+ * Returns `null` for a pass-through line that is not an ancillary at all — the
+ * treatment is shared with anything else the operator collects rather than
+ * prices, so the marker, not the treatment, is what identifies these.
+ */
+export function readAncillaryItemMarker(
+  metadata: Record<string, unknown> | null | undefined,
+): AncillaryItemMarker | null {
+  const ancillary = metadata?.ancillary
+  if (ancillary === null || typeof ancillary !== "object") return null
+  const candidate = ancillary as Record<string, unknown>
+  const sourceId = candidate.sourceId
+  const providerId = candidate.providerId
+  const applicationRef = candidate.applicationRef
+  if (
+    typeof sourceId !== "string" ||
+    typeof providerId !== "string" ||
+    typeof applicationRef !== "string"
+  ) {
+    return null
+  }
+  return {
+    sourceId,
+    providerId,
+    applicationRef,
+    ...(typeof candidate.selectionKey === "string" ? { selectionKey: candidate.selectionKey } : {}),
+  }
 }
 
 export type AncillaryPremiumReconciliation =

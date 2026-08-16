@@ -370,6 +370,8 @@ jobs:
                 tests/integration/linked-payment-contract-confirmation.test.ts
               pnpm --filter @voyant-travel/commerce exec vitest run \
                 tests/integration/fx-rate-capture.test.ts
+              pnpm --filter @voyant-travel/commerce exec vitest run \
+                tests/integration/ancillary-checkout-fulfilment.test.ts
               pnpm --filter @voyant-travel/cruises exec vitest run \
                 tests/integration/created-target-tools.test.ts
               pnpm --filter @voyant-travel/auth exec vitest run \
@@ -444,6 +446,8 @@ jobs:
                 tests/integration/insurer-disclosure-terms.test.ts
               pnpm --filter @voyant-travel/insurance exec vitest run \
                 tests/integration/durable-issue-command.test.ts
+              pnpm --filter @voyant-travel/insurance exec vitest run \
+                tests/integration/ancillary-source-fulfilment.test.ts
               pnpm --filter @voyant-travel/db exec vitest run \
                 tests/integration/outbox.test.ts
               pnpm --filter @voyant-travel/notifications exec vitest run \
