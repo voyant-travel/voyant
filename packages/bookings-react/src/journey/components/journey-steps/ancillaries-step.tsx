@@ -8,6 +8,8 @@ import type {
   AncillaryTravelerFieldV1,
 } from "@voyant-travel/catalog-contracts/booking-engine/ancillary-contracts"
 import {
+  ancillaryOfferKey,
+  ancillarySelectionKey,
   hasMultipleAncillaryProviders,
   isAncillaryOfferSelectable,
 } from "@voyant-travel/catalog-contracts/booking-engine/ancillary-contracts"
@@ -44,10 +46,16 @@ import { DateField, Field, SelectField, type StepCommonProps } from "./shared.js
 
 /**
  * Radio values. Offers are prefixed so a provider cannot collide with the
- * decline control by naming an offer after it.
+ * decline control by naming an offer after it, and the value itself is the
+ * source/provider/offer triple rather than the provider-local `offerId` —
+ * two insurers can both call their quote `"Q-1"`.
  */
 const OFFER_VALUE_PREFIX = "offer:"
 const DECLINE_VALUE = "decline"
+
+function offerValue(offer: AncillaryOfferV1): string {
+  return `${OFFER_VALUE_PREFIX}${ancillaryOfferKey(offer)}`
+}
 
 export function AncillariesStep({
   draft,
@@ -81,7 +89,9 @@ function AncillaryGroupCard({
   const selection = (draft.ancillaries ?? []).find((entry) => entry.kind === group.kind)
   const acceptedSelection = selection?.decision === "accepted" ? selection : undefined
   const acceptedOffer = acceptedSelection
-    ? group.offers.find((offer) => offer.offerId === acceptedSelection.offerId)
+    ? group.offers.find(
+        (offer) => ancillaryOfferKey(offer) === ancillarySelectionKey(acceptedSelection),
+      )
     : undefined
 
   // One connected provider is not a comparison. When there is only one, no
@@ -106,9 +116,7 @@ function AncillaryGroupCard({
       )
       return
     }
-    const offer = group.offers.find(
-      (candidate) => `${OFFER_VALUE_PREFIX}${candidate.offerId}` === next,
-    )
+    const offer = group.offers.find((candidate) => offerValue(candidate) === next)
     if (!offer || !isAncillaryOfferSelectable(offer)) return
     setDraft((previous) =>
       setAncillarySelection(previous, group.kind, {
@@ -169,9 +177,12 @@ function AncillaryGroupCard({
               unaccountable opinion about what to show first. */}
           {group.offers.map((offer) => (
             <OfferChoice
-              key={offer.offerId}
+              key={ancillaryOfferKey(offer)}
               offer={offer}
-              active={selection?.decision === "accepted" && selection.offerId === offer.offerId}
+              active={
+                selection?.decision === "accepted" &&
+                ancillarySelectionKey(selection) === ancillaryOfferKey(offer)
+              }
             />
           ))}
           {/* Declining is a peer of every offer above: same container, same
@@ -204,7 +215,8 @@ function radioValueFor(selection: AncillarySelectionV1 | undefined): string | nu
   // decline control is not a default either.
   if (!selection) return null
   if (selection.decision === "declined") return DECLINE_VALUE
-  return selection.offerId ? `${OFFER_VALUE_PREFIX}${selection.offerId}` : null
+  const key = ancillarySelectionKey(selection)
+  return key ? `${OFFER_VALUE_PREFIX}${key}` : null
 }
 
 /**
@@ -225,7 +237,7 @@ function OfferChoice({
   const messages = useBookingsUiMessagesOrDefault().bookingJourney.ancillaries
   const { formatCurrency, formatDateTime } = useBookingsUiI18nOrDefault()
   const selectable = isAncillaryOfferSelectable(offer)
-  const inputId = `bj-anc-offer-${offer.offerId}`
+  const inputId = `bj-anc-offer-${ancillaryOfferKey(offer)}`
   const price = formatCurrency(offer.price.amountMinor / 100, offer.price.currency)
   const priceLine = formatMessage(
     offer.pricedPerPerson ? messages.perPerson : messages.perBooking,
@@ -234,7 +246,7 @@ function OfferChoice({
 
   return (
     <ChoiceShell
-      value={`${OFFER_VALUE_PREFIX}${offer.offerId}`}
+      value={offerValue(offer)}
       inputId={inputId}
       title={offer.title}
       description={formatMessage(messages.providedBy, { provider: offer.providerLabel })}

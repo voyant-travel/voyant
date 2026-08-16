@@ -446,6 +446,18 @@ function toApplicationInput(
   providerId: string,
 ): InsuranceApplicationInput | null {
   const keys = INSURANCE_TRAVELER_FIELD_KEYS
+  // A row that cannot be named is a REFUSAL, not something to skip. Dropping it
+  // and applying for the rest issues a policy covering fewer people than the
+  // traveller paid to cover, and nothing downstream ever says so — the booking
+  // total is right, the certificate lists two of four, and it surfaces at a
+  // claim. So one incomplete row fails the whole application.
+  const incomplete = input.selection.travelers.some(
+    (traveler) =>
+      !traveler.fields[keys.givenName] ||
+      !traveler.fields[keys.familyName] ||
+      !traveler.fields[keys.dateOfBirth],
+  )
+  if (incomplete) return null
   const insuredPersons = input.selection.travelers.flatMap((traveler) => {
     const givenName = traveler.fields[keys.givenName]
     const familyName = traveler.fields[keys.familyName]

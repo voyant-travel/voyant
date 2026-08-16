@@ -224,6 +224,38 @@ export function isAncillaryOfferSelectable(offer: AncillaryOfferV1): boolean {
 }
 
 /**
+ * The identity of an offer across the whole fan-out.
+ *
+ * `offerId` alone is not one. It is whatever the provider called its own quote,
+ * and two insurers asked the same question at the same moment can both answer
+ * `"Q-1"`. Keying a control, a lookup or a validation on `offerId` by itself
+ * therefore resolves to whichever offer happens to be first, and the traveller
+ * who picked the second provider gets the first provider's `sourceId`,
+ * `providerId` and `quoteRef` stored against their selection — a policy bought
+ * from an insurer they did not choose.
+ *
+ * So identity is the triple, and every consumer uses this one function for it.
+ */
+export function ancillaryOfferKey(
+  offer: Pick<AncillaryOfferV1, "sourceId" | "providerId" | "offerId">,
+): string {
+  return `${offer.sourceId}::${offer.providerId}::${offer.offerId}`
+}
+
+/**
+ * The same identity, read off a stored selection.
+ *
+ * Returns `null` for a selection that carries no offer — a decline, or one not
+ * yet made — so a caller cannot accidentally match it against a real offer.
+ */
+export function ancillarySelectionKey(
+  selection: Pick<AncillarySelectionV1, "offerId" | "sourceId" | "providerId">,
+): string | null {
+  if (!selection.offerId || !selection.sourceId || !selection.providerId) return null
+  return `${selection.sourceId}::${selection.providerId}::${selection.offerId}`
+}
+
+/**
  * Whether the offer group needs comparison affordances.
  *
  * One connected provider is not a comparison, and presenting it as one invents

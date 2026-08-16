@@ -1,3 +1,11 @@
+import type {
+  AncillaryOfferV1,
+  AncillarySelectionV1,
+} from "@voyant-travel/catalog-contracts/booking-engine/ancillary-contracts"
+import {
+  ancillaryOfferKey,
+  ancillarySelectionKey,
+} from "@voyant-travel/catalog-contracts/booking-engine/ancillary-contracts"
 import type { BookingRequirementsV1 } from "@voyant-travel/catalog-contracts/booking-engine/requirements-contracts"
 import {
   DEFAULT_PAX_BANDS,
@@ -139,12 +147,18 @@ export function decidableAncillaryGroups(
 }
 
 /**
- * Every offered group has an EXPLICIT decision.
+ * Every offered group has an EXPLICIT decision, and an accepted one is
+ * answerable.
  *
  * Silence is not a decline: an empty `draft.ancillaries` means the traveller
  * has not been asked yet, and the step holds until they answer one way or the
  * other. Accepting also requires acknowledging whatever the provider marked as
  * required reading, so nobody buys before the document was reachable.
+ *
+ * And it requires every provider-required field, for every traveller on the
+ * booking. Letting the step advance with them blank does not fail at the
+ * boundary — the insurance source drops a traveller it cannot name and applies
+ * for the rest, so a party of four quietly becomes a policy covering two.
  */
 export function ancillaryDecisionsComplete(draft: Draft, shape: BookingRequirementsV1): boolean {
   const groups = decidableAncillaryGroups(shape)
@@ -154,10 +168,12 @@ export function ancillaryDecisionsComplete(draft: Draft, shape: BookingRequireme
     const selection = selections.find((entry) => entry.kind === group.kind)
     if (!selection) return false
     if (selection.decision === "declined") return true
-    const offer = group.offers.find((candidate) => candidate.offerId === selection.offerId)
+    const offer = group.offers.find(
+      (candidate) => ancillaryOfferKey(candidate) === ancillarySelectionKey(selection),
+    )
     if (!offer) return false
     if (offer.eligibility.status !== "eligible") return false
-    return offer.disclosures
+    const disclosed = offer.disclosures
       .filter((disclosure) => disclosure.required)
       .every((disclosure) =>
         selection.acceptedDisclosures.some(
@@ -165,6 +181,24 @@ export function ancillaryDecisionsComplete(draft: Draft, shape: BookingRequireme
             accepted.kind === disclosure.kind && accepted.versionId === disclosure.versionId,
         ),
       )
+    return disclosed && ancillaryTravelerFieldsComplete(draft, offer, selection)
+  })
+}
+
+/** Every required field answered, for every traveller the booking carries. */
+export function ancillaryTravelerFieldsComplete(
+  draft: Draft,
+  offer: AncillaryOfferV1,
+  selection: AncillarySelectionV1,
+): boolean {
+  const required = offer.requiredTravelerFields.filter((field) => field.required)
+  if (required.length === 0) return true
+  if (draft.travelers.length === 0) return false
+  return draft.travelers.every((traveler, index) => {
+    const ref = traveler.rowId ?? String(index)
+    const row = selection.travelers.find((entry) => entry.ref === ref)
+    if (!row) return false
+    return required.every((field) => (row.fields[field.key] ?? "").trim().length > 0)
   })
 }
 

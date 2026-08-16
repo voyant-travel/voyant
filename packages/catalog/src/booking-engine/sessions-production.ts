@@ -160,23 +160,25 @@ export function createProductionBookingSessionModule(
         normalizeBookingSelection(target, selection, access),
       composeRequirements: async (input) => {
         const { session } = input
-        if (session.target.kind === "trip_snapshot") {
-          const handler = await deps.resolveCompositeHandler?.()
-          return (
-            (handler
-              ? await handler.composeRequirements({
-                  ...input,
-                  tx: input.tx ?? deps.db,
-                  leaf,
-                })
-              : undefined) ?? {
-              status: "unavailable",
-              reason: "target_not_bookable",
-              nextAction: "contact_operator",
-            }
-          )
-        }
-        const composed = await leaf.composeRequirements(input)
+        // A composed trip is the case travel insurance is most often sold
+        // against, so the enrichment has to reach it too. Composite and leaf
+        // both go through `withAncillaries` for that reason — enriching only
+        // the leaf path gave ordinary products an insurance step and trips
+        // none.
+        const composed =
+          session.target.kind === "trip_snapshot"
+            ? ((await (
+                await deps.resolveCompositeHandler?.()
+              )?.composeRequirements({
+                ...input,
+                tx: input.tx ?? deps.db,
+                leaf,
+              })) ?? {
+                status: "unavailable" as const,
+                reason: "target_not_bookable" as const,
+                nextAction: "contact_operator" as const,
+              })
+            : await leaf.composeRequirements(input)
         if (composed.status !== "available") return composed
         return {
           ...composed,
@@ -185,19 +187,16 @@ export function createProductionBookingSessionModule(
       },
       composeQuote: async (input) => {
         const { session } = input
-        if (session.target.kind === "trip_snapshot") {
-          const handler = await deps.resolveCompositeHandler?.()
-          return (
-            (handler
-              ? await handler.composeQuote({ ...input, tx: input.tx ?? deps.db, leaf })
-              : undefined) ?? {
-              status: "unavailable",
-              reason: "target_not_bookable",
-              nextAction: "contact_operator",
-            }
-          )
-        }
-        const quoted = await leaf.composeQuote(input)
+        const quoted =
+          session.target.kind === "trip_snapshot"
+            ? ((await (
+                await deps.resolveCompositeHandler?.()
+              )?.composeQuote({ ...input, tx: input.tx ?? deps.db, leaf })) ?? {
+                status: "unavailable" as const,
+                reason: "target_not_bookable" as const,
+                nextAction: "contact_operator" as const,
+              })
+            : await leaf.composeQuote(input)
         if (!quoted.requirements) return quoted
         return { ...quoted, requirements: await withAncillaries(session, quoted.requirements) }
       },

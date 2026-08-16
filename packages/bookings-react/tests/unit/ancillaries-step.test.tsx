@@ -4,6 +4,7 @@ import type {
   AncillaryOfferGroupV1,
   AncillaryOfferV1,
 } from "@voyant-travel/catalog-contracts/booking-engine/ancillary-contracts"
+import { ancillaryOfferKey } from "@voyant-travel/catalog-contracts/booking-engine/ancillary-contracts"
 import type { BookingRequirementsV1 } from "@voyant-travel/catalog-contracts/booking-engine/requirements-contracts"
 import { act } from "react"
 import { createRoot, type Root } from "react-dom/client"
@@ -174,8 +175,16 @@ describe("AncillariesStep", () => {
     expect(text).toContain("One traveler is over the age limit.")
     expect(text).toContain("Not available for this booking")
 
-    const blocked = radioInput(html, "bj-anc-offer-offer_blocked")
-    const eligible = radioInput(html, "bj-anc-offer-offer_1")
+    // Addressed by the source/provider/offer triple, not the provider-local
+    // `offerId` — two insurers can both call their quote the same thing.
+    const blocked = radioInput(
+      html,
+      `bj-anc-offer-${ancillaryOfferKey({ sourceId: "source_1", providerId: "provider_2", offerId: "offer_blocked" })}`,
+    )
+    const eligible = radioInput(
+      html,
+      `bj-anc-offer-${ancillaryOfferKey({ sourceId: "source_1", providerId: "provider_1", offerId: "offer_1" })}`,
+    )
     expect(blocked).toMatch(/disabled/)
     expect(eligible).not.toMatch(/disabled/)
   })
