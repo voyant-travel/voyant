@@ -5,6 +5,7 @@ import type {
 import type { BookingSessionTargetV1 } from "@voyant-travel/catalog-contracts/booking-engine/session-contracts"
 import { identifiedUserId } from "@voyant-travel/core"
 import type {
+  ComputedScheduleEntry,
   PaymentAdapter,
   PaymentAdapterRuntimeContext,
   PaymentPolicy,
@@ -15,6 +16,7 @@ import {
   expirePendingBookingSessionPayments,
   financeService,
   findEstablishedBookingSessionPayment,
+  findLiveBookingSessionPayment,
   hasInFlightBookingSessionPayment,
   initiateCheckoutCollection,
   noDepositPolicy,
@@ -192,7 +194,8 @@ export function createProductionBookingSessionPaymentPorts(
         throw new Error("booking_session_payment_target_not_found")
       }
       const { context, resolved, departureDate, entries } = plan
-      const dueNow = entries[0]
+      const payInFull = commit.payInFull === true
+      const dueNow = collectNow(entries, { payInFull, totalCents: quote.pricing.total })
       if (!dueNow || dueNow.amountCents <= 0) return { kind: "not_required" }
 
       const settlementPaymentSessionId = access.settlementAuthority?.paymentSessionId
@@ -219,6 +222,37 @@ export function createProductionBookingSessionPaymentPorts(
       })
       if (established) return { kind: "established", paymentSessionId: established.id }
 
+      // A Session collects one amount at a time.
+      //
+      // Commit is the one lifecycle action `rejectWhilePaymentInFlight` does
+      // not guard — renewing, reselecting, quoting, holding and abandoning all
+      // refuse while money is with a processor, but a Commit may always be
+      // retried, which is what lets a dropped response be finished. That was
+      // safe while every Commit on a Session asked for the same money. Offering
+      // the shopper a second amount ends that: click "Pay deposit", go back,
+      // click "Pay in full" — under a new idempotency key, which the request
+      // fingerprint now requires — and the lookups above both miss. The
+      // established lookup matches only settled money *at this amount*, and
+      // `createOrReuseBookingSessionPayment` is keyed on the Commit, so a second
+      // live checkout opens beside the first and both can capture. The worse
+      // sibling needs no second tab: a shopper who already paid the deposit and
+      // then asks to pay in full is charged the whole total on top of it.
+      //
+      // Refusing is the same answer the Session already gives everywhere else,
+      // and it resolves by itself the moment the first payment does — in either
+      // direction. Retrying *this* Commit is untouched: a payment already
+      // established under this idempotency key is the one being retried, not a
+      // competing one, and `createOrReuseBookingSessionPayment` reuses it (or
+      // refuses on its own idempotency grounds if the amount moved under it).
+      const live = await findLiveBookingSessionPayment(deps.db, session.id, now)
+      if (
+        live &&
+        stringValue(record(live.metadata)?.commitIdempotencyKey) !== commit.idempotencyKey &&
+        (live.amountCents !== dueNow.amountCents || live.currency !== dueNow.currency)
+      ) {
+        throw new Error("booking_session_payment_amount_in_flight")
+      }
+
       const contact = paymentContact(session.statePayload)
       let paymentSession = await createOrReuseBookingSessionPayment(
         deps.db,
@@ -239,6 +273,11 @@ export function createProductionBookingSessionPaymentPorts(
           metadata: {
             paymentPolicySource: resolved.source,
             paymentScheduleType: dueNow.scheduleType,
+            // The shopper's own choice, not the policy's. `paymentScheduleType`
+            // cannot stand in for it: a policy that never offered a deposit
+            // also reads `full`, and settlement has to re-derive the same
+            // amount it collected, not the amount the policy would ask for.
+            ...(payInFull ? { payInFull: true } : {}),
             sessionActorKind: session.actorKind,
             quoteId: quote.id,
             ...(hold ? { holdId: hold.id } : {}),
@@ -332,6 +371,10 @@ export function createProductionBookingSessionPaymentPorts(
         currency: pricing.currency,
         totalCents: pricing.total,
         dueNowCents: dueNow.amountCents,
+        // The second button, and only when it says something the first does
+        // not: a plan that already collects the whole total now offers no
+        // choice, and advertising one would render two identical options.
+        payInFullCents: dueNow.amountCents < pricing.total ? pricing.total : null,
         entries: plan.entries.map((entry) => ({
           scheduleType: entry.scheduleType,
           amountCents: entry.amountCents,
@@ -353,6 +396,11 @@ export function createProductionBookingSessionPaymentPorts(
       return {
         quoteId: stringValue(metadata.quoteId),
         holdId: stringValue(metadata.holdId),
+        // Settlement re-runs `prepare` and re-checks the amount it is settling
+        // against a freshly derived plan. Without this the derivation would
+        // come back to the policy's deposit while the processor holds the
+        // whole total, and every pay-in-full checkout would fail to settle.
+        payInFull: metadata.payInFull === true,
       }
     },
     async transferToBooking({ tx, ...input }) {
@@ -361,10 +409,11 @@ export function createProductionBookingSessionPaymentPorts(
     async expirePending({ tx, bookingSessionId, at }) {
       await expirePendingBookingSessionPayments(tx as PostgresJsDatabase, bookingSessionId, at)
     },
-    async establishPaymentSchedule({ tx, session, quote, bookingId, bookingIds }) {
+    async establishPaymentSchedule({ tx, session, quote, commit, bookingId, bookingIds }) {
       await establishBookingPaymentSchedule(deps, tx as PostgresJsDatabase, {
         session,
         quotedAt: quote.quotedAt,
+        payInFull: commit.payInFull === true,
         bookingId,
         bookingIds,
       })
@@ -431,6 +480,8 @@ async function establishBookingPaymentSchedule(
   input: {
     session: Parameters<typeof resolvePlan>[1]
     quotedAt: Date
+    /** The shopper's election, as `prepare` read it — see {@link collectNow}. */
+    payInFull: boolean
     bookingId: string
     bookingIds: readonly string[]
   },
@@ -451,6 +502,19 @@ async function establishBookingPaymentSchedule(
   )
   if (plan.kind !== "plan" || plan.entries.length === 0) return
 
+  // A shopper who elected to pay in full owes one instalment, not the policy's
+  // deposit and a balance behind it (voyant#4742). `prepare` already collapsed
+  // the pair through `collectNow` to decide what to charge; recording the
+  // uncollapsed pair here would leave a balance row outstanding against money
+  // that has already been taken, which is the schedule contradicting the
+  // payment. Same collapse, same function, so the two cannot disagree.
+  const entries = input.payInFull
+    ? [collectNow(plan.entries, { payInFull: true, totalCents: booking.sellAmountCents })].filter(
+        (entry): entry is ComputedScheduleEntry => entry !== undefined,
+      )
+    : plan.entries
+  if (entries.length === 0) return
+
   // Finance's own write, so a Booking scheduled here is indistinguishable
   // downstream from one scheduled by the subscriber: the rows, the
   // `__payment_policy_source__` marker the contract resolver echoes, and the
@@ -461,12 +525,12 @@ async function establishBookingPaymentSchedule(
   await persistResolvedBookingPaymentSchedule(
     db,
     input.bookingId,
-    { policy: plan.resolved.policy, source: plan.resolved.source, entries: plan.entries },
+    { policy: plan.resolved.policy, source: plan.resolved.source, entries },
     {
       // Nothing to replace: this only runs when the Booking has no schedule.
       replace: false,
-      description: `Payment schedule established at booking commit from ${plan.resolved.source} policy (${plan.entries.length} row${
-        plan.entries.length === 1 ? "" : "s"
+      description: `Payment schedule established at booking commit from ${plan.resolved.source} policy (${entries.length} row${
+        entries.length === 1 ? "" : "s"
       })`,
     },
   )
@@ -565,6 +629,40 @@ async function establishBankTransferDocument(
       dueAt: instructions.dueDate ?? input.now.toISOString(),
     },
   }
+}
+
+/**
+ * The one instalment Commit collects, given what the policy asked for and what
+ * the shopper chose.
+ *
+ * Absent a choice this is `entries[0]` — the policy's own first row, exactly as
+ * before. `payInFull` collapses the deposit/balance pair into the single `full`
+ * row the shopper asked for, because a deposit is an option the operator
+ * extends and not an obligation to place on the buyer (voyant#4742).
+ *
+ * The choice may only ever *increase* what is collected, and that is checked
+ * rather than assumed. `resolveDepositAmountCents` clamps a deposit to the
+ * total today, so nothing can currently reach the throw — but the flag arrives
+ * from a browser and the thing it moves is money, which is the wrong pair of
+ * facts to leave resting on a clamp in another package. A policy that grew a
+ * surcharge, or a total that moved under the plan, would otherwise let a client
+ * quietly pay less by asking to pay "in full".
+ *
+ * The collapsed row keeps `entries[0]`'s due date rather than formatting one:
+ * `computePaymentSchedule` already dates the first instalment as due today, and
+ * a second clock here is a second answer.
+ */
+function collectNow(
+  entries: ComputedScheduleEntry[],
+  request: { payInFull: boolean; totalCents: number },
+): ComputedScheduleEntry | undefined {
+  const dueNow = entries[0]
+  if (!dueNow || !request.payInFull) return dueNow
+  const amountCents = Math.max(0, Math.round(request.totalCents))
+  if (amountCents < dueNow.amountCents) {
+    throw new Error("booking_session_pay_in_full_collects_less_than_policy")
+  }
+  return { ...dueNow, scheduleType: "full", amountCents }
 }
 
 /**
