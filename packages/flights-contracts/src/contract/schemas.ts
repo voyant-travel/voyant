@@ -6,8 +6,30 @@ import { FLIGHT_CAPABILITIES, type FlightCapability } from "./types.js"
 const decimalStringSchema = z.string().regex(/^\d+(\.\d+)?$/)
 const signedDecimalStringSchema = z.string().regex(/^-?\d+(\.\d+)?$/)
 const iataCodeSchema = z.string().length(3)
-/** Calendar-day precision. The fare calendar iterates these, so shape matters. */
-const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/)
+/**
+ * A real calendar day, not merely a `yyyy-MM-dd`-shaped string.
+ *
+ * Shape alone is not enough: `Date` silently rolls `2026-02-31` forward to
+ * 2026-03-03, so a format-only check would hand the connector a window the
+ * caller never asked for and quote the wrong month back. Round-tripping the
+ * parsed parts is what rejects a day that does not exist.
+ */
+const isoDateSchema = z.string().refine(isCalendarDate, {
+  message: "Expected a calendar date in yyyy-MM-dd form",
+})
+
+function isCalendarDate(value: string): boolean {
+  const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  if (!match) return false
+  const [, year, month, day] = match
+  const parsed = new Date(`${value}T00:00:00Z`)
+  if (Number.isNaN(parsed.getTime())) return false
+  return (
+    parsed.getUTCFullYear() === Number(year) &&
+    parsed.getUTCMonth() + 1 === Number(month) &&
+    parsed.getUTCDate() === Number(day)
+  )
+}
 const carrierCodeSchema = z.string().min(2).max(3)
 const currencyCodeSchema = z.string().length(3)
 const providerDataSchema = z.record(z.string(), z.unknown())

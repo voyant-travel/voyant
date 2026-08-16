@@ -155,6 +155,30 @@ describe("flights hono module", () => {
       expect(res.status).toBe(400)
       expect(searchFareCalendar).not.toHaveBeenCalled()
     })
+
+    // `new Date("2026-02-31")` rolls forward to March 3rd, so a shape-only
+    // check would quote a month the caller never asked for.
+    it("rejects a date-shaped string that is not a real day", async () => {
+      const searchFareCalendar = vi.fn(async () => ({ days: [] }))
+      const app = mount(stubAdapter({ searchFareCalendar }))
+
+      for (const from of ["2026-02-31", "2026-13-01", "2026-04-31", "2026-00-10"]) {
+        const res = await callCalendar(app, { ...window, from })
+        expect(res.status, `expected 400 for ${from}`).toBe(400)
+      }
+      expect(searchFareCalendar).not.toHaveBeenCalled()
+    })
+
+    it("accepts a leap day in a leap year and refuses it otherwise", async () => {
+      const searchFareCalendar = vi.fn(async () => ({ days: [] }))
+      const app = mount(stubAdapter({ searchFareCalendar }))
+
+      const leap = await callCalendar(app, { ...window, from: "2028-02-29", to: "2028-03-05" })
+      expect(leap.status).toBe(200)
+
+      const notLeap = await callCalendar(app, { ...window, from: "2027-02-29", to: "2027-03-05" })
+      expect(notLeap.status).toBe(400)
+    })
   })
 
   it("returns 501 when the connector lacks an optional capability", async () => {
