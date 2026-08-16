@@ -7,6 +7,7 @@ import {
   requireCustomerBuyerContext,
   requireCustomerIdentityContext,
 } from "@voyant-travel/hono"
+import { customerVerificationRuntimePort } from "@voyant-travel/identity/runtime-port"
 import {
   buildCustomerVerificationSenders,
   type CustomerVerificationRoutesOptions,

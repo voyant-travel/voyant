@@ -314,7 +314,6 @@ export {
   publicApiOffersRuntimePort,
   publicApiPaymentLinkRuntimePort,
   publicApiPaymentReconciliationJobRuntimePort,
-  publicApiVerificationRuntimePort,
 } from "./runtime-port.js"
 export type {
   PublicApiRequestedScope,
