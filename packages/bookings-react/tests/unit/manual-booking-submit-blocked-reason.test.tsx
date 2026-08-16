@@ -10,15 +10,13 @@ import { afterEach, beforeEach, describe, expect, it } from "vitest"
 ).IS_REACT_ACT_ENVIRONMENT = true
 
 import {
+  MANUAL_BOOKING_SUBMIT_BLOCKED_ID,
+  type ManualBookingSubmitBlocker,
+  ManualBookingSubmitFooter,
   manualBookingSubmitBlockedNotice,
   manualBookingSubmitBlockerMessage,
-  type ManualBookingSubmitBlocker,
   resolveManualBookingSubmitBlocker,
 } from "../../src/components/manual-booking-create-form.js"
-import {
-  MANUAL_BOOKING_SUBMIT_BLOCKED_ID,
-  ManualBookingSubmitFooter,
-} from "../../src/components/manual-booking-submit-footer.js"
 import { bookingsUiEn } from "../../src/i18n/en.js"
 import { bookingsUiRo } from "../../src/i18n/ro.js"
 
