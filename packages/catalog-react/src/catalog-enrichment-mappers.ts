@@ -306,8 +306,8 @@ function mapCruiseContentToEnrichment(content: CruiseContentPayload): CatalogDet
         }
       : null,
     // Cruise itinerary lives per-sailing in the content payload; the cruise-level
-    // `itinerary_stops` is empty for sourced cruises. Fall back to the first
-    // sailing's stops so the Itinerary tab shows the representative route.
+    // `itinerary_stops` is a representative copy an adapter may leave empty. Fall
+    // back to the first sailing's stops so the Itinerary tab shows the route.
     itinerary: mapCruiseItineraryStops(
       content.itinerary_stops?.length
         ? content.itinerary_stops
