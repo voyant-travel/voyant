@@ -99,41 +99,10 @@ export function createProductionBookingSessionPaymentPorts(
       // same Commit transaction, by `establishBankTransfer` below.
       if (commit.checkoutIntent === "bank_transfer") return { kind: "not_required" }
 
-      // The policy cascade and the departure are two different questions about
-      // two different things — the listing, and what the shopper selected off
-      // it. They were one call until voyant#4740, which is how every deposit
-      // gate came to be measured from `products.startDate`.
-      const [context, departureDate] = await Promise.all([
-        deps.inventory.loadProductPaymentPolicyContext(deps.db, session.target.productId, {
-          locale: session.scope.locale,
-        }),
-        deps.inventory.resolveSelectedDepartureDate(deps.db, {
-          productId: session.target.productId,
-          departureSlotId: selectedDepartureSlotId(session.statePayload),
-        }),
-      ])
-      if (!context) throw new Error("booking_session_payment_product_not_found")
-      const [supplierPolicy, operatorDefault] = await Promise.all([
-        context.supplierId
-          ? deps.distribution.loadSupplierPaymentPolicy(deps.db, context.supplierId)
-          : Promise.resolve(null),
-        deps.settings.resolveOperatorDefaultPaymentPolicy(deps.db),
-      ])
-      const resolved = resolveEffectivePaymentPolicy({
-        listingPolicy: context.listingPolicy,
-        categoryPolicy: context.categoryPolicy,
-        supplierPolicy,
-        operatorDefault: operatorDefault ?? noDepositPolicy,
-      })
-      const dueNow = computePaymentSchedule(
-        {
-          totalCents: quote.pricing.total,
-          currency: quote.pricing.currency,
-          departureDate,
-          today: now,
-        },
-        resolved.policy,
-      )[0]
+      const plan = await resolvePlan(deps, session, quote.pricing, now)
+      if (!plan) throw new Error("booking_session_payment_product_not_found")
+      const { context, resolved, departureDate, entries } = plan
+      const dueNow = entries[0]
       if (!dueNow || dueNow.amountCents <= 0) return { kind: "not_required" }
 
       const settlementPaymentSessionId = access.settlementAuthority?.paymentSessionId
@@ -260,6 +229,27 @@ export function createProductionBookingSessionPaymentPorts(
         paymentSession: projectPaymentSession(paymentSession),
       }
     },
+    async describePlan({ session, pricing, now }) {
+      const plan = await resolvePlan(deps, session, pricing, now)
+      // A target with no product, or a product that has since gone: the Quote
+      // simply carries no plan. Commit throws on the same condition because it
+      // is about to take money; a projection has nothing to protect.
+      if (!plan) return null
+      const [dueNow] = plan.entries
+      if (!dueNow) return null
+      return {
+        policySource: plan.resolved.source,
+        currency: pricing.currency,
+        totalCents: pricing.total,
+        dueNowCents: dueNow.amountCents,
+        entries: plan.entries.map((entry) => ({
+          scheduleType: entry.scheduleType,
+          amountCents: entry.amountCents,
+          currency: entry.currency,
+          dueDate: entry.dueDate,
+        })),
+      }
+    },
     async hasInFlight({ bookingSessionId }) {
       return hasInFlightBookingSessionPayment(deps.db, bookingSessionId)
     },
@@ -352,6 +342,69 @@ function customerReference(session: {
   if (personId) return personId
   if (session.actorKind !== "customer") return undefined
   return identifiedUserId(session.ownerPrincipalId) ?? undefined
+}
+
+/**
+ * The collection plan for a product Session, and everything that went into it.
+ *
+ * One derivation, two readers: `prepare` charges `entries[0]` at Commit and
+ * `describePlan` publishes the whole thing on the Quote. Quoting a plan that a
+ * second, parallel derivation produced would put the shopper's stated terms and
+ * their actual charge back on separate code paths, which is the shape of
+ * voyant#4741 rather than a fix for it.
+ *
+ * The policy cascade and the departure are two different questions about two
+ * different things — the listing, and what the shopper selected off it. They
+ * were one call until voyant#4740, which is how every deposit gate came to be
+ * measured from `products.startDate`.
+ *
+ * Null when the product is gone. Callers differ on what that means: Commit
+ * throws, a Quote projection publishes nothing.
+ */
+async function resolvePlan(
+  deps: ProductionBookingSessionPaymentDeps,
+  session: {
+    target: { kind: string; productId?: string }
+    scope: { locale: string }
+    statePayload: Record<string, unknown>
+  },
+  pricing: { total: number; currency: string },
+  now: Date,
+) {
+  const productId = session.target.productId
+  if (session.target.kind !== "product" || !productId) return null
+  const [context, departureDate] = await Promise.all([
+    deps.inventory.loadProductPaymentPolicyContext(deps.db, productId, {
+      locale: session.scope.locale,
+    }),
+    deps.inventory.resolveSelectedDepartureDate(deps.db, {
+      productId,
+      departureSlotId: selectedDepartureSlotId(session.statePayload),
+    }),
+  ])
+  if (!context) return null
+  const [supplierPolicy, operatorDefault] = await Promise.all([
+    context.supplierId
+      ? deps.distribution.loadSupplierPaymentPolicy(deps.db, context.supplierId)
+      : Promise.resolve(null),
+    deps.settings.resolveOperatorDefaultPaymentPolicy(deps.db),
+  ])
+  const resolved = resolveEffectivePaymentPolicy({
+    listingPolicy: context.listingPolicy,
+    categoryPolicy: context.categoryPolicy,
+    supplierPolicy,
+    operatorDefault: operatorDefault ?? noDepositPolicy,
+  })
+  const entries = computePaymentSchedule(
+    {
+      totalCents: pricing.total,
+      currency: pricing.currency,
+      departureDate,
+      today: now,
+    },
+    resolved.policy,
+  )
+  return { context, resolved, departureDate, entries }
 }
 
 /**
