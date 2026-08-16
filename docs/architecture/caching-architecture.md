@@ -312,11 +312,28 @@ how stale that particular read may be — the dashboard aggregates declare
 `private, max-age=30` for exactly that reason. A route that sets its own
 `Cache-Control` is never restamped, so that opt-in stays with the route.
 
+**This puts admin payloads on the device, and that is a decision rather than a
+side effect.** Revalidation requires storage — no directive yields a 304 without
+the browser having kept the body — so admin JSON moves from "most browsers store
+nothing" (no directives, no validators) to "stored in the operator's own profile
+cache". `private` keeps it out of every shared cache, but the browser cache is
+not session-scoped: booking and customer payloads persist on the device after
+sign-out, and signing out does not evict them.
+
+That is accepted for a staff workstation, whose profile already holds the admin
+bundle and the session cookie, and it is bounded — entries are `private`,
+revalidated before every reuse, and evicted under ordinary disk-cache pressure.
+A deployment that cannot accept device-resident admin payloads sets
+`adminRevalidation: false` and gets the previous behaviour back: no directives,
+no storage, a full re-transfer per navigation. Revisit this if the staff surface
+is ever served to shared or unmanaged devices, where the profile cache stops
+being the operator's own.
+
 Rule:
 
-Every admin GET states its cache policy. The default is revalidation; a
-freshness window is a route's decision to make explicitly, and never a shared
-cache's.
+Every admin GET states its cache policy. The default is revalidation, which
+means the payload is stored on the member's device; a freshness window on top of
+that is a route's decision to make explicitly, and never a shared cache's.
 
 ## Practical Checklist
 

@@ -106,7 +106,7 @@ describe("adminResponseRevalidation middleware", () => {
     expect(publicRead.headers.get("ETag")).toBeNull()
   })
 
-  it("passes a body over the hashing cap through unstamped", async () => {
+  it("passes a body over the cap through unstamped, and intact", async () => {
     const app = new Hono()
     app.use("*", adminResponseRevalidation({ maxBodyBytes: 8 }))
     app.get("/v1/admin/big", (c) => c.json({ padding: "x".repeat(64) }))
@@ -115,6 +115,68 @@ describe("adminResponseRevalidation middleware", () => {
 
     expect(response.status).toBe(200)
     expect(response.headers.get("ETag")).toBeNull()
+    expect(response.headers.get("Cache-Control")).toBeNull()
     expect(await response.json()).toEqual({ padding: "x".repeat(64) })
+  })
+
+  it("stops reading at the cap instead of buffering the whole body first", async () => {
+    // The cap is the middleware's memory ceiling per in-flight request, so it
+    // has to be enforced *during* the read. Checking the size afterwards would
+    // buffer an oversized body in full and then discard it.
+    const chunk = new TextEncoder().encode("x".repeat(64))
+    let chunksRead = 0
+    const app = new Hono()
+    app.use("*", adminResponseRevalidation({ maxBodyBytes: 128 }))
+    app.get("/v1/admin/stream", (c) =>
+      c.body(
+        new ReadableStream<Uint8Array>({
+          pull(controller) {
+            if (chunksRead === 64) {
+              controller.close()
+              return
+            }
+            chunksRead += 1
+            controller.enqueue(chunk)
+          },
+        }),
+        { headers: { "content-type": "application/json" } },
+      ),
+    )
+
+    const response = await app.request("/v1/admin/stream")
+    const readWhenHandedBack = chunksRead
+
+    expect(response.headers.get("ETag")).toBeNull()
+    // Three 64-byte chunks is the first read past a 128-byte cap; the stream's
+    // own queue may have pulled one more. What matters is that it is a handful
+    // and not the whole 4 KiB body.
+    expect(readWhenHandedBack).toBeLessThan(8)
+    // The unread remainder is still delivered: the buffered chunks are put back
+    // in front of it rather than dropped.
+    expect((await response.text()).length).toBe(64 * 64)
+    expect(chunksRead).toBe(64)
+  })
+
+  it("does not tee the body it hashes", async () => {
+    // `clone()` would make the origin hold the payload twice for every
+    // in-flight admin read. Reading the single body proves it was not cloned:
+    // a teed stream would leave the original still unread.
+    let cloned = false
+    const app = new Hono()
+    app.use("/v1/admin/*", async (c, next) => {
+      await next()
+      const original = c.res.clone
+      c.res.clone = function trackedClone(this: Response) {
+        cloned = true
+        return original.call(this)
+      }
+    })
+    app.use("/v1/admin/*", adminResponseRevalidation())
+    app.get("/v1/admin/bookings", (c) => c.json({ rows: [] }))
+
+    const response = await app.request("/v1/admin/bookings")
+
+    expect(response.headers.get("ETag")).not.toBeNull()
+    expect(cloned).toBe(false)
   })
 })
