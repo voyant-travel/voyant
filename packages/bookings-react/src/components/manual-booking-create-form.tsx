@@ -69,7 +69,6 @@ import { AsyncCombobox } from "@voyant-travel/ui/components/async-combobox"
 import { CountryCombobox } from "@voyant-travel/ui/components/country-combobox"
 import { CurrencyCombobox } from "@voyant-travel/ui/components/currency-combobox"
 import { PhoneInput } from "@voyant-travel/ui/components/phone-input"
-import { Loader2 } from "lucide-react"
 import * as React from "react"
 import {
   formatMessage,
@@ -112,6 +111,7 @@ import {
   getTravelerAssignableStepperUnits,
   itemLinesToRows,
 } from "./booking-create-utils.js"
+import { ManualBookingSubmitFooter } from "./manual-booking-submit-footer.js"
 import {
   emptyOptionUnitsStepperValue,
   OptionUnitsStepperSection,
@@ -730,6 +730,111 @@ export function toManualBookingFormError(
     field: isUnitsError ? "units" : undefined,
     blocksSubmit: isUnitsError || undefined,
   }
+}
+
+/**
+ * Which condition is holding **Create booking** shut, in the order the submit
+ * handler itself checks them.
+ *
+ * `settling` is transient and resolves on its own; the other six are states an
+ * operator has to act on, and before voyant#4762 all seven rendered as one
+ * boolean and one silent, greyed-out button.
+ */
+export type ManualBookingSubmitBlocker =
+  | "sourced"
+  | "product"
+  | "timing"
+  | "units"
+  | "settling"
+  | "pricing"
+  | "promotion"
+
+/**
+ * The first condition blocking submit, or `null` when nothing is.
+ *
+ * This is the same seven-term disjunction the form used to write inline, split
+ * so the button can name what it is waiting for. The order is the disjunction's
+ * order, which is also `handleSubmit`'s, so the reason shown at the button is
+ * the reason a submit would have reported.
+ */
+export function resolveManualBookingSubmitBlocker(input: {
+  isSourcedProduct: boolean
+  hasProduct: boolean
+  hasBookingTiming: boolean
+  hasSelectedUnits: boolean
+  quoteIsSettling: boolean
+  sourcedQuoteReady: boolean
+  promotionReady: boolean
+}): ManualBookingSubmitBlocker | null {
+  if (input.isSourcedProduct) return "sourced"
+  if (!input.hasProduct) return "product"
+  if (!input.hasBookingTiming) return "timing"
+  if (!input.hasSelectedUnits) return "units"
+  if (input.quoteIsSettling) return "settling"
+  if (!input.sourcedQuoteReady) return "pricing"
+  if (!input.promotionReady) return "promotion"
+  return null
+}
+
+/**
+ * Human copy for a blocker.
+ *
+ * Every branch but `units` reuses the sentence the submit handler would have
+ * raised for the same condition, so the button and a failed submit cannot say
+ * different things. `units` gets its own wording: the validation message is
+ * anchored to the Options section and reads correctly there, but at the button
+ * it has to name where that section is.
+ */
+export function manualBookingSubmitBlockerMessage(
+  blocker: ManualBookingSubmitBlocker,
+  copy: ReturnType<typeof useBookingsUiMessagesOrDefault>["manualBookingCreate"],
+  options: { promotionRejected: boolean },
+): string {
+  switch (blocker) {
+    case "sourced":
+      return copy.validation.sourcedBookingSessionRequired
+    case "product":
+      return copy.validation.product
+    case "timing":
+      return copy.validation.departure
+    case "units":
+      return copy.submitBlocked.units
+    case "settling":
+      return copy.validation.pricingPending
+    case "pricing":
+      return copy.validation.pricingUnavailable
+    case "promotion":
+      return options.promotionRejected ? copy.promotion.blocked : copy.promotion.unavailable
+  }
+}
+
+/**
+ * The sentence to render beside **Create booking**, named after the button so
+ * it cannot be read as belonging to the document checkboxes above it.
+ *
+ * Returns `null` when nothing is blocking, and also when the reason would
+ * repeat — word for word, a line or two apart — an alert the footer already
+ * renders. Those alerts carry `role="alert"`; saying the same thing twice in
+ * one screenful is noise, not clarity.
+ */
+export function manualBookingSubmitBlockedNotice(input: {
+  blocker: ManualBookingSubmitBlocker | null
+  copy: ReturnType<typeof useBookingsUiMessagesOrDefault>["manualBookingCreate"]
+  promotionRejected: boolean
+  isSourcedProduct: boolean
+  formErrorMessage: string | null
+}): string | null {
+  if (!input.blocker) return null
+  const reason = manualBookingSubmitBlockerMessage(input.blocker, input.copy, {
+    promotionRejected: input.promotionRejected,
+  })
+  const alreadyShown = [
+    input.formErrorMessage,
+    input.isSourcedProduct ? input.copy.validation.sourcedBookingSessionRequired : null,
+    input.promotionRejected ? input.copy.promotion.blocked : null,
+  ]
+  if (alreadyShown.includes(reason)) return null
+  return formatMessage(input.copy.submitBlocked.label, { reason })
 }
 
 /**
@@ -1708,17 +1813,20 @@ export function ManualBookingCreateForm({
             })
 
   /**
-   * Every condition that keeps **Create booking** disabled. Named once so the
-   * button and the error-clearing effect below cannot drift apart.
+   * Every condition that keeps **Create booking** disabled, resolved to the
+   * first one that applies. Named once so the button, the reason rendered
+   * beside it, and the error-clearing effect below cannot drift apart.
    */
-  const submitBlocked =
-    isSourcedProduct ||
-    !product.productId ||
-    !hasBookingTiming ||
-    !hasSelectedUnits ||
-    quote.isSettling ||
-    !sourcedQuoteReady ||
-    !promotionReady
+  const submitBlocker = resolveManualBookingSubmitBlocker({
+    isSourcedProduct,
+    hasProduct: Boolean(product.productId),
+    hasBookingTiming,
+    hasSelectedUnits,
+    quoteIsSettling: quote.isSettling,
+    sourcedQuoteReady,
+    promotionReady,
+  })
+  const submitBlocked = submitBlocker !== null
 
   // #4588: a message raised by a submit-gating condition has no other way out
   // — the button is dead, and Enter does not fire implicit submission through
@@ -2457,17 +2565,20 @@ export function ManualBookingCreateForm({
             {copy.promotion.blocked}
           </p>
         ) : null}
-        <div className="mt-4 flex items-center justify-end gap-2 border-t px-1 pt-3">
-          <Button type="button" variant="ghost" size="sm" onClick={onCancel} disabled={submitting}>
-            {messages.common.cancel}
-          </Button>
-          <Button type="submit" size="sm" disabled={submitting || submitBlocked}>
-            {submitting ? (
-              <Loader2 data-icon="inline-start" className="animate-spin" aria-hidden="true" />
-            ) : null}
-            {messages.bookingCreateDialog.actions.createBooking}
-          </Button>
-        </div>
+        <ManualBookingSubmitFooter
+          submitting={submitting}
+          submitBlocked={submitBlocked}
+          blockedReason={manualBookingSubmitBlockedNotice({
+            blocker: submitBlocker,
+            copy,
+            promotionRejected,
+            isSourcedProduct,
+            formErrorMessage: error?.message ?? null,
+          })}
+          cancelLabel={messages.common.cancel}
+          submitLabel={messages.bookingCreateDialog.actions.createBooking}
+          onCancel={onCancel}
+        />
       </div>
 
       <div className="flex flex-col gap-4 lg:col-span-4">
