@@ -37,6 +37,11 @@ export function isStepVisible(step: JourneyStep, shape: BookingRequirementsV1): 
       return shape.showsAccommodation
     case "addons":
       return shape.showsAddons
+    case "ancillaries":
+      // Off when the deployment has no ancillary source connected. The step
+      // then does not mount at all — no heading, no empty state, no notice
+      // about a thing this operator does not sell.
+      return shape.showsAncillaries
     case "payment":
       return shape.showsPayment
     case "documents":
@@ -111,11 +116,56 @@ export function canAdvanceFromStep(
         (t) => t.firstName && t.lastName && isValidOptionalEmail(t.email),
       )
     }
+    case "ancillaries":
+      return ancillaryDecisionsComplete(draft, shape)
     case "payment":
       return findPaidScheduleRowsMissingPaymentDate(draft.paymentSchedules) === null
     default:
       return true
   }
+}
+
+/**
+ * The ancillary groups that are actually asking the traveller something.
+ *
+ * A group whose sources all failed carries diagnostics and no offers. There is
+ * no decision to take there, so it neither renders nor holds the step — the
+ * traveller is not shown a question they cannot answer.
+ */
+export function decidableAncillaryGroups(
+  shape: BookingRequirementsV1,
+): ReadonlyArray<NonNullable<BookingRequirementsV1["ancillaries"]>["groups"][number]> {
+  return (shape.ancillaries?.groups ?? []).filter((group) => group.offers.length > 0)
+}
+
+/**
+ * Every offered group has an EXPLICIT decision.
+ *
+ * Silence is not a decline: an empty `draft.ancillaries` means the traveller
+ * has not been asked yet, and the step holds until they answer one way or the
+ * other. Accepting also requires acknowledging whatever the provider marked as
+ * required reading, so nobody buys before the document was reachable.
+ */
+export function ancillaryDecisionsComplete(draft: Draft, shape: BookingRequirementsV1): boolean {
+  const groups = decidableAncillaryGroups(shape)
+  if (groups.length === 0) return true
+  const selections = draft.ancillaries ?? []
+  return groups.every((group) => {
+    const selection = selections.find((entry) => entry.kind === group.kind)
+    if (!selection) return false
+    if (selection.decision === "declined") return true
+    const offer = group.offers.find((candidate) => candidate.offerId === selection.offerId)
+    if (!offer) return false
+    if (offer.eligibility.status !== "eligible") return false
+    return offer.disclosures
+      .filter((disclosure) => disclosure.required)
+      .every((disclosure) =>
+        selection.acceptedDisclosures.some(
+          (accepted) =>
+            accepted.kind === disclosure.kind && accepted.versionId === disclosure.versionId,
+        ),
+      )
+  })
 }
 
 export function validationErrorsForStep(
