@@ -49,7 +49,15 @@ describe("port check and contracts helper agree", () => {
 
   for (const [label, value] of cases) {
     it(`agrees on ${label}`, () => {
-      const viaPort = rejects((candidate) => insuranceProviderSourcePort.test?.(candidate), value)
+      // The cast is the point of the test, not a way around it: `definePort<T>`
+      // types `test` as taking a `T`, and what the graph actually binds is
+      // whatever a deployment wrote. Every case below is something that is not
+      // an `InsuranceProviderAdapter`.
+      const viaPort = rejects(
+        (candidate) =>
+          insuranceProviderSourcePort.test?.(candidate as InsuranceProviderAdapter),
+        value,
+      )
       const viaContracts = rejects(assertInsuranceProviderAdapter, value)
       expect(viaPort === null).toBe(viaContracts === null)
       if (viaPort && viaContracts) {

@@ -12889,7 +12889,11 @@
                           "properties": {
                             "scheduleType": {
                               "type": "string",
-                              "enum": ["deposit", "balance", "full"]
+                              "enum": [
+                                "deposit",
+                                "balance",
+                                "full"
+                              ]
                             },
                             "amountCents": {
                               "type": "integer",
@@ -12904,12 +12908,23 @@
                               "type": "string"
                             }
                           },
-                          "required": ["scheduleType", "amountCents", "currency", "dueDate"]
+                          "required": [
+                            "scheduleType",
+                            "amountCents",
+                            "currency",
+                            "dueDate"
+                          ]
                         },
                         "minItems": 1
                       }
                     },
-                    "required": ["policySource", "currency", "totalCents", "dueNowCents", "entries"]
+                    "required": [
+                      "policySource",
+                      "currency",
+                      "totalCents",
+                      "dueNowCents",
+                      "entries"
+                    ]
                   },
                   "quotedAt": {
                     "type": "string",

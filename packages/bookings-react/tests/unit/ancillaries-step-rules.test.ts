@@ -261,14 +261,20 @@ describe("ancillaries journey rules", () => {
     const accepted = offer({
       requiredTravelerFields: [
         { key: "given_name", label: "First name", type: "text", required: true, sensitive: true },
-        { key: "date_of_birth", label: "Date of birth", type: "date", required: true },
-        { key: "notes", label: "Notes", type: "text", required: false },
+        {
+          key: "date_of_birth",
+          label: "Date of birth",
+          type: "date",
+          required: true,
+          sensitive: true,
+        },
+        { key: "notes", label: "Notes", type: "text", required: false, sensitive: false },
       ],
     })
     const shape = shapeWith([group([accepted])])
     const withTravelers = setTravelers(emptyDraft(ENTITY), [
-      { rowId: "t1", firstName: "Ana", lastName: "Pop" },
-      { rowId: "t2", firstName: "Mihai", lastName: "Pop" },
+      { rowId: "t1", firstName: "Ana", lastName: "Pop", band: "adult" },
+      { rowId: "t2", firstName: "Mihai", lastName: "Pop", band: "adult" },
     ])
     const select = (travelers: Array<{ ref: string; fields: Record<string, string> }>) =>
       setAncillarySelection(withTravelers, "insurance", {
