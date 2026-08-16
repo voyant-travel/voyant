@@ -20,14 +20,22 @@ import {
   bookings,
   bookingTravelers,
 } from "@voyant-travel/bookings/schema"
+import {
+  type FiscalBillingField,
+  missingFiscalBillingFields,
+} from "@voyant-travel/bookings-contracts"
 import { withBookingFinanceInsertionFence } from "@voyant-travel/db/booking-finance-fence"
+import {
+  externalInvoiceDocumentSchema,
+  formatExternalDocumentLabel,
+} from "@voyant-travel/finance-contracts"
 import { classifyOccupancyPrice } from "@voyant-travel/products-contracts/occupancy-pricing"
 import { emailAddress } from "@voyant-travel/schema-kit/email"
 import { and, asc, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import * as rrulePackage from "rrule"
 import { z } from "zod"
-
+import { externalDocumentToRefInput } from "./invoice-external-document.js"
 import type {
   BookingPaymentSchedule,
   Invoice,
@@ -36,7 +44,13 @@ import type {
   TravelCreditRedemption,
 } from "./schema.js"
 import { bookingItemTaxLines, bookingPaymentSchedules, travelCredits } from "./schema.js"
-import { type FinanceServiceRuntime, financeService, toRows } from "./service.js"
+import {
+  type FinanceDomainEvent,
+  type FinanceServiceRuntime,
+  financeService,
+  toRows,
+} from "./service.js"
+import { issueBookingInvoiceInTransaction } from "./service-issue.js"
 import { TravelCreditServiceError, travelCreditsService } from "./service-travel-credits.js"
 import {
   ianaTimeZoneSchema,
@@ -91,6 +105,22 @@ const documentGenerationInputSchema = z
      * shortcut on the new-booking dialog).
      */
     invoiceType: z.enum(["invoice", "proforma"]).default("invoice"),
+    /**
+     * The sale is already invoiced in the operator's accounting provider.
+     *
+     * This is what back-filling a booking for an already-invoiced sale needs
+     * (voyant#4688): the standard recovery after a checkout takes the money and
+     * the settlement commit fails, where the operator has already issued a
+     * fiscal document by hand so the customer has one. Without it the back-fill
+     * mirrored a second real document to the provider — for a Romanian operator
+     * both land in e-Factura and the sale is declared twice.
+     *
+     * The booking's invoice is still written and still issued, so payments,
+     * balances and the contract are right. What changes is that no document is
+     * requested from the provider and the invoice's external reference names
+     * the one the operator already has.
+     */
+    externalInvoice: externalInvoiceDocumentSchema.optional(),
   })
   .default({ contractDocument: false, invoiceDocument: false, invoiceType: "invoice" })
 
@@ -514,6 +544,24 @@ const bookingCreateBaseSchema = z.object({
    */
   suppressNotifications: z.boolean().optional(),
   /**
+   * Record this booking without producing documents for it: no invoice or
+   * proforma reaches the accounting provider, and no contract is generated.
+   *
+   * voyant#4688: an operator instructed the agent not to issue a proforma,
+   * invoice or contract. The agent invoked no issuance call and said none were
+   * issued — and creating the booking issued a real fiscal invoice to the
+   * provider anyway, because issuance is a consequence of booking creation
+   * rather than a call anyone makes. An agent cannot decline an action it never
+   * invokes, so the instruction had nowhere to land. This is where it lands.
+   *
+   * The invoice is still written when there is money to record, as an unissued
+   * draft carrying the payments — recording that a booking was paid is
+   * deliberately separable from issuing a fiscal document for it. Persisted on
+   * the booking as `documents_suppressed`, because contract generation runs off
+   * an event after this transaction commits and cannot see a command flag.
+   */
+  suppressDocuments: z.boolean().optional(),
+  /**
    * Explicit operator override for same billing party + departure creates.
    * Defaults to guarded behavior so retries and concurrent double-submit
    * attempts return a structured duplicate signal instead of minting another
@@ -645,6 +693,32 @@ export interface BookingCreateResult {
     | { status: "requested"; renditionId: string | null }
     | { status: "generated"; renditionId: string }
     | { status: "not_requested" | "not_available" | "failed" }
+  /**
+   * Whether the invoice this create wrote was issued, and if not, why not.
+   *
+   * `blocked` is not a failure: the invoice exists as a draft, the booking is
+   * fine, and the operator completes the buyer's billing details and issues it.
+   * It is here so the caller can say that rather than leaving an unissued
+   * invoice looking like an issued one (voyant#4654).
+   *
+   * `recorded_externally` is issued too — the invoice is a real, issued record
+   * with the right balance. What it says is that no fiscal document was
+   * requested from the accounting provider, because the operator already has
+   * one for this sale (voyant#4688).
+   *
+   * `withheld` is the operator's instruction honoured: the invoice exists as an
+   * unissued draft and carries the payments, so the booking records what was
+   * paid, and no fiscal document was produced for it. It is the answer to "an
+   * operator said do not issue" — which previously had nowhere to land, because
+   * issuance was a consequence of creating the booking rather than a call
+   * anyone made (voyant#4688).
+   */
+  invoiceIssuance:
+    | { status: "issued" }
+    | { status: "recorded_externally"; externalDocument: { provider: string; label: string } }
+    | { status: "withheld" }
+    | { status: "blocked"; missingBillingFields: readonly FiscalBillingField[] }
+    | { status: "not_applicable" }
   payments: Payment[]
 }
 
@@ -654,7 +728,18 @@ export interface BookingCreateValidationIssue {
 }
 
 export type BookingCreateOutcome =
-  | { status: "ok"; result: BookingCreateResult }
+  | {
+      status: "ok"
+      result: BookingCreateResult
+      /**
+       * Domain events raised while building the booking, for the command that
+       * owns the transaction to persist with `insertOutboxEvents(tx, ...)`.
+       *
+       * Handed up rather than emitted because everything here happens inside a
+       * transaction that may still roll back — see `domainEventSink`.
+       */
+      events: FinanceDomainEvent[]
+    }
   | { status: "invalid_payment_schedules"; issues: BookingCreateValidationIssue[] }
   | { status: "invalid_tax_lines"; issues: BookingCreateValidationIssue[] }
   | { status: "invalid_pricing"; issues: BookingCreateValidationIssue[] }
@@ -2576,6 +2661,7 @@ export async function createBookingMutation(
           priceOverrideReason: input.priceOverrideReason ?? null,
           manualPriceOverride: input.manualPriceOverride,
           suppressNotifications: input.suppressNotifications,
+          suppressDocuments: input.suppressDocuments,
           contactFirstName: input.contactFirstName ?? null,
           contactLastName: input.contactLastName ?? null,
           contactPartyType: input.contactPartyType ?? null,
@@ -2847,6 +2933,7 @@ export async function createBookingMutation(
         groupMembership,
         invoice: null,
         invoiceDocument: { status: "not_requested" as const },
+        invoiceIssuance: { status: "not_applicable" as const },
         payments: [],
       }
     })()
@@ -2869,8 +2956,27 @@ export async function createBookingMutation(
     throw error
   }
 
+  const domainEvents: FinanceDomainEvent[] = []
+  // Everything below runs on the caller's still-open transaction, so nothing
+  // here may reach the event bus: a bus emit captures on a different
+  // connection and would outlive a rollback. Services get this sink instead
+  // and the command writes what it collects into the outbox atomically.
+  const invoiceRuntime: FinanceServiceRuntime = {
+    ...(runtime ?? {}),
+    domainEventSink: (event) => domainEvents.push(event),
+  }
+
   const paidSchedules = (input.paymentSchedules ?? []).filter(isAlreadyPaidSchedule)
-  const shouldCreateInvoice = documentGeneration.invoiceDocument || paidSchedules.length > 0
+  // Declaring an external document is itself a reason to write the invoice.
+  // Without this, `externalInvoice` on a create that asked for no invoice
+  // document and has no already-paid schedule is silently dropped: no invoice,
+  // no external reference, and therefore nothing for the duplicate guard to
+  // find — so the next issuance mirrors exactly the document this field exists
+  // to prevent.
+  const shouldCreateInvoice =
+    documentGeneration.invoiceDocument ||
+    paidSchedules.length > 0 ||
+    documentGeneration.externalInvoice !== undefined
 
   if (shouldCreateInvoice) {
     const items = await tx
@@ -2890,6 +2996,16 @@ export async function createBookingMutation(
       documentGeneration.invoiceType,
     )
 
+    const externalInvoice = documentGeneration.externalInvoice ?? null
+    // An operator saying "do not issue" and an operator saying "it is already
+    // issued, over there" are different instructions with the same consequence
+    // for the provider: this create must not put a fiscal document into the
+    // world. They differ in what the platform's own invoice ends up being — an
+    // unissued draft that records the money, or an issued record pointed at the
+    // operator's document — so `externalInvoice` is the more specific of the
+    // two and decides when both are given.
+    const withholdIssuance = input.suppressDocuments === true && externalInvoice === null
+
     const invoice = await financeService.createInvoiceFromBooking(
       tx,
       {
@@ -2900,10 +3016,16 @@ export async function createBookingMutation(
         issueDate,
         dueDate,
         invoiceType: documentGeneration.invoiceType,
-        notes: "Generated from booking create.",
+        notes: externalInvoice
+          ? "Generated from booking create. Already invoiced externally."
+          : "Generated from booking create.",
+        // The reference is written with the invoice, in the same fenced insert,
+        // so there is no window where an issued invoice exists without the
+        // record of which external document already covers it.
+        ...(externalInvoice ? { externalRefs: [externalDocumentToRefInput(externalInvoice)] } : {}),
       },
       { booking: result.booking, dueDatePaymentSchedule, items },
-      runtime,
+      invoiceRuntime,
     )
 
     result = {
@@ -2912,41 +3034,99 @@ export async function createBookingMutation(
     }
 
     if (invoice) {
+      // voyant#4653: the invoice was created and then left alone. Nothing
+      // issued it, so `invoice.issued` never fired, an external number series
+      // never got past its `PENDING-…` placeholder, and an installed
+      // accounting app saw nothing for the lifetime of the deployment. The
+      // only way to a real number was an operator opening each invoice and
+      // pressing the app's own button.
+      //
+      // voyant#4654: a fiscal document needs to name its buyer and where they
+      // are. Issuing one that cannot is worse than not issuing it — an invalid
+      // invoice reaching an accounting system has to be voided and reissued
+      // there, not just corrected here. So an incomplete buyer leaves the
+      // invoice a draft, which is exactly where every booking-created invoice
+      // already sat before this change: no deployment loses behaviour it had,
+      // and the operator gets told what is missing.
+      const missingBillingFields = missingFiscalBillingFields(result.booking)
+      const issuance =
+        missingBillingFields.length === 0 && !withholdIssuance
+          ? await issueBookingInvoiceInTransaction(tx, invoice, invoiceRuntime, {
+              skipExternalSync: externalInvoice !== null,
+            })
+          : null
+      if (issuance) domainEvents.push(issuance.event)
+
       const payments: Payment[] = []
       for (const schedule of paidSchedules) {
         const metadata = parseAlreadyPaidScheduleMetadata(schedule.notes)
         const methodResult = paymentMethodSchema.safeParse(
           metadata?.paymentMethod ?? "bank_transfer",
         )
-        const payment = await financeService.createPayment(tx, invoice.id, {
-          amountCents: schedule.amountCents,
-          currency: schedule.currency,
-          paymentMethod: methodResult.success ? methodResult.data : "bank_transfer",
-          status: "completed",
-          referenceNumber: metadata?.paymentReference?.trim() || null,
-          paymentDate: metadata?.paymentDate || schedule.dueDate || issueDate,
-          notes: schedule.notes ?? null,
-        })
+        const payment = await financeService.createPayment(
+          tx,
+          invoice.id,
+          {
+            amountCents: schedule.amountCents,
+            currency: schedule.currency,
+            paymentMethod: methodResult.success ? methodResult.data : "bank_transfer",
+            status: "completed",
+            referenceNumber: metadata?.paymentReference?.trim() || null,
+            paymentDate: metadata?.paymentDate || schedule.dueDate || issueDate,
+            notes: schedule.notes ?? null,
+          },
+          invoiceRuntime,
+        )
         if (payment) payments.push(payment)
       }
 
       let invoiceDocument: BookingCreateResult["invoiceDocument"] = { status: "not_requested" }
+      // Nothing is rendered for an invoice we just refused to issue. Asking
+      // for the PDF of a document we decided must not become a fiscal record
+      // contradicts the decision, and a rendition that later turns `ready`
+      // would put that document in the booking's notification bundle and mail
+      // it to the customer — the retry this change added is what would carry
+      // it. `not_available` says the document was wanted and withheld, which
+      // `not_requested` (nobody asked) does not.
       if (documentGeneration.invoiceDocument) {
-        const requested = await financeService.renderInvoice(tx, invoice.id, { format: "pdf" })
-        invoiceDocument =
-          requested.status === "requested"
-            ? { status: "requested", renditionId: requested.rendition?.id ?? null }
-            : { status: "failed" }
+        if (!issuance || externalInvoice) {
+          // Withheld for the same reason above, and for one more when the sale
+          // is already invoiced externally: our rendition carries our invoice
+          // number and reads as an invoice, so a `ready` one would join the
+          // booking's notification bundle and mail the customer a second
+          // document for a purchase they already hold one for (voyant#4688).
+          // The operator's own document is the one to send.
+          invoiceDocument = { status: "not_available" }
+        } else {
+          const requested = await financeService.renderInvoice(tx, invoice.id, { format: "pdf" })
+          invoiceDocument =
+            requested.status === "requested"
+              ? { status: "requested", renditionId: requested.rendition?.id ?? null }
+              : { status: "failed" }
+        }
       }
 
       result = {
         ...result,
         invoice: await financeService.getInvoiceById(tx, invoice.id),
         invoiceDocument,
+        invoiceIssuance: withholdIssuance
+          ? { status: "withheld" }
+          : !issuance
+            ? { status: "blocked", missingBillingFields }
+            : externalInvoice
+              ? {
+                  status: "recorded_externally",
+                  externalDocument: {
+                    provider: externalInvoice.provider,
+                    label: formatExternalDocumentLabel(externalInvoice),
+                  },
+                }
+              : { status: "issued" },
         payments,
       }
     }
   }
 
-  return { status: "ok", result }
+  return { status: "ok", result, events: domainEvents }
 }

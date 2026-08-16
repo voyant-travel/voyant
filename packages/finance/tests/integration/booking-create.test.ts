@@ -45,6 +45,7 @@ import { financeBookingLifecycle } from "../../src/booking-lifecycle.js"
 import {
   bookingItemTaxLines,
   bookingPaymentSchedules,
+  invoiceExternalRefs,
   invoiceNumberSeries,
   invoiceRenditions,
   invoices,
@@ -53,10 +54,11 @@ import {
   travelCreditRedemptions,
   travelCredits,
 } from "../../src/schema.js"
-import type { FinanceServiceRuntime } from "../../src/service.js"
+import { type FinanceServiceRuntime, financeService } from "../../src/service.js"
 import { bookingCreateSchema, createBookingMutation } from "../../src/service-booking-create.js"
 import { financeBookingPaymentScheduleService } from "../../src/service-booking-payment-schedules.js"
 import { financeInvoiceCoreService } from "../../src/service-invoice-core.js"
+import { issueInvoiceFromBookingCommand } from "../../src/service-issue.js"
 
 const DB_AVAILABLE = !!process.env.TEST_DATABASE_URL
 let directCreateSequence = 0
@@ -130,6 +132,10 @@ async function resetTables(
     "invoice_renditions",
     "invoice_line_items",
     "invoices",
+    // Left out until voyant#4653: a default series is deployment-wide state,
+    // so the one test that seeded an external series was silently deciding
+    // how every later test in the file numbered its invoices.
+    "invoice_number_series",
     "travel_credit_redemptions",
     "travel_credits",
     "payment_instruments",
@@ -1684,6 +1690,11 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
       productId,
       bookingNumber: nextBookingNumber(),
       ...bookingParty(),
+      // voyant#4654: a rendition is only requested for an invoice that could
+      // be issued, so this case needs a buyer a fiscal document can name.
+      contactAddressLine1: "Strada Lipscani 12",
+      contactCity: "Bucuresti",
+      contactCountry: "RO",
       documentGeneration: {
         contractDocument: false,
         invoiceDocument: true,
@@ -5330,6 +5341,786 @@ describe.skipIf(!DB_AVAILABLE)("createBooking", () => {
 
     expect(result).toMatchObject({ replayed: false })
     expect(await db.select().from(bookings)).toHaveLength(1)
+  })
+
+  // voyant#4653 / voyant#4654. Driven through the real command entrypoint
+  // rather than `createBookingMutation` directly, because the whole point is
+  // where the event lands: the mutation hands its events up and only
+  // `insertBookingCreatedOutbox` writes them. A test that called the mutation
+  // would assert the invoice status and prove nothing about the event, which
+  // is the half that was missing in production.
+  describe("issuing the invoice a booking creates", () => {
+    /** A buyer complete enough to put on a fiscal document. */
+    function fiscalBillingParty() {
+      return {
+        ...bookingParty(),
+        contactAddressLine1: "Strada Lipscani 12",
+        contactCity: "Bucuresti",
+        contactCountry: "RO",
+      }
+    }
+
+    async function outboxByName() {
+      const rows = await db
+        .select({
+          eventId: eventOutboxTable.eventId,
+          name: eventOutboxTable.name,
+          payload: eventOutboxTable.payload,
+          status: eventOutboxTable.status,
+        })
+        .from(eventOutboxTable)
+        .orderBy(asc(eventOutboxTable.createdAt))
+      return new Map(rows.map((row) => [row.name, row]))
+    }
+
+    it("issues the invoice and captures invoice.issued in the same transaction", async () => {
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-issue-invoice", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        documentGeneration: { contractDocument: false, invoiceDocument: true },
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, result.value.bookingId))
+      expect(invoice?.status).toBe("issued")
+
+      const events = await outboxByName()
+      // Alongside booking.created and booking.confirmed, not instead of them.
+      expect([...events.keys()]).toEqual(["booking.created", "booking.confirmed", "invoice.issued"])
+      expect(events.get("invoice.issued")).toMatchObject({
+        eventId: `evt_finance_invoice_issued_${invoice?.id}`,
+        status: "pending",
+        payload: expect.objectContaining({
+          invoiceId: invoice?.id,
+          invoiceType: "invoice",
+          bookingId: result.value.bookingId,
+          clientCity: "Bucuresti",
+          clientCountry: "RO",
+        }),
+      })
+    })
+
+    it("routes a proforma to its own event", async () => {
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-issue-proforma", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        documentGeneration: {
+          contractDocument: false,
+          invoiceDocument: true,
+          invoiceType: "proforma" as const,
+        },
+      })
+
+      await executeFinanceStaffBookingCreateCommand(command)
+
+      const events = await outboxByName()
+      expect(events.has("invoice.issued")).toBe(false)
+      expect(events.get("invoice.proforma.issued")).toMatchObject({
+        payload: expect.objectContaining({ invoiceType: "proforma" }),
+      })
+    })
+
+    it("holds the placeholder number for an external series and says so in the event", async () => {
+      // The contract `resolveInvoiceNumberForBooking` writes: issuance must not
+      // invent a number the accounting provider owns, and the event has to
+      // carry enough for the subscribed app to allocate one.
+      const { productId } = await seedProduct()
+      await db.insert(invoiceNumberSeries).values({
+        code: "SMARTBILL_ISSUE_INV",
+        name: "SmartBill issue",
+        scope: "invoice",
+        prefix: "",
+        separator: "",
+        padLength: 0,
+        externalProvider: "mapp_smartbill",
+        externalConfigKey: "B",
+        isDefault: true,
+        active: true,
+      })
+      const command = await durableCommand("finance-booking-create-issue-external", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        documentGeneration: { contractDocument: false, invoiceDocument: true },
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, result.value.bookingId))
+      expect(invoice?.status).toBe("pending_external_allocation")
+      expect(invoice?.invoiceNumber).toMatch(/^PENDING-INVOICE-/)
+      expect((await outboxByName()).get("invoice.issued")).toMatchObject({
+        payload: expect.objectContaining({
+          externalAllocationRequired: true,
+          externalProvider: "mapp_smartbill",
+          externalConfigKey: "B",
+          externalPlaceholderNumber: invoice?.invoiceNumber,
+        }),
+      })
+    })
+
+    it("leaves the invoice a draft when the buyer has no address, and names what is missing", async () => {
+      // voyant#4654: issuing here would put an invoice with no buyer address
+      // into an accounting system, where correcting it means voiding and
+      // reissuing. Staying a draft is exactly where these invoices already
+      // sat, so nothing regresses and the operator is told why.
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-issue-blocked", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...bookingParty(),
+        documentGeneration: { contractDocument: false, invoiceDocument: true },
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, result.value.bookingId))
+      expect(invoice?.status).toBe("draft")
+      expect((await outboxByName()).has("invoice.issued")).toBe(false)
+    })
+
+    it("requires a fiscal code before issuing to a company", async () => {
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-issue-company", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        personId: null,
+        organizationId: "org_booking_create",
+        contactPartyType: "company" as const,
+        documentGeneration: { contractDocument: false, invoiceDocument: true },
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      const [blocked] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, result.value.bookingId))
+      expect(blocked?.status).toBe("draft")
+
+      const withCode = await durableCommand("finance-booking-create-issue-company-ok", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        personId: null,
+        organizationId: "org_booking_create",
+        contactPartyType: "company" as const,
+        contactTaxId: "RO12345678",
+        documentGeneration: { contractDocument: false, invoiceDocument: true },
+      })
+      const issued = await executeFinanceStaffBookingCreateCommand(withCode)
+
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, issued.value.bookingId))
+      expect(invoice?.status).toBe("issued")
+      // voyant#4653's companion defect: the fiscal code sat on the booking row
+      // and the payload hardcoded null, so it could never reach an integration.
+      expect((await outboxByName()).get("invoice.issued")).toMatchObject({
+        payload: expect.objectContaining({ clientVatCode: "RO12345678" }),
+      })
+    })
+
+    it("treats an organization booking as a company even with no party type", async () => {
+      // `contactPartyType` is independently optional and only the manual form
+      // always sets it. Judging the buyer by it alone let an organization
+      // booking through as an individual — never asked for a fiscal code, and
+      // issued as a B2B invoice carrying none.
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-issue-org-no-type", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        personId: null,
+        organizationId: "org_booking_create",
+        documentGeneration: { contractDocument: false, invoiceDocument: true },
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, result.value.bookingId))
+      expect(invoice?.status).toBe("draft")
+      expect((await outboxByName()).has("invoice.issued")).toBe(false)
+    })
+
+    it("renders nothing for an invoice it refused to issue", async () => {
+      // A rendition that later turned `ready` would put the quarantined
+      // document into the booking's notification bundle and mail it.
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-issue-no-render", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...bookingParty(),
+        documentGeneration: { contractDocument: false, invoiceDocument: true },
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, result.value.bookingId))
+      expect(invoice?.status).toBe("draft")
+      expect(
+        await db
+          .select()
+          .from(invoiceRenditions)
+          .where(eq(invoiceRenditions.invoiceId, invoice!.id)),
+      ).toHaveLength(0)
+    })
+
+    it("still renders the invoice it did issue", async () => {
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-issue-renders", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        documentGeneration: { contractDocument: false, invoiceDocument: true },
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, result.value.bookingId))
+      expect(invoice?.status).toBe("issued")
+      expect(
+        await db
+          .select()
+          .from(invoiceRenditions)
+          .where(eq(invoiceRenditions.invoiceId, invoice!.id)),
+      ).toHaveLength(1)
+    })
+
+    it("captures invoice.payment.recorded for a schedule already marked paid", async () => {
+      // These payments were created with no runtime at all, so the event never
+      // fired and an accounting integration never learned the booking was paid.
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-issue-paid", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        documentGeneration: { contractDocument: false, invoiceDocument: true },
+        paymentSchedules: [
+          {
+            scheduleType: "balance" as const,
+            status: "paid" as const,
+            dueDate: "2026-06-15",
+            currency: "EUR",
+            amountCents: 50_000,
+            notes: JSON.stringify({
+              alreadyPaid: true,
+              paymentDate: "2026-06-10",
+              paymentMethod: "bank_transfer",
+              paymentReference: "BT-ISSUED-1",
+            }),
+          },
+        ],
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      const [payment] = await db
+        .select()
+        .from(payments)
+        .where(eq(payments.referenceNumber, "BT-ISSUED-1"))
+      expect((await outboxByName()).get("invoice.payment.recorded")).toMatchObject({
+        eventId: `evt_finance_invoice_payment_recorded_${payment?.id}`,
+        payload: expect.objectContaining({
+          bookingId: result.value.bookingId,
+          amountCents: 50_000,
+          referenceNumber: "BT-ISSUED-1",
+          status: "completed",
+        }),
+      })
+    })
+
+    // voyant#4688. The recovery flow this covers: a checkout took the money,
+    // the settlement commit failed, and the operator issued a fiscal document
+    // by hand so the customer has one. Support then back-fills the booking so
+    // the operational record matches — and that back-fill used to mirror a
+    // second real fiscal document for the same sale.
+    const alreadyIssuedBySmartBill = {
+      provider: "mapp_smartbill",
+      series: "VOY",
+      number: "1042",
+      externalId: "sb_doc_1042",
+      externalUrl: "https://smartbill.example/doc/1042",
+      issuedAt: "2026-06-10",
+      note: "Issued by hand after the settlement commit failed.",
+    }
+
+    const paidByBankTransfer = (reference: string) => [
+      {
+        scheduleType: "balance" as const,
+        status: "paid" as const,
+        dueDate: "2026-06-15",
+        currency: "EUR",
+        amountCents: 50_000,
+        notes: JSON.stringify({
+          alreadyPaid: true,
+          paymentDate: "2026-06-10",
+          paymentMethod: "bank_transfer",
+          paymentReference: reference,
+        }),
+      },
+    ]
+
+    async function backFillAlreadyInvoicedBooking(idempotencyKey: string, reference: string) {
+      const { productId } = await seedProduct()
+      const command = await durableCommand(idempotencyKey, {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        documentGeneration: {
+          contractDocument: false,
+          invoiceDocument: true,
+          externalInvoice: alreadyIssuedBySmartBill,
+        },
+        paymentSchedules: paidByBankTransfer(reference),
+      })
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, result.value.bookingId))
+      return { bookingId: result.value.bookingId, invoice: invoice! }
+    }
+
+    it("records what was paid without issuing anything when the operator said not to", async () => {
+      // The incident this is for: an operator instructed the agent not to issue
+      // a proforma, invoice or contract. The agent made no issuance call and
+      // reported that none were issued — and a real fiscal invoice reached the
+      // accounting provider ~38s later, because issuance followed from creating
+      // the booking rather than from any call. Recording the money and issuing
+      // a document for it had to become separable.
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-suppressed", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        suppressDocuments: true,
+        documentGeneration: { contractDocument: false, invoiceDocument: true },
+        paymentSchedules: paidByBankTransfer("BT-SUPPRESSED-1"),
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      // The money is recorded.
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, result.value.bookingId))
+      expect(invoice?.paidCents).toBe(50_000)
+      expect(
+        await db.select().from(payments).where(eq(payments.referenceNumber, "BT-SUPPRESSED-1")),
+      ).toHaveLength(1)
+
+      // The fiscal document is not. Nothing announced an issuance, so no
+      // subscribed accounting app can act on one — that event is the whole
+      // mechanism by which a document reaches the provider.
+      //
+      // The row's status is not the assertion to make here: `createPayment`
+      // moves any invoice to `paid` once it is settled, issued or not, so a
+      // withheld invoice that was paid in full reads `paid` exactly as the
+      // existing missing-billing-fields path does. What distinguishes it is
+      // that it was never issued.
+      const events = await outboxByName()
+      expect(events.has("invoice.issued")).toBe(false)
+      expect(events.has("invoice.proforma.issued")).toBe(false)
+      expect(
+        await db
+          .select()
+          .from(invoiceExternalRefs)
+          .where(eq(invoiceExternalRefs.invoiceId, invoice!.id)),
+      ).toHaveLength(0)
+
+      // And no rendition, which would otherwise reach the customer.
+      expect(
+        await db
+          .select()
+          .from(invoiceRenditions)
+          .where(eq(invoiceRenditions.invoiceId, invoice!.id)),
+      ).toHaveLength(0)
+    })
+
+    it("persists the suppression so the paths that run after the create can honour it", async () => {
+      // Contract generation runs off `booking.confirmed` once this transaction
+      // has committed. A decision that existed only on the command could not
+      // reach it, which is why the contract was generated anyway.
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-suppressed-persist", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        suppressDocuments: true,
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      await expect(
+        bookingsService.getBookingById(db, result.value.bookingId),
+      ).resolves.toMatchObject({ documentsSuppressed: true })
+    })
+
+    it("issues as before when nothing suppressed it", async () => {
+      // The control for the two above: without the flag this is still the
+      // behaviour every deployment has today.
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-unsuppressed", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        documentGeneration: { contractDocument: false, invoiceDocument: true },
+        paymentSchedules: paidByBankTransfer("BT-UNSUPPRESSED-1"),
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, result.value.bookingId))
+      expect(invoice?.status).toBe("paid")
+      expect((await outboxByName()).has("invoice.issued")).toBe(true)
+      await expect(
+        bookingsService.getBookingById(db, result.value.bookingId),
+      ).resolves.toMatchObject({ documentsSuppressed: false })
+    })
+
+    it("records a back-filled sale against the operator's own document instead of issuing a second one", async () => {
+      const { invoice } = await backFillAlreadyInvoicedBooking(
+        "finance-booking-create-external-invoice",
+        "BT-EXTERNAL-1",
+      )
+
+      // The internal record is a real, issued, fully-paid invoice — the point
+      // is that the balance and the contract stay right.
+      expect(invoice.status).toBe("paid")
+      expect(invoice.paidCents).toBe(50_000)
+
+      // The external reference names the operator's document, and says the
+      // platform did not put it there.
+      const [ref] = await db
+        .select()
+        .from(invoiceExternalRefs)
+        .where(eq(invoiceExternalRefs.invoiceId, invoice.id))
+      expect(ref).toMatchObject({
+        provider: "mapp_smartbill",
+        externalNumber: "1042",
+        externalId: "sb_doc_1042",
+        status: "recorded_externally",
+        syncedAt: null,
+      })
+
+      // The event still fires for ledgers and audit; the external subscribers
+      // are told to stand down, which is what stops the duplicate.
+      const issued = (await outboxByName()).get("invoice.issued")
+      expect(issued).toMatchObject({
+        payload: expect.objectContaining({ invoiceId: invoice.id, skipExternalSync: true }),
+      })
+
+      // And no rendition: ours reads as an invoice and would join the booking's
+      // notification bundle, mailing the customer a second document.
+      expect(
+        await db
+          .select()
+          .from(invoiceRenditions)
+          .where(eq(invoiceRenditions.invoiceId, invoice.id)),
+      ).toHaveLength(0)
+    })
+
+    it("refuses to issue over a booking that already has a live external document", async () => {
+      const { bookingId } = await backFillAlreadyInvoicedBooking(
+        "finance-booking-create-external-guard",
+        "BT-EXTERNAL-2",
+      )
+
+      const outcome = await issueInvoiceFromBookingCommand(db, {
+        bookingId,
+        issueDate: "2026-08-15",
+        dueDate: "2026-08-15",
+        invoiceType: "invoice",
+      })
+
+      expect(outcome).toMatchObject({
+        status: "duplicate_external_document",
+        existing: { provider: "mapp_smartbill", externalNumber: "1042", label: "VOY 1042" },
+      })
+      expect(
+        await db.select().from(invoices).where(eq(invoices.bookingId, bookingId)),
+      ).toHaveLength(1)
+    })
+
+    it("still issues a balance invoice for a booking whose deposit is already invoiced", async () => {
+      // The guard must not mistake staged invoicing for a duplicate: a deposit
+      // and a balance are two real sales of two different amounts, and a
+      // booking legitimately carries a fiscal document for each. Overlap is the
+      // question, not "does this booking have a document".
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-external-staged", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        paymentSchedules: [
+          {
+            scheduleType: "deposit" as const,
+            status: "paid" as const,
+            dueDate: "2026-06-15",
+            currency: "EUR",
+            amountCents: 20_000,
+            notes: JSON.stringify({
+              alreadyPaid: true,
+              paymentDate: "2026-06-10",
+              paymentReference: "BT-DEPOSIT-1",
+            }),
+          },
+          {
+            scheduleType: "balance" as const,
+            status: "pending" as const,
+            dueDate: "2026-07-15",
+            currency: "EUR",
+            amountCents: 30_000,
+          },
+        ],
+      })
+      const created = await executeFinanceStaffBookingCreateCommand(command)
+      const schedules = await db
+        .select()
+        .from(bookingPaymentSchedules)
+        .where(eq(bookingPaymentSchedules.bookingId, created.value.bookingId))
+      const deposit = schedules.find((schedule) => schedule.scheduleType === "deposit")
+      const balance = schedules.find((schedule) => schedule.scheduleType === "balance")
+
+      // The deposit is invoiced against a document the operator already holds.
+      const depositOutcome = await issueInvoiceFromBookingCommand(db, {
+        bookingId: created.value.bookingId,
+        bookingPaymentScheduleId: deposit!.id,
+        invoiceNumber: "INV-STAGED-DEPOSIT",
+        issueDate: "2026-06-15",
+        dueDate: "2026-06-15",
+        invoiceType: "invoice",
+        externalDocument: { ...alreadyIssuedBySmartBill, number: "2001" },
+      })
+      expect(depositOutcome.status).toBe("issued")
+
+      // The balance is a different sale and must still go through.
+      const balanceOutcome = await issueInvoiceFromBookingCommand(db, {
+        bookingId: created.value.bookingId,
+        bookingPaymentScheduleId: balance!.id,
+        invoiceNumber: "INV-STAGED-BALANCE",
+        issueDate: "2026-07-15",
+        dueDate: "2026-07-15",
+        invoiceType: "invoice",
+      })
+      expect(balanceOutcome.status).toBe("issued")
+
+      // But re-invoicing the deposit is the duplicate the guard is for.
+      const repeatOutcome = await issueInvoiceFromBookingCommand(db, {
+        bookingId: created.value.bookingId,
+        bookingPaymentScheduleId: deposit!.id,
+        invoiceNumber: "INV-STAGED-DEPOSIT-AGAIN",
+        issueDate: "2026-08-15",
+        dueDate: "2026-08-15",
+        invoiceType: "invoice",
+      })
+      expect(repeatOutcome).toMatchObject({
+        status: "duplicate_external_document",
+        existing: { externalNumber: "2001" },
+      })
+    })
+
+    it("issues anyway when the operator acknowledges the existing document", async () => {
+      const { bookingId } = await backFillAlreadyInvoicedBooking(
+        "finance-booking-create-external-ack",
+        "BT-EXTERNAL-3",
+      )
+
+      const outcome = await issueInvoiceFromBookingCommand(db, {
+        bookingId,
+        invoiceNumber: "INV-ACKNOWLEDGED",
+        issueDate: "2026-08-15",
+        dueDate: "2026-08-15",
+        invoiceType: "invoice",
+        acknowledgeExistingExternalDocument: true,
+      })
+
+      expect(outcome.status).toBe("issued")
+    })
+
+    it("lets the booking be invoiced again once the provider document is retracted", async () => {
+      // The way out the issue asked for: cancelling in the provider's UI left
+      // the reference pointing at a cancelled document with nothing supported
+      // to do about it, and `voidInvoice` refuses on a recorded payment.
+      const { bookingId, invoice } = await backFillAlreadyInvoicedBooking(
+        "finance-booking-create-external-supersede",
+        "BT-EXTERNAL-4",
+      )
+      const [ref] = await db
+        .select()
+        .from(invoiceExternalRefs)
+        .where(eq(invoiceExternalRefs.invoiceId, invoice.id))
+
+      const superseded = await financeService.supersedeInvoiceExternalRef(db, ref!.id, {
+        reason: "Cancelled in SmartBill after the duplicate was spotted.",
+      })
+
+      expect(superseded).toMatchObject({ status: "cancelled" })
+      // The identity is kept, not erased — an audit has to be able to see that
+      // a document was issued there at all.
+      expect(
+        (superseded?.metadata as Record<string, unknown>)?.voyantSupersededDocuments,
+      ).toMatchObject([
+        expect.objectContaining({ externalNumber: "1042", externalId: "sb_doc_1042" }),
+      ])
+
+      const outcome = await issueInvoiceFromBookingCommand(db, {
+        bookingId,
+        invoiceNumber: "INV-AFTER-SUPERSEDE",
+        issueDate: "2026-08-15",
+        dueDate: "2026-08-15",
+        invoiceType: "invoice",
+      })
+      expect(outcome.status).toBe("issued")
+    })
+
+    it("records the declaration even when no invoice document was asked for", async () => {
+      // The declaration is itself a reason to write the invoice. Dropping it
+      // because `invoiceDocument` defaulted to false would leave no external
+      // reference, so the guard would find nothing and the next issuance would
+      // mirror exactly the document this field exists to prevent.
+      const { productId } = await seedProduct()
+      const command = await durableCommand("finance-booking-create-external-only", {
+        productId,
+        bookingNumber: nextBookingNumber(),
+        ...fiscalBillingParty(),
+        documentGeneration: { externalInvoice: alreadyIssuedBySmartBill },
+      })
+
+      const result = await executeFinanceStaffBookingCreateCommand(command)
+
+      const [invoice] = await db
+        .select()
+        .from(invoices)
+        .where(eq(invoices.bookingId, result.value.bookingId))
+      expect(invoice).toBeDefined()
+      expect(
+        await db
+          .select()
+          .from(invoiceExternalRefs)
+          .where(eq(invoiceExternalRefs.invoiceId, invoice!.id)),
+      ).toMatchObject([{ provider: "mapp_smartbill", externalNumber: "1042" }])
+
+      // And the guard can now see it.
+      const outcome = await issueInvoiceFromBookingCommand(db, {
+        bookingId: result.value.bookingId,
+        invoiceNumber: "INV-EXTERNAL-ONLY",
+        issueDate: "2026-08-15",
+        dueDate: "2026-08-15",
+        invoiceType: "invoice",
+      })
+      expect(outcome.status).toBe("duplicate_external_document")
+    })
+
+    it("refuses to supersede a reference belonging to another invoice", async () => {
+      // Reference ids are globally addressable, so the route must prove the
+      // reference belongs to the invoice in its own path — otherwise a request
+      // naming invoice A can release invoice B's guard.
+      const { invoice } = await backFillAlreadyInvoicedBooking(
+        "finance-booking-create-external-scope",
+        "BT-EXTERNAL-6",
+      )
+      const [ref] = await db
+        .select()
+        .from(invoiceExternalRefs)
+        .where(eq(invoiceExternalRefs.invoiceId, invoice.id))
+
+      await expect(
+        financeService.supersedeInvoiceExternalRef(
+          db,
+          ref!.id,
+          { reason: "Cancelled in SmartBill." },
+          { invoiceId: "inv_someone_elses" },
+        ),
+      ).resolves.toBeNull()
+
+      // Untouched: still live, still guarding.
+      const [unchanged] = await db
+        .select()
+        .from(invoiceExternalRefs)
+        .where(eq(invoiceExternalRefs.id, ref!.id))
+      expect(unchanged).toMatchObject({ status: "recorded_externally", externalNumber: "1042" })
+    })
+
+    it("repoints a reference at the document that replaced the cancelled one", async () => {
+      const { invoice } = await backFillAlreadyInvoicedBooking(
+        "finance-booking-create-external-repoint",
+        "BT-EXTERNAL-5",
+      )
+      const [ref] = await db
+        .select()
+        .from(invoiceExternalRefs)
+        .where(eq(invoiceExternalRefs.invoiceId, invoice.id))
+
+      const superseded = await financeService.supersedeInvoiceExternalRef(db, ref!.id, {
+        reason: "Reissued under the correct series.",
+        replacement: { series: "VOY", externalNumber: "1043", externalId: "sb_doc_1043" },
+      })
+
+      expect(superseded).toMatchObject({ externalNumber: "1043", externalId: "sb_doc_1043" })
+      // Still one row: the reference moved, it did not multiply.
+      expect(
+        await db
+          .select()
+          .from(invoiceExternalRefs)
+          .where(eq(invoiceExternalRefs.invoiceId, invoice.id)),
+      ).toHaveLength(1)
+    })
+
+    it("keeps the issuance events atomic with the booking that caused them", async () => {
+      // The reason these go through the outbox rather than the event bus: a
+      // bus emit captures on the request connection, so a rollback here would
+      // leave `invoice.issued` announcing an invoice that does not exist.
+      const { productId } = await seedProduct()
+      await expect(
+        executeFinanceStaffBookingCreateCommand({
+          ...(await durableCommand("finance-booking-create-issue-crash", {
+            productId,
+            bookingNumber: nextBookingNumber(),
+            ...fiscalBillingParty(),
+            documentGeneration: { contractDocument: false, invoiceDocument: true },
+          })),
+          testHooks: {
+            async afterDomainCreate() {
+              throw new Error("injected finance booking-create crash")
+            },
+          },
+        }),
+      ).rejects.toThrow("injected finance booking-create crash")
+
+      expect(await db.select().from(eventOutboxTable)).toHaveLength(0)
+      expect(await db.select().from(invoices)).toHaveLength(0)
+    })
   })
 
   async function durableCommand(

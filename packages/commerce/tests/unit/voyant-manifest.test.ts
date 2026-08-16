@@ -8,6 +8,7 @@ import {
   financeAccommodationsPaymentPolicyRuntimePort,
   financeCruisesPaymentPolicyRuntimePort,
   financeDistributionPaymentPolicyRuntimePort,
+  financeFxRateCaptureRuntimePort,
   financeInventoryPaymentPolicyRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
 import { describe, expect, it } from "vitest"
@@ -50,6 +51,9 @@ describe("commerce deployment manifest", () => {
           { id: promotionsBulkReindexRuntimePort.id },
           { id: promotionBoundaryJobRuntimePort.id },
           { id: promotionReindexJobRuntimePort.id },
+          // Markets owns the rate tables, so it is what turns a resolved
+          // reference rate into a durable rate set for finance (voyant#4703).
+          { id: financeFxRateCaptureRuntimePort.id },
         ],
       },
       runtimePorts: [
@@ -135,6 +139,10 @@ describe("commerce deployment manifest", () => {
         {
           id: "@voyant-travel/commerce#event.checkout.finalized",
           eventType: "checkout.finalized",
+        },
+        {
+          id: "@voyant-travel/commerce#event.booking-session.settlement-failed",
+          eventType: "booking_session.settlement.failed",
         },
         {
           id: "@voyant-travel/commerce#event.promotion.changed",

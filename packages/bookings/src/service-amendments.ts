@@ -3,7 +3,12 @@ import type {
   BookingAmendment,
   BookingAmendmentFinancialConsequences,
   BookingAmendmentPrice,
+  BookingItemAddition,
+  BookingItemMove,
+  BookingItemMoveRefundHandling,
   BookingRevisionSnapshot,
+  PreviewBookingItemAdditionInput,
+  PreviewBookingItemMoveInput,
   PreviewTravelerCorrectionInput,
   PreviewTravelerRosterChangeInput,
   TravelerCorrectionPatch,
@@ -13,6 +18,7 @@ import { and, asc, eq, inArray, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { availabilitySlotsRef } from "./availability-ref.js"
+import { productsRef } from "./products-ref.js"
 import type { BookingsFinanceRuntime, BookingsSupplierAmendmentRuntime } from "./runtime-port.js"
 import {
   bookingActivityLog,
@@ -27,11 +33,16 @@ import {
 import type {
   BookingAmendmentActor,
   BookingAmendmentEffects,
+  BookingAmendmentItemAddPlan,
+  BookingAmendmentItemMovePlan,
   BookingAmendmentPolicyDecision,
   BookingAmendmentRosterItemPlan,
   BookingAmendmentRow,
   BookingRevisionRow,
 } from "./schema-amendments.js"
+import { isItemAddPlan, isItemMovePlan } from "./schema-amendments.js"
+import { resolveBookingItemSnapshot } from "./service-core.js"
+import { resolveSessionPricingSnapshot } from "./service-public-core.js"
 
 const TRAVELER_IDENTITY_FIELDS = new Set<keyof TravelerCorrectionPatch>(["firstName", "lastName"])
 export const DEFAULT_BOOKING_AMENDMENT_QUOTE_TTL_MS = 30 * 60 * 1_000
@@ -285,6 +296,19 @@ function snapshotBooking(
     allocationQuantityDelta?: Map<string, number>
     sellAmountDeltaCents?: number
     paxDelta?: number
+    /**
+     * Items the Amendment will create. They have no row yet, so they
+     * cannot come from `state` — the proposed snapshot has to be told
+     * about them or it would show the booking without the very service
+     * being added.
+     */
+    addedItems?: BookingRevisionSnapshot["items"]
+    /**
+     * Absolute new total for an item, keyed by id. A move reprices the line
+     * outright rather than nudging it by a delta, so the proposed snapshot
+     * needs the number itself.
+     */
+    itemTotalOverride?: Map<string, number>
   } = {},
 ): BookingRevisionSnapshot {
   const itemQuantityDelta = overrides.itemQuantityDelta ?? new Map()
@@ -300,23 +324,27 @@ function snapshotBooking(
         : booking.sellAmountCents + (overrides.sellAmountDeltaCents ?? 0),
     pax: booking.pax == null ? null : Math.max(0, booking.pax + (overrides.paxDelta ?? 0)),
     travelers: overrides.travelers ?? state.travelers.map(snapshotTraveler),
-    items: state.items.map((item) => ({
-      id: item.id,
-      quantity: item.quantity + (itemQuantityDelta.get(item.id) ?? 0),
-      totalSellAmountCents:
-        item.totalSellAmountCents == null
-          ? null
-          : item.totalSellAmountCents +
-            (itemQuantityDelta.get(item.id) ?? 0) * (item.unitSellAmountCents ?? 0),
-      travelerIds: [...(itemTravelerIds.get(item.id) ?? [])].sort(),
-      allocations: state.allocations
-        .filter((allocation) => allocation.bookingItemId === item.id)
-        .map((allocation) => ({
-          id: allocation.id,
-          quantity: allocation.quantity + (allocationQuantityDelta.get(allocation.id) ?? 0),
-          status: allocation.status,
-        })),
-    })),
+    items: [
+      ...state.items.map((item) => ({
+        id: item.id,
+        quantity: item.quantity + (itemQuantityDelta.get(item.id) ?? 0),
+        totalSellAmountCents:
+          overrides.itemTotalOverride?.get(item.id) ??
+          (item.totalSellAmountCents == null
+            ? null
+            : item.totalSellAmountCents +
+              (itemQuantityDelta.get(item.id) ?? 0) * (item.unitSellAmountCents ?? 0)),
+        travelerIds: [...(itemTravelerIds.get(item.id) ?? [])].sort(),
+        allocations: state.allocations
+          .filter((allocation) => allocation.bookingItemId === item.id)
+          .map((allocation) => ({
+            id: allocation.id,
+            quantity: allocation.quantity + (allocationQuantityDelta.get(allocation.id) ?? 0),
+            status: allocation.status,
+          })),
+      })),
+      ...(overrides.addedItems ?? []),
+    ],
   }
 }
 
@@ -609,6 +637,483 @@ function mapPlanError(error: RosterPlanError): PreviewTravelerRosterChangeResult
   return { status: "unsupported_configuration", reason: error.message }
 }
 
+/**
+ * Resolve what a requested addition actually costs and whether it can be
+ * held, from the catalog rather than from the caller.
+ *
+ * The price comes from `resolveSessionPricingSnapshot` — the same authority
+ * the storefront prices against — so an operator adding a service mid-trip
+ * quotes the number the catalog says, not one they typed. Anything the
+ * catalog cannot answer is refused rather than guessed.
+ *
+ * Sourced (supplier) products are refused outright: adding a service the
+ * supplier has never heard of needs a supplier *create* call, and the
+ * supplier amendment port only knows how to modify an operation that
+ * already has an `upstreamRef`. Quoting one would promise capacity nobody
+ * reserved.
+ */
+/**
+ * Load the departure an addition targets, scoped to the product that
+ * claims it.
+ *
+ * Scoping is the point. Looking a slot up by id alone lets a caller pair
+ * product A with a departure belonging to product B: apply would then
+ * decrement B's capacity while writing an item and allocation that say A,
+ * corrupting both inventory views at once. Not found and wrong-product are
+ * deliberately the same answer.
+ */
+async function loadAdditionSlot(db: PostgresJsDatabase, slotId: string, productId: string) {
+  const [slot] = await db
+    .select({
+      id: availabilitySlotsRef.id,
+      status: availabilitySlotsRef.status,
+      unlimited: availabilitySlotsRef.unlimited,
+      remainingPax: availabilitySlotsRef.remainingPax,
+      pastCutoff: availabilitySlotsRef.pastCutoff,
+      tooEarly: availabilitySlotsRef.tooEarly,
+    })
+    .from(availabilitySlotsRef)
+    .where(and(eq(availabilitySlotsRef.id, slotId), eq(availabilitySlotsRef.productId, productId)))
+    .limit(1)
+  if (!slot) {
+    throw new RosterPlanError("not_found", "Departure does not exist for this product")
+  }
+  return slot
+}
+
+/**
+ * The catalog price for `quantity` of a unit, honouring quantity tiers.
+ *
+ * Tiers are ordered by the pricing snapshot; the matching one is the tier
+ * whose `[minQuantity, maxQuantity]` window contains the requested
+ * quantity. With no tiers — or none that match — the rule's own price
+ * stands.
+ */
+function resolveTieredUnitPrice(
+  unitPrice: {
+    sellAmountCents: number | null
+    tiers?: Array<{
+      minQuantity: number
+      maxQuantity: number | null
+      sellAmountCents: number | null
+    }>
+  },
+  quantity: number,
+): number | null {
+  const tier = (unitPrice.tiers ?? []).find(
+    (entry) =>
+      quantity >= entry.minQuantity &&
+      (entry.maxQuantity == null || quantity <= entry.maxQuantity) &&
+      entry.sellAmountCents != null,
+  )
+  return tier?.sellAmountCents ?? unitPrice.sellAmountCents ?? null
+}
+
+async function buildItemAddPlan(
+  db: PostgresJsDatabase,
+  booking: BookingRow,
+  addition: BookingItemAddition,
+): Promise<BookingAmendmentItemAddPlan> {
+  const [product] = await db
+    .select({
+      id: productsRef.id,
+      name: productsRef.name,
+      status: productsRef.status,
+      sellCurrency: productsRef.sellCurrency,
+      sellAmountCents: productsRef.sellAmountCents,
+      costAmountCents: productsRef.costAmountCents,
+      supplierId: productsRef.supplierId,
+    })
+    .from(productsRef)
+    .where(eq(productsRef.id, addition.productId))
+    .limit(1)
+  if (!product) throw new RosterPlanError("not_found", "Product does not exist")
+  if (product.status !== "active") {
+    throw new RosterPlanError("unsupported_configuration", "Product is not active")
+  }
+  if (product.sellCurrency !== booking.sellCurrency) {
+    throw new RosterPlanError(
+      "unsupported_configuration",
+      "Product is priced in a different currency from the Booking",
+    )
+  }
+
+  // The departure has to be resolved BEFORE pricing: a slot can carry
+  // `departure_price_overrides`, and quoting without it charges the base
+  // catalog rate for a date the operator has deliberately repriced.
+  const slot = addition.availabilitySlotId
+    ? await loadAdditionSlot(db, addition.availabilitySlotId, addition.productId)
+    : null
+
+  if (!slot) {
+    // A product that sells by departure has no meaning without one:
+    // writing an item with a null slot would consume no capacity while
+    // looking confirmed. Treat "this product has bookable departures" as
+    // the signal, since that is the same thing the booking-create flow
+    // requires the operator to pick from.
+    const [anySlot] = await db
+      .select({ id: availabilitySlotsRef.id })
+      .from(availabilitySlotsRef)
+      .where(
+        and(
+          eq(availabilitySlotsRef.productId, addition.productId),
+          eq(availabilitySlotsRef.status, "open"),
+        ),
+      )
+      .limit(1)
+    if (anySlot) {
+      throw new RosterPlanError(
+        "unsupported_configuration",
+        "This product sells by departure — pick one for the added service",
+      )
+    }
+  }
+
+  const pricing = await resolveSessionPricingSnapshot(db, addition.productId, {
+    optionId: addition.optionId ?? undefined,
+    departureId: addition.availabilitySlotId ?? undefined,
+    requirePublicProduct: false,
+  })
+  if (!pricing) {
+    throw new RosterPlanError("unsupported_configuration", "Product has no resolvable pricing")
+  }
+  if (pricing.catalog.currencyCode && pricing.catalog.currencyCode !== booking.sellCurrency) {
+    throw new RosterPlanError(
+      "unsupported_configuration",
+      "Price catalog is in a different currency from the Booking",
+    )
+  }
+
+  const option = addition.optionId
+    ? (pricing.options.find((entry) => entry.id === addition.optionId) ?? null)
+    : (pricing.options[0] ?? null)
+
+  let unitSellAmountCents: number | null = null
+  let unitName: string | null = null
+  if (addition.optionUnitId) {
+    const unitPrice = pricing.unitPrices.find((entry) => entry.unitId === addition.optionUnitId)
+    if (!unitPrice) {
+      throw new RosterPlanError("unsupported_configuration", "Unit has no price in this catalog")
+    }
+    // A unit may only be sold in the quantities the catalog permits.
+    if (unitPrice.minQuantity != null && addition.quantity < unitPrice.minQuantity) {
+      throw new RosterPlanError(
+        "unsupported_configuration",
+        `This unit sells in quantities of at least ${unitPrice.minQuantity}`,
+      )
+    }
+    if (unitPrice.maxQuantity != null && addition.quantity > unitPrice.maxQuantity) {
+      throw new RosterPlanError(
+        "unsupported_configuration",
+        `This unit sells in quantities of at most ${unitPrice.maxQuantity}`,
+      )
+    }
+    // Quantity tiers are the authoritative price when one matches — the
+    // rule's own `sellAmountCents` is the untiered fallback, and quoting
+    // it for a group-sized addition would charge the wrong rate.
+    unitSellAmountCents = resolveTieredUnitPrice(unitPrice, addition.quantity)
+    unitName = unitPrice.unitName
+  } else {
+    const rule =
+      pricing.rules.find((entry) => entry.optionId === option?.id) ?? pricing.rules[0] ?? null
+    unitSellAmountCents = rule?.baseSellAmountCents ?? product.sellAmountCents ?? null
+  }
+  if (unitSellAmountCents == null) {
+    throw new RosterPlanError(
+      "unsupported_configuration",
+      "Selection has no authoritative sell price",
+    )
+  }
+
+  if (slot) {
+    const room = slot.unlimited || (slot.remainingPax ?? 0) >= addition.quantity
+    if (slot.status !== "open" || slot.pastCutoff || slot.tooEarly || !room) {
+      throw new RosterPlanError("availability_changed", "Departure cannot take this addition")
+    }
+  }
+
+  const snapshot = await resolveBookingItemSnapshot(db, {
+    productId: addition.productId,
+    optionId: addition.optionId ?? null,
+    optionUnitId: addition.optionUnitId ?? null,
+    availabilitySlotId: addition.availabilitySlotId ?? null,
+  })
+
+  const quantity = addition.quantity
+  const unitCostAmountCents =
+    product.costAmountCents != null ? Math.floor(product.costAmountCents) : null
+
+  return {
+    kind: "item_add",
+    productId: addition.productId,
+    optionId: addition.optionId ?? option?.id ?? null,
+    optionUnitId: addition.optionUnitId ?? null,
+    availabilitySlotId: addition.availabilitySlotId ?? null,
+    quantity,
+    title: addition.title ?? unitName ?? option?.name ?? product.name,
+    sellCurrency: booking.sellCurrency,
+    unitSellAmountCents,
+    totalSellAmountCents: unitSellAmountCents * quantity,
+    costCurrency: unitCostAmountCents == null ? null : product.sellCurrency,
+    unitCostAmountCents,
+    totalCostAmountCents: unitCostAmountCents == null ? null : unitCostAmountCents * quantity,
+    serviceDate: snapshot.serviceDate,
+    productNameSnapshot: snapshot.productName ?? product.name,
+    optionNameSnapshot: snapshot.optionName ?? option?.name ?? null,
+    unitNameSnapshot: snapshot.unitName ?? unitName,
+    departureLabelSnapshot: snapshot.departureLabel,
+  }
+}
+
+/**
+ * Resolve what moving a Booking Item to another departure costs, and whether
+ * the target can actually take it.
+ *
+ * Capacity is a precondition, not a warning: a departure without room for
+ * this item's quantity is refused here, and the same check is re-run
+ * atomically at apply. The operator-facing picker only offers departures
+ * with room, so reaching this refusal normally means the target filled up
+ * while the sheet was open.
+ *
+ * The new fare comes from the catalog for the *target* date — including its
+ * departure price override and quantity tier — so moving onto a peak week
+ * costs what that week costs. The change fee is the operator's, added on
+ * top as its own line.
+ */
+async function buildItemMovePlan(
+  db: PostgresJsDatabase,
+  booking: BookingRow,
+  state: SnapshotState,
+  move: BookingItemMove,
+): Promise<BookingAmendmentItemMovePlan> {
+  const item = state.items.find((candidate) => candidate.id === move.bookingItemId)
+  if (!item) throw new RosterPlanError("not_found", "Booking Item does not exist")
+  if (item.status !== "confirmed") {
+    throw new RosterPlanError(
+      "unsupported_configuration",
+      "Only a confirmed service can be moved",
+      item.id,
+    )
+  }
+  if (!item.productId) {
+    throw new RosterPlanError(
+      "unsupported_configuration",
+      "This line is not linked to a product, so there is nothing to move it between",
+      item.id,
+    )
+  }
+  if (item.sellCurrency !== booking.sellCurrency) {
+    throw new RosterPlanError(
+      "unsupported_configuration",
+      "Booking Item is priced in a different currency from the Booking",
+      item.id,
+    )
+  }
+  if (item.totalSellAmountCents == null) {
+    throw new RosterPlanError(
+      "unsupported_configuration",
+      "Booking Item has no authoritative price to compare the new date against",
+      item.id,
+    )
+  }
+  if (item.availabilitySlotId === move.availabilitySlotId) {
+    throw new RosterPlanError(
+      "unsupported_configuration",
+      "That is the departure this service is already on",
+      item.id,
+    )
+  }
+
+  // Scoped to the item's own product for the same reason `item_add` is: a
+  // slot looked up by id alone lets a caller move onto another product's
+  // departure, which would decrement capacity nobody is travelling on.
+  const target = await loadAdditionSlot(db, move.availabilitySlotId, item.productId)
+  const room = target.unlimited || (target.remainingPax ?? 0) >= item.quantity
+  if (target.status !== "open" || target.pastCutoff || target.tooEarly || !room) {
+    throw new RosterPlanError(
+      "availability_changed",
+      "That departure cannot take this booking",
+      item.id,
+    )
+  }
+
+  const pricing = await resolveSessionPricingSnapshot(db, item.productId, {
+    optionId: item.optionId ?? undefined,
+    departureId: move.availabilitySlotId,
+    requirePublicProduct: false,
+  })
+  if (!pricing) {
+    throw new RosterPlanError(
+      "unsupported_configuration",
+      "The target departure has no resolvable price",
+      item.id,
+    )
+  }
+
+  let unitSellAmountCents: number | null = null
+  if (item.optionUnitId) {
+    const unitPrice = pricing.unitPrices.find((entry) => entry.unitId === item.optionUnitId)
+    if (!unitPrice) {
+      throw new RosterPlanError(
+        "unsupported_configuration",
+        "This unit is not priced on the target departure",
+        item.id,
+      )
+    }
+    unitSellAmountCents = resolveTieredUnitPrice(unitPrice, item.quantity)
+  } else {
+    const rule =
+      pricing.rules.find((entry) => entry.optionId === item.optionId) ?? pricing.rules[0] ?? null
+    unitSellAmountCents = rule?.baseSellAmountCents ?? item.unitSellAmountCents ?? null
+  }
+  if (unitSellAmountCents == null) {
+    throw new RosterPlanError(
+      "unsupported_configuration",
+      "The target departure has no authoritative sell price",
+      item.id,
+    )
+  }
+
+  const totalSellAmountCents = unitSellAmountCents * item.quantity
+  const fareDeltaCents = totalSellAmountCents - item.totalSellAmountCents
+  // Capped at the increase. Absorbing more than the move costs would turn a
+  // pricier date into a payout, which is a refund decision rather than a
+  // discount one — `refundHandling` is where that lives.
+  const fareDiscountCents = Math.min(move.fareDiscountCents, Math.max(fareDeltaCents, 0))
+
+  const snapshot = await resolveBookingItemSnapshot(db, {
+    productId: item.productId,
+    optionId: item.optionId ?? null,
+    optionUnitId: item.optionUnitId ?? null,
+    availabilitySlotId: move.availabilitySlotId,
+  })
+
+  const activeAllocations = state.allocations.filter(
+    (allocation) =>
+      allocation.bookingItemId === item.id &&
+      (allocation.status === "held" || allocation.status === "confirmed"),
+  )
+  // Exactly one, not "at most one". A move is an inventory operation before
+  // it is a price one: apply restores the old departure's capacity and claims
+  // the target's, and both halves are only true of a line that actually holds
+  // an allocation. Moving one that does not would credit the old departure a
+  // seat it never consumed and leave the target's decrement with no row
+  // pointing at it, so cancelling later would never give it back.
+  //
+  // The state is reachable — `updateItem` still lets an operator schedule a
+  // product-linked line without claiming capacity — so this refuses rather
+  // than silently inventing an allocation the operator never asked for.
+  if (activeAllocations.length !== 1) {
+    throw new RosterPlanError(
+      "unsupported_configuration",
+      activeAllocations.length === 0
+        ? "This service holds no seat on its current departure, so there is nothing to move. Set its departure directly instead."
+        : "Moving a service requires exactly one active capacity allocation",
+      item.id,
+    )
+  }
+  const allocation = activeAllocations[0]!
+
+  const itemMetadata = asRecord(item.metadata)
+  const allocationMetadata = asRecord(allocation?.metadata)
+  const sourceConnectionId = stringField(allocationMetadata, "sourceConnectionId")
+  const upstreamRef =
+    stringField(allocationMetadata, "upstreamRef") ?? stringField(itemMetadata, "upstreamRef")
+  const sourceKind = stringField(allocationMetadata, "sourceKind")
+  const sourced = Boolean(sourceConnectionId || upstreamRef || sourceKind)
+  if (sourced && (!sourceConnectionId || !upstreamRef || !sourceKind)) {
+    throw new RosterPlanError(
+      "unsupported_configuration",
+      "Sourced allocation provenance is incomplete",
+      item.id,
+    )
+  }
+
+  // A date change on sourced inventory is exactly what the supplier port
+  // exists for: it carries the existing reservation's `upstreamRef` and a
+  // free-form parameter bag, and the connector answers `refused` when it
+  // cannot move the booking. The passenger list is unchanged — only when
+  // it travels moves.
+  const desiredState = {
+    parameters: {
+      availabilitySlotId: move.availabilitySlotId,
+      serviceDate: snapshot.serviceDate,
+      startsAt: snapshot.startsAt ? snapshot.startsAt.toISOString() : null,
+    },
+    party: {
+      passengers: (state.travelerIdsByItem.get(item.id) ?? []).flatMap((id) => {
+        const traveler = state.travelers.find((candidate) => candidate.id === id)
+        return traveler ? [supplierPassenger(snapshotTraveler(traveler))] : []
+      }),
+    },
+  }
+
+  return {
+    kind: "item_move",
+    bookingItemId: item.id,
+    allocationId: allocation.id,
+    quantity: item.quantity,
+    productId: item.productId,
+    fromAvailabilitySlotId: item.availabilitySlotId ?? null,
+    toAvailabilitySlotId: move.availabilitySlotId,
+    unitSellAmountCents,
+    totalSellAmountCents,
+    fareDeltaCents,
+    fareDiscountCents,
+    changeFeeCents: move.changeFeeCents,
+    refundHandling: move.refundHandling,
+    serviceDate: snapshot.serviceDate,
+    startsAt: snapshot.startsAt ? snapshot.startsAt.toISOString() : null,
+    endsAt: snapshot.endsAt ? snapshot.endsAt.toISOString() : null,
+    departureLabelSnapshot: snapshot.departureLabel,
+    supplierOperation: sourced
+      ? {
+          entityModule: stringField(itemMetadata, "entityModule") ?? "catalog",
+          entityId: stringField(itemMetadata, "entityId") ?? item.productId,
+          sourceKind: sourceKind!,
+          sourceConnectionId: sourceConnectionId!,
+          sourceRef: item.sourceOfferId ?? item.id,
+          upstreamRef: upstreamRef!,
+          desiredState,
+          requestFingerprint: await stableFingerprint(desiredState),
+        }
+      : null,
+  }
+}
+
+function itemMoveEffects(price: BookingAmendmentPrice, sourced: boolean): BookingAmendmentEffects {
+  return {
+    finance:
+      price.collectionAmountCents > 0
+        ? "collection_required"
+        : price.refundAmountCents > 0
+          ? "refund_required"
+          : "not_required",
+    legal: "not_required",
+    // The travel dates on every document and ticket just changed.
+    documents: "reissue_required",
+    fulfillment: "reissue_required",
+    supplier: sourced ? "modify_required" : "not_required",
+    allocation: "move_required",
+  }
+}
+
+function itemAddEffects(price: BookingAmendmentPrice): BookingAmendmentEffects {
+  return {
+    finance:
+      price.collectionAmountCents > 0
+        ? "collection_required"
+        : price.refundAmountCents > 0
+          ? "refund_required"
+          : "not_required",
+    legal: "not_required",
+    documents: "reissue_required",
+    fulfillment: "reissue_required",
+    supplier: "not_required",
+    allocation: "increase_required",
+  }
+}
+
 export const bookingAmendmentService = {
   async previewTravelerCorrection(
     db: PostgresJsDatabase,
@@ -869,6 +1374,299 @@ export const bookingAmendmentService = {
     })
   },
 
+  /**
+   * Quote adding a catalog-linked service to a booking that already exists.
+   *
+   * Same protocol as a roster change — preview, accept, apply — so the
+   * price, the departure check, and the money that follows all behave the
+   * way an operator has already learned they do. Nothing is written to the
+   * booking here; the plan is stored on the Amendment and replayed at apply.
+   */
+  async previewItemAddition(
+    db: PostgresJsDatabase,
+    bookingId: string,
+    input: PreviewBookingItemAdditionInput,
+    context: BookingAmendmentCommandContext,
+    dependencies: BookingAmendmentServiceDependencies = {},
+  ): Promise<PreviewTravelerRosterChangeResult> {
+    if (!dependencies.finance) {
+      return {
+        status: "unsupported_configuration",
+        reason: "Finance runtime is required for priced Booking Amendments",
+      }
+    }
+    const finance = dependencies.finance
+    return db.transaction(async (rawTx) => {
+      const tx = rawTx as PostgresJsDatabase
+      const [booking] = await tx
+        .select()
+        .from(bookings)
+        .where(eq(bookings.id, bookingId))
+        .for("update")
+        .limit(1)
+      if (!booking) return { status: "not_found" as const }
+
+      const [existing] = await tx
+        .select()
+        .from(bookingAmendments)
+        .where(
+          and(
+            eq(bookingAmendments.bookingId, booking.id),
+            eq(bookingAmendments.previewIdempotencyKey, context.idempotencyKey),
+          ),
+        )
+        .limit(1)
+      if (existing) {
+        if (!sameItemAdditionRequest(existing, input)) {
+          return { status: "idempotency_conflict" as const }
+        }
+        return { status: "ok" as const, amendment: await hydrateAmendment(tx, existing) }
+      }
+      if (booking.revision !== input.expectedBookingRevision) {
+        return { status: "stale_revision" as const, currentBookingRevision: booking.revision }
+      }
+      if (booking.status !== "confirmed" && booking.status !== "in_progress") {
+        return {
+          status: "unsupported_configuration" as const,
+          reason: "Only a live Booking can take an added service",
+        }
+      }
+
+      let plan: BookingAmendmentItemAddPlan
+      try {
+        plan = await buildItemAddPlan(tx, booking, input.addition)
+      } catch (error) {
+        if (error instanceof RosterPlanError) return mapPlanError(error)
+        throw error
+      }
+
+      const state = await loadSnapshotState(tx, booking.id)
+      const financeQuote = await finance.quoteBookingAmendment(tx, {
+        bookingId: booking.id,
+        currency: booking.sellCurrency,
+        lines: [
+          {
+            // The Booking Item does not exist yet, so there is no id to
+            // quote against. Finance only uses it to attribute tax lines;
+            // the placeholder is replaced at apply time.
+            bookingItemId: PENDING_ITEM_ID,
+            productId: plan.productId,
+            subtotalDeltaCents: plan.totalSellAmountCents,
+          },
+        ],
+      })
+
+      const now = dependencies.now?.() ?? new Date()
+      const quoteExpiresAt = new Date(
+        now.getTime() + (dependencies.quoteTtlMs ?? DEFAULT_BOOKING_AMENDMENT_QUOTE_TTL_MS),
+      )
+      const before = snapshotBooking(booking, booking.revision, state)
+      const proposed = snapshotBooking(booking, booking.revision + 1, state, {
+        sellAmountDeltaCents: financeQuote.price.amountCents,
+        addedItems: [
+          {
+            id: PENDING_ITEM_ID,
+            quantity: plan.quantity,
+            totalSellAmountCents: plan.totalSellAmountCents,
+            travelerIds: [],
+            allocations: [],
+          },
+        ],
+      })
+
+      const amendmentId = newId("booking_amendments")
+      const [amendment] = await tx
+        .insert(bookingAmendments)
+        .values({
+          id: amendmentId,
+          bookingId: booking.id,
+          travelerId: null,
+          kind: "item_add",
+          baseBookingRevision: booking.revision,
+          resultBookingRevision: booking.revision + 1,
+          requestedChange: input.addition,
+          acceptanceRequired: true,
+          policyDecisions: rosterPolicy(financeQuote.policyVersion),
+          subtotalDeltaCents: financeQuote.price.subtotalDeltaCents,
+          feeDeltaCents: financeQuote.price.feeDeltaCents,
+          taxDeltaCents: financeQuote.price.taxDeltaCents,
+          priceDeltaCents: financeQuote.price.amountCents,
+          priceCurrency: financeQuote.price.currency,
+          collectionAmountCents: financeQuote.price.collectionAmountCents,
+          refundAmountCents: financeQuote.price.refundAmountCents,
+          taxLines: financeQuote.price.taxLines,
+          financialConsequences: financeQuote.consequences,
+          effects: itemAddEffects(financeQuote.price),
+          quotedAt: now,
+          quoteExpiresAt,
+          operationPlan: [plan],
+          previewIdempotencyKey: context.idempotencyKey,
+          requestedBy: context.actorId ?? null,
+          requestedActor: context.actor,
+          reason: input.reason,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning()
+      if (!amendment) throw new Error("Booking Amendment insert did not return a row")
+
+      const revisions = await insertRevisions(tx, amendmentId, booking.id, [before, proposed], {
+        changedFields: ["items", "sellAmountCents"],
+        authorizedBy: context.actorId ?? null,
+        reason: input.reason,
+        now,
+      })
+      return { status: "ok" as const, amendment: serializeAmendment(amendment, revisions) }
+    })
+  },
+
+  /**
+   * Quote moving a Booking Item to a different departure.
+   *
+   * Prices the target date from the catalog, adds the operator's change fee,
+   * and settles a negative result per the caller's `refundHandling`. As with
+   * every other Amendment nothing is written to the booking here — the plan
+   * is stored and replayed at apply, so the number accepted is the number
+   * applied.
+   */
+  async previewItemMove(
+    db: PostgresJsDatabase,
+    bookingId: string,
+    input: PreviewBookingItemMoveInput,
+    context: BookingAmendmentCommandContext,
+    dependencies: BookingAmendmentServiceDependencies = {},
+  ): Promise<PreviewTravelerRosterChangeResult> {
+    if (!dependencies.finance) {
+      return {
+        status: "unsupported_configuration",
+        reason: "Finance runtime is required for priced Booking Amendments",
+      }
+    }
+    const finance = dependencies.finance
+    return db.transaction(async (rawTx) => {
+      const tx = rawTx as PostgresJsDatabase
+      const [booking] = await tx
+        .select()
+        .from(bookings)
+        .where(eq(bookings.id, bookingId))
+        .for("update")
+        .limit(1)
+      if (!booking) return { status: "not_found" as const }
+
+      const [existing] = await tx
+        .select()
+        .from(bookingAmendments)
+        .where(
+          and(
+            eq(bookingAmendments.bookingId, booking.id),
+            eq(bookingAmendments.previewIdempotencyKey, context.idempotencyKey),
+          ),
+        )
+        .limit(1)
+      if (existing) {
+        if (!sameItemMoveRequest(existing, input)) {
+          return { status: "idempotency_conflict" as const }
+        }
+        return { status: "ok" as const, amendment: await hydrateAmendment(tx, existing) }
+      }
+      if (booking.revision !== input.expectedBookingRevision) {
+        return { status: "stale_revision" as const, currentBookingRevision: booking.revision }
+      }
+      if (booking.status !== "confirmed" && booking.status !== "in_progress") {
+        return {
+          status: "unsupported_configuration" as const,
+          reason: "Only a live Booking can be moved",
+        }
+      }
+
+      const state = await loadSnapshotState(tx, booking.id)
+      let plan: BookingAmendmentItemMovePlan
+      try {
+        plan = await buildItemMovePlan(tx, booking, state, input.move)
+      } catch (error) {
+        if (error instanceof RosterPlanError) return mapPlanError(error)
+        throw error
+      }
+
+      const financeQuote = await finance.quoteBookingAmendment(tx, {
+        bookingId: booking.id,
+        currency: booking.sellCurrency,
+        lines: [
+          {
+            bookingItemId: plan.bookingItemId,
+            productId: plan.productId,
+            // Discounted before quoting: tax follows what the customer is
+            // actually charged, not the list difference.
+            subtotalDeltaCents: plan.fareDeltaCents - plan.fareDiscountCents,
+          },
+        ],
+        // The change fee is not a fare, so it is quoted as a fee rather than
+        // folded into the subtotal — the customer-facing record has to show
+        // "the new date costs more" separately from "we charge to change".
+        feeDeltaCents: plan.changeFeeCents,
+      })
+
+      const settled = settleMoveDirection(financeQuote.price, plan.refundHandling)
+      const now = dependencies.now?.() ?? new Date()
+      const quoteExpiresAt = new Date(
+        now.getTime() + (dependencies.quoteTtlMs ?? DEFAULT_BOOKING_AMENDMENT_QUOTE_TTL_MS),
+      )
+      const before = snapshotBooking(booking, booking.revision, state)
+      const proposed = snapshotBooking(booking, booking.revision + 1, state, {
+        sellAmountDeltaCents: settled.amountCents,
+        itemTotalOverride: new Map([[plan.bookingItemId, plan.totalSellAmountCents]]),
+      })
+
+      const amendmentId = newId("booking_amendments")
+      const [amendment] = await tx
+        .insert(bookingAmendments)
+        .values({
+          id: amendmentId,
+          bookingId: booking.id,
+          travelerId: null,
+          kind: "item_move",
+          baseBookingRevision: booking.revision,
+          resultBookingRevision: booking.revision + 1,
+          requestedChange: input.move,
+          acceptanceRequired: true,
+          policyDecisions: rosterPolicy(financeQuote.policyVersion),
+          subtotalDeltaCents: settled.subtotalDeltaCents,
+          feeDeltaCents: settled.feeDeltaCents,
+          taxDeltaCents: settled.taxDeltaCents,
+          priceDeltaCents: settled.amountCents,
+          priceCurrency: settled.currency,
+          collectionAmountCents: settled.collectionAmountCents,
+          refundAmountCents: settled.refundAmountCents,
+          taxLines: settled.taxLines,
+          financialConsequences: financeQuote.consequences,
+          effects: itemMoveEffects(settled, plan.supplierOperation !== null),
+          quotedAt: now,
+          quoteExpiresAt,
+          operationPlan: [plan],
+          previewIdempotencyKey: context.idempotencyKey,
+          requestedBy: context.actorId ?? null,
+          requestedActor: context.actor,
+          reason: input.reason,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning()
+      if (!amendment) throw new Error("Booking Amendment insert did not return a row")
+
+      const revisions = await insertRevisions(tx, amendmentId, booking.id, [before, proposed], {
+        changedFields: [
+          `items.${plan.bookingItemId}.availabilitySlotId`,
+          `items.${plan.bookingItemId}.totalSellAmountCents`,
+          "sellAmountCents",
+        ],
+        authorizedBy: context.actorId ?? null,
+        reason: input.reason,
+        now,
+      })
+      return { status: "ok" as const, amendment: serializeAmendment(amendment, revisions) }
+    })
+  },
+
   async accept(
     db: PostgresJsDatabase,
     amendmentId: string,
@@ -938,13 +1736,25 @@ export const bookingAmendmentService = {
     if (staged.amendment.kind === "traveler_correction") {
       return applyCorrection(db, staged.amendment.id, context, dependencies)
     }
+    if (staged.amendment.kind === "item_add") {
+      return finalizeItemAddApply(db, staged.amendment.id, context, dependencies)
+    }
     const supplierPlans = staged.amendment.operationPlan.flatMap((plan) =>
-      plan.supplierOperation
-        ? [{ ...plan.supplierOperation, bookingItemId: plan.bookingItemId }]
-        : [],
+      // Item-add plans carry no supplier operation — only owned inventory
+      // can be added this way, which `buildItemAddPlan` enforces. A move
+      // can carry one, because changing the date of an existing supplier
+      // reservation is a modify the port already expresses.
+      isItemAddPlan(plan) || !plan.supplierOperation
+        ? []
+        : [{ ...plan.supplierOperation, bookingItemId: plan.bookingItemId }],
     )
     if (supplierPlans.length === 0) {
-      return finalizeRosterApply(db, staged.amendment.id, context, dependencies)
+      return finalizeApplyForKind(staged.amendment.kind)(
+        db,
+        staged.amendment.id,
+        context,
+        dependencies,
+      )
     }
     if (!dependencies.supplier) {
       await setAmendmentFailure(
@@ -967,7 +1777,12 @@ export const bookingAmendmentService = {
     })
     const supplierResult = await persistSupplierOutcomes(db, staged.amendment.id, outcomes, now)
     if (supplierResult === "secured") {
-      return finalizeRosterApply(db, staged.amendment.id, context, dependencies)
+      return finalizeApplyForKind(staged.amendment.kind)(
+        db,
+        staged.amendment.id,
+        context,
+        dependencies,
+      )
     }
     if (supplierResult === "idempotency_conflict") return { status: "idempotency_conflict" }
     const amendment = await this.get(db, staged.amendment.bookingId, staged.amendment.id)
@@ -996,7 +1811,7 @@ export const bookingAmendmentService = {
     })
     const supplierResult = await persistSupplierOutcomes(db, amendmentId, outcomes, now)
     if (supplierResult === "secured") {
-      return finalizeRosterApply(db, amendmentId, context, dependencies)
+      return finalizeApplyForKind(amendment.kind)(db, amendmentId, context, dependencies)
     }
     if (supplierResult === "idempotency_conflict") return { status: "idempotency_conflict" }
     const current = await this.get(db, bookingId, amendmentId)
@@ -1073,6 +1888,103 @@ async function insertRevisions(
       })),
     )
     .returning()
+}
+
+/**
+ * Stands in for the Booking Item an `item_add` will create, in the quote
+ * and in the proposed revision snapshot. The row does not exist until
+ * apply, but the snapshot has to show the service being bought.
+ */
+const PENDING_ITEM_ID = "pending"
+
+/**
+ * Whether a replayed preview describes the same addition as the stored one.
+ *
+ * Compared field by field rather than by serialising both sides: the stored
+ * copy has been through `jsonb`, which normalises key order, so two
+ * identical requests would not produce identical JSON strings and every
+ * replay would look like a conflict.
+ */
+/**
+ * Apply the operator's chosen handling for a move that came out cheaper.
+ *
+ * `waive` is the only one that changes the money: the customer keeps the
+ * original price, so the delta is floored at zero rather than recorded as
+ * something owed back. `refund` and `travel_credit` both leave the amount
+ * intact — they differ in what finance does with it at apply, not in what
+ * the move costs.
+ */
+function settleMoveDirection(
+  price: BookingAmendmentPrice,
+  handling: BookingItemMoveRefundHandling,
+): BookingAmendmentPrice {
+  // Tested on the fare alone, not on the net. `amountCents` already has the
+  // change fee folded in, so a 1,000-cent cheaper departure carrying a
+  // 1,500-cent fee nets +500 and would have read as "not a reduction" — the
+  // waive silently dropped, charging 500 where the fee alone is payable.
+  // Finance taxes only the fare lines, so subtracting the fee leaves exactly
+  // the fare-and-tax component.
+  const fareComponentCents = price.amountCents - price.feeDeltaCents
+  if (handling !== "waive" || fareComponentCents >= 0) return price
+  const feeOnlyCents = Math.max(price.feeDeltaCents, 0)
+  return {
+    ...price,
+    subtotalDeltaCents: 0,
+    taxDeltaCents: 0,
+    amountCents: feeOnlyCents,
+    collectionAmountCents: feeOnlyCents,
+    refundAmountCents: 0,
+    taxLines: [],
+  }
+}
+
+function sameItemMoveRequest(row: BookingAmendmentRow, input: PreviewBookingItemMoveInput) {
+  const requested = row.requestedChange
+  if (requested.type !== "item_move") return false
+  if (row.baseBookingRevision !== input.expectedBookingRevision || row.reason !== input.reason) {
+    return false
+  }
+  // Field by field, not JSON.stringify: the stored copy has been through
+  // jsonb, which normalises key order.
+  return (
+    requested.bookingItemId === input.move.bookingItemId &&
+    requested.availabilitySlotId === input.move.availabilitySlotId &&
+    requested.changeFeeCents === input.move.changeFeeCents &&
+    requested.fareDiscountCents === input.move.fareDiscountCents &&
+    requested.refundHandling === input.move.refundHandling
+  )
+}
+
+function sameItemAdditionRequest(row: BookingAmendmentRow, input: PreviewBookingItemAdditionInput) {
+  const requested = row.requestedChange
+  if (requested.type !== "item_add") return false
+  if (row.baseBookingRevision !== input.expectedBookingRevision || row.reason !== input.reason) {
+    return false
+  }
+  const addition = input.addition
+  return (
+    requested.productId === addition.productId &&
+    (requested.optionId ?? null) === (addition.optionId ?? null) &&
+    (requested.optionUnitId ?? null) === (addition.optionUnitId ?? null) &&
+    (requested.availabilitySlotId ?? null) === (addition.availabilitySlotId ?? null) &&
+    requested.quantity === addition.quantity &&
+    (requested.title ?? null) === (addition.title ?? null)
+  )
+}
+
+/**
+ * The traveler a non-`item_add` Amendment concerns.
+ *
+ * `traveler_id` is nullable only so `item_add` can leave it unset; the
+ * `ck_booking_amendments_traveler_required` constraint guarantees every
+ * other kind has one. Throwing here reports a violated invariant instead
+ * of silently querying `id = NULL` and finding nothing.
+ */
+function requireAmendmentTravelerId(amendment: BookingAmendmentRow): string {
+  if (!amendment.travelerId) {
+    throw new Error(`Booking Amendment ${amendment.id} of kind ${amendment.kind} has no traveler`)
+  }
+  return amendment.travelerId
 }
 
 function sameRosterRequest(row: BookingAmendmentRow, input: PreviewTravelerRosterChangeInput) {
@@ -1222,12 +2134,13 @@ async function applyCorrection(
     }
     const requested = amendment.requestedChange
     if (requested.type !== "traveler_correction") return { status: "invalid_state" as const }
+    const amendmentTravelerId = requireAmendmentTravelerId(amendment)
     const [traveler] = await tx
       .update(bookingTravelers)
       .set({ ...requested.patch, updatedAt: dependencies.now?.() ?? new Date() })
       .where(
         and(
-          eq(bookingTravelers.id, amendment.travelerId),
+          eq(bookingTravelers.id, amendmentTravelerId),
           eq(bookingTravelers.bookingId, booking.id),
         ),
       )
@@ -1245,6 +2158,18 @@ async function applyCorrection(
     await writeActivity(tx, amendment, context, "Traveler correction applied", now)
     return { status: "ok", amendment: await hydrateAmendment(tx, applied) }
   })
+}
+
+/**
+ * Which projection writes the change once any supplier leg has secured.
+ *
+ * Kept as one lookup rather than a branch at each call site: apply reaches
+ * the finalizer through three paths (no supplier, supplier secured on
+ * dispatch, supplier secured on reconcile) and a new kind that is wired
+ * into only two of them fails in exactly the case that is hardest to test.
+ */
+function finalizeApplyForKind(kind: BookingAmendmentRow["kind"]) {
+  return kind === "item_move" ? finalizeItemMoveApply : finalizeRosterApply
 }
 
 async function finalizeRosterApply(
@@ -1277,11 +2202,17 @@ async function finalizeRosterApply(
         return { status: "invalid_state" as const }
       }
       const now = dependencies.now?.() ?? new Date()
-      await applyCapacityAndAllocationPlan(tx, amendment.operationPlan, now)
+      // A roster Amendment only ever carries roster plans; `item_add` is
+      // dispatched to its own finalizer well before this point.
+      const rosterPlans = amendment.operationPlan.filter(
+        (plan): plan is BookingAmendmentRosterItemPlan => !isItemAddPlan(plan),
+      )
+      await applyCapacityAndAllocationPlan(tx, rosterPlans, now)
+      const amendmentTravelerId = requireAmendmentTravelerId(amendment)
       const requested = amendment.requestedChange
       if (requested.type === "traveler_add") {
         await tx.insert(bookingTravelers).values({
-          id: amendment.travelerId,
+          id: amendmentTravelerId,
           bookingId: booking.id,
           personId: requested.traveler.personId ?? null,
           participantType: requested.traveler.participantType,
@@ -1299,7 +2230,7 @@ async function finalizeRosterApply(
           requested.bookingItemIds.map((bookingItemId) => ({
             id: newId("booking_item_travelers"),
             bookingItemId,
-            travelerId: amendment.travelerId,
+            travelerId: amendmentTravelerId,
             role: "traveler" as const,
             isPrimary: false,
             createdAt: now,
@@ -1310,21 +2241,21 @@ async function finalizeRosterApply(
           .delete(bookingItemTravelers)
           .where(
             and(
-              eq(bookingItemTravelers.travelerId, amendment.travelerId),
+              eq(bookingItemTravelers.travelerId, amendmentTravelerId),
               inArray(bookingItemTravelers.bookingItemId, requested.bookingItemIds),
             ),
           )
         const [remainingAssignment] = await tx
           .select({ id: bookingItemTravelers.id })
           .from(bookingItemTravelers)
-          .where(eq(bookingItemTravelers.travelerId, amendment.travelerId))
+          .where(eq(bookingItemTravelers.travelerId, amendmentTravelerId))
           .limit(1)
         if (!remainingAssignment) {
           await tx
             .delete(bookingTravelers)
             .where(
               and(
-                eq(bookingTravelers.id, amendment.travelerId),
+                eq(bookingTravelers.id, amendmentTravelerId),
                 eq(bookingTravelers.bookingId, booking.id),
               ),
             )
@@ -1332,7 +2263,7 @@ async function finalizeRosterApply(
       } else {
         return { status: "invalid_state" as const }
       }
-      for (const plan of amendment.operationPlan) {
+      for (const plan of rosterPlans) {
         await tx
           .update(bookingItems)
           // agent-quality: raw-sql reviewed -- owner: bookings; integer deltas are server-derived from the immutable Amendment plan and Drizzle binds them.
@@ -1353,6 +2284,7 @@ async function finalizeRosterApply(
         price,
         consequences: amendment.financialConsequences,
         reason: amendment.reason,
+        now,
       })
       await advanceBookingRevision(tx, booking.id, amendment.baseBookingRevision, {
         revision: amendment.resultBookingRevision,
@@ -1399,6 +2331,337 @@ async function finalizeRosterApply(
         const amendment = await hydrateAmendment(db, failed)
         return { status: "manual_review", amendment }
       }
+      return { status: "availability_changed", bookingItemId: error.bookingItemId ?? "unknown" }
+    }
+    throw error
+  }
+}
+
+/**
+ * Write the service the Amendment quoted: the Booking Item, its capacity
+ * allocation, and the departure decrement — then advance the revision and
+ * hand finance the delta to collect.
+ *
+ * The slot decrement is a conditional UPDATE guarded on the departure still
+ * being open, in-window, and having room, exactly as the roster path does.
+ * A departure that filled up between the quote and the apply fails the
+ * guard and the whole transaction rolls back rather than overselling.
+ */
+/**
+ * Carry the Booking Item onto its new departure: give the old one's
+ * capacity back, take the new one's, and reprice the line to the fare that
+ * was quoted.
+ *
+ * Both capacity legs happen in one transaction, and the acquire is the same
+ * conditional UPDATE the other paths use — guarded on the target still being
+ * open, in-window, and having room. A departure that filled up between quote
+ * and commit fails the guard and the whole move rolls back, so the booking
+ * is never left holding neither date.
+ *
+ * The release is deliberately unguarded on status: giving a seat back to a
+ * departure that has since closed is always safe, and refusing it would
+ * strand capacity on exactly the dates operators most often move away from.
+ */
+async function finalizeItemMoveApply(
+  db: PostgresJsDatabase,
+  amendmentId: string,
+  context: BookingAmendmentCommandContext,
+  dependencies: BookingAmendmentServiceDependencies,
+): Promise<ApplyBookingAmendmentResult> {
+  if (!dependencies.finance) return { status: "unsupported_capability" }
+  const finance = dependencies.finance
+  try {
+    return await db.transaction(async (rawTx) => {
+      const tx = rawTx as PostgresJsDatabase
+      const locked = await lockAmendment(tx, amendmentId)
+      if (!locked) return { status: "not_found" as const }
+      const { booking, amendment } = locked
+      if (amendment.status === "applied") {
+        return { status: "ok" as const, amendment: await hydrateAmendment(tx, amendment) }
+      }
+      if (booking.revision !== amendment.baseBookingRevision) {
+        return { status: "stale_revision" as const, currentBookingRevision: booking.revision }
+      }
+      const plan = amendment.operationPlan.find(isItemMovePlan)
+      if (!plan) return { status: "invalid_state" as const }
+
+      const now = dependencies.now?.() ?? new Date()
+
+      // Take the new departure's capacity first. If this fails there is
+      // nothing to undo, whereas releasing first and failing here would
+      // leave the booking holding no seat at all.
+      const [claimed] = await tx
+        .update(availabilitySlotsRef)
+        // agent-quality: raw-sql reviewed -- owner: bookings; conditional capacity decrement uses locked, server-owned plan data and Drizzle identifiers.
+        .set({
+          remainingPax: sql`CASE WHEN ${availabilitySlotsRef.unlimited} THEN ${availabilitySlotsRef.remainingPax} ELSE ${availabilitySlotsRef.remainingPax} - ${plan.quantity} END`,
+          updatedAt: now,
+        })
+        .where(
+          and(
+            eq(availabilitySlotsRef.id, plan.toAvailabilitySlotId),
+            ...(plan.productId ? [eq(availabilitySlotsRef.productId, plan.productId)] : []),
+            eq(availabilitySlotsRef.status, "open"),
+            eq(availabilitySlotsRef.pastCutoff, false),
+            eq(availabilitySlotsRef.tooEarly, false),
+            // agent-quality: raw-sql reviewed -- owner: bookings; atomic positive-capacity guard over a Drizzle identifier.
+            or(
+              eq(availabilitySlotsRef.unlimited, true),
+              sql`${availabilitySlotsRef.remainingPax} >= ${plan.quantity}`,
+            ),
+          ),
+        )
+        .returning({ id: availabilitySlotsRef.id })
+      if (!claimed) {
+        throw new RosterPlanError(
+          "availability_changed",
+          "The target departure filled up",
+          plan.bookingItemId,
+        )
+      }
+
+      if (plan.fromAvailabilitySlotId) {
+        await tx
+          .update(availabilitySlotsRef)
+          // agent-quality: raw-sql reviewed -- owner: bookings; capacity restore uses locked, server-owned plan data and Drizzle identifiers.
+          .set({
+            remainingPax: sql`CASE WHEN ${availabilitySlotsRef.unlimited} THEN ${availabilitySlotsRef.remainingPax} ELSE ${availabilitySlotsRef.remainingPax} + ${plan.quantity} END`,
+            // A departure that sold out only because of this booking becomes
+            // sellable again the moment the booking leaves it.
+            status: sql`CASE WHEN ${availabilitySlotsRef.status} = 'sold_out' THEN 'open' ELSE ${availabilitySlotsRef.status} END`,
+            updatedAt: now,
+          })
+          .where(eq(availabilitySlotsRef.id, plan.fromAvailabilitySlotId))
+      }
+
+      await tx
+        .update(bookingAllocations)
+        .set({ availabilitySlotId: plan.toAvailabilitySlotId, updatedAt: now })
+        .where(eq(bookingAllocations.id, plan.allocationId))
+
+      await tx
+        .update(bookingItems)
+        .set({
+          availabilitySlotId: plan.toAvailabilitySlotId,
+          unitSellAmountCents: plan.unitSellAmountCents,
+          totalSellAmountCents: plan.totalSellAmountCents,
+          serviceDate: plan.serviceDate,
+          startsAt: plan.startsAt ? new Date(plan.startsAt) : null,
+          endsAt: plan.endsAt ? new Date(plan.endsAt) : null,
+          departureLabelSnapshot: plan.departureLabelSnapshot,
+          updatedAt: now,
+        })
+        .where(and(eq(bookingItems.id, plan.bookingItemId), eq(bookingItems.bookingId, booking.id)))
+
+      const price = priceFromRow(amendment)
+      await finance.recordBookingAmendment(tx, {
+        amendmentId: amendment.id,
+        bookingId: booking.id,
+        idempotencyKey: context.idempotencyKey,
+        price,
+        consequences: amendment.financialConsequences,
+        reason: amendment.reason,
+        now,
+        refundHandling: plan.refundHandling,
+        issuedToPersonId: booking.personId,
+      })
+      await advanceBookingRevision(tx, booking.id, amendment.baseBookingRevision, {
+        revision: amendment.resultBookingRevision,
+        sellAmountCents:
+          booking.sellAmountCents == null
+            ? amendment.priceDeltaCents
+            : booking.sellAmountCents + amendment.priceDeltaCents,
+        updatedAt: now,
+      })
+      const applied = await markApplied(tx, amendment, context, now, {
+        ...amendment.effects,
+        finance: "recorded",
+        supplier: amendment.effects.supplier === "not_required" ? "not_required" : "secured",
+        allocation: "applied",
+      })
+      await writeActivity(
+        tx,
+        amendment,
+        context,
+        `Service moved to ${plan.departureLabelSnapshot ?? plan.toAvailabilitySlotId}`,
+        now,
+      )
+      return { status: "ok" as const, amendment: await hydrateAmendment(tx, applied) }
+    })
+  } catch (error) {
+    if (error instanceof RosterPlanError && error.code === "availability_changed") {
+      const [current] = await db
+        .select()
+        .from(bookingAmendments)
+        .where(eq(bookingAmendments.id, amendmentId))
+        .limit(1)
+      // A supplier that already moved the reservation while the local
+      // projection failed is not something to retry blindly.
+      const supplierAlreadySecured = current?.effects.supplier === "secured"
+      await setAmendmentFailure(
+        db,
+        amendmentId,
+        supplierAlreadySecured ? "manual_review" : "failed",
+        supplierAlreadySecured
+          ? "local_projection_failed_after_supplier_secured"
+          : "availability_changed",
+        dependencies.now?.() ?? new Date(),
+      )
+      if (supplierAlreadySecured && current) {
+        // Re-read rather than hydrating `current`: it was loaded before
+        // `setAmendmentFailure` wrote the new status, so returning it would
+        // hand back a `manual_review` result whose embedded amendment still
+        // says `applying` and carries no failure code.
+        const [failed] = await db
+          .select()
+          .from(bookingAmendments)
+          .where(eq(bookingAmendments.id, amendmentId))
+          .limit(1)
+        if (!failed) return { status: "not_found" }
+        const amendment = await hydrateAmendment(db, failed)
+        return { status: "manual_review", amendment }
+      }
+      return { status: "availability_changed", bookingItemId: error.bookingItemId ?? "unknown" }
+    }
+    throw error
+  }
+}
+
+async function finalizeItemAddApply(
+  db: PostgresJsDatabase,
+  amendmentId: string,
+  context: BookingAmendmentCommandContext,
+  dependencies: BookingAmendmentServiceDependencies,
+): Promise<ApplyBookingAmendmentResult> {
+  if (!dependencies.finance) return { status: "unsupported_capability" }
+  const finance = dependencies.finance
+  try {
+    return await db.transaction(async (rawTx) => {
+      const tx = rawTx as PostgresJsDatabase
+      const locked = await lockAmendment(tx, amendmentId)
+      if (!locked) return { status: "not_found" as const }
+      const { booking, amendment } = locked
+      if (amendment.status === "applied") {
+        return { status: "ok" as const, amendment: await hydrateAmendment(tx, amendment) }
+      }
+      if (booking.revision !== amendment.baseBookingRevision) {
+        return { status: "stale_revision" as const, currentBookingRevision: booking.revision }
+      }
+      const plan = amendment.operationPlan.find(isItemAddPlan)
+      if (!plan) return { status: "invalid_state" as const }
+
+      const now = dependencies.now?.() ?? new Date()
+
+      if (plan.availabilitySlotId) {
+        const [updated] = await tx
+          .update(availabilitySlotsRef)
+          // agent-quality: raw-sql reviewed -- owner: bookings; conditional capacity decrement uses locked, server-owned plan data and Drizzle identifiers.
+          .set({
+            remainingPax: sql`CASE WHEN ${availabilitySlotsRef.unlimited} THEN ${availabilitySlotsRef.remainingPax} ELSE ${availabilitySlotsRef.remainingPax} - ${plan.quantity} END`,
+            updatedAt: now,
+          })
+          .where(
+            and(
+              eq(availabilitySlotsRef.id, plan.availabilitySlotId),
+              // Re-asserted at apply, not just at preview: the decrement
+              // must land on the product the item claims, or capacity
+              // moves on one product while the booking records another.
+              eq(availabilitySlotsRef.productId, plan.productId),
+              eq(availabilitySlotsRef.status, "open"),
+              eq(availabilitySlotsRef.pastCutoff, false),
+              eq(availabilitySlotsRef.tooEarly, false),
+              // agent-quality: raw-sql reviewed -- owner: bookings; atomic positive-capacity guard over a Drizzle identifier.
+              or(
+                eq(availabilitySlotsRef.unlimited, true),
+                sql`${availabilitySlotsRef.remainingPax} >= ${plan.quantity}`,
+              ),
+            ),
+          )
+          .returning({ id: availabilitySlotsRef.id })
+        if (!updated) {
+          throw new RosterPlanError("availability_changed", "Departure filled up", PENDING_ITEM_ID)
+        }
+      }
+
+      const [item] = await tx
+        .insert(bookingItems)
+        .values({
+          bookingId: booking.id,
+          title: plan.title,
+          itemType: "unit",
+          status: "confirmed",
+          quantity: plan.quantity,
+          sellCurrency: plan.sellCurrency,
+          unitSellAmountCents: plan.unitSellAmountCents,
+          totalSellAmountCents: plan.totalSellAmountCents,
+          costCurrency: plan.costCurrency,
+          unitCostAmountCents: plan.unitCostAmountCents,
+          totalCostAmountCents: plan.totalCostAmountCents,
+          serviceDate: plan.serviceDate,
+          productId: plan.productId,
+          optionId: plan.optionId,
+          optionUnitId: plan.optionUnitId,
+          availabilitySlotId: plan.availabilitySlotId,
+          productNameSnapshot: plan.productNameSnapshot,
+          optionNameSnapshot: plan.optionNameSnapshot,
+          unitNameSnapshot: plan.unitNameSnapshot,
+          departureLabelSnapshot: plan.departureLabelSnapshot,
+          createdAt: now,
+          updatedAt: now,
+        })
+        .returning()
+      if (!item) throw new Error("Booking Item insert did not return a row")
+
+      await tx.insert(bookingAllocations).values({
+        bookingId: booking.id,
+        bookingItemId: item.id,
+        productId: plan.productId,
+        optionId: plan.optionId,
+        optionUnitId: plan.optionUnitId,
+        availabilitySlotId: plan.availabilitySlotId,
+        quantity: plan.quantity,
+        allocationType: "unit",
+        status: "confirmed",
+        confirmedAt: now,
+        createdAt: now,
+        updatedAt: now,
+      })
+
+      const price = priceFromRow(amendment)
+      await finance.recordBookingAmendment(tx, {
+        amendmentId: amendment.id,
+        bookingId: booking.id,
+        idempotencyKey: context.idempotencyKey,
+        price,
+        consequences: amendment.financialConsequences,
+        reason: amendment.reason,
+        now,
+      })
+      await advanceBookingRevision(tx, booking.id, amendment.baseBookingRevision, {
+        revision: amendment.resultBookingRevision,
+        sellAmountCents:
+          booking.sellAmountCents == null
+            ? amendment.priceDeltaCents
+            : booking.sellAmountCents + amendment.priceDeltaCents,
+        updatedAt: now,
+      })
+      const applied = await markApplied(tx, amendment, context, now, {
+        ...amendment.effects,
+        finance: "recorded",
+        allocation: "applied",
+      })
+      await writeActivity(tx, amendment, context, `Service "${plan.title}" added`, now)
+      return { status: "ok" as const, amendment: await hydrateAmendment(tx, applied) }
+    })
+  } catch (error) {
+    if (error instanceof RosterPlanError && error.code === "availability_changed") {
+      await setAmendmentFailure(
+        db,
+        amendmentId,
+        "failed",
+        "availability_changed",
+        dependencies.now?.() ?? new Date(),
+      )
       return { status: "availability_changed", bookingItemId: error.bookingItemId ?? "unknown" }
     }
     throw error

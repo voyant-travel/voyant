@@ -17,16 +17,20 @@ import {
   financeAppApiRuntimePort,
   financeDepartureProfitabilityRuntimePort,
 } from "@voyant-travel/finance-contracts/runtime-port"
+import { financeInvoiceDocumentProviderPort } from "./contracts/invoice-document-provider.js"
 import {
   financeReceivablesDatasetDefinition,
   financeReportingTemplates,
   financeReportingWidgets,
+  financeUnperformedServicesDatasetDefinition,
 } from "./reporting-definitions.js"
 import {
   financeAccommodationsPaymentPolicyRuntimePort,
   financeCheckoutPaymentStartersRuntimePort,
   financeCruisesPaymentPolicyRuntimePort,
   financeDistributionPaymentPolicyRuntimePort,
+  financeFxRateCaptureRuntimePort,
+  financeFxReferenceRuntimePort,
   financeHostRuntimePort,
   financeInventoryPaymentPolicyRuntimePort,
   financeInvoiceSettlementPollerRuntimePort,
@@ -50,6 +54,39 @@ import {
 
 const paymentAdapterRuntimePortReference = { id: "payments.adapter.runtime" } as const
 
+const financeInvoiceDocumentResources = [
+  {
+    id: "@voyant-travel/finance#resource.document-storage",
+    kind: "document-storage",
+    required: true,
+  },
+  {
+    id: "@voyant-travel/finance#resource.document-renderer",
+    kind: "document-renderer",
+    required: true,
+  },
+] as const
+
+const invoiceDocumentJobs = [
+  {
+    id: "finance.invoice-document-renditions",
+    schedule: { every: "1m", overlap: "skip" as const },
+    scheduling: {
+      required: true,
+      profiles: {
+        eager: { every: "1m", overlap: "skip" as const },
+        economical: { every: "5m", overlap: "skip" as const },
+        "scale-to-zero": { cron: "*/15 * * * *", overlap: "skip" as const },
+      },
+    },
+    wakeup: true,
+    runtime: {
+      entry: "@voyant-travel/finance/invoice-document-job",
+      export: "runDueInvoiceDocumentRenditionsJob",
+    },
+  },
+] as const
+
 /** Import-cheap deployment declaration owned by the finance package. */
 export const financeVoyantModule = defineModule({
   id: "@voyant-travel/finance",
@@ -67,6 +104,12 @@ export const financeVoyantModule = defineModule({
       optional: true,
       cardinality: "many",
     }),
+    requirePort(financeInvoiceDocumentProviderPort, { optional: true }),
+    // Persisting a resolved rate needs the module that owns `exchange_rates`.
+    // Optional: without it finance still converts, it just cannot hand the
+    // document a rate-set identity that outlives the request (voyant#4703).
+    requirePort(financeFxRateCaptureRuntimePort, { optional: true }),
+    requirePort(financeFxReferenceRuntimePort, { optional: true }),
   ],
   provides: {
     capabilities: ["finance.data-owner", "finance.payment-sessions"],
@@ -77,8 +120,31 @@ export const financeVoyantModule = defineModule({
       providePort(financeHostRuntimePort),
       providePort(financeAppApiRuntimePort),
       providePort(financeDepartureProfitabilityRuntimePort),
+      providePort(financeInvoiceDocumentProviderPort),
     ],
   },
+  // An invoice PDF needs a renderer and somewhere to put it. Declaring both
+  // makes a deployment that cannot produce one say so when the graph resolves,
+  // rather than at the HTTP 501 these routes used to return
+  // (voyant#4668).
+  resources: financeInvoiceDocumentResources,
+  providers: [
+    {
+      id: "@voyant-travel/finance#provider.invoice-document",
+      port: financeInvoiceDocumentProviderPort.id,
+      selection: { role: "invoiceDocumentArtifact", value: "standard" },
+      uses: {
+        resources: [
+          "@voyant-travel/finance#resource.document-storage",
+          "@voyant-travel/finance#resource.document-renderer",
+        ],
+      },
+      runtime: {
+        entry: "@voyant-travel/finance/runtime-contributor",
+        export: "createFinanceInvoiceDocumentGraphProvider",
+      },
+    },
+  ],
   api: [
     {
       id: "@voyant-travel/finance#api.admin",
@@ -145,6 +211,18 @@ export const financeVoyantModule = defineModule({
           export: "financeReceivablesDataset",
         },
       },
+      {
+        id: financeUnperformedServicesDatasetDefinition.id,
+        version: financeUnperformedServicesDatasetDefinition.version,
+        label: financeUnperformedServicesDatasetDefinition.label,
+        description: financeUnperformedServicesDatasetDefinition.description,
+        descriptor: financeUnperformedServicesDatasetDefinition,
+        requiredScopes: financeUnperformedServicesDatasetDefinition.requiredScopes,
+        runtime: {
+          entry: "@voyant-travel/finance/reporting-unperformed-services",
+          export: "financeUnperformedServicesDataset",
+        },
+      },
     ],
     widgets: financeReportingWidgets.map((widget) => ({
       id: widget.id,
@@ -173,6 +251,10 @@ export const financeVoyantModule = defineModule({
       version: template.version,
       label: template.label,
       description: template.description,
+      // The parameters reach the graph so a host can render the template's own
+      // inputs before instantiating it. Dropping them here is what would leave
+      // an operator with a period-scoped report and nowhere to say which period.
+      ...(template.parameters.length > 0 ? { parameters: template.parameters } : {}),
       requirements: template.widgets.map((widget) => ({
         kind: "widget" as const,
         id: widget.source.kind === "preset" ? widget.source.widgetId : widget.id,
@@ -452,6 +534,52 @@ export const financeVoyantModule = defineModule({
       risk: "high",
     },
     {
+      id: "@voyant-travel/finance#tool.record-payment",
+      name: "record_payment",
+      runtime: {
+        entry: "@voyant-travel/finance/tools",
+        export: "recordPaymentTool",
+      },
+      requiredScopes: ["finance:write"],
+      context: ["finance"],
+      // `medium`: the money arrived before the call and this is the record
+      // catching up with it. What changes is what the invoice honestly reports.
+      risk: "medium",
+      // Declared for the same reason the dispute Tool declares its own: the
+      // trailing noun of `/finance/payments/{id}` is `payment` too, and this
+      // Tool records a NEW payment against an invoice. It does not amend or
+      // delete one, so it must not claim coverage of those.
+      adminWrites: ["/v1/admin/finance/invoices/{id}/payments"],
+    },
+    {
+      id: "@voyant-travel/finance#tool.stamp-invoice-fx-rate",
+      name: "stamp_invoice_fx_rate",
+      runtime: {
+        entry: "@voyant-travel/finance/tools",
+        export: "stampInvoiceFxRateTool",
+      },
+      requiredScopes: ["finance:write"],
+      context: ["finance"],
+      // `medium`: it records what the invoice was already worth on its own
+      // date. Nothing about the money moves, and a wrong rate is re-stampable.
+      risk: "medium",
+      // Declared: `fx-stamp` is not one of the write-coverage checker's action
+      // verbs, so the path reads as its own resource under `invoice`.
+      adminWrites: ["/v1/admin/finance/invoices/{id}/fx-stamp"],
+    },
+    {
+      id: "@voyant-travel/finance#tool.stamp-payment-fx-rate",
+      name: "stamp_payment_fx_rate",
+      runtime: {
+        entry: "@voyant-travel/finance/tools",
+        export: "stampPaymentFxRateTool",
+      },
+      requiredScopes: ["finance:write"],
+      context: ["finance"],
+      risk: "medium",
+      adminWrites: ["/v1/admin/finance/payments/{id}/fx-stamp"],
+    },
+    {
       id: "@voyant-travel/finance#tool.record-payment-dispute",
       name: "record_payment_dispute",
       runtime: {
@@ -611,6 +739,31 @@ export const financeVoyantModule = defineModule({
       from: { tools: ["@voyant-travel/finance#tool.record-refund-settlement"] },
     },
     {
+      id: "@voyant-travel/finance#action.record-payment",
+      capabilityId: "finance:payment-record",
+      version: "v1",
+      kind: "execute",
+      targetType: "invoice",
+      commandTargetField: "invoiceId",
+      resource: "finance",
+      action: "write",
+      requiredScopes: ["finance:write"],
+      risk: "medium",
+      ledger: "required",
+      // `never`, like the dispute record: the payment happened outside this
+      // system and the operator is entering what already occurred. An approval
+      // per payment would stall the back-entry sweep this Tool exists for while
+      // the invoice kept reporting a balance nobody owes. The service still
+      // refuses an overpayment and an invoice that cannot take a payment.
+      approval: "never",
+      reversible: false,
+      allowedActorTypes: ["staff", "system"],
+      availability: { status: "available" },
+      effectBoundary: "local",
+      targetLifecycle: "existing",
+      from: { tools: ["@voyant-travel/finance#tool.record-payment"] },
+    },
+    {
       id: "@voyant-travel/finance#action.record-payment-dispute",
       capabilityId: "finance:payment-dispute-record",
       version: "v1",
@@ -633,6 +786,50 @@ export const financeVoyantModule = defineModule({
       effectBoundary: "local",
       targetLifecycle: "existing",
       from: { tools: ["@voyant-travel/finance#tool.record-payment-dispute"] },
+    },
+    {
+      id: "@voyant-travel/finance#action.stamp-invoice-fx-rate",
+      capabilityId: "finance:invoice-fx-stamp",
+      version: "v1",
+      kind: "execute",
+      targetType: "invoice",
+      commandTargetField: "invoiceId",
+      resource: "finance",
+      action: "write",
+      requiredScopes: ["finance:write"],
+      risk: "medium",
+      ledger: "required",
+      // `never`: this records what the document was already worth on its own
+      // date. Gating it behind an approval would stall the back-entry sweep it
+      // exists for, while the period return keeps having no lei figure at all.
+      // The service refuses to replace a standing stamp without `force`.
+      approval: "never",
+      reversible: true,
+      allowedActorTypes: ["staff", "system"],
+      availability: { status: "available" },
+      effectBoundary: "local",
+      targetLifecycle: "existing",
+      from: { tools: ["@voyant-travel/finance#tool.stamp-invoice-fx-rate"] },
+    },
+    {
+      id: "@voyant-travel/finance#action.stamp-payment-fx-rate",
+      capabilityId: "finance:payment-fx-stamp",
+      version: "v1",
+      kind: "execute",
+      targetType: "payment",
+      commandTargetField: "paymentId",
+      resource: "finance",
+      action: "write",
+      requiredScopes: ["finance:write"],
+      risk: "medium",
+      ledger: "required",
+      approval: "never",
+      reversible: true,
+      allowedActorTypes: ["staff", "system"],
+      availability: { status: "available" },
+      effectBoundary: "local",
+      targetLifecycle: "existing",
+      from: { tools: ["@voyant-travel/finance#tool.stamp-payment-fx-rate"] },
     },
     {
       id: "@voyant-travel/finance#action.issue-invoice-from-booking",
@@ -681,6 +878,24 @@ export const financeVoyantModule = defineModule({
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },
+  // The trigger and the recovery leg for invoice documents (voyant#4668). The
+  // subscriber is the latency path — booking create cannot render inside its
+  // own transaction, so it writes the request and this turns it into a
+  // document as soon as the invoice is issued. The job covers everything the
+  // subscriber cannot: a restart mid-render, a transient renderer failure, and
+  // a rendition requested against an invoice issued long ago.
+  subscribers: [
+    {
+      id: "@voyant-travel/finance#subscriber.invoice-issued-document",
+      eventType: "invoice.issued",
+      source: "@voyant-travel/finance/invoice-issued-subscriber",
+      runtime: {
+        entry: "@voyant-travel/finance/invoice-issued-subscriber",
+        export: "createInvoiceIssuedDocumentSubscriberGraphRuntime",
+      },
+    },
+  ],
+  jobs: invoiceDocumentJobs,
   meta: {
     ownership: "package",
   },

@@ -25,8 +25,10 @@ import {
   PaymentValidationError,
   paymentSettlementAmountSql,
   payments,
+  publishFinanceDomainEvent,
   recomputeInvoiceTotalsAfterPaymentChange,
   resolveFxMoneyBaseAmount,
+  resolveReportingStamp,
   settleCoveredBookingPaymentSchedules,
   shouldNormalizeBaseAmount,
   sql,
@@ -324,19 +326,35 @@ export const financeInvoicePaymentService = {
     await assertInvoiceAcceptsNewPayment(db, invoice)
 
     const { idempotencyKey: requestedIdempotencyKey, ...paymentInput } = data
-    const paymentData = await resolveFxMoneyBaseAmount(db, paymentInput, {
+    const settlement = await resolveFxMoneyBaseAmount(db, paymentInput, {
       ...runtime,
       targetBaseCurrency: invoice.currency,
       fallbackFxRateSetId: invoice.fxRateSetId ?? null,
       date: data.paymentDate,
     })
 
-    assertPaymentCanSettleInvoice(invoice.currency, paymentData)
+    assertPaymentCanSettleInvoice(invoice.currency, settlement)
+
+    // Stamped at the payment's own date, not at read time: an advance is worth
+    // what it was worth the day it landed, and that figure has to hold for the
+    // period return long after the rate moved on (voyant#4703).
+    const reporting = await resolveReportingStamp(
+      db,
+      {
+        amountCents: settlement.amountCents,
+        currency: settlement.currency,
+        date: data.paymentDate,
+      },
+      runtime,
+    )
+    const paymentData = { ...settlement, ...(reporting ?? {}) }
 
     const paymentId = newId("payments")
 
-    let recordedPaymentEvent: InvoicePaymentRecordedEvent | null = null
-    const payment = await db.transaction(async (tx) => {
+    // Returned from the transaction rather than closed over: a `let` assigned
+    // only inside the callback reads as `null` to control-flow analysis
+    // afterwards, which silently typed the event as `never` at its use site.
+    const { payment, recordedPaymentEvent } = await db.transaction(async (tx) => {
       if (runtime.actionLedgerContext) {
         const ledgerResult = await appendActionLedgerMutation(
           tx,
@@ -358,7 +376,10 @@ export const financeInvoicePaymentService = {
         )
 
         if (ledgerResult.replayed) {
-          return getPaymentFromReplayedLedgerEntry(tx, ledgerResult.entry.id)
+          return {
+            payment: await getPaymentFromReplayedLedgerEntry(tx, ledgerResult.entry.id),
+            recordedPaymentEvent: null,
+          }
         }
       }
 
@@ -413,30 +434,31 @@ export const financeInvoicePaymentService = {
         .where(eq(invoices.id, invoiceId))
       await touchLinkedBookingUpdatedAt(tx, invoice.bookingId)
 
-      if (payment.status === "completed") {
-        recordedPaymentEvent = {
-          invoiceId: invoice.id,
-          invoiceNumber: invoice.invoiceNumber,
-          invoiceType: invoice.invoiceType,
-          bookingId: invoice.bookingId,
-          invoiceCurrency: invoice.currency,
-          invoiceTotalCents: invoice.totalCents,
-          invoicePaidCents: paidCents,
-          invoiceBalanceDueCents: balanceDueCents,
-          paymentId: payment.id,
-          amountCents: payment.amountCents,
-          currency: payment.currency,
-          baseCurrency: payment.baseCurrency ?? null,
-          baseAmountCents: payment.baseAmountCents ?? null,
-          paymentMethod: payment.paymentMethod,
-          status: payment.status,
-          referenceNumber: payment.referenceNumber ?? null,
-          paymentDate: payment.paymentDate,
-          occurredAt: new Date().toISOString(),
-        }
-      }
+      const recordedPaymentEvent: InvoicePaymentRecordedEvent | null =
+        payment.status !== "completed"
+          ? null
+          : {
+              invoiceId: invoice.id,
+              invoiceNumber: invoice.invoiceNumber,
+              invoiceType: invoice.invoiceType,
+              bookingId: invoice.bookingId,
+              invoiceCurrency: invoice.currency,
+              invoiceTotalCents: invoice.totalCents,
+              invoicePaidCents: paidCents,
+              invoiceBalanceDueCents: balanceDueCents,
+              paymentId: payment.id,
+              amountCents: payment.amountCents,
+              currency: payment.currency,
+              baseCurrency: payment.baseCurrency ?? null,
+              baseAmountCents: payment.baseAmountCents ?? null,
+              paymentMethod: payment.paymentMethod,
+              status: payment.status,
+              referenceNumber: payment.referenceNumber ?? null,
+              paymentDate: payment.paymentDate,
+              occurredAt: new Date().toISOString(),
+            }
 
-      return payment
+      return { payment, recordedPaymentEvent }
     })
 
     if (payment?.status === "completed" && invoice.bookingId) {
@@ -444,9 +466,19 @@ export const financeInvoicePaymentService = {
     }
 
     if (recordedPaymentEvent) {
-      await runtime.eventBus?.emit("invoice.payment.recorded", recordedPaymentEvent, {
-        category: "domain",
-        source: "service",
+      // voyant#4653: booking create records the payments for already-paid
+      // schedules on its own transaction and passed no runtime at all, so this
+      // never fired and the accounting integration never learned a booking had
+      // been paid. It now passes a `domainEventSink`, which lands the event in
+      // the same outbox write as the booking.
+      await publishFinanceDomainEvent(runtime, {
+        name: "invoice.payment.recorded",
+        data: recordedPaymentEvent,
+        metadata: {
+          category: "domain",
+          source: "service",
+          eventId: `evt_finance_invoice_payment_recorded_${recordedPaymentEvent.paymentId}`,
+        },
       })
     }
 
@@ -499,7 +531,8 @@ export const financeInvoicePaymentService = {
       paymentDate: data.paymentDate ?? existing.paymentDate,
     }
 
-    const normalized = shouldNormalizeBaseAmount(data)
+    const shouldRenormalize = shouldNormalizeBaseAmount(data)
+    const normalized = shouldRenormalize
       ? await resolveFxMoneyBaseAmount(db, merged, {
           ...runtime,
           targetBaseCurrency: invoice.currency,
@@ -510,6 +543,18 @@ export const financeInvoicePaymentService = {
 
     assertPaymentCanSettleInvoice(invoice.currency, normalized as CreatePaymentInput)
 
+    const reporting = shouldRenormalize
+      ? await resolveReportingStamp(
+          db,
+          {
+            amountCents: merged.amountCents,
+            currency: merged.currency,
+            date: merged.paymentDate,
+          },
+          runtime,
+        )
+      : null
+
     return db.transaction(async (tx) => {
       const writePatch: Record<string, unknown> = { ...data, updatedAt: new Date() }
       // resolveFxMoneyBaseAmount may have filled in baseCurrency / baseAmountCents /
@@ -517,6 +562,16 @@ export const financeInvoicePaymentService = {
       writePatch.baseCurrency = normalized.baseCurrency ?? null
       writePatch.baseAmountCents = normalized.baseAmountCents ?? null
       writePatch.fxRateSetId = normalized.fxRateSetId ?? null
+      // Amount, currency or date moved, so the reporting figure moved with
+      // them. Written unconditionally, like the settlement leg above: when the
+      // new date has no resolvable rate the stamp is CLEARED rather than left
+      // standing, because the old one describes the amount and date this
+      // payment no longer has. No figure is honest; a stale one is not.
+      if (shouldRenormalize) {
+        writePatch.reportingCurrency = reporting?.reportingCurrency ?? null
+        writePatch.reportingAmountCents = reporting?.reportingAmountCents ?? null
+        writePatch.reportingFxRateSetId = reporting?.reportingFxRateSetId ?? null
+      }
 
       const [payment] = await tx
         .update(payments)

@@ -9,6 +9,8 @@ import type {
   CompositeBookingCommitment,
   PricingBreakdownV1,
 } from "@voyant-travel/catalog/booking-engine"
+import { partySizeFromSelection } from "@voyant-travel/catalog/booking-engine"
+import { policyEvidenceIdentity } from "@voyant-travel/catalog-contracts/booking-engine/pricing-contracts"
 import {
   DEFAULT_PAX_BANDS,
   DEFAULT_PAYMENT_INTENTS,
@@ -229,7 +231,7 @@ export function createTripBookingSessionCompositeHandler(
           quote: childQuote(input.quote, pricing),
           holdId: hold.id,
           capacityKey: hold.capacityKey,
-          quantity: componentQuantity(child.statePayload),
+          quantity: partySizeFromSelection(child.statePayload),
           expiresAt: hold.expiresAt,
           access: input.access,
           now: input.now,
@@ -566,7 +568,7 @@ function childHold(
     sessionId: session.id,
     quoteId: "hold" in input ? input.hold.quoteId : input.quote.id,
     target: session.target,
-    quantity: componentQuantity(session.statePayload),
+    quantity: partySizeFromSelection(session.statePayload),
     state: "active",
     capacityKey: componentCapacityKey(session.target, componentId),
     expiresAt: "hold" in input ? input.hold.expiresAt : input.expiresAt,
@@ -647,11 +649,26 @@ function materialPolicyChanged(snapshot: TripSnapshot, pricing: PricingBreakdown
     if (!isCatalogBackedTripComponent(component)) continue
     const accepted = acceptedPolicyEvidence(component)
     const fresh = current.get(component.id)
+    // Compared on identity, not on the instant each side was read. The accepted
+    // snapshot was captured when the traveller accepted the proposal and the
+    // fresh one moments ago, so their `capturedAt` always differ - which used to
+    // report every catalog-backed component as materially changed and demand a
+    // re-acceptance no traveller could ever clear (voyant#4689).
     if (accepted?.cancellation !== undefined || fresh?.cancellation !== undefined) {
-      if (stableJson(accepted?.cancellation) !== stableJson(fresh?.cancellation)) return true
+      if (
+        stableJson(policyEvidenceIdentity(accepted?.cancellation)) !==
+        stableJson(policyEvidenceIdentity(fresh?.cancellation))
+      ) {
+        return true
+      }
     }
     if (accepted?.bookingTerms !== undefined || fresh?.bookingTerms !== undefined) {
-      if (stableJson(accepted?.bookingTerms) !== stableJson(fresh?.bookingTerms)) return true
+      if (
+        stableJson(policyEvidenceIdentity(accepted?.bookingTerms)) !==
+        stableJson(policyEvidenceIdentity(fresh?.bookingTerms))
+      ) {
+        return true
+      }
     }
   }
   return false
@@ -776,16 +793,6 @@ async function recordComponentCommit(input: {
 
 function acceptedProposalOrigin(session: BookingSessionInternalRecord) {
   return session.origin?.kind === "accepted_proposal_version" ? session.origin : undefined
-}
-
-function componentQuantity(payload: Record<string, unknown>): number {
-  const configure = record(payload.configure)
-  const pax = record(configure?.pax)
-  const total = Object.values(pax ?? {}).reduce(
-    (sum: number, value) => sum + (typeof value === "number" && value > 0 ? value : 0),
-    0,
-  )
-  return total > 0 ? total : 1
 }
 
 function componentCapacityKey(target: BookingSessionTargetV1, componentId: string) {

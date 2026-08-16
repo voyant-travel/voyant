@@ -45,10 +45,12 @@ import type { Context } from "hono"
 import { z } from "zod"
 
 import {
+  BOOKING_DOCUMENT_CAPABILITIES,
   BOOKING_PII_READ_CAPABILITY,
   BOOKING_STATUS_CAPABILITIES,
 } from "./action-ledger-capabilities.js"
 import { BookingMonthlyLimitReachedError } from "./booking-plan-limit.js"
+import { recordBookingDocument } from "./document-recording.js"
 import { createBookingPiiService } from "./pii.js"
 import {
   redactBookingContact,
@@ -65,9 +67,9 @@ import { bookingGroupRoutes } from "./routes-groups.js"
 import { bookingInquiryAdminRoutes } from "./routes-inquiries.js"
 import { createBookingsAdminRoute as createRoute } from "./routes-openapi.js"
 import type { publicBookingRoutes } from "./routes-public.js"
-import type { Env } from "./routes-shared.js"
+import { type Env, getActionLedgerRequestContext } from "./routes-shared.js"
 import { bookingPiiAccessLog } from "./schema.js"
-import { bookingsService } from "./service.js"
+import { BookingServiceError, bookingsService } from "./service.js"
 import { bookingGroupsService } from "./service-groups.js"
 import { publicBookingsService, resolveSessionPricingSnapshot } from "./service-public.js"
 import {
@@ -133,6 +135,12 @@ function hasPiiScope(scopes: string[] | null | undefined, action: "read" | "upda
 
 const BOOKING_PII_READ_ACTION_NAME = "booking.pii.read"
 const BOOKING_PII_READ_ACTION_VERSION = "v1"
+/**
+ * Ledger identity for reading a booking's documents. Distinct from
+ * `booking.pii.read`, which targets one traveller: this discloses the whole
+ * collection, including the file URLs of identity documents.
+ */
+const BOOKING_DOCUMENT_READ_ACTION_NAME = "booking.document.read"
 const BOOKING_PII_DECISION_POLICY = "bookings-pii-scope-or-staff-v1"
 const BOOKING_PII_AUTHORIZATION_SOURCE = "bookings.pii.route"
 const BOOKING_TRAVELER_LEDGER_ACTION_VERSION = "v1"
@@ -298,24 +306,6 @@ function cacheDashboardAggregates(c: Context<Env>) {
   c.header("Cache-Control", DASHBOARD_AGGREGATES_CACHE_CONTROL)
   c.header("Vary", "Authorization", { append: true })
   c.header("Vary", "Cookie", { append: true })
-}
-
-function getActionLedgerRequestContext(c: Context<Env>): ActionLedgerRequestContextValues {
-  return {
-    userId: c.get("userId") ?? null,
-    agentId: c.get("agentId") ?? null,
-    workflowPrincipalId: c.get("workflowPrincipalId") ?? null,
-    principalSubtype: c.get("principalSubtype") ?? null,
-    sessionId: c.get("sessionId") ?? null,
-    apiTokenId: c.get("apiTokenId") ?? c.get("apiKeyId") ?? null,
-    callerType: c.get("callerType") ?? null,
-    actor: c.get("actor") ?? null,
-    isInternalRequest: c.get("isInternalRequest") ?? false,
-    organizationId: c.get("organizationId") ?? null,
-    workflowRunId: c.get("workflowRunId") ?? null,
-    workflowStepId: c.get("workflowStepId") ?? null,
-    correlationId: c.req.header("x-correlation-id") ?? c.req.header("x-request-id") ?? null,
-  }
 }
 
 async function validateBookingBillingPartyReferences<T extends Env>(
@@ -1301,6 +1291,7 @@ const bookingSchema = z.object({
   pax: z.number().int().nullable(),
   internalNotes: z.string().nullable(),
   notificationsSuppressed: z.boolean(),
+  documentsSuppressed: z.boolean(),
   customerPaymentPolicy: z.unknown().nullable(),
   priceOverride: jsonObject.nullable(),
   customFields: namespacedCustomFields,
@@ -1489,6 +1480,12 @@ const bookingDocumentSchema = z.object({
   type: bookingDocumentTypeSchema,
   fileName: z.string(),
   fileUrl: z.string(),
+  // The identity the document's own issuer gave it. Populated for paperwork
+  // recorded from outside Voyant; null for an uploaded traveller document.
+  issuedBy: z.string().nullable(),
+  issuedSeries: z.string().nullable(),
+  issuedNumber: z.string().nullable(),
+  issuedAt: nullableIsoTimestamp,
   expiresAt: nullableIsoTimestamp,
   notes: z.string().nullable(),
   createdAt: isoTimestamp,
@@ -3067,22 +3064,46 @@ const itemsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
     }
     const body = c.req.valid("json") ?? {}
     const ledgerContext = getActionLedgerRequestContext(c)
-    const row = await c.get("db").transaction(async (tx) => {
-      const row = await bookingsService.updateItem(tx as PostgresJsDatabase, itemId, body)
-      if (!row) return null
-      await appendBookingMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
-        action: "update",
-        actionName: "booking.item.update",
-        actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
-        targetType: "booking_item",
-        targetId: row.id,
-        changedFields: changedBookingItemFields(body, before, row),
-        subject: "booking item",
-        routeOrToolName: "bookings.items.update",
-        evaluatedRisk: "high",
+    const row = await c
+      .get("db")
+      .transaction(async (tx) => {
+        const row = await bookingsService.updateItem(tx as PostgresJsDatabase, itemId, body, {
+          eventBus: c.get("eventBus"),
+        })
+        if (!row) return null
+        await appendBookingMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
+          action: "update",
+          actionName: "booking.item.update",
+          actionVersion: BOOKING_ITEM_LEDGER_ACTION_VERSION,
+          targetType: "booking_item",
+          targetId: row.id,
+          changedFields: changedBookingItemFields(body, before, row),
+          subject: "booking item",
+          routeOrToolName: "bookings.items.update",
+          evaluatedRisk: "high",
+        })
+        return row
       })
-      return row
-    })
+      .catch((error: unknown) => {
+        // A refused move is an answer, not a fault: tell the operator where
+        // the priced, capacity-checked path lives instead of 500-ing.
+        if (
+          error instanceof BookingServiceError &&
+          error.code === "slot_change_requires_amendment"
+        ) {
+          return "slot_change_requires_amendment" as const
+        }
+        throw error
+      })
+    if (row === "slot_change_requires_amendment") {
+      return c.json(
+        {
+          error:
+            "This service holds a departure. Moving it to another date changes capacity and price — use the booking's move flow instead.",
+        },
+        409,
+      )
+    }
     if (!row) {
       return c.json({ error: "Booking item not found" }, 404)
     }
@@ -3106,6 +3127,7 @@ const itemsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
         tx as PostgresJsDatabase,
         itemId,
         c.get("userId"),
+        { eventBus: c.get("eventBus") },
       )
       if (!row) return null
       await appendBookingMutationLedgerEntryToDb(tx as AnyDrizzleDb, ledgerContext, {
@@ -3593,21 +3615,46 @@ const deleteDocumentRoute = createRoute({
 
 const documentsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
   .openapi(listDocumentsRoute, async (c) => {
-    return c.json(
-      { data: await bookingsService.listDocuments(c.get("db"), c.req.valid("param").id) },
-      200,
-    )
+    const bookingId = c.req.valid("param").id
+    const documents = await bookingsService.listDocuments(c.get("db"), bookingId)
+    // The collection carries traveller passports and visas, so the graph
+    // declares this a required-ledger sensitive read. Record it here, or the
+    // declaration would claim an audit the deployment never writes.
+    await appendActionLedgerSensitiveRead(c.get("db"), {
+      context: getActionLedgerRequestContext(c),
+      actionName: BOOKING_DOCUMENT_READ_ACTION_NAME,
+      actionVersion: BOOKING_DOCUMENT_CAPABILITIES.read.version,
+      status: "succeeded",
+      evaluatedRisk: "high",
+      targetType: "booking_document",
+      targetId: bookingId,
+      routeOrToolName: "bookings.documents.list",
+      capabilityId: BOOKING_DOCUMENT_CAPABILITIES.read.id,
+      capabilityVersion: BOOKING_DOCUMENT_CAPABILITIES.read.version,
+      authorizationSource: BOOKING_PII_AUTHORIZATION_SOURCE,
+      disclosedFieldSet: ["fileName", "fileUrl", "travelerId"],
+      disclosureSummary: `Listed ${documents.length} booking document(s)`,
+      decisionPolicy: BOOKING_PII_DECISION_POLICY,
+    })
+    return c.json({ data: documents }, 200)
   })
   .openapi(createDocumentRoute, async (c) => {
-    const row = await bookingsService.createDocument(
-      c.get("db"),
-      c.req.valid("param").id,
-      c.req.valid("json"),
-    )
-    if (!row) {
+    const bookingId = c.req.valid("param").id
+    // Shared with `record_booking_document`, so the row and its ledger entry
+    // commit together whichever surface recorded the document. A replayed
+    // recording of the same issued document returns the row that already
+    // exists rather than a second copy of it, and is not a second audit event.
+    const result = await recordBookingDocument(c.get("db"), {
+      context: getActionLedgerRequestContext(c),
+      bookingId,
+      data: c.req.valid("json"),
+      routeOrToolName: "bookings.documents.create",
+      authorizationSource: "bookings.route",
+    })
+    if (!result) {
       return c.json({ error: "Booking not found" }, 404)
     }
-    return c.json({ data: row }, 201)
+    return c.json({ data: result.document }, 201)
   })
   .openapi(deleteDocumentRoute, async (c) => {
     const row = await bookingsService.deleteDocument(c.get("db"), c.req.valid("param").documentId)

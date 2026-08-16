@@ -1,5 +1,212 @@
 # @voyant-travel/legal-react
 
+## 0.298.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.298.0
+- @voyant-travel/inventory-react@0.180.0
+- @voyant-travel/commerce-react@0.180.0
+- @voyant-travel/react@0.106.3
+- @voyant-travel/distribution-react@0.288.0
+- @voyant-travel/relationships-react@0.298.0
+
+## 0.297.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.297.0
+- @voyant-travel/inventory-react@0.179.0
+- @voyant-travel/commerce-react@0.179.0
+- @voyant-travel/distribution-react@0.287.0
+- @voyant-travel/relationships-react@0.297.0
+
+## 0.296.0
+
+### Patch Changes
+
+- Updated dependencies [3b9cd41]
+  - @voyant-travel/distribution-react@0.286.0
+  - @voyant-travel/bookings-react@0.296.0
+  - @voyant-travel/commerce-react@0.178.0
+  - @voyant-travel/inventory-react@0.178.0
+  - @voyant-travel/relationships-react@0.296.0
+
+## 0.295.0
+
+### Minor Changes
+
+- 46bb84e: Let an operator issue and send a booking contract without an agent.
+
+  A booking-linked contract could only complete its reviewed lifecycle through `executeLegalContractLifecycleCommand`, which has no admin route and is invoked only from the MCP runtime. `POST /v1/admin/legal/contracts/{id}/issue` refused with a 400 while the admin UI rendered its `Issue` button anyway, so on a deployment where the agent is not wired for contracts every generated contract accumulated in `draft` with no operator path out of it.
+
+  What the reviewed lifecycle actually enforces is three facts about the contract row — the revision has not been superseded, its content is still the reviewed content, and the caller approved the revision that is current. Those are checkable without the agent-approval machinery wrapped around them, so the admin routes now check them directly:
+
+  - `GET /v1/admin/legal/contracts/{id}/booking-review` serves the un-redacted revision, including the `revision` and `contentFingerprint` a caller approves against. Managed booking revisions only; requires `bookings-pii:read` and records the access on the booking's PII log.
+  - `POST /{id}/issue` and `POST /{id}/send` accept `{ revision, contentFingerprint }`. A managed booking revision without them is refused and told where to read them; a mismatched fingerprint, a stale revision, or an existing successor revision is refused for the same reason an agent would be.
+  - Issuing a managed booking revision now promotes the reviewed content verbatim — no template re-render, no contract-number allocation — matching the reviewed lifecycle command's own issue leg instead of rewriting the document the approval covered.
+  - The contract detail page opens a review dialog for booking contracts instead of firing an `Issue` that was guaranteed to fail, and disables the action with a reason when the review cannot be read.
+
+  - `legal.contracts.issue` on the standard admin client took `z.object({})`, so it stripped the approval and would have hit `approval_required` on every booking contract. It now derives its input from the route schema, and `legal.contracts.send` and `legal.contracts.bookingReview` join it.
+  - `packages/legal/openapi/admin/legal.json` says "Do not edit by hand" but nothing regenerated it. `pnpm --filter @voyant-travel/legal generate:openapi` now produces the contracts slice from the live routes through the operator app's own composition, and `verify:openapi-drift` holds it. Regenerating also corrected a `DELETE /{id}` conflict description that had already drifted from the route.
+
+  Document regeneration for a draft whose content is wrong is not part of this change: it needs the durable document-operation engine and an artifact provider on the admin route surface, neither of which the contracts admin routes carry today.
+
+### Patch Changes
+
+- Updated dependencies [46bb84e]
+  - @voyant-travel/legal@0.254.0
+  - @voyant-travel/bookings-react@0.295.0
+  - @voyant-travel/distribution-react@0.285.0
+  - @voyant-travel/inventory-react@0.177.0
+  - @voyant-travel/commerce-react@0.177.0
+  - @voyant-travel/relationships-react@0.295.0
+
+## 0.294.0
+
+### Patch Changes
+
+- @voyant-travel/commerce-react@0.176.0
+- @voyant-travel/bookings-react@0.294.0
+- @voyant-travel/inventory-react@0.176.0
+- @voyant-travel/distribution-react@0.284.0
+- @voyant-travel/relationships-react@0.294.0
+
+## 0.293.0
+
+### Patch Changes
+
+- Updated dependencies [c6ccc30]
+  - @voyant-travel/i18n@0.126.0
+  - @voyant-travel/bookings-react@0.293.0
+  - @voyant-travel/inventory-react@0.175.0
+  - @voyant-travel/commerce-react@0.175.0
+  - @voyant-travel/distribution-react@0.283.0
+  - @voyant-travel/relationships-react@0.293.0
+
+## 0.292.0
+
+### Patch Changes
+
+- Updated dependencies [c6b5b12]
+  - @voyant-travel/bookings-react@0.292.0
+  - @voyant-travel/distribution-react@0.282.0
+  - @voyant-travel/inventory-react@0.174.0
+  - @voyant-travel/commerce-react@0.174.0
+  - @voyant-travel/relationships-react@0.292.0
+
+## 0.291.0
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/i18n@0.125.0
+  - @voyant-travel/bookings-react@0.291.0
+  - @voyant-travel/inventory-react@0.173.0
+  - @voyant-travel/commerce-react@0.173.0
+  - @voyant-travel/distribution-react@0.281.0
+  - @voyant-travel/relationships-react@0.291.0
+
+## 0.290.0
+
+### Patch Changes
+
+- Updated dependencies [1f36964]
+  - @voyant-travel/legal@0.253.0
+  - @voyant-travel/bookings-react@0.290.0
+  - @voyant-travel/inventory-react@0.172.0
+  - @voyant-travel/distribution-react@0.280.0
+  - @voyant-travel/commerce-react@0.172.0
+  - @voyant-travel/relationships-react@0.290.0
+
+## 0.289.0
+
+### Patch Changes
+
+- Updated dependencies [798b05b]
+  - @voyant-travel/legal@0.252.0
+  - @voyant-travel/bookings-react@0.289.0
+  - @voyant-travel/inventory-react@0.171.0
+  - @voyant-travel/distribution-react@0.279.0
+  - @voyant-travel/commerce-react@0.171.0
+  - @voyant-travel/relationships-react@0.289.0
+
+## 0.288.0
+
+### Patch Changes
+
+- Updated dependencies [e99380d]
+  - @voyant-travel/i18n@0.124.0
+  - @voyant-travel/inventory-react@0.170.0
+  - @voyant-travel/bookings-react@0.288.0
+  - @voyant-travel/commerce-react@0.170.0
+  - @voyant-travel/distribution-react@0.278.0
+  - @voyant-travel/relationships-react@0.288.0
+
+## 0.287.0
+
+### Patch Changes
+
+- @voyant-travel/react@0.106.2
+- @voyant-travel/bookings-react@0.287.0
+- @voyant-travel/inventory-react@0.169.0
+- @voyant-travel/distribution-react@0.277.0
+- @voyant-travel/commerce-react@0.169.0
+- @voyant-travel/relationships-react@0.287.0
+
+## 0.286.0
+
+### Patch Changes
+
+- Updated dependencies [8e2133e]
+  - @voyant-travel/bookings-react@0.286.0
+  - @voyant-travel/distribution-react@0.276.0
+  - @voyant-travel/commerce-react@0.168.0
+  - @voyant-travel/inventory-react@0.168.0
+  - @voyant-travel/relationships-react@0.286.0
+
+## 0.285.0
+
+### Patch Changes
+
+- Updated dependencies [1858c5b]
+  - @voyant-travel/bookings-react@0.285.0
+  - @voyant-travel/inventory-react@0.167.0
+  - @voyant-travel/distribution-react@0.275.0
+  - @voyant-travel/commerce-react@0.167.0
+  - @voyant-travel/relationships-react@0.285.0
+
+## 0.284.0
+
+### Patch Changes
+
+- Updated dependencies [0fe4ce8]
+  - @voyant-travel/bookings-react@0.284.0
+  - @voyant-travel/distribution-react@0.274.0
+  - @voyant-travel/inventory-react@0.166.0
+  - @voyant-travel/commerce-react@0.166.0
+  - @voyant-travel/relationships-react@0.284.0
+
+## 0.283.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.283.0
+- @voyant-travel/inventory-react@0.165.0
+- @voyant-travel/distribution-react@0.273.0
+- @voyant-travel/commerce-react@0.165.0
+- @voyant-travel/relationships-react@0.283.0
+
+## 0.282.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.282.0
+- @voyant-travel/inventory-react@0.164.0
+- @voyant-travel/distribution-react@0.272.0
+- @voyant-travel/commerce-react@0.164.0
+- @voyant-travel/relationships-react@0.282.0
+
 ## 0.281.0
 
 ### Patch Changes

@@ -40,6 +40,11 @@ export function ScheduledCatalogHost({
       scope={scope}
       title={title}
       subtitle={subtitle}
+      query={search.q ?? ""}
+      searchPlaceholder={nav.catalogSearchPlaceholder.replace("{surface}", title.toLowerCase())}
+      onQueryChange={(q) =>
+        onSearchChange((prev) => ({ ...prev, q: q.length > 0 ? q : undefined, page: 1 }), true)
+      }
       renderBrowseGrid={({ lockedFacets, lockedRanges }) => (
         <CatalogVerticalHost
           vertical="products"
@@ -67,8 +72,6 @@ function scheduledScopeCopy(
       return [nav.catalogExcursions, nav.catalogExcursionsTagline]
     case "tours":
       return [nav.catalogTours, nav.catalogToursTagline]
-    case "boat-tours":
-      return [nav.catalogBoatTours, nav.catalogBoatToursTagline]
     case "activities":
       return [nav.catalogActivities, nav.catalogActivitiesTagline]
     case "attractions":

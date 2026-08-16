@@ -1,5 +1,41 @@
 # @voyant-travel/charters
 
+## 0.237.4
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/catalog@0.258.0
+  - @voyant-travel/core@0.143.0
+  - @voyant-travel/action-ledger@0.115.20
+  - @voyant-travel/db@0.122.4
+  - @voyant-travel/hono@0.143.2
+
+## 0.237.3
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/catalog@0.257.0
+
+## 0.237.2
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/action-ledger@0.115.19
+  - @voyant-travel/catalog@0.256.5
+  - @voyant-travel/db@0.122.2
+  - @voyant-travel/hono@0.143.1
+
+## 0.237.1
+
+### Patch Changes
+
+- Updated dependencies [a41a73a]
+  - @voyant-travel/catalog@0.256.0
+
 ## 0.237.0
 
 ### Minor Changes

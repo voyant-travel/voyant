@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/finance",
-  "version": "0.249.1",
+  "version": "0.258.1",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -12,8 +12,10 @@
     "./checkout-routes": "./src/checkout-routes.ts",
     "./checkout-validation": "./src/checkout-validation.ts",
     "./invoice-fx": "./src/invoice-fx.ts",
+    "./booking-settlement": "./src/service-booking-settlement.ts",
     "./service-invoice-core": "./src/service-invoice-core.ts",
     "./reporting": "./src/reporting.ts",
+    "./reporting-unperformed-services": "./src/reporting-unperformed-services.ts",
     "./order-payment-sessions": "./src/order-payment-sessions.ts",
     "./payment-policy": "./src/payment-policy.ts",
     "./payment-policy-cascade": "./src/payment-policy-cascade.ts",
@@ -26,6 +28,8 @@
     "./runtime-port": "./src/runtime-port.ts",
     "./booking-schedule-subscriber": "./src/booking-schedule/subscriber-runtime.ts",
     "./proforma-conversion-subscriber": "./src/proforma-conversion-runtime.ts",
+    "./invoice-document-job": "./src/invoice-document-job.ts",
+    "./invoice-issued-subscriber": "./src/invoice-issued-subscriber.ts",
     "./routes": "./src/routes.ts",
     "./public-routes": "./src/routes-public.ts",
     "./public-validation": "./src/validation-public.ts",
@@ -129,6 +133,11 @@
         "import": "./dist/invoice-fx.js",
         "default": "./dist/invoice-fx.js"
       },
+      "./booking-settlement": {
+        "types": "./dist/service-booking-settlement.d.ts",
+        "import": "./dist/service-booking-settlement.js",
+        "default": "./dist/service-booking-settlement.js"
+      },
       "./service-invoice-core": {
         "types": "./dist/service-invoice-core.d.ts",
         "import": "./dist/service-invoice-core.js",
@@ -138,6 +147,11 @@
         "types": "./dist/reporting.d.ts",
         "import": "./dist/reporting.js",
         "default": "./dist/reporting.js"
+      },
+      "./reporting-unperformed-services": {
+        "types": "./dist/reporting-unperformed-services.d.ts",
+        "import": "./dist/reporting-unperformed-services.js",
+        "default": "./dist/reporting-unperformed-services.js"
       },
       "./order-payment-sessions": {
         "types": "./dist/order-payment-sessions.d.ts",
@@ -198,6 +212,16 @@
         "types": "./dist/proforma-conversion-runtime.d.ts",
         "import": "./dist/proforma-conversion-runtime.js",
         "default": "./dist/proforma-conversion-runtime.js"
+      },
+      "./invoice-document-job": {
+        "types": "./dist/invoice-document-job.d.ts",
+        "import": "./dist/invoice-document-job.js",
+        "default": "./dist/invoice-document-job.js"
+      },
+      "./invoice-issued-subscriber": {
+        "types": "./dist/invoice-issued-subscriber.d.ts",
+        "import": "./dist/invoice-issued-subscriber.js",
+        "default": "./dist/invoice-issued-subscriber.js"
       },
       "./routes": {
         "types": "./dist/routes.d.ts",

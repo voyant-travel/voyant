@@ -15,6 +15,15 @@ export const bookingsUiRoCreateList = {
       contactLastName: "Nume contact",
       contactEmail: "E-mail contact",
       contactPhone: "Telefon contact",
+      billingAddress: "Adresa de facturare",
+      billingAddressRequired: "Adresa de facturare (obligatorie pentru factura)",
+      billingAddressLine1: "Strada si numarul",
+      billingAddressLine2: "Adresa, linia 2",
+      billingCity: "Oras",
+      billingRegion: "Judet / regiune",
+      billingPostalCode: "Cod postal",
+      billingCountry: "Tara",
+      billingTaxId: "Cod fiscal",
       addPayment: "Adauga un calendar initial de plata",
       notes: "Note interne",
     },
@@ -31,6 +40,11 @@ export const bookingsUiRoCreateList = {
         "Nu am putut incarca acest contact. Incearca din nou sau selecteaza ori creeaza alt contact.",
       contactIncomplete:
         "Acest contact are nevoie de prenume si nume, plus un e-mail sau un numar de telefon. Editeaza contactul de mai sus sau selecteaza ori creeaza alt contact.",
+      billingAddress:
+        "Precompletata din adresa principala a acestui contact. Corecteaz-o daca factura se emite in alta parte.",
+      billingAddressRequired:
+        "O factura trebuie sa contina numele si adresa cumparatorului, asa ca rezervarea nu poate fi creata fara ele.",
+      billingAddressLoading: "Se incarca adresa de facturare...",
     },
     validation: {
       product: "Alege un produs.",
@@ -41,6 +55,10 @@ export const bookingsUiRoCreateList = {
       contact: "Adauga un nume de contact pentru rezervare.",
       contactName: "Adauga prenumele si numele persoanei facturate.",
       contactMethod: "Adauga un e-mail sau un numar de telefon pentru persoana facturata.",
+      billingAddress:
+        "Adauga adresa de facturare — strada, oras si tara. O factura nu este valida fara adresa cumparatorului.",
+      billingTaxId:
+        "Adauga codul fiscal al organizatiei. O factura catre o firma trebuie sa il contina.",
       email: "Introdu un e-mail de contact valid.",
       travelers: "Adauga cel putin un calator.",
       travelerNames: "Fiecare calator are nevoie de prenume si nume.",
@@ -67,6 +85,14 @@ export const bookingsUiRoCreateList = {
         requirementsChanged:
           "Datele solicitate de acest produs s-au schimbat. Verifica formularul actualizat si incearca din nou.",
         commitRejected: "Rezervarea nu a putut fi finalizata din selectia curenta.",
+        commitInFlight:
+          "Rezervarea este inca in curs de confirmare. Nu o trimite din nou - reincarca peste un moment pentru a vedea rezultatul.",
+        alreadyCommitted:
+          "Aceasta sesiune a fost deja finalizata printr-o alta incercare. Cauta rezervarea creata in loc sa trimiti din nou.",
+        supplierUnavailable:
+          "Furnizorul nu a putut confirma rezervarea. Alege alta disponibilitate sau trimite cazul spre verificare manuala.",
+        proposalAcceptanceRequired:
+          "Propunerea s-a schimbat de la acceptare. Cere calatorului sa accepte versiunea curenta si incearca din nou.",
         notAuthorized: "Nu ai permisiunea de a finaliza aceasta rezervare.",
         unknown: "Booking Session a respins cererea. Verifica rezervarea si incearca din nou.",
       },
@@ -142,7 +168,7 @@ export const bookingsUiRoCreateList = {
       internalNotes: "Note interne",
       notifyTraveler: "Anunta calatorul",
       notifyTravelerHint:
-        "Trimite clientului confirmarea rezervarii si documentele. Dezactiveaza pentru o finalizare silentioasa de catre operator.",
+        "Trimite clientului confirmarea rezervarii si documentele. Dezactivarea face rezervarea silentioasa definitiv, inclusiv reamintirile viitoare — nu mai poate fi reactivata.",
     },
     placeholders: {
       departure: "Selecteaza o plecare...",

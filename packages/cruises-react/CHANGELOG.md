@@ -1,5 +1,138 @@
 # @voyant-travel/cruises-react
 
+## 0.297.0
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/catalog-contracts@0.136.0
+  - @voyant-travel/catalog-react@0.296.0
+  - @voyant-travel/storefront-react@0.300.0
+  - @voyant-travel/react@0.106.3
+
+## 0.296.0
+
+### Patch Changes
+
+- Updated dependencies [1a903c5]
+  - @voyant-travel/catalog-contracts@0.135.0
+  - @voyant-travel/catalog-react@0.295.0
+  - @voyant-travel/storefront-react@0.299.0
+
+## 0.295.0
+
+### Patch Changes
+
+- @voyant-travel/catalog-react@0.294.0
+- @voyant-travel/storefront-react@0.298.0
+
+## 0.294.0
+
+### Patch Changes
+
+- @voyant-travel/storefront-react@0.297.0
+- @voyant-travel/catalog-react@0.293.0
+
+## 0.293.0
+
+### Patch Changes
+
+- @voyant-travel/catalog-react@0.292.0
+- @voyant-travel/storefront-react@0.296.0
+
+## 0.292.0
+
+### Patch Changes
+
+- Updated dependencies [c6ccc30]
+  - @voyant-travel/catalog-react@0.291.0
+  - @voyant-travel/i18n@0.126.0
+  - @voyant-travel/storefront-react@0.295.0
+
+## 0.291.0
+
+### Patch Changes
+
+- @voyant-travel/storefront-react@0.294.0
+- @voyant-travel/catalog-react@0.290.0
+
+## 0.290.0
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/catalog-react@0.289.0
+  - @voyant-travel/i18n@0.125.0
+  - @voyant-travel/storefront-react@0.293.0
+
+## 0.289.0
+
+### Patch Changes
+
+- @voyant-travel/catalog-react@0.288.0
+- @voyant-travel/storefront-react@0.292.0
+
+## 0.288.0
+
+### Patch Changes
+
+- @voyant-travel/storefront-react@0.291.0
+- @voyant-travel/catalog-react@0.287.0
+
+## 0.287.0
+
+### Patch Changes
+
+- Updated dependencies [e99380d]
+  - @voyant-travel/i18n@0.124.0
+  - @voyant-travel/catalog-react@0.286.0
+  - @voyant-travel/storefront-react@0.290.0
+
+## 0.286.0
+
+### Patch Changes
+
+- @voyant-travel/react@0.106.2
+- @voyant-travel/catalog-react@0.285.0
+- @voyant-travel/storefront-react@0.289.0
+
+## 0.285.0
+
+### Patch Changes
+
+- @voyant-travel/storefront-react@0.288.0
+- @voyant-travel/catalog-react@0.284.0
+
+## 0.284.0
+
+### Patch Changes
+
+- @voyant-travel/storefront-react@0.287.0
+- @voyant-travel/catalog-react@0.283.0
+
+## 0.283.0
+
+### Patch Changes
+
+- @voyant-travel/storefront-react@0.286.0
+- @voyant-travel/catalog-react@0.282.0
+
+## 0.282.0
+
+### Patch Changes
+
+- @voyant-travel/catalog-react@0.281.0
+- @voyant-travel/storefront-react@0.285.0
+
+## 0.281.0
+
+### Patch Changes
+
+- Updated dependencies [a41a73a]
+  - @voyant-travel/catalog-contracts@0.134.0
+  - @voyant-travel/catalog-react@0.280.0
+  - @voyant-travel/storefront-react@0.284.0
+
 ## 0.280.0
 
 ### Patch Changes

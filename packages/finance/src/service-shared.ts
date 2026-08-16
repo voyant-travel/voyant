@@ -30,7 +30,7 @@ export {
 } from "drizzle-orm"
 export type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 export type { z } from "zod"
-export { resolveFxMoneyBaseAmount } from "./fx-money.js"
+export { resolveFxMoneyBaseAmount, resolveReportingStamp } from "./fx-money.js"
 export type { InvoiceFxOptions } from "./invoice-fx.js"
 export { isInvoiceNumberUniqueConstraintError } from "./invoice-number-errors.js"
 export {
@@ -68,7 +68,7 @@ export { recomputeSupplierInvoiceBalance } from "./service-supplier-invoices.js"
 import type { ActionLedgerRequestContextValues } from "@voyant-travel/action-ledger"
 import { actionMutationDetails } from "@voyant-travel/action-ledger"
 import { bookings } from "@voyant-travel/bookings/schema"
-import type { EventBus } from "@voyant-travel/core"
+import type { EventBus, EventMetadata } from "@voyant-travel/core"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { renderStructuredTemplate } from "@voyant-travel/utils/template-renderer"
 import { and, asc, desc, eq, gt, ne, or, sql } from "drizzle-orm"
@@ -179,6 +179,7 @@ import type {
   profitabilityQuerySchema,
   renderInvoiceInputSchema,
   revenueReportQuerySchema,
+  supersedeInvoiceExternalRefSchema,
   supplierPaymentListQuerySchema,
   taxClassListQuerySchema,
   taxPolicyProfileListQuerySchema,
@@ -336,6 +337,7 @@ export type TaxPolicyRuleListQuery = z.infer<typeof taxPolicyRuleListQuerySchema
 export type CreateTaxPolicyRuleInput = z.infer<typeof insertTaxPolicyRuleSchema>
 export type UpdateTaxPolicyRuleInput = z.infer<typeof updateTaxPolicyRuleSchema>
 export type CreateInvoiceExternalRefInput = z.infer<typeof insertInvoiceExternalRefSchema>
+export type SupersedeInvoiceExternalRefInput = z.infer<typeof supersedeInvoiceExternalRefSchema>
 export type RenderInvoiceInput = z.infer<typeof renderInvoiceInputSchema>
 export type MarkPaymentSessionRequiresRedirectInput = z.infer<
   typeof markPaymentSessionRequiresRedirectSchema
@@ -1063,6 +1065,35 @@ export async function touchLinkedBookingUpdatedAt(
     .where(eq(bookings.id, bookingId))
 }
 
+/** One domain event, in the shape `insertOutboxEvents` persists. */
+export interface FinanceDomainEvent {
+  name: string
+  data: unknown
+  metadata?: EventMetadata
+}
+
+/** Receives a domain event raised inside an open transaction. */
+export type FinanceDomainEventSink = (event: FinanceDomainEvent) => void
+
+/**
+ * Raise a finance domain event: into the caller's transaction when one is
+ * open, onto the bus otherwise, and nowhere at all when neither is wired.
+ *
+ * The sink wins over the bus deliberately. A caller that supplies both is
+ * inside a transaction and also holds a request bus, and taking the bus there
+ * is exactly the escape `domainEventSink` exists to prevent.
+ */
+export async function publishFinanceDomainEvent(
+  runtime: Pick<FinanceServiceRuntime, "eventBus" | "domainEventSink">,
+  event: FinanceDomainEvent,
+): Promise<void> {
+  if (runtime.domainEventSink) {
+    runtime.domainEventSink(event)
+    return
+  }
+  await runtime.eventBus?.emit(event.name, event.data, event.metadata)
+}
+
 /**
  * Runtime context for finance service methods that need to emit lifecycle
  * events (e.g. `invoice.settled`). Optional — methods fall back to a no-op
@@ -1071,6 +1102,23 @@ export async function touchLinkedBookingUpdatedAt(
  */
 export interface FinanceServiceRuntime extends InvoiceFxOptions {
   eventBus?: EventBus
+  /**
+   * Collects domain events instead of emitting them, for a service running
+   * inside a caller's open transaction.
+   *
+   * `eventBus.emit` is the wrong instrument there. The durable bus captures on
+   * the per-request connection, not on the transaction handle, so the row
+   * commits independently: roll the transaction back and the event survives,
+   * announcing an invoice that does not exist. Subscribers also run on other
+   * connections and cannot read the uncommitted write they were told about,
+   * and each one borrows a socket from a pool the transaction is already
+   * holding — which self-deadlocks wherever the pool is one connection deep.
+   *
+   * So a service that may run inside a transaction hands its events here and
+   * the transaction's owner writes them with `insertOutboxEvents(tx, ...)`,
+   * atomically with the rows they describe. Absent, events emit as before.
+   */
+  domainEventSink?: FinanceDomainEventSink
   /**
    * Where an instrument a provider stored gets recorded, wired from
    * `finance.stored-instrument.runtime`.

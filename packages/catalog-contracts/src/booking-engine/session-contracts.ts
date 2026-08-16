@@ -166,6 +166,24 @@ export const bookingSessionRecordV1 = z.object({
    * Sessions, whose target is no longer re-derived.
    */
   requirements: bookingRequirementsV1.optional(),
+  /**
+   * Fingerprint of `requirements`, computed exactly as the Quote's is.
+   * Present whenever `requirements` is, absent whenever it is not.
+   *
+   * It rides the Session so that **a Commit is always reachable from a read.**
+   * Commit requires this value and only a Quote used to produce it, which is a
+   * dead end precisely when it matters most: while a payment is settled the
+   * Session refuses to quote (`payment_in_flight`, correctly — a re-quote
+   * would release the Hold the money was collected for), so a host that lost
+   * its Quote response to a reload or a crash had no call left that could
+   * finish the booking it had already been paid for (voyant#4733).
+   *
+   * Publishing it here costs nothing: it is a hash of a descriptor the read
+   * already returns, so it carries no authority a caller did not have, and a
+   * Commit that echoes a stale one is refused by the same `requirements_changed`
+   * comparison as before.
+   */
+  requirementsFingerprint: z.string().min(1).optional(),
   expiresAt: z.string().datetime(),
   createdAt: z.string().datetime(),
   updatedAt: z.string().datetime(),
@@ -227,6 +245,22 @@ export type CreateAcceptedProposalBookingSessionV1 = z.input<
  * three different prices. Re-scoping is a new Session.
  */
 export const updateBookingSessionV1 = z.object({
+  /**
+   * One user action, one key, for every retry of that action.
+   *
+   * **Derive it from the payload, not from the revision alone.** A revision
+   * only advances on a *successful* mutation, so two different edits attempted
+   * at the same revision collide on one key — and the second is answered
+   * `idempotency_conflict` and dropped. That turns a rejected write into a
+   * write that can never be corrected: the shopper edits the field that caused
+   * the rejection, the corrected `PATCH` reuses the failed one's key, and the
+   * stored value never changes however many times they try (voyant#4733).
+   *
+   * `bookingSessionIdempotencyKey(root, "update", revision,
+   * bookingSelectionDigest(selection))` in `@voyant-travel/catalog-react` is
+   * the derivation this contract expects: the revision fences the write, the
+   * digest distinguishes the edits.
+   */
   idempotencyKey: z.string().min(8).max(128),
   expectedRevision: z.number().int().positive(),
   selection: z.record(z.string(), z.unknown()),
@@ -276,7 +310,20 @@ export type BookingQuoteRecordV1 = z.infer<typeof bookingQuoteRecordV1>
 export const placeBookingHoldV1 = z.object({
   expectedRevision: z.number().int().positive(),
   quoteId: z.string().min(1),
-  quantity: z.number().int().positive().default(1),
+  /**
+   * How much capacity to hold. **Omit it** unless the caller is deliberately
+   * holding for a party other than the one the Session states: absent means
+   * the Session's own party size, which is what the capacity port checks
+   * against.
+   *
+   * This carried `.default(1)` until voyant#4655. A default here is not a
+   * default at all — it is a value the server invents and then rejects itself
+   * for, because parsing filled the field in before any code could fall back
+   * to the Session. Every storefront checkout for two or more travelers was
+   * unholdable, and the rejection asked the client to retry, so it retried the
+   * same invented `1` forever.
+   */
+  quantity: z.number().int().positive().optional(),
   idempotencyKey: z.string().min(8).max(128),
 })
 export type PlaceBookingHoldV1 = z.input<typeof placeBookingHoldV1>
@@ -470,9 +517,23 @@ export const bookingSessionLifecycleErrorV1 = z.discriminatedUnion("kind", [
     nextAction: z.literal("select_supported_checkout_intent"),
   }),
   z.object({
+    /**
+     * The selection cannot be written as sent.
+     *
+     * `value_too_long` is the one arm the shopper can fix, and it exists so
+     * they are told at the step rather than after the card is captured: the
+     * Session write path used to accept any width while the commit held the
+     * value to the Booking's own column, so a 25-character postal code was
+     * taken a dozen times and refused once, too late to edit (voyant#4734).
+     * `path` names the field as the caller sent it (`billing.address.postal`),
+     * not as the commit would have reported it (`contactPostalCode`), and
+     * `maxLength` repeats the bound the Session's
+     * `requirements.bookingFields` already publishes.
+     */
     kind: z.literal("invalid_selection"),
-    reason: z.enum(["unsupported_target", "forbidden_field"]),
+    reason: z.enum(["unsupported_target", "forbidden_field", "value_too_long"]),
     path: z.string().min(1).optional(),
+    maxLength: z.number().int().positive().optional(),
   }),
   z.object({
     kind: z.literal("renewal_not_allowed"),
@@ -491,10 +552,19 @@ export const bookingSessionLifecycleErrorV1 = z.discriminatedUnion("kind", [
     nextAction: z.literal("request_new_hold"),
   }),
   z.object({
+    /**
+     * The caller named a quantity, and it is not the party this Session is
+     * for. The server derives the expected quantity from the Session's own
+     * selection, so repeating the same request is rejected the same way:
+     * `request_new_hold` here was a livelock, not a recovery (voyant#4655).
+     *
+     * `expectedQuantity` is the value to hold instead. A caller that meant a
+     * different party size changes the Session's pax and re-quotes.
+     */
     kind: z.literal("hold_quantity_mismatch"),
     requestedQuantity: z.number().int().positive(),
     expectedQuantity: z.number().int().positive(),
-    nextAction: z.literal("request_new_hold"),
+    nextAction: z.literal("request_hold_for_expected_quantity"),
   }),
   z.object({
     kind: z.literal("commit_already_consumed"),

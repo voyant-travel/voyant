@@ -1,5 +1,149 @@
 # @voyant-travel/runtime
 
+## 0.24.11
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/core@0.143.0
+  - @voyant-travel/apps@0.14.21
+  - @voyant-travel/auth@0.152.2
+  - @voyant-travel/db@0.122.4
+  - @voyant-travel/framework@0.83.2
+  - @voyant-travel/hono@0.143.2
+  - @voyant-travel/storage@0.115.8
+  - @voyant-travel/webhook-delivery@0.6.4
+  - @voyant-travel/admin-host@0.149.0
+
+## 0.24.10
+
+### Patch Changes
+
+- Updated dependencies [1a903c5]
+  - @voyant-travel/db@0.122.3
+  - @voyant-travel/framework@0.83.1
+  - @voyant-travel/admin-host@0.148.0
+
+## 0.24.9
+
+### Patch Changes
+
+- Updated dependencies [b78b724]
+  - @voyant-travel/framework@0.83.0
+  - @voyant-travel/core@0.142.1
+  - @voyant-travel/admin-host@0.147.0
+
+## 0.24.8
+
+### Patch Changes
+
+- @voyant-travel/admin-host@0.146.0
+
+## 0.24.7
+
+### Patch Changes
+
+- @voyant-travel/admin-host@0.145.0
+
+## 0.24.6
+
+### Patch Changes
+
+- @voyant-travel/admin-host@0.144.0
+
+## 0.24.5
+
+### Patch Changes
+
+- @voyant-travel/admin-host@0.143.0
+
+## 0.24.4
+
+### Patch Changes
+
+- @voyant-travel/framework@0.82.3
+- @voyant-travel/admin-host@0.142.0
+
+## 0.24.3
+
+### Patch Changes
+
+- @voyant-travel/admin-host@0.141.0
+
+## 0.24.2
+
+### Patch Changes
+
+- @voyant-travel/apps@0.14.20
+- @voyant-travel/admin-host@0.140.0
+
+## 0.24.1
+
+### Patch Changes
+
+- @voyant-travel/admin-host@0.139.0
+
+## 0.24.0
+
+### Minor Changes
+
+- 020de35: Bind the observability sinks a served deployment ships with.
+
+  `analytics.runtime` had no provider anywhere in the repository, so every
+  deployment ran with the booking engine's `engine.*` events — including
+  `engine.hold.failed` and its `failure_reason` — reaching `noopAnalytics`. The
+  runtime now binds `consoleAnalytics`, a new built-in sink writing one JSON line
+  per event to stdout, unless the project supplies its own `analytics.runtime`; a
+  deployment that wants silence binds `noopAnalytics` explicitly.
+
+  The reporter was hard-coded to `consoleReporter`, which left the first-party
+  Sentry adapter unreachable from a generated project. `host.reporter` now accepts
+  the deployment's own `Reporter`, with the console one as the default.
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/apps@0.14.19
+  - @voyant-travel/auth@0.152.1
+  - @voyant-travel/db@0.122.2
+  - @voyant-travel/framework@0.82.2
+  - @voyant-travel/hono@0.143.1
+  - @voyant-travel/storage@0.115.7
+  - @voyant-travel/webhook-delivery@0.6.3
+  - @voyant-travel/admin-host@0.138.0
+
+## 0.23.10
+
+### Patch Changes
+
+- @voyant-travel/admin-host@0.137.0
+
+## 0.23.9
+
+### Patch Changes
+
+- @voyant-travel/admin-host@0.136.0
+
+## 0.23.8
+
+### Patch Changes
+
+- @voyant-travel/admin-host@0.135.0
+
+## 0.23.7
+
+### Patch Changes
+
+- @voyant-travel/admin-host@0.134.0
+
+## 0.23.6
+
+### Patch Changes
+
+- @voyant-travel/framework@0.82.1
+- @voyant-travel/admin-host@0.133.0
+
 ## 0.23.5
 
 ### Patch Changes

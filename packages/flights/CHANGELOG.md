@@ -1,5 +1,126 @@
 # @voyant-travel/flights
 
+## 0.237.19
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/catalog-contracts@0.136.0
+  - @voyant-travel/catalog@0.258.0
+  - @voyant-travel/core@0.143.0
+  - @voyant-travel/flights-contracts@0.105.3
+  - @voyant-travel/action-ledger@0.115.20
+  - @voyant-travel/db@0.122.4
+  - @voyant-travel/finance@0.258.1
+  - @voyant-travel/hono@0.143.2
+
+## 0.237.18
+
+### Patch Changes
+
+- Updated dependencies [1a903c5]
+  - @voyant-travel/catalog-contracts@0.135.0
+  - @voyant-travel/catalog@0.257.4
+  - @voyant-travel/db@0.122.3
+  - @voyant-travel/flights-contracts@0.105.2
+
+## 0.237.17
+
+### Patch Changes
+
+- Updated dependencies [b78b724]
+  - @voyant-travel/finance@0.258.0
+  - @voyant-travel/core@0.142.1
+  - @voyant-travel/catalog@0.257.3
+
+## 0.237.16
+
+### Patch Changes
+
+- Updated dependencies [b11c10e]
+  - @voyant-travel/finance@0.257.0
+  - @voyant-travel/catalog@0.257.2
+
+## 0.237.15
+
+### Patch Changes
+
+- Updated dependencies [c6b5b12]
+  - @voyant-travel/finance@0.256.0
+  - @voyant-travel/catalog@0.257.1
+
+## 0.237.14
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/catalog@0.257.0
+
+## 0.237.13
+
+### Patch Changes
+
+- Updated dependencies [1f36964]
+  - @voyant-travel/finance@0.255.0
+  - @voyant-travel/catalog@0.256.7
+
+## 0.237.12
+
+### Patch Changes
+
+- Updated dependencies [798b05b]
+- Updated dependencies [05c2202]
+  - @voyant-travel/finance@0.254.0
+  - @voyant-travel/catalog-contracts@0.134.1
+  - @voyant-travel/catalog@0.256.6
+
+## 0.237.11
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+- Updated dependencies [c2aedcb]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/finance@0.253.0
+  - @voyant-travel/action-ledger@0.115.19
+  - @voyant-travel/catalog@0.256.5
+  - @voyant-travel/db@0.122.2
+  - @voyant-travel/hono@0.143.1
+
+## 0.237.10
+
+### Patch Changes
+
+- Updated dependencies [1858c5b]
+  - @voyant-travel/finance@0.252.0
+  - @voyant-travel/catalog@0.256.3
+
+## 0.237.9
+
+### Patch Changes
+
+- Updated dependencies [0fe4ce8]
+- Updated dependencies [a414f2c]
+  - @voyant-travel/finance@0.251.0
+  - @voyant-travel/catalog@0.256.2
+
+## 0.237.8
+
+### Patch Changes
+
+- Updated dependencies [d3b17e2]
+  - @voyant-travel/finance@0.250.0
+  - @voyant-travel/catalog@0.256.1
+
+## 0.237.7
+
+### Patch Changes
+
+- Updated dependencies [a41a73a]
+  - @voyant-travel/catalog-contracts@0.134.0
+  - @voyant-travel/catalog@0.256.0
+  - @voyant-travel/flights-contracts@0.105.1
+
 ## 0.237.6
 
 ### Patch Changes

@@ -1,5 +1,102 @@
 # @voyant-travel/catalog-contracts
 
+## 0.136.0
+
+### Minor Changes
+
+- f6c85ee: Refuse an over-long billing value at the Booking Session write path instead of after the card is captured, and stop a settled payment from being stranded by the Session's own expiry.
+
+  The Session's selection normalizer projected the billing block field by field rather than parsing it, so the widths `bookingSelectionPublicV1` declared never ran while the Booking create enforced its own. A 25-character postal code was accepted at every step and refused once, at settlement. `requirements.bookingFields` now publishes `maxLength`, advertises the whole billing address, and the write path rejects with `invalid_selection` / `value_too_long` naming the field as the caller sent it (`billing.address.postal`, not `contactPostalCode`).
+
+  A Session whose money is with a processor is no longer expired by the commit preflight or the expiry sweep, and can no longer be abandoned; `BookingSessionRecordV1` carries `requirementsFingerprint`, so a Commit is reachable from a read rather than only from a Quote. A settlement that produces no Booking emits `booking_session.settlement.failed`, and `ANALYTICS_FAILURE_REASONS` gains `value_too_long` so the new rejection reaches the breakdown rather than the `unknown` bucket.
+
+## 0.135.0
+
+### Minor Changes
+
+- 1a903c5: Stop settlement refusing a captured payment over a Hold token, and make the refusal it
+  does give loud and legible.
+
+  A card checkout was captured and never became a Booking: settlement refused
+  `hold_failure` against a Hold that was `active`, unexpired, correctly sized and bound to
+  the Session's current Quote, then spent all eight outbox attempts restating it. Two
+  independent faults produced that.
+
+  `commitPaidSession` read the Quote and the Hold as a pair off the payment's metadata, and
+  took the Hold _only_ when a Quote was recorded with it. `prepare` writes that metadata
+  from the Commit it was called on and reuses an existing payment row for the same
+  idempotency key without rewriting it, so a checkout that reached `prepare` before taking
+  its Hold records the Quote alone — permanently. Settlement then passed no `holdId` and was
+  refused `hold_failure: missing` while the Hold sat there. The Hold is now resolved
+  independently, from the Session's live Holds bound to the settled Quote.
+
+  Separately, a Hold that is genuinely gone no longer refuses the Commit. Settlement runs
+  server-side against a Session whose money has already moved, and no client can keep a
+  15-minute reservation alive across a processor — the tab sleeps, 3-D Secure adds minutes,
+  a re-quote supersedes the Hold six seconds after taking it. It now asks inventory for the
+  capacity again, idempotently across the retry chain, and only a `no` from inventory
+  refuses: `hold_failure` gains a `capacity_unavailable` reason so "the token lapsed" and
+  "the seat is gone" stop arriving as the same verdict.
+
+  A refusal that no retry can change is now declared permanent, so it dead-letters on the
+  spot — the stranded-payment staff alert fires with that verdict instead of the eighth
+  attempt's, three quarters of an hour later — and the Session's Holds are released at that
+  point rather than left `active` with a null `released_at`. Retryable outcomes are
+  unchanged, and still keep their Hold.
+
+  `event_outbox` gains `attempt_errors`, one entry per failed delivery, so a chain that
+  fails several times retains what each attempt decided rather than only the last. The
+  dead-letter announcement carries it.
+
+## 0.134.1
+
+### Patch Changes
+
+- 05c2202: Stop the policy capture instant from superseding every Quote it is attached to.
+
+  Commit re-composes the Quote and compares price fingerprints to decide whether
+  the price still stands. The composed pricing carries
+  `policyEvidence.cancellation.capturedAt`, which
+  `captureCancellationPolicySnapshot` stamps with `new Date()` on every read — so
+  the two fingerprints could never agree. Every Commit against a product with a
+  published cancellation policy was refused `quote_failure / superseded` and had
+  its Hold released, deterministically and on the first attempt. Online checkout
+  was down for those products, on any payment method, with no race involved.
+
+  The capture instant now leaves the fingerprint input and nothing else does:
+  `policyId`, `policyVersionId`, `version` and the rules themselves stay in, so a
+  genuine price change or a policy version change still supersedes the Quote.
+  Both comparison sites use one helper with the value written at quote time, so a
+  normalization cannot be applied to some of them and not others.
+
+  The same comparison in `materialPolicyChanged` had the same defect, reporting
+  every catalog-backed Trip component as materially changed and demanding a
+  proposal re-acceptance no traveller could clear.
+
+## 0.134.0
+
+### Minor Changes
+
+- a41a73a: Hold capacity for the party the Booking Session is already for. An unstated
+  Hold quantity is now derived from the Session's own selection instead of
+  becoming a literal `1`, which no multi-traveler checkout could ever satisfy: the
+  capacity port expects the real traveler count, so every Hold for two or more
+  people was rejected as a quantity mismatch, and the rejection asked the client
+  to retry — with the same invented `1`, forever.
+
+  `placeBookingHoldV1.quantity` loses its `.default(1)`. A default there was not a
+  fallback at all — parsing filled the field in before any code could consult the
+  Session — and the same invented `1` was applied again in `useBookingHold` and
+  required by the shared journey. All three now leave it absent and let the server
+  derive it. `partySizeFromSelection` is that one derivation, replacing the two
+  private copies in the capacity port and the Trips composite handler.
+
+  A genuine mismatch — a caller that names a quantity other than the Session's
+  party size — no longer answers `request_new_hold`. Repeating a request whose
+  quantity is derived cannot succeed, so that next action described a livelock;
+  `hold_quantity_mismatch` now answers `request_hold_for_expected_quantity` and
+  `expectedQuantity` is the value to hold instead.
+
 ## 0.133.1
 
 ### Patch Changes

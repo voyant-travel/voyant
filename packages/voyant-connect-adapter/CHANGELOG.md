@@ -1,5 +1,88 @@
 # @voyant-travel/plugin-voyant-connect
 
+## 0.34.0
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/catalog-contracts@0.136.0
+  - @voyant-travel/catalog@0.258.0
+  - @voyant-travel/core@0.143.0
+  - @voyant-travel/storefront@0.260.3
+
+## 0.33.0
+
+### Patch Changes
+
+- Updated dependencies [1a903c5]
+  - @voyant-travel/catalog-contracts@0.135.0
+  - @voyant-travel/storefront@0.260.2
+
+## 0.32.2
+
+### Patch Changes
+
+- Updated dependencies [b78b724]
+  - @voyant-travel/graph-contracts@0.7.0
+  - @voyant-travel/core@0.142.1
+  - @voyant-travel/storefront@0.260.1
+
+## 0.32.1
+
+### Patch Changes
+
+- @voyant-travel/storefront@0.260.0
+
+## 0.32.0
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/catalog@0.257.0
+  - @voyant-travel/storefront@0.259.1
+
+## 0.31.4
+
+### Patch Changes
+
+- @voyant-travel/storefront@0.259.0
+
+## 0.31.3
+
+### Patch Changes
+
+- @voyant-travel/storefront@0.258.0
+
+## 0.31.2
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/storefront@0.257.6
+
+## 0.31.1
+
+### Patch Changes
+
+- f35c83e: Adopt `@voyant-travel/connect-adapter` 0.6.1, which resolves cruises keyed by an encoded SourceRef.
+
+  The catalog keys sourced cruises as `crus_sr_<base64url(JSON)>`, but the Connect
+  adapter only understood the legacy `cruise:<externalId>:<locale>` form, so no
+  candidate ever reduced to the upstream external id. The per-id lookup 404'd, the
+  fallback list scan matched nothing, and `getContent` threw
+  `Connect cruise content not found` — a 500 on every sourced cruise content read,
+  admin and storefront alike.
+
+## 0.31.0
+
+### Patch Changes
+
+- Updated dependencies [a41a73a]
+  - @voyant-travel/catalog-contracts@0.134.0
+  - @voyant-travel/catalog@0.256.0
+  - @voyant-travel/storefront@0.257.1
+
 ## 0.30.0
 
 ### Patch Changes

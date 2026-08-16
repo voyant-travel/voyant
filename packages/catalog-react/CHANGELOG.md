@@ -1,5 +1,257 @@
 # @voyant-travel/catalog-react
 
+## 0.296.0
+
+### Patch Changes
+
+- f6c85ee: Refuse an over-long billing value at the Booking Session write path instead of after the card is captured, and stop a settled payment from being stranded by the Session's own expiry.
+
+  The Session's selection normalizer projected the billing block field by field rather than parsing it, so the widths `bookingSelectionPublicV1` declared never ran while the Booking create enforced its own. A 25-character postal code was accepted at every step and refused once, at settlement. `requirements.bookingFields` now publishes `maxLength`, advertises the whole billing address, and the write path rejects with `invalid_selection` / `value_too_long` naming the field as the caller sent it (`billing.address.postal`, not `contactPostalCode`).
+
+  A Session whose money is with a processor is no longer expired by the commit preflight or the expiry sweep, and can no longer be abandoned; `BookingSessionRecordV1` carries `requirementsFingerprint`, so a Commit is reachable from a read rather than only from a Quote. A settlement that produces no Booking emits `booking_session.settlement.failed`, and `ANALYTICS_FAILURE_REASONS` gains `value_too_long` so the new rejection reaches the breakdown rather than the `unknown` bucket.
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/catalog-contracts@0.136.0
+  - @voyant-travel/inventory-react@0.180.0
+  - @voyant-travel/commerce-react@0.180.0
+  - @voyant-travel/react@0.106.3
+  - @voyant-travel/distribution-react@0.288.0
+
+## 0.295.0
+
+### Patch Changes
+
+- Updated dependencies [1a903c5]
+  - @voyant-travel/catalog-contracts@0.135.0
+  - @voyant-travel/inventory-react@0.179.0
+  - @voyant-travel/commerce-react@0.179.0
+  - @voyant-travel/distribution-react@0.287.0
+
+## 0.294.0
+
+### Patch Changes
+
+- Updated dependencies [3b9cd41]
+  - @voyant-travel/distribution-react@0.286.0
+  - @voyant-travel/commerce-react@0.178.0
+  - @voyant-travel/inventory-react@0.178.0
+
+## 0.293.1
+
+### Patch Changes
+
+- 50e518b: Restore the content catalog detail pages were dropping.
+
+  Resolve a sourced cruise's adapter by its own `source_kind` scoped to the
+  connection before falling back to the bare connection id. A channel registers
+  several adapters per connection and keys them apart by suffixing the registry
+  key (`<connectionId>:cruises`), so resolving by connection alone returned the
+  connection's _generic_ adapter. That adapter carries no `cruiseAdapter`, so
+  `getCruiseSailingPricing` reached through it for nothing and every
+  connection-scoped cruise reported no cabin pricing at all.
+
+  Read the projection's own camelCase keys in the cruise content synthesizer. It
+  read the snake_case names of the content shape it produces, which overlapped the
+  shim's projection on `id`/`name`/`status` and nothing else, so the fallback
+  rendered blank even when discovery had captured the data.
+
+  Stamp the provider key rather than the connection id as a sourced cruise's
+  `source_provider`, and project the cruise line, ship and port display names
+  alongside their faceted ids. The shim read `sourceRef.provider` while Voyant
+  Connect writes `providerKey`, so the fallback fired every time and a raw
+  `conn_…` string surfaced as the cruise line on the detail page.
+
+  Read the indexed document by id on the URL-addressable vertical detail pages.
+  Entered by id there is no result row to carry the index projection, so price,
+  offers, status, categories, destinations and the whole Attributes tab were
+  dropped — the same record showed far more when opened as a sheet from the list.
+  The supplier formatter is now held by ref so the supplier directory settling no
+  longer rebuilds the fetchers and re-requests the record (one page load issued the
+  content route three times).
+
+  Fall back to an itinerary-day image for an owned product's hero when it has no
+  product-level image, instead of reporting no hero while the same image sits in
+  `content.media`.
+
+  Degrade to the synthesizer when a cruise adapter's `getContent` fails, rather
+  than letting the throw escape and 500 the detail route. We hold a durable
+  sourced-entry projection and §3.6 defines the synthesizer as exactly that
+  degraded read, so an upstream miss should not blank the page. On sandbox,
+  `resolveCruiseRow` in `@voyant-travel/connect-adapter` throws
+  `Connect cruise content not found` for cruises discovery has already indexed,
+  which turned every concurrent cruise detail open into a 500. The failure is
+  reported through the new `onContentFetchError` option (defaulting to
+  `console.warn`) so an upstream outage stays visible instead of silently
+  degrading every cruise to a stub.
+
+## 0.293.0
+
+### Patch Changes
+
+- @voyant-travel/distribution-react@0.285.0
+- @voyant-travel/inventory-react@0.177.0
+- @voyant-travel/commerce-react@0.177.0
+
+## 0.292.0
+
+### Patch Changes
+
+- @voyant-travel/commerce-react@0.176.0
+- @voyant-travel/inventory-react@0.176.0
+- @voyant-travel/distribution-react@0.284.0
+
+## 0.291.0
+
+### Minor Changes
+
+- c6ccc30: Make the catalog browse surfaces read in the operator's language rather than the index's.
+
+  - **A family page names its schedule entries correctly.** `scheduleTerm` is resolved once upstream and carried on the catalog document, but the card ignored it and called everything a departure. A timed Activity now has sessions and an Event has dates.
+  - **A timed product shows its time.** An instant carries an hour, which is what distinguishes a 09:00 sailing from an 18:00 one; the card showed only the calendar day. Hovering gives the same instant in the departure's zone and the reader's, and offers nothing when there is nothing to convert — a bare calendar date, or a reader already in that zone.
+  - **A one-day product reads `1d`, not `1d / 0n`.** Zero nights is the absence of an overnight, not a measurement worth printing.
+  - **Facet values are labels, not codes.** The rail leaned on CSS `capitalize`, which does not treat `_` as a word break, so `free_sale` reached the operator as "Free_sale". Codes are now read as sentences: "Free sale".
+  - **A surface no longer offers the facet it pins.** A family view is `familyCode = tour`; rendering that in the rail as a checked box with a Clear link advertised a choice the surface does not allow and restated the page title. `hiddenFilterFields` on `CatalogPage` drops it; the filter still applies.
+  - **Booking mode is no longer a filter.** It is a derived integration mechanic (ADR-0010), not something anyone browses by.
+  - **Family pages have search.** They embed the browse grid, which suppresses its own search box so there is one search per page — but nothing supplied that one, so a family view had no free-text search at all. `CatalogSearchInput` is now shared by both surfaces, which also removes the duplicated typing-buffer and debounce from `CatalogSearchPage`.
+  - **Family taglines say what belongs in the family** instead of restating the heading ("Products in the Activity family.").
+
+### Patch Changes
+
+- Updated dependencies [c6ccc30]
+  - @voyant-travel/i18n@0.126.0
+  - @voyant-travel/inventory-react@0.175.0
+  - @voyant-travel/commerce-react@0.175.0
+  - @voyant-travel/distribution-react@0.283.0
+
+## 0.290.0
+
+### Patch Changes
+
+- @voyant-travel/distribution-react@0.282.0
+- @voyant-travel/inventory-react@0.174.0
+- @voyant-travel/commerce-react@0.174.0
+
+## 0.289.0
+
+### Minor Changes
+
+- 70752e1: Retire the Boat Tours catalog surface — a subtype is not a browse scope.
+
+  Every other Catalog entry is a Product family (`tour`, `activity`, `attraction`, `event`, `transportation`) or a vertical with its own index. Boat Tours was neither: it locked `familyCode = tour` plus `subtypeCode = boat-tour`, making it a strict subset of Tours that showed the same products a second time.
+
+  Subtypes are free-form per deployment (`products.productSubtypeCode` accepts any kebab-case code), so promoting one of them to a nav surface hardcoded one operator's vocabulary and left every other subtype — `day-tour`, `wine-tour` — without an equivalent. Families are a closed, seeded set, so a family view means the same thing on every deployment.
+
+  `subtypeCode` remains a facet on the product filter rail, so a Boat Tour is found by filtering Tours the same way any other subtype is. `ScheduledScope` no longer accepts `"boat-tours"`, and `/catalog/boat-tours` (index and detail) is no longer routed.
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/i18n@0.125.0
+  - @voyant-travel/inventory-react@0.173.0
+  - @voyant-travel/commerce-react@0.173.0
+  - @voyant-travel/distribution-react@0.281.0
+
+## 0.288.0
+
+### Patch Changes
+
+- @voyant-travel/inventory-react@0.172.0
+- @voyant-travel/distribution-react@0.280.0
+- @voyant-travel/commerce-react@0.172.0
+
+## 0.287.0
+
+### Patch Changes
+
+- Updated dependencies [05c2202]
+  - @voyant-travel/catalog-contracts@0.134.1
+  - @voyant-travel/inventory-react@0.171.0
+  - @voyant-travel/distribution-react@0.279.0
+  - @voyant-travel/commerce-react@0.171.0
+
+## 0.286.0
+
+### Patch Changes
+
+- Updated dependencies [e99380d]
+  - @voyant-travel/i18n@0.124.0
+  - @voyant-travel/inventory-react@0.170.0
+  - @voyant-travel/commerce-react@0.170.0
+  - @voyant-travel/distribution-react@0.278.0
+
+## 0.285.0
+
+### Patch Changes
+
+- @voyant-travel/react@0.106.2
+- @voyant-travel/inventory-react@0.169.0
+- @voyant-travel/distribution-react@0.277.0
+- @voyant-travel/commerce-react@0.169.0
+
+## 0.284.0
+
+### Patch Changes
+
+- @voyant-travel/distribution-react@0.276.0
+- @voyant-travel/commerce-react@0.168.0
+- @voyant-travel/inventory-react@0.168.0
+
+## 0.283.0
+
+### Patch Changes
+
+- @voyant-travel/inventory-react@0.167.0
+- @voyant-travel/distribution-react@0.275.0
+- @voyant-travel/commerce-react@0.167.0
+
+## 0.282.0
+
+### Patch Changes
+
+- @voyant-travel/distribution-react@0.274.0
+- @voyant-travel/inventory-react@0.166.0
+- @voyant-travel/commerce-react@0.166.0
+
+## 0.281.0
+
+### Patch Changes
+
+- @voyant-travel/inventory-react@0.165.0
+- @voyant-travel/distribution-react@0.273.0
+- @voyant-travel/commerce-react@0.165.0
+
+## 0.280.0
+
+### Minor Changes
+
+- a41a73a: Hold capacity for the party the Booking Session is already for. An unstated
+  Hold quantity is now derived from the Session's own selection instead of
+  becoming a literal `1`, which no multi-traveler checkout could ever satisfy: the
+  capacity port expects the real traveler count, so every Hold for two or more
+  people was rejected as a quantity mismatch, and the rejection asked the client
+  to retry — with the same invented `1`, forever.
+
+  `placeBookingHoldV1.quantity` loses its `.default(1)`. A default there was not a
+  fallback at all — parsing filled the field in before any code could consult the
+  Session — and the same invented `1` was applied again in `useBookingHold` and
+  required by the shared journey. All three now leave it absent and let the server
+  derive it. `partySizeFromSelection` is that one derivation, replacing the two
+  private copies in the capacity port and the Trips composite handler.
+
+  A genuine mismatch — a caller that names a quantity other than the Session's
+  party size — no longer answers `request_new_hold`. Repeating a request whose
+  quantity is derived cannot succeed, so that next action described a livelock;
+  `hold_quantity_mismatch` now answers `request_hold_for_expected_quantity` and
+  `expectedQuantity` is the value to hold instead.
+
+### Patch Changes
+
+- Updated dependencies [a41a73a]
+  - @voyant-travel/catalog-contracts@0.134.0
+  - @voyant-travel/inventory-react@0.164.0
+  - @voyant-travel/distribution-react@0.272.0
+  - @voyant-travel/commerce-react@0.164.0
+
 ## 0.279.0
 
 ### Patch Changes

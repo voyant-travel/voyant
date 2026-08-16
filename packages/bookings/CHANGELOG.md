@@ -1,5 +1,210 @@
 # @voyant-travel/bookings
 
+## 0.246.3
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/core@0.143.0
+  - @voyant-travel/products-contracts@0.111.7
+  - @voyant-travel/action-ledger@0.115.20
+  - @voyant-travel/db@0.122.4
+  - @voyant-travel/hono@0.143.2
+  - @voyant-travel/reporting-contracts@0.5.1
+
+## 0.246.2
+
+### Patch Changes
+
+- Updated dependencies [b78b724]
+  - @voyant-travel/reporting-contracts@0.5.0
+  - @voyant-travel/core@0.142.1
+
+## 0.246.1
+
+### Patch Changes
+
+- b11c10e: Capture FX rates, and stamp foreign-currency documents with the rate of their own date.
+
+  The FX model was fully built and never populated: on a live tenant with 53
+  foreign-currency invoices, `exchange_rates` held zero rows and not one document
+  carried an `fx_rate_set_id`. The platform could say a contract was worth
+  1,980 EUR but not what that was in the operator's reporting currency on the day
+  it was transacted — which is the figure the regulator asks for.
+
+  Four things were missing, and all four are here.
+
+  **The operator's FX settings never reached the write paths.** `createFinanceRuntime`
+  resolved the document-generation seams but not `resolveInvoiceFxSettings`, so every
+  document-stamping path saw "no configured base currency", fell through to null, and
+  left `base_*` and `fx_rate_set_id` empty. The operator-settings port now supplies them.
+
+  **Nothing could persist a resolved rate.** Markets owns `fx_rate_sets`/`exchange_rates`
+  and finance only reads them, so finance had no way to turn a rate into a durable
+  identity. Markets now provides `finance.fx-rate-capture.runtime`, an idempotent
+  capture keyed on (source, reporting currency, day). A captured rate is never
+  rewritten: re-capturing a day leaves the standing rate alone, because restating a
+  number under an id historical documents already point at would silently restate them.
+
+  **The rate source ignored the requested date.** The Voyant Data resolver called the
+  live pair route whatever date it was handed, so an invoice issued last March
+  resolved at today's rate. It now uses the dated history route, and the host's own
+  `finance.fx-reference.runtime` — shipped as a seam and never bound — is wired as the
+  preferred source, which is what lets a Romanian operator use BNR without a cloud key.
+
+  **The margin was applied but never recorded.** `exchange_rates` gains
+  `effective_rate_decimal` and `commission_bps`, so a row shows both halves of the
+  arithmetic on the invoice: the published rate, and the rate the document was actually
+  converted at once the operator's currency-risk commission is folded in. A stamped
+  document keeps the margin in force when it was stamped, so changing the setting no
+  longer restates history.
+
+  Resolution order now puts the document's own day first — a rate captured for that
+  day, else a fresh capture for that day, and only then an older standing rate, never
+  one observed after the document. Reaching for the newest rate on hand is worth about
+  1.8% across one month of BNR quotes, which is the difference between a figure tied to
+  documents and one that is derived.
+
+  Also:
+
+  - `payments` gains `reporting_currency` / `reporting_amount_cents` /
+    `reporting_fx_rate_set_id`, stamped at the payment's own date. These are new
+    columns rather than a reuse of `payments.base_*`, which on this table alone means
+    the _invoice's_ currency — a settlement conversion `paymentSettlementAmountSql`
+    depends on. Unifying that naming needs a data migration and is left for follow-up.
+  - `POST /v1/admin/finance/invoices/{id}/fx-stamp` and
+    `POST /v1/admin/finance/payments/{id}/fx-stamp` let an operator repair a historical
+    document, either from the configured source or from the rate printed on the
+    paperwork their accounting provider issued. Both are also agent Tools
+    (`stamp_invoice_fx_rate`, `stamp_payment_fx_rate`), because reading a month of rates
+    off PDFs is exactly the work that made the last period return manual.
+  - Booking FX rollups use the applied rate too, so a booking total and the invoice
+    raised from it no longer disagree by exactly the margin. An applied rate read in
+    the reverse direction is now `1 / applied` in both finance and bookings: a row
+    saying the operator converts at 5.352144 RON per EUR means one RON is 1/5.352144
+    EUR. Inverting the source rate and re-applying the margin — which finance did —
+    implied 5.1443 RON per EUR, contradicting the row it came from.
+  - A payment whose amount, currency or date changes and can no longer be converted
+    has its reporting stamp **cleared** rather than left describing the values it no
+    longer has.
+  - `fx_rate_source` gains `bnr`.
+
+## 0.246.0
+
+### Minor Changes
+
+- c6b5b12: Let an operator move a booking to a different departure, and stop the old way of doing it from silently double-booking.
+
+  **The hole first.** `updateItem` accepted `availabilitySlotId` and would repoint the item and refresh its snapshots — but never moved the allocation. The old departure kept the seat consumed forever while the new one had nothing reserved and stayed sellable, and the booking read as correctly moved the whole time. That is now refused with a 409 pointing at the move flow; scheduling a line that holds no capacity still works.
+
+  **`item_move` Amendment.** Same preview → accept → apply protocol as the rest: the new fare is resolved from the catalog for the target date (honouring departure price overrides and quantity tiers), the operator adds a change fee, and applying releases the old departure's capacity and claims the new one's in a single transaction. A target that fills up between quote and apply fails the guard and the whole move rolls back, so the booking is never left holding neither date.
+
+  Supplier-sourced inventory is included — a date change is a modify against the existing reservation, which is what the supplier port already expresses — so a connector that cannot move a booking answers `refused` rather than the move being refused up front.
+
+  **Fixes `item_add`, which had never worked.** The idempotency middleware is registered per path and `items/preview` never got a line, so `mutationContext` threw and every request to it returned 500 — the "Add a service" sheet shipped in #4660 could not complete a quote. Both item routes now carry it, and a route-level guard fails if any mutating amendment route can 500 on a missing key. Two further defects in the same sheet: a failed preview rendered nothing at all (the mutation was awaited with no catch), and the departure picker offered sold-out departures because the capacity filter written for the move picker was never applied to it.
+
+  **Pricing has a lever in both directions.** A cheaper move is the operator's call, per move rather than by policy: give the difference back, hold it as travel credit, or keep the original price. Travel credit issues a real credit against the customer; waive floors the change at zero while leaving any change fee payable. A dearer move can be discounted with `fareDiscountCents` so an operator can absorb part or all of an increase as goodwill — its own auditable line rather than an override of the fare, capped at the increase so a pricier date never turns into a payout.
+
+  **UX.** The target departure is a selector over departures that can actually take the booking — open, in the future, on the same product, and with room for the seats being carried — not a free date field. Price is never typed; the quote separates "the new date costs more" from "we charge to change it" so an operator can read it back to a customer.
+
+### Patch Changes
+
+- Updated dependencies [c6b5b12]
+  - @voyant-travel/bookings-contracts@0.119.0
+
+## 0.245.1
+
+### Patch Changes
+
+- c7bccba: Record a Booking Document that carries the issuer's identity.
+
+  Every `POST /v1/admin/bookings/{id}/documents` request carrying the `issued*`
+  group answered 500, so `contract` and `invoice` — the types whose validation
+  _requires_ that group — could not be created at all: without the fields the
+  request was refused 400, with them it crashed.
+
+  The insert was never the problem. The replay lookup that runs before it
+  interpolated the issue date straight into a `sql` fragment, and an interpolated
+  value goes to the driver unencoded — unlike `eq(column, value)`, which encodes
+  it through the column first. postgres-js cannot bind a `Date`, so the query
+  threw before it was ever sent, which is why writing the same values to the same
+  columns by hand always worked. The lookup now binds through the column, so it
+  and the insert agree by construction.
+
+  The same interpolation sat in `buildCreatedAtCondition` in all three
+  action-ledger drift checkers, where it crashed
+  `check_booking_action_ledger_drift`, `check_finance_action_ledger_drift` and
+  `check_product_action_ledger_drift` for any caller that narrowed by
+  `createdAtFrom`. Each is bound as an encoded timestamp now, and each package's
+  unit test pins the parameter's type rather than just the SQL it builds.
+
+## 0.245.0
+
+### Minor Changes
+
+- 798b05b: Make recording a booking's payment separable from issuing a fiscal document for it.
+
+  Creating a booking with a recorded payment issued an invoice and mirrored it to the operator's accounting provider, and confirming one generated a contract. Both were consequences of the create rather than calls anyone made, so an operator's explicit "do not issue a proforma, invoice or contract" had nowhere to land, and back-filling a booking for an already-invoiced sale filed a second real fiscal document for it.
+
+  - `suppressDocuments` on booking create records the booking without producing documents for it. The invoice is still written, as an unissued draft carrying the payments, so the booking records what was paid. Persisted as `bookings.documents_suppressed` and re-read by contract generation, which runs off an event after the create commits.
+  - `documentGeneration.externalInvoice` (and `externalDocument` on `POST /invoices/from-booking`) records the sale against a fiscal document the operator already issued in their provider: the platform's invoice is issued so balances and contracts stay right, the mirror is suppressed, and the invoice's external reference names the operator's document.
+  - Issuing from a booking that already carries a live external fiscal document now refuses with `duplicate_external_document` (HTTP 409) instead of sending a duplicate; `acknowledgeExistingExternalDocument: true` overrides it.
+  - `POST /invoices/{id}/external-refs/{refId}/supersede` records that a provider document was cancelled outside the platform, keeping the superseded identity, and optionally repoints the reference at its replacement.
+
+### Patch Changes
+
+- Updated dependencies [798b05b]
+  - @voyant-travel/bookings-contracts@0.118.0
+
+## 0.244.1
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/action-ledger@0.115.19
+  - @voyant-travel/db@0.122.2
+  - @voyant-travel/hono@0.143.1
+  - @voyant-travel/reporting-contracts@0.4.2
+
+## 0.244.0
+
+### Minor Changes
+
+- 8e2133e: Record contracts, invoices, proformas, and credit notes that were issued outside Voyant against a booking.
+
+  A Booking Document can now be one of those four commercial kinds as well as a traveller document, and carries the identity its own issuer gave it (`issuedBy`, `issuedSeries`, `issuedNumber`, `issuedAt`). Recording is not issuing: nothing allocates a number from an invoice or contract series, nothing renders from a template, and no `invoices` or `contracts` row is created. A database check requires an issued kind to carry the issuer's number and date, and a unique index over the document's whole issued identity makes recording the same document twice replay the first record instead of doubling it, while keeping two issuers' identically-numbered documents apart. The insert and its action-ledger entry commit in one transaction.
+
+  Adds the `record_booking_document` and `list_booking_documents` Tools so an agent migrating historical bookings can attach the paperwork itself, and adds the matching fields to the admin Upload document dialog.
+
+### Patch Changes
+
+- Updated dependencies [8e2133e]
+  - @voyant-travel/bookings-contracts@0.117.0
+
+## 0.243.1
+
+### Patch Changes
+
+- Updated dependencies [1858c5b]
+  - @voyant-travel/bookings-contracts@0.116.0
+
+## 0.243.0
+
+### Minor Changes
+
+- 0fe4ce8: Make changing a live booking a first-class operation instead of free-text data entry.
+
+  - **Deleting or resizing a Booking Item now returns the inventory it held.** `booking_allocations.booking_item_id` cascades, so deleting an item destroyed its allocation without giving the seats back — `availability_slots.remaining_pax` stayed decremented permanently with no row left to reconcile from. `deleteItem` now releases before the cascade, and `updateItem` keeps the allocation in step with a `quantity` change, refusing to oversell rather than silently desyncing.
+  - **The Booking Amendment engine is reachable from the operator.** Adding or removing a traveller on a confirmed booking runs preview → accept → apply: the change is priced, the departure is capacity-checked, and the supplier consequence is shown before anything is written.
+  - **A new `item_add` Amendment adds a catalog-linked service** — an extra excursion, a transfer — priced from the catalog and holding a real allocation. Supplier-sourced products are refused, since adding one needs a supplier reservation this system cannot make.
+  - **The money follows.** Applying an Amendment that owes money now raises a payment schedule for the difference, so "Generate payment link" pre-fills the delta instead of the booking total, and the generated link can be emailed to the customer from the same dialog.
+
+### Patch Changes
+
+- Updated dependencies [0fe4ce8]
+  - @voyant-travel/bookings-contracts@0.115.0
+
 ## 0.242.0
 
 ### Minor Changes

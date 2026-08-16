@@ -1,5 +1,104 @@
 # @voyant-travel/operations
 
+## 0.23.4
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/catalog@0.258.0
+  - @voyant-travel/core@0.143.0
+  - @voyant-travel/products-contracts@0.111.7
+  - @voyant-travel/action-ledger@0.115.20
+  - @voyant-travel/bookings@0.246.3
+  - @voyant-travel/db@0.122.4
+  - @voyant-travel/hono@0.143.2
+  - @voyant-travel/identity@0.236.10
+
+## 0.23.3
+
+### Patch Changes
+
+- Updated dependencies [c6b5b12]
+  - @voyant-travel/bookings@0.246.0
+  - @voyant-travel/bookings-contracts@0.119.0
+  - @voyant-travel/catalog@0.257.1
+
+## 0.23.2
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/catalog@0.257.0
+
+## 0.23.1
+
+### Patch Changes
+
+- Updated dependencies [798b05b]
+- Updated dependencies [05c2202]
+  - @voyant-travel/bookings-contracts@0.118.0
+  - @voyant-travel/finance-contracts@0.114.0
+  - @voyant-travel/bookings@0.245.0
+  - @voyant-travel/catalog@0.256.6
+
+## 0.23.0
+
+### Minor Changes
+
+- e99380d: Group the departure traveler roster by reservation, and stop asking departures that allocate nothing about rooms and seats.
+
+  The roster was a flat table that repeated the booking number on every row, so who travelled together had to be reconstructed by matching strings by eye. Each reservation is now its own group carrying what belongs to the party — who booked it, its status, whether it is paid, and how many of its sold seats have names yet — with the traveler rows underneath.
+
+  The departure summary now reports whether a departure allocates positions at all (`allocation.planned`, derived from the resources laid out on it and the resource templates its option declares, alongside a new `allocation.templated` count). A day excursion has neither, so its Seated / Not seated counters, its Seat / room column and its allocation manager no longer render, and `allocation_resources_missing` and `travelers_unassigned` are no longer raised against a rooming plan that was never going to exist. Departures whose catalog does declare resources are unaffected.
+
+## 0.22.22
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/action-ledger@0.115.19
+  - @voyant-travel/bookings@0.244.1
+  - @voyant-travel/catalog@0.256.5
+  - @voyant-travel/db@0.122.2
+  - @voyant-travel/hono@0.143.1
+  - @voyant-travel/identity@0.236.9
+
+## 0.22.21
+
+### Patch Changes
+
+- Updated dependencies [8e2133e]
+  - @voyant-travel/bookings-contracts@0.117.0
+  - @voyant-travel/bookings@0.244.0
+  - @voyant-travel/catalog@0.256.4
+
+## 0.22.20
+
+### Patch Changes
+
+- Updated dependencies [1858c5b]
+  - @voyant-travel/bookings-contracts@0.116.0
+  - @voyant-travel/bookings@0.243.1
+  - @voyant-travel/catalog@0.256.3
+
+## 0.22.19
+
+### Patch Changes
+
+- Updated dependencies [0fe4ce8]
+  - @voyant-travel/bookings@0.243.0
+  - @voyant-travel/bookings-contracts@0.115.0
+  - @voyant-travel/catalog@0.256.2
+
+## 0.22.18
+
+### Patch Changes
+
+- Updated dependencies [a41a73a]
+  - @voyant-travel/catalog@0.256.0
+  - @voyant-travel/products-contracts@0.111.5
+
 ## 0.22.17
 
 ### Patch Changes

@@ -1,5 +1,145 @@
 # @voyant-travel/operations-react
 
+## 0.179.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.298.0
+- @voyant-travel/inventory-react@0.180.0
+- @voyant-travel/react@0.106.3
+
+## 0.178.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.297.0
+- @voyant-travel/inventory-react@0.179.0
+
+## 0.177.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.296.0
+- @voyant-travel/inventory-react@0.178.0
+
+## 0.176.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.295.0
+- @voyant-travel/inventory-react@0.177.0
+
+## 0.175.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.294.0
+- @voyant-travel/inventory-react@0.176.0
+
+## 0.174.0
+
+### Patch Changes
+
+- Updated dependencies [c6ccc30]
+  - @voyant-travel/i18n@0.126.0
+  - @voyant-travel/bookings-react@0.293.0
+  - @voyant-travel/inventory-react@0.175.0
+
+## 0.173.0
+
+### Patch Changes
+
+- Updated dependencies [c6b5b12]
+  - @voyant-travel/bookings-react@0.292.0
+  - @voyant-travel/inventory-react@0.174.0
+
+## 0.172.0
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/i18n@0.125.0
+  - @voyant-travel/bookings-react@0.291.0
+  - @voyant-travel/inventory-react@0.173.0
+
+## 0.171.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.290.0
+- @voyant-travel/inventory-react@0.172.0
+
+## 0.170.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.289.0
+- @voyant-travel/inventory-react@0.171.0
+
+## 0.169.0
+
+### Minor Changes
+
+- e99380d: Group the departure traveler roster by reservation, and stop asking departures that allocate nothing about rooms and seats.
+
+  The roster was a flat table that repeated the booking number on every row, so who travelled together had to be reconstructed by matching strings by eye. Each reservation is now its own group carrying what belongs to the party — who booked it, its status, whether it is paid, and how many of its sold seats have names yet — with the traveler rows underneath.
+
+  The departure summary now reports whether a departure allocates positions at all (`allocation.planned`, derived from the resources laid out on it and the resource templates its option declares, alongside a new `allocation.templated` count). A day excursion has neither, so its Seated / Not seated counters, its Seat / room column and its allocation manager no longer render, and `allocation_resources_missing` and `travelers_unassigned` are no longer raised against a rooming plan that was never going to exist. Departures whose catalog does declare resources are unaffected.
+
+### Patch Changes
+
+- Updated dependencies [e99380d]
+  - @voyant-travel/operations@0.23.0
+  - @voyant-travel/i18n@0.124.0
+  - @voyant-travel/inventory-react@0.170.0
+  - @voyant-travel/bookings-react@0.288.0
+
+## 0.168.0
+
+### Patch Changes
+
+- @voyant-travel/react@0.106.2
+- @voyant-travel/bookings-react@0.287.0
+- @voyant-travel/inventory-react@0.169.0
+
+## 0.167.0
+
+### Patch Changes
+
+- Updated dependencies [8e2133e]
+  - @voyant-travel/bookings-react@0.286.0
+  - @voyant-travel/inventory-react@0.168.0
+
+## 0.166.0
+
+### Patch Changes
+
+- Updated dependencies [1858c5b]
+  - @voyant-travel/bookings-react@0.285.0
+  - @voyant-travel/inventory-react@0.167.0
+
+## 0.165.0
+
+### Patch Changes
+
+- Updated dependencies [0fe4ce8]
+  - @voyant-travel/bookings-react@0.284.0
+  - @voyant-travel/inventory-react@0.166.0
+
+## 0.164.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.283.0
+- @voyant-travel/inventory-react@0.165.0
+
+## 0.163.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.282.0
+- @voyant-travel/inventory-react@0.164.0
+
 ## 0.162.0
 
 ### Patch Changes

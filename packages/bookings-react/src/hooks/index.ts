@@ -12,6 +12,17 @@ export {
 } from "./use-booking-action-ledger.js"
 export { type UseBookingActivityOptions, useBookingActivity } from "./use-booking-activity.js"
 export {
+  type BookingItemAdditionInput,
+  type BookingItemMoveInput,
+  type PreviewItemAdditionInput,
+  type PreviewItemMoveInput,
+  type PreviewRosterChangeInput,
+  type RosterPreviewResult,
+  type TravelerRosterChangeInput,
+  useBookingAmendmentFlow,
+  useBookingAmendments,
+} from "./use-booking-amendments.js"
+export {
   type CancelBookingInput,
   useBookingCancelMutation,
 } from "./use-booking-cancel-mutation.js"

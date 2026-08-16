@@ -61,6 +61,12 @@ export type BookingRecordItemSummary = z.infer<typeof bookingRecordItemSummarySc
 export const bookingRecordSchema = z.object({
   id: z.string(),
   bookingNumber: z.string(),
+  /**
+   * Optimistic-concurrency token. Amendment previews and applies quote
+   * against it, so a change raced by another operator is refused rather
+   * than silently applied to a booking that has moved on.
+   */
+  revision: z.number().int().positive().optional(),
   status: bookingStatusSchema,
   personId: z.string().nullable(),
   organizationId: z.string().nullable(),
@@ -75,6 +81,12 @@ export const bookingRecordSchema = z.object({
   pax: z.number().int().nullable(),
   items: z.array(bookingRecordItemSummarySchema).optional(),
   internalNotes: z.string().nullable(),
+  /**
+   * One-way suppression latch. The admin route returns it; `updateBookingSchema`
+   * types it as `z.literal(true)`, so once set nothing clears it. Optional here
+   * because responses built before it was surfaced omit the field.
+   */
+  notificationsSuppressed: z.boolean().optional(),
   communicationLanguage: z.string().nullable().optional(),
   contactFirstName: z.string().nullable().optional(),
   contactLastName: z.string().nullable().optional(),
@@ -292,8 +304,25 @@ export const bookingDocumentTypeSchema = z.enum([
   "insurance",
   "health",
   "passport_copy",
+  "contract",
+  "invoice",
+  "proforma",
+  "credit_note",
   "other",
 ])
+
+/**
+ * The kinds that record commercial paperwork issued outside Voyant. Voyant
+ * never allocated their numbers, so they carry the issuer's own identity.
+ */
+export const issuedBookingDocumentTypes = [
+  "contract",
+  "invoice",
+  "proforma",
+  "credit_note",
+] as const satisfies readonly BookingDocumentType[]
+
+export type BookingDocumentType = z.infer<typeof bookingDocumentTypeSchema>
 
 export const bookingTravelerDocumentRecordSchema = z.object({
   id: z.string(),
@@ -302,6 +331,10 @@ export const bookingTravelerDocumentRecordSchema = z.object({
   type: bookingDocumentTypeSchema,
   fileName: z.string(),
   fileUrl: z.string(),
+  issuedBy: z.string().nullable().default(null),
+  issuedSeries: z.string().nullable().default(null),
+  issuedNumber: z.string().nullable().default(null),
+  issuedAt: z.string().nullable().default(null),
   expiresAt: z.string().nullable(),
   notes: z.string().nullable(),
   createdAt: z.string(),

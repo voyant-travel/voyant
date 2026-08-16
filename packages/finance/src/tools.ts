@@ -31,14 +31,17 @@ import {
   invoiceDetailSchema,
   invoiceListItemSchema,
   invoiceSchema,
+  paymentSchema,
 } from "./routes-invoice-schemas.js"
 import { bookingCreateToolSchema } from "./service-booking-create.js"
 import { parseJsonResult } from "./tool-json.js"
 import {
   insertCreditNoteSchema,
+  insertPaymentSchema,
   invoiceFromBookingSchema,
   invoiceListQuerySchema,
   paymentDisputeRecordSchema,
+  paymentStatusSchema,
   recordPaymentDisputeSchema,
   recordRefundSettlementSchema,
   refundSettlementRecordSchema,
@@ -96,6 +99,9 @@ export interface FinanceToolServices {
   issueInvoiceFromBooking(
     input: z.infer<typeof issueInvoiceFromBookingToolInputSchema> & { approvalId?: string },
   ): Promise<unknown>
+  recordPayment(input: z.infer<typeof recordPaymentToolInputSchema>): Promise<unknown>
+  stampInvoiceFxRate(input: z.infer<typeof stampInvoiceFxRateToolInputSchema>): Promise<unknown>
+  stampPaymentFxRate(input: z.infer<typeof stampPaymentFxRateToolInputSchema>): Promise<unknown>
   recordPaymentDispute(input: z.infer<typeof recordPaymentDisputeToolInputSchema>): Promise<unknown>
   recordRefundSettlement(
     input: z.infer<typeof recordRefundSettlementToolInputSchema>,
@@ -680,6 +686,124 @@ export const issueUnsyncedProformaFromBookingTool = defineTool<
   },
 })
 
+/**
+ * The payment states an agent may RECORD, out of the four the lifecycle has.
+ *
+ * Derived by subsetting `paymentStatusSchema` rather than re-listing it, so a new
+ * lifecycle state has to be considered here rather than silently admitted.
+ */
+export const recordablePaymentStatusSchema = paymentStatusSchema.extract(["pending", "completed"])
+
+/**
+ * The agent-facing shape of "money arrived against this invoice".
+ *
+ * Derived from `insertPaymentSchema` — the body the admin route takes under
+ * `/invoices/{id}/payments` — so the two cannot drift, then narrowed three ways:
+ *
+ * - `invoiceId` moves INTO the body. A Tool has no path, and the graph action
+ *   resolves its target from a named command field.
+ * - The FX and card-plumbing fields are dropped. `baseCurrency`,
+ *   `baseAmountCents` and `fxRateSetId` are resolved server-side against the
+ *   invoice's currency and rate set, and `paymentInstrumentId` /
+ *   `paymentAuthorizationId` / `paymentCaptureId` belong to a processor session
+ *   that recorded its own payment. An agent that had to fill them in would guess,
+ *   and every one of them also rides the eager `tools/list`.
+ * - `status` is narrowed to the two RECORDABLE states and defaults to
+ *   `completed` rather than `pending`. An operator telling an agent to record a
+ *   payment is recording money it already has; the route's `pending` default
+ *   belongs to a checkout session that settles later, and getting that backwards
+ *   leaves the invoice reading unpaid after the agent reports success. The other
+ *   two lifecycle states are not things this call means: `failed` is not money
+ *   received, and `refunded` is reached by refunding a payment
+ *   (`issue_invoice_refund` then `record_refund_settlement`), never by recording
+ *   one. Both were accepted, inserted, and then silently ignored by the balance
+ *   recomputation, which counts only `completed` (voyant#4661 review).
+ */
+export const recordPaymentToolInputSchema = insertPaymentSchema
+  .pick({
+    amountCents: true,
+    currency: true,
+    paymentMethod: true,
+    paymentDate: true,
+    referenceNumber: true,
+    notes: true,
+  })
+  .safeExtend({
+    invoiceId: z.string().min(1).describe("The invoice this payment settles."),
+    status: recordablePaymentStatusSchema
+      .default("completed")
+      .describe(
+        "Settlement state. `completed` counts against the invoice balance; `pending` records " +
+          "an expected payment that does not. A failed attempt is not recorded here, and a " +
+          "refund goes through `issue_invoice_refund`.",
+      ),
+    idempotencyKey: z
+      .string()
+      .max(255)
+      .optional()
+      .describe(
+        "Optional stable key. Repeating a recording with the same key replays the first one " +
+          "instead of taking the money twice.",
+      ),
+  })
+
+/**
+ * Recording a payment an operator already received (voyant#4656).
+ *
+ * The gap this closes was not discovery: there was no Tool at all. An operator
+ * asked the agent for a confirmed, fully-paid booking and was told payment
+ * recording did not exist — correctly, because `/finance/invoices/{id}/payments`
+ * had no agent-facing front. Entering historical bookings and their payments for
+ * a regulatory filing is exactly the work an operator delegates.
+ *
+ * `medium` risk, no approval, for the same reason `record_payment_dispute` needs
+ * none: the money moved before this call, and the record only catches up with
+ * it. Gating a back-entry sweep behind per-payment approval would stall the one
+ * job this exists for, while the invoice kept reporting a balance nobody owes.
+ * The service still refuses to overpay an invoice or to accept a payment against
+ * one that cannot take another, so the destructive cases fail closed on their
+ * own.
+ */
+export const recordPaymentTool = defineTool<
+  z.infer<typeof recordPaymentToolInputSchema>,
+  unknown,
+  FinanceToolContext
+>({
+  owner: "@voyant-travel/finance",
+  capabilityId: "@voyant-travel/finance#tool.record-payment",
+  capabilityVersion: "v1",
+  name: "record_payment",
+  description:
+    "Record a payment received against an invoice — bank transfer, card, cash, cheque, " +
+    "wallet, direct bill, or travel credit. Recomputes the invoice's paid amount, balance, " +
+    "and status, so a payment that covers the total marks the invoice `paid`. Amounts are " +
+    "in MINOR units (`amountCents`) and `paymentDate` is the date the money was received, " +
+    "which is what makes back-entering historical payments work. Rejected when the invoice " +
+    "would be overpaid or is not in a state that accepts payments. Refunds go through " +
+    "`issue_invoice_refund` and `record_refund_settlement`, not a negative payment.",
+  inputSchema: recordPaymentToolInputSchema,
+  outputSchema: paymentSchema,
+  requiredScopes: ["finance:write"],
+  audience: { source: "grant", allowed: ["staff"] },
+  tier: "write",
+  riskPolicy: {
+    destructive: false,
+    // Matches the graph action. Removing a payment is an admin operation with no
+    // agent-facing counterpart, so from here the record does not come back.
+    reversible: false,
+    dryRunSupported: false,
+    confirmationRequired: true,
+    sideEffects: ["data-write"],
+  },
+  // Deliberately NOT `idempotentHint`. This is idempotent only when the caller
+  // sends `idempotencyKey`, which is optional — and it has to stay optional,
+  // because two genuinely identical payments are a thing customers do. Claiming
+  // the hint would tell an agent that repeating the call is free, about money.
+  async handler(input, ctx) {
+    return parseJsonResult(paymentSchema, await finance(ctx).recordPayment(input))
+  },
+})
+
 export const recordPaymentDisputeToolInputSchema = recordPaymentDisputeSchema
 
 /**
@@ -799,6 +923,123 @@ export const recordRefundSettlementTool = defineTool<
   },
 })
 
+const fxStampFieldsSchema = {
+  rate: z
+    .number()
+    .positive()
+    .optional()
+    .describe(
+      "The rate the source published for the document's own date — reporting-currency " +
+        "units per one unit of the document's currency, BEFORE the operator's " +
+        "currency-risk margin. Omit to ask the configured reference source.",
+    ),
+  source: z
+    .string()
+    .min(1)
+    .max(32)
+    .optional()
+    .describe("Who published `rate`, e.g. `bnr`. Defaults to `manual`."),
+  force: z.boolean().optional().describe("Replace a stamp the document already carries."),
+}
+
+export const stampInvoiceFxRateToolInputSchema = z.object({
+  invoiceId: z.string().min(1).describe("The invoice to stamp."),
+  ...fxStampFieldsSchema,
+})
+
+export const stampPaymentFxRateToolInputSchema = z.object({
+  paymentId: z.string().min(1).describe("The payment to stamp."),
+  ...fxStampFieldsSchema,
+})
+
+const fxStampResultSchema = z.object({
+  documentId: z.string(),
+  currency: z.string(),
+  reportingCurrency: z.string(),
+  rate: z.number(),
+  effectiveRate: z.number(),
+  commissionBps: z.number().int(),
+  fxRateSetId: z.string().nullable(),
+  reportingAmountCents: z.number().int(),
+})
+
+const FX_STAMP_RISK_POLICY = {
+  destructive: false,
+  // Re-stamping is a `force` away, so a wrong rate is correctable.
+  reversible: true,
+  dryRunSupported: false,
+  confirmationRequired: true,
+  sideEffects: ["data-write"],
+} as const
+
+const FX_STAMP_RATE_GUIDANCE =
+  "Pass `rate` to use the rate printed on the document — the published rate BEFORE the " +
+  "operator's currency-risk margin, which is applied on top and recorded alongside it — " +
+  "or omit it to ask the configured reference source for that date. The rate is kept as " +
+  "a rate set, so every document of that day resolves to the same number afterwards. " +
+  "Refuses a document that already carries a stamp unless `force` is set; a stamp is " +
+  "meant to hold, because changing it restates a figure someone has already reported."
+
+/**
+ * Repair a foreign-currency document that predates rate capture (voyant#4703).
+ *
+ * These are agent surfaces because the work they exist for is agent-shaped: the
+ * operator's accounting provider prints the applied rate on every invoice
+ * ("Total plata 420.00 EUR (2247.92 Lei) Curs 1 EUR = 5.3522 Lei"), and putting a
+ * month of those back onto the records is what made the last period return
+ * manual. Documents issued from now on stamp themselves.
+ */
+export const stampInvoiceFxRateTool = defineTool<
+  z.infer<typeof stampInvoiceFxRateToolInputSchema>,
+  unknown,
+  FinanceToolContext
+>({
+  owner: "@voyant-travel/finance",
+  capabilityId: "@voyant-travel/finance#tool.stamp-invoice-fx-rate",
+  capabilityVersion: "v1",
+  name: "stamp_invoice_fx_rate",
+  description:
+    "Record what a foreign-currency invoice was worth in the operator's reporting " +
+    `currency, at the rate of the invoice's OWN issue date. ${FX_STAMP_RATE_GUIDANCE}`,
+  inputSchema: stampInvoiceFxRateToolInputSchema,
+  outputSchema: fxStampResultSchema,
+  requiredScopes: ["finance:write"],
+  audience: { source: "grant", allowed: ["staff"] },
+  tier: "write",
+  riskPolicy: FX_STAMP_RISK_POLICY,
+  // Stamping the same invoice with the same rate lands on the same numbers, and
+  // a captured rate is never rewritten — so a repeat really is free.
+  annotations: { idempotentHint: true },
+  async handler(input, ctx) {
+    return fxStampResultSchema.parse(await finance(ctx).stampInvoiceFxRate(input))
+  },
+})
+
+export const stampPaymentFxRateTool = defineTool<
+  z.infer<typeof stampPaymentFxRateToolInputSchema>,
+  unknown,
+  FinanceToolContext
+>({
+  owner: "@voyant-travel/finance",
+  capabilityId: "@voyant-travel/finance#tool.stamp-payment-fx-rate",
+  capabilityVersion: "v1",
+  name: "stamp_payment_fx_rate",
+  description:
+    "Record what a foreign-currency payment was worth in the operator's reporting " +
+    "currency, at the rate of the day it landed — the figure a period return asks for " +
+    `as advances collected. ${FX_STAMP_RATE_GUIDANCE}`,
+  inputSchema: stampPaymentFxRateToolInputSchema,
+  outputSchema: fxStampResultSchema,
+  requiredScopes: ["finance:write"],
+  audience: { source: "grant", allowed: ["staff"] },
+  tier: "write",
+  riskPolicy: FX_STAMP_RISK_POLICY,
+  annotations: { idempotentHint: true },
+  async handler(input, ctx) {
+    return fxStampResultSchema.parse(await finance(ctx).stampPaymentFxRate(input))
+  },
+})
+
 export const financeTools = [
   listInvoicesTool,
   getInvoiceTool,
@@ -807,8 +1048,11 @@ export const financeTools = [
   issueInvoiceFromBookingTool,
   invoiceBookingTool,
   refundCancelledBookingTool,
+  recordPaymentTool,
   recordPaymentDisputeTool,
   recordRefundSettlementTool,
+  stampInvoiceFxRateTool,
+  stampPaymentFxRateTool,
   previewUnsyncedProformaFromBookingTool,
   issueUnsyncedProformaFromBookingTool,
 ] as const

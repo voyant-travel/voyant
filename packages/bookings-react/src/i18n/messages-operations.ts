@@ -4,13 +4,14 @@ export type BookingsUiOperationsMessages = {
     fields: {
       status: string
       note: string
-      suppressNotifications: string
+      notifyCustomer: string
     }
     placeholders: {
       note: string
     }
     helpers: {
-      suppressNotifications: string
+      notifyCustomer: string
+      notificationsAlreadySilenced: string
     }
     actions: {
       updateStatus: string
@@ -83,6 +84,7 @@ export type BookingsUiOperationsMessages = {
       viewItem: string
       editItem: string
       deleteItem: string
+      moveItem: string
     }
     snapshot: {
       title: string

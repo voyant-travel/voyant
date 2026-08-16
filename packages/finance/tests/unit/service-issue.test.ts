@@ -53,6 +53,7 @@ describe("issueInvoiceFromBooking", () => {
       contactLastName: "Popescu",
       contactEmail: "ana@example.com",
       contactPhone: "+40720000000",
+      contactTaxId: "RO12345678",
       contactAddressLine1: "Strada 1",
       contactAddressLine2: "Ap. 2",
       contactCity: "Cluj-Napoca",
@@ -142,7 +143,7 @@ describe("issueInvoiceFromBooking", () => {
       clientCity: "Cluj-Napoca",
       clientCounty: "Cluj",
       clientCountry: "RO",
-      clientVatCode: null,
+      clientVatCode: "RO12345678",
       clientRegCom: null,
       bookingNumber: "BK-1",
       issueDate: "2026-05-13",
@@ -533,7 +534,9 @@ describe("issueInvoiceFromBooking", () => {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
             limit: vi.fn(async () => [{ bookingNumber: "BK-FX" }]),
-            orderBy: vi.fn(async () => []),
+            // Drizzle's builder is thenable AND chainable; the FX resolution
+            // reads exchange_rates with `.orderBy(...).limit(1)`.
+            orderBy: vi.fn(() => Object.assign(Promise.resolve([]), { limit: async () => [] })),
           })),
         })),
       })),
@@ -631,7 +634,7 @@ describe("issueInvoiceFromBooking", () => {
         from: vi.fn(() => ({
           where: vi.fn(() => ({
             limit: vi.fn(async () => [{ bookingNumber: "BK-FX-FAIL" }]),
-            orderBy: vi.fn(async () => []),
+            orderBy: vi.fn(() => Object.assign(Promise.resolve([]), { limit: async () => [] })),
           })),
         })),
       })),

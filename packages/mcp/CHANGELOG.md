@@ -1,5 +1,83 @@
 # @voyant-travel/mcp
 
+## 0.25.2
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/core@0.143.0
+  - @voyant-travel/framework@0.83.2
+  - @voyant-travel/hono@0.143.2
+
+## 0.25.1
+
+### Patch Changes
+
+- @voyant-travel/framework@0.83.1
+
+## 0.25.0
+
+### Patch Changes
+
+- Updated dependencies [b78b724]
+  - @voyant-travel/framework@0.83.0
+  - @voyant-travel/core@0.142.1
+
+## 0.24.3
+
+### Patch Changes
+
+- @voyant-travel/framework@0.82.3
+
+## 0.24.2
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/framework@0.82.2
+  - @voyant-travel/hono@0.143.1
+
+## 0.24.1
+
+### Patch Changes
+
+- dccec4b: Follow-ups from the review of the core-operator-writes change. The MCP rate
+  limiter now picks its bucket from the tool a request will DISPATCH rather than
+  the name on the envelope, so a write reached through `call_tool` — the ordinary
+  way to reach anything non-eager — is charged to the tight write bucket instead
+  of the loose read one, and a client namespace prefix (`functions.x`) can no
+  longer downgrade it either. `record_payment` accepts only the two recordable
+  payment states: `failed` and `refunded` were inserted and then ignored by the
+  balance recomputation, so the agent reported success against an invoice that
+  never moved. The server instructions and the `discovery` guide topic now name
+  the eager writes this caller actually received rather than the configured
+  default, so a read-only key, an opted-out deployment, or a graph without those
+  tools is no longer told a resident tool it cannot see.
+
+## 0.24.0
+
+### Minor Changes
+
+- d3b17e2: Make the core operator writes reachable from a conversation. Finance gains a
+  `record_payment` Tool over `POST /finance/invoices/{id}/payments`, which had no
+  agent-facing front at all, so an agent asked to record a payment correctly
+  reported that no such action existed. The MCP transport now registers a default
+  eager set — `book_product` and `record_payment`, promoted only for a caller
+  authorized for them — instead of defaulting to an empty domain tier that made
+  every write depend on the consumer admitting the meta-tools; pass
+  `eagerToolNames: []` to opt out. A read the projection folded into a
+  `<domain>_query` group now answers with the query tool and `resource` to call
+  instead of "it does not exist or your grant does not authorize it", over
+  `call_tool`, the flat name, and `describe_tool`, and is counted as the new
+  `unreachable` telemetry outcome rather than as an unknown tool.
+
+## 0.23.1
+
+### Patch Changes
+
+- @voyant-travel/framework@0.82.1
+
 ## 0.23.0
 
 ### Minor Changes

@@ -20,11 +20,18 @@ import {
   SheetHeader,
   SheetTitle,
 } from "@voyant-travel/ui/components/sheet"
-import { Eye, Package, Pencil, Plus, Trash2 } from "lucide-react"
+import { CalendarArrowUp, Eye, Package, Pencil, Plus, Trash2 } from "lucide-react"
 import * as React from "react"
 import { useBookingsUiI18nOrDefault, useBookingsUiMessagesOrDefault } from "../i18n/provider.js"
-import { type BookingItemRecord, useBookingItemMutation, useBookingItems } from "../index.js"
+import {
+  type BookingItemRecord,
+  useBooking,
+  useBookingItemMutation,
+  useBookingItems,
+} from "../index.js"
+import { BookingItemAdditionDialog } from "./booking-item-addition-dialog.js"
 import { BookingItemDialog } from "./booking-item-dialog.js"
+import { BookingItemMoveDialog } from "./booking-item-move-dialog.js"
 import { IconActionButton } from "./icon-action-button.js"
 import { StatusBadge } from "./status-badge.js"
 
@@ -50,7 +57,21 @@ export function BookingItemList({
   const [editing, setEditing] = React.useState<BookingItemRecord | undefined>(undefined)
   const [deleteTarget, setDeleteTarget] = React.useState<BookingItemRecord | null>(null)
   const [viewing, setViewing] = React.useState<BookingItemRecord | null>(null)
+  const [additionOpen, setAdditionOpen] = React.useState(false)
+  const [moveTarget, setMoveTarget] = React.useState<BookingItemRecord | null>(null)
   const { data } = useBookingItems(bookingId)
+  const bookingQuery = useBooking(bookingId)
+  const booking = bookingQuery.data?.data
+
+  /**
+   * On a live booking, adding a line is not data entry — it buys something.
+   * Route it through the Amendment flow so the catalog prices it and the
+   * departure actually gives up a seat, and keep the free-text dialog for
+   * bookings that have not been committed yet.
+   */
+  const requiresAmendment =
+    (booking?.status === "confirmed" || booking?.status === "in_progress") &&
+    typeof booking.revision === "number"
   const { remove } = useBookingItemMutation(bookingId)
   const { formatCurrency, formatDateTime } = useBookingsUiI18nOrDefault()
   const messages = useBookingsUiMessagesOrDefault()
@@ -164,6 +185,16 @@ export function BookingItemList({
                     setDialogOpen(true)
                   }}
                 />
+                {requiresAmendment && row.original.productId ? (
+                  <IconActionButton
+                    label={messages.bookingItemList.actions.moveItem}
+                    icon={<CalendarArrowUp className="h-3.5 w-3.5" />}
+                    onClick={(e) => {
+                      e.stopPropagation()
+                      setMoveTarget(row.original)
+                    }}
+                  />
+                ) : null}
                 <IconActionButton
                   label={messages.bookingItemList.actions.deleteItem}
                   icon={<Trash2 className="h-3.5 w-3.5" />}
@@ -179,7 +210,16 @@ export function BookingItemList({
         ),
       },
     ],
-    [formatCurrency, formatDateTime, messages, readOnly],
+    [
+      formatCurrency,
+      formatDateTime,
+      messages,
+      readOnly,
+      // The booking loads after the first render, so without this the row
+      // actions keep the initial `false` and the move action never appears
+      // on a confirmed booking.
+      requiresAmendment,
+    ],
   )
 
   return (
@@ -194,6 +234,10 @@ export function BookingItemList({
             variant="outline"
             size="sm"
             onClick={() => {
+              if (requiresAmendment) {
+                setAdditionOpen(true)
+                return
+              }
               setEditing(undefined)
               setDialogOpen(true)
             }}
@@ -210,6 +254,27 @@ export function BookingItemList({
         emptyMessage={messages.bookingItemList.empty}
         showPagination={false}
       />
+
+      {moveTarget && booking?.revision !== undefined ? (
+        <BookingItemMoveDialog
+          open
+          onOpenChange={(next) => {
+            if (!next) setMoveTarget(null)
+          }}
+          bookingId={bookingId}
+          bookingRevision={booking.revision}
+          item={moveTarget}
+        />
+      ) : null}
+
+      {booking?.revision !== undefined ? (
+        <BookingItemAdditionDialog
+          open={additionOpen}
+          onOpenChange={setAdditionOpen}
+          bookingId={bookingId}
+          bookingRevision={booking.revision}
+        />
+      ) : null}
 
       <BookingItemDialog
         open={dialogOpen}

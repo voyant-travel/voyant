@@ -34,6 +34,7 @@ describe("finance deployment manifest", () => {
           { id: "finance.host.runtime" },
           { id: "finance.app-api.runtime" },
           { id: "finance.departure-profitability.runtime" },
+          { id: "finance.invoice-document-provider" },
         ],
       },
       runtime: { entry: "@voyant-travel/finance", export: "createFinanceVoyantRuntime" },
@@ -45,6 +46,11 @@ describe("finance deployment manifest", () => {
         { id: "finance.checkout-payment-starters.runtime", optional: true },
         { id: "payments.adapter.runtime", optional: true },
         { id: "finance.invoice-settlement-poller", optional: true, cardinality: "many" },
+        { id: "finance.invoice-document-provider", optional: true },
+        // Both FX seams are optional: without them finance still converts, it
+        // just cannot hand a document a durable rate-set identity.
+        { id: "finance.fx-rate-capture.runtime", optional: true },
+        { id: "finance.fx-reference.runtime", optional: true },
       ],
       api: [
         {
@@ -70,22 +76,42 @@ describe("finance deployment manifest", () => {
       schema: [{ id: "@voyant-travel/finance#schema" }],
       migrations: [{ id: "@voyant-travel/finance#migrations" }],
       reporting: {
-        datasets: [
-          {
+        datasets: expect.arrayContaining([
+          expect.objectContaining({
             id: "finance.receivables",
             version: 1,
             runtime: {
               entry: "@voyant-travel/finance/reporting",
               export: "financeReceivablesDataset",
             },
-          },
-        ],
+          }),
+          expect.objectContaining({
+            id: "finance.unperformed-services",
+            version: 1,
+            runtime: {
+              entry: "@voyant-travel/finance/reporting-unperformed-services",
+              export: "financeUnperformedServicesDataset",
+            },
+          }),
+        ]),
         widgets: expect.arrayContaining([
           expect.objectContaining({ id: "finance.outstanding-by-currency" }),
           expect.objectContaining({ id: "finance.net-issued-trend" }),
           expect.objectContaining({ id: "finance.invoice-status-breakdown" }),
+          expect.objectContaining({ id: "finance.unperformed-services-lines" }),
         ]),
-        templates: [expect.objectContaining({ id: "finance.overview" })],
+        templates: expect.arrayContaining([
+          expect.objectContaining({ id: "finance.overview" }),
+          // The period reaches the graph as descriptors, so a host can render
+          // the inputs before instantiating the template.
+          expect.objectContaining({
+            id: "finance.contracts-in-progress",
+            parameters: [
+              expect.objectContaining({ id: "periodStart", valueType: "date", required: true }),
+              expect.objectContaining({ id: "periodEnd", valueType: "date", required: true }),
+            ],
+          }),
+        ]),
       },
       setupMigrations: [
         {
@@ -780,6 +806,82 @@ describe("finance deployment manifest", () => {
         label: { namespace: "finance.admin", key: "invoicesPage.title" },
       }),
     ])
+  })
+})
+
+/**
+ * voyant#4668: finance could request an invoice document and nothing anywhere
+ * would produce one. The four declarations below are what makes that
+ * impossible to reintroduce silently — an unfulfillable deployment now fails
+ * when the graph resolves rather than returning HTTP 501 at the route.
+ */
+describe("invoice document production", () => {
+  it("declares the resources an invoice PDF actually needs", () => {
+    expect(financeVoyantModule.resources).toEqual([
+      {
+        id: "@voyant-travel/finance#resource.document-storage",
+        kind: "document-storage",
+        required: true,
+      },
+      {
+        id: "@voyant-travel/finance#resource.document-renderer",
+        kind: "document-renderer",
+        required: true,
+      },
+    ])
+  })
+
+  it("offers the document provider as a selectable, resource-backed provider", () => {
+    expect(financeVoyantModule.providers).toEqual([
+      expect.objectContaining({
+        id: "@voyant-travel/finance#provider.invoice-document",
+        port: "finance.invoice-document-provider",
+        selection: { role: "invoiceDocumentArtifact", value: "standard" },
+        uses: {
+          resources: [
+            "@voyant-travel/finance#resource.document-storage",
+            "@voyant-travel/finance#resource.document-renderer",
+          ],
+        },
+        runtime: {
+          entry: "@voyant-travel/finance/runtime-contributor",
+          export: "createFinanceInvoiceDocumentGraphProvider",
+        },
+      }),
+    ])
+  })
+
+  it("carries both a trigger and a recovery leg", () => {
+    expect(financeVoyantModule.subscribers).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          id: "@voyant-travel/finance#subscriber.invoice-issued-document",
+          eventType: "invoice.issued",
+          runtime: {
+            entry: "@voyant-travel/finance/invoice-issued-subscriber",
+            export: "createInvoiceIssuedDocumentSubscriberGraphRuntime",
+          },
+        }),
+      ]),
+    )
+    expect(financeVoyantModule.jobs).toEqual([
+      expect.objectContaining({
+        id: "finance.invoice-document-renditions",
+        wakeup: true,
+        schedule: { every: "1m", overlap: "skip" },
+        runtime: {
+          entry: "@voyant-travel/finance/invoice-document-job",
+          export: "runDueInvoiceDocumentRenditionsJob",
+        },
+      }),
+    ])
+  })
+
+  it("keeps the provider port optional so a deployment without one still boots", () => {
+    expect(declaredRuntimePorts.has("finance.invoice-document-provider")).toBe(true)
+    expect(
+      financeVoyantModule.runtimePorts.find(({ id }) => id === "finance.invoice-document-provider"),
+    ).toMatchObject({ optional: true })
   })
 })
 

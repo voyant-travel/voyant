@@ -1,5 +1,264 @@
 # @voyant-travel/legal
 
+## 0.254.2
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/catalog@0.258.0
+  - @voyant-travel/commerce@0.53.0
+  - @voyant-travel/core@0.143.0
+  - @voyant-travel/distribution@0.228.13
+  - @voyant-travel/action-ledger@0.115.20
+  - @voyant-travel/bookings@0.246.3
+  - @voyant-travel/db@0.122.4
+  - @voyant-travel/finance@0.258.1
+  - @voyant-travel/hono@0.143.2
+  - @voyant-travel/public-document-delivery@0.5.2
+  - @voyant-travel/relationships@0.134.13
+  - @voyant-travel/storage@0.115.8
+
+## 0.254.1
+
+### Patch Changes
+
+- Updated dependencies [b78b724]
+  - @voyant-travel/finance@0.258.0
+  - @voyant-travel/bookings@0.246.2
+  - @voyant-travel/core@0.142.1
+  - @voyant-travel/catalog@0.257.3
+  - @voyant-travel/commerce@0.52.1
+  - @voyant-travel/distribution@0.228.12
+  - @voyant-travel/relationships@0.134.12
+
+## 0.254.0
+
+### Minor Changes
+
+- 46bb84e: Let an operator issue and send a booking contract without an agent.
+
+  A booking-linked contract could only complete its reviewed lifecycle through `executeLegalContractLifecycleCommand`, which has no admin route and is invoked only from the MCP runtime. `POST /v1/admin/legal/contracts/{id}/issue` refused with a 400 while the admin UI rendered its `Issue` button anyway, so on a deployment where the agent is not wired for contracts every generated contract accumulated in `draft` with no operator path out of it.
+
+  What the reviewed lifecycle actually enforces is three facts about the contract row — the revision has not been superseded, its content is still the reviewed content, and the caller approved the revision that is current. Those are checkable without the agent-approval machinery wrapped around them, so the admin routes now check them directly:
+
+  - `GET /v1/admin/legal/contracts/{id}/booking-review` serves the un-redacted revision, including the `revision` and `contentFingerprint` a caller approves against. Managed booking revisions only; requires `bookings-pii:read` and records the access on the booking's PII log.
+  - `POST /{id}/issue` and `POST /{id}/send` accept `{ revision, contentFingerprint }`. A managed booking revision without them is refused and told where to read them; a mismatched fingerprint, a stale revision, or an existing successor revision is refused for the same reason an agent would be.
+  - Issuing a managed booking revision now promotes the reviewed content verbatim — no template re-render, no contract-number allocation — matching the reviewed lifecycle command's own issue leg instead of rewriting the document the approval covered.
+  - The contract detail page opens a review dialog for booking contracts instead of firing an `Issue` that was guaranteed to fail, and disables the action with a reason when the review cannot be read.
+
+  - `legal.contracts.issue` on the standard admin client took `z.object({})`, so it stripped the approval and would have hit `approval_required` on every booking contract. It now derives its input from the route schema, and `legal.contracts.send` and `legal.contracts.bookingReview` join it.
+  - `packages/legal/openapi/admin/legal.json` says "Do not edit by hand" but nothing regenerated it. `pnpm --filter @voyant-travel/legal generate:openapi` now produces the contracts slice from the live routes through the operator app's own composition, and `verify:openapi-drift` holds it. Regenerating also corrected a `DELETE /{id}` conflict description that had already drifted from the route.
+
+  Document regeneration for a draft whose content is wrong is not part of this change: it needs the durable document-operation engine and an artifact provider on the admin route surface, neither of which the contracts admin routes carry today.
+
+### Patch Changes
+
+- Updated dependencies [46bb84e]
+  - @voyant-travel/legal-contracts@0.109.0
+
+## 0.253.3
+
+### Patch Changes
+
+- Updated dependencies [b11c10e]
+  - @voyant-travel/commerce@0.52.0
+  - @voyant-travel/finance@0.257.0
+  - @voyant-travel/bookings@0.246.1
+  - @voyant-travel/catalog@0.257.2
+  - @voyant-travel/distribution@0.228.11
+  - @voyant-travel/relationships@0.134.11
+
+## 0.253.2
+
+### Patch Changes
+
+- Updated dependencies [c6b5b12]
+  - @voyant-travel/bookings@0.246.0
+  - @voyant-travel/bookings-contracts@0.119.0
+  - @voyant-travel/finance@0.256.0
+  - @voyant-travel/catalog@0.257.1
+  - @voyant-travel/commerce@0.51.11
+  - @voyant-travel/distribution@0.228.10
+  - @voyant-travel/relationships@0.134.10
+
+## 0.253.1
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/catalog@0.257.0
+  - @voyant-travel/commerce@0.51.10
+  - @voyant-travel/distribution@0.228.9
+
+## 0.253.0
+
+### Minor Changes
+
+- 1f36964: Render the auto-generated booking contract's payment clause from settlement.
+
+  The post-confirm variable bag carried the booking's list price and nothing
+  about what had been paid, so a template branching on `booking.isPaidInFull`
+  took the `else` arm on every contract and printed the missing-value
+  placeholder for each amount — telling a customer who had paid in full that
+  they owed "-" by "-".
+
+  Finance gains `getBookingSettlement`, the one answer for what a booking has
+  paid and still owes: completed payments against non-void invoices, the
+  invoice balance, and the installments that still stand (cancelled, waived and
+  expired rows excluded). Legal reads it through that service and emits
+  `booking.paidAmountCents`, `amountDueCents`, `balanceDueCents`,
+  `isPaidInFull`, the deposit/balance installments, and `payment.method` /
+  `latestCompleted` / `schedule`, so the auto-generated contract and the agent
+  path now render the same clause.
+
+  A credit note is a negative receivable, so `getBookingSettlement` nets it out
+  of the balance rather than summing it as debt, and never presents a
+  credit-note refund as the customer's latest payment.
+
+  The acceptance-evidence digest is matched against a third candidate rendered
+  with preview-time settlement — nothing paid, the whole price outstanding —
+  because the shopper accepted the terms before paying, and a card booking is
+  settled by the time `booking.confirmed` lands.
+
+### Patch Changes
+
+- Updated dependencies [1f36964]
+  - @voyant-travel/finance@0.255.0
+  - @voyant-travel/catalog@0.256.7
+  - @voyant-travel/commerce@0.51.9
+  - @voyant-travel/distribution@0.228.8
+  - @voyant-travel/relationships@0.134.9
+
+## 0.252.0
+
+### Minor Changes
+
+- 798b05b: Make recording a booking's payment separable from issuing a fiscal document for it.
+
+  Creating a booking with a recorded payment issued an invoice and mirrored it to the operator's accounting provider, and confirming one generated a contract. Both were consequences of the create rather than calls anyone made, so an operator's explicit "do not issue a proforma, invoice or contract" had nowhere to land, and back-filling a booking for an already-invoiced sale filed a second real fiscal document for it.
+
+  - `suppressDocuments` on booking create records the booking without producing documents for it. The invoice is still written, as an unissued draft carrying the payments, so the booking records what was paid. Persisted as `bookings.documents_suppressed` and re-read by contract generation, which runs off an event after the create commits.
+  - `documentGeneration.externalInvoice` (and `externalDocument` on `POST /invoices/from-booking`) records the sale against a fiscal document the operator already issued in their provider: the platform's invoice is issued so balances and contracts stay right, the mirror is suppressed, and the invoice's external reference names the operator's document.
+  - Issuing from a booking that already carries a live external fiscal document now refuses with `duplicate_external_document` (HTTP 409) instead of sending a duplicate; `acknowledgeExistingExternalDocument: true` overrides it.
+  - `POST /invoices/{id}/external-refs/{refId}/supersede` records that a provider document was cancelled outside the platform, keeping the superseded identity, and optionally repoints the reference at its replacement.
+
+### Patch Changes
+
+- Updated dependencies [798b05b]
+- Updated dependencies [05c2202]
+  - @voyant-travel/bookings-contracts@0.118.0
+  - @voyant-travel/bookings@0.245.0
+  - @voyant-travel/finance@0.254.0
+  - @voyant-travel/catalog@0.256.6
+  - @voyant-travel/commerce@0.51.8
+  - @voyant-travel/distribution@0.228.7
+  - @voyant-travel/relationships@0.134.8
+
+## 0.251.8
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+- Updated dependencies [c2aedcb]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/finance@0.253.0
+  - @voyant-travel/action-ledger@0.115.19
+  - @voyant-travel/bookings@0.244.1
+  - @voyant-travel/catalog@0.256.5
+  - @voyant-travel/commerce@0.51.7
+  - @voyant-travel/db@0.122.2
+  - @voyant-travel/distribution@0.228.6
+  - @voyant-travel/hono@0.143.1
+  - @voyant-travel/public-document-delivery@0.5.1
+  - @voyant-travel/relationships@0.134.7
+  - @voyant-travel/storage@0.115.7
+
+## 0.251.7
+
+### Patch Changes
+
+- Updated dependencies [8e2133e]
+  - @voyant-travel/bookings-contracts@0.117.0
+  - @voyant-travel/bookings@0.244.0
+  - @voyant-travel/catalog@0.256.4
+  - @voyant-travel/finance@0.252.1
+  - @voyant-travel/commerce@0.51.5
+  - @voyant-travel/distribution@0.228.5
+  - @voyant-travel/relationships@0.134.6
+
+## 0.251.6
+
+### Patch Changes
+
+- Updated dependencies [1858c5b]
+  - @voyant-travel/bookings-contracts@0.116.0
+  - @voyant-travel/finance@0.252.0
+  - @voyant-travel/bookings@0.243.1
+  - @voyant-travel/catalog@0.256.3
+  - @voyant-travel/commerce@0.51.4
+  - @voyant-travel/distribution@0.228.4
+  - @voyant-travel/relationships@0.134.5
+
+## 0.251.5
+
+### Patch Changes
+
+- Updated dependencies [0fe4ce8]
+- Updated dependencies [a414f2c]
+  - @voyant-travel/bookings@0.243.0
+  - @voyant-travel/bookings-contracts@0.115.0
+  - @voyant-travel/finance@0.251.0
+  - @voyant-travel/catalog@0.256.2
+  - @voyant-travel/commerce@0.51.3
+  - @voyant-travel/distribution@0.228.3
+  - @voyant-travel/relationships@0.134.4
+
+## 0.251.4
+
+### Patch Changes
+
+- Updated dependencies [d3b17e2]
+  - @voyant-travel/finance@0.250.0
+  - @voyant-travel/catalog@0.256.1
+  - @voyant-travel/commerce@0.51.2
+  - @voyant-travel/distribution@0.228.2
+  - @voyant-travel/relationships@0.134.3
+
+## 0.251.3
+
+### Patch Changes
+
+- Updated dependencies [a41a73a]
+  - @voyant-travel/catalog@0.256.0
+  - @voyant-travel/commerce@0.51.1
+  - @voyant-travel/distribution@0.228.1
+
+## 0.251.2
+
+### Patch Changes
+
+- 584b2ce: Generate booking contracts from the template the deployment actually owns, instead of
+  requiring the booking to name its language.
+
+  Nothing writes `bookings.communication_language` or `contact_preferred_language`, so the
+  contract language resolved to `"en"` for essentially every booking. Template _selection_
+  already handled that — `getDefaultTemplate` prefers the requested language and falls back
+  to the operator's own active default — but the applicability re-check that followed
+  demanded `template.language === language` and discarded the fallback, reporting
+  `template.applicableCurrentVersion` as missing. On a single-language deployment that is
+  the only template there is, so contract generation never once succeeded through the
+  ordinary path: a Romanian operator with one active Romanian template had 311 confirmed
+  bookings and no contract from any of them.
+
+  A contract is now written, and labelled, in the language of the template it was rendered
+  from; the booking's language is a preference that orders selection and nothing more. The
+  same correction applies to the applicable-template listing, which filtered on that
+  preference and so hid the operator's own template from its own bookings, and to the
+  booking-contract draft tool, which rejected a template version the caller had named
+  explicitly. Unfulfilled-generation ledger entries now carry the comparison that failed —
+  the resolved preference, the selected template and its language, and both channels —
+  rather than only the `template.applicableCurrentVersion` category.
+
 ## 0.251.1
 
 ### Patch Changes

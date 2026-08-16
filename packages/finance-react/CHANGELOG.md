@@ -1,5 +1,196 @@
 # @voyant-travel/finance-react
 
+## 0.298.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.298.0
+- @voyant-travel/inventory-react@0.180.0
+- @voyant-travel/react@0.106.3
+- @voyant-travel/distribution-react@0.288.0
+- @voyant-travel/operations-react@0.179.0
+
+## 0.297.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.297.0
+- @voyant-travel/inventory-react@0.179.0
+- @voyant-travel/distribution-react@0.287.0
+- @voyant-travel/operations-react@0.178.0
+
+## 0.296.0
+
+### Patch Changes
+
+- Updated dependencies [3b9cd41]
+- Updated dependencies [b78b724]
+  - @voyant-travel/distribution-react@0.286.0
+  - @voyant-travel/finance@0.258.0
+  - @voyant-travel/bookings-react@0.296.0
+  - @voyant-travel/inventory-react@0.178.0
+  - @voyant-travel/operations-react@0.177.0
+
+## 0.295.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.295.0
+- @voyant-travel/distribution-react@0.285.0
+- @voyant-travel/operations-react@0.176.0
+- @voyant-travel/inventory-react@0.177.0
+
+## 0.294.0
+
+### Patch Changes
+
+- Updated dependencies [b11c10e]
+  - @voyant-travel/finance@0.257.0
+  - @voyant-travel/bookings-react@0.294.0
+  - @voyant-travel/inventory-react@0.176.0
+  - @voyant-travel/distribution-react@0.284.0
+  - @voyant-travel/operations-react@0.175.0
+
+## 0.293.0
+
+### Patch Changes
+
+- Updated dependencies [c6ccc30]
+  - @voyant-travel/i18n@0.126.0
+  - @voyant-travel/bookings-react@0.293.0
+  - @voyant-travel/inventory-react@0.175.0
+  - @voyant-travel/distribution-react@0.283.0
+  - @voyant-travel/operations-react@0.174.0
+
+## 0.292.0
+
+### Patch Changes
+
+- Updated dependencies [c6b5b12]
+  - @voyant-travel/bookings-react@0.292.0
+  - @voyant-travel/finance@0.256.0
+  - @voyant-travel/distribution-react@0.282.0
+  - @voyant-travel/operations-react@0.173.0
+  - @voyant-travel/inventory-react@0.174.0
+
+## 0.291.0
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/i18n@0.125.0
+  - @voyant-travel/bookings-react@0.291.0
+  - @voyant-travel/inventory-react@0.173.0
+  - @voyant-travel/distribution-react@0.281.0
+  - @voyant-travel/operations-react@0.172.0
+
+## 0.290.0
+
+### Patch Changes
+
+- Updated dependencies [1f36964]
+  - @voyant-travel/finance@0.255.0
+  - @voyant-travel/bookings-react@0.290.0
+  - @voyant-travel/inventory-react@0.172.0
+  - @voyant-travel/distribution-react@0.280.0
+  - @voyant-travel/operations-react@0.171.0
+
+## 0.289.0
+
+### Patch Changes
+
+- Updated dependencies [798b05b]
+  - @voyant-travel/finance@0.254.0
+  - @voyant-travel/bookings-react@0.289.0
+  - @voyant-travel/inventory-react@0.171.0
+  - @voyant-travel/distribution-react@0.279.0
+  - @voyant-travel/operations-react@0.170.0
+
+## 0.288.0
+
+### Patch Changes
+
+- Updated dependencies [e99380d]
+  - @voyant-travel/operations-react@0.169.0
+  - @voyant-travel/i18n@0.124.0
+  - @voyant-travel/inventory-react@0.170.0
+  - @voyant-travel/bookings-react@0.288.0
+  - @voyant-travel/distribution-react@0.278.0
+
+## 0.287.0
+
+### Patch Changes
+
+- Updated dependencies [c2aedcb]
+  - @voyant-travel/finance@0.253.0
+  - @voyant-travel/react@0.106.2
+  - @voyant-travel/bookings-react@0.287.0
+  - @voyant-travel/inventory-react@0.169.0
+  - @voyant-travel/distribution-react@0.277.0
+  - @voyant-travel/operations-react@0.168.0
+
+## 0.286.0
+
+### Patch Changes
+
+- Updated dependencies [8e2133e]
+  - @voyant-travel/bookings-react@0.286.0
+  - @voyant-travel/distribution-react@0.276.0
+  - @voyant-travel/operations-react@0.167.0
+  - @voyant-travel/inventory-react@0.168.0
+
+## 0.285.0
+
+### Patch Changes
+
+- Updated dependencies [1858c5b]
+  - @voyant-travel/finance@0.252.0
+  - @voyant-travel/bookings-react@0.285.0
+  - @voyant-travel/inventory-react@0.167.0
+  - @voyant-travel/distribution-react@0.275.0
+  - @voyant-travel/operations-react@0.166.0
+
+## 0.284.0
+
+### Minor Changes
+
+- 0fe4ce8: Make changing a live booking a first-class operation instead of free-text data entry.
+
+  - **Deleting or resizing a Booking Item now returns the inventory it held.** `booking_allocations.booking_item_id` cascades, so deleting an item destroyed its allocation without giving the seats back — `availability_slots.remaining_pax` stayed decremented permanently with no row left to reconcile from. `deleteItem` now releases before the cascade, and `updateItem` keeps the allocation in step with a `quantity` change, refusing to oversell rather than silently desyncing.
+  - **The Booking Amendment engine is reachable from the operator.** Adding or removing a traveller on a confirmed booking runs preview → accept → apply: the change is priced, the departure is capacity-checked, and the supplier consequence is shown before anything is written.
+  - **A new `item_add` Amendment adds a catalog-linked service** — an extra excursion, a transfer — priced from the catalog and holding a real allocation. Supplier-sourced products are refused, since adding one needs a supplier reservation this system cannot make.
+  - **The money follows.** Applying an Amendment that owes money now raises a payment schedule for the difference, so "Generate payment link" pre-fills the delta instead of the booking total, and the generated link can be emailed to the customer from the same dialog.
+
+### Patch Changes
+
+- Updated dependencies [0fe4ce8]
+- Updated dependencies [a414f2c]
+  - @voyant-travel/bookings-react@0.284.0
+  - @voyant-travel/finance@0.251.0
+  - @voyant-travel/distribution-react@0.274.0
+  - @voyant-travel/operations-react@0.165.0
+  - @voyant-travel/inventory-react@0.166.0
+
+## 0.283.0
+
+### Patch Changes
+
+- Updated dependencies [d3b17e2]
+  - @voyant-travel/finance@0.250.0
+  - @voyant-travel/bookings-react@0.283.0
+  - @voyant-travel/inventory-react@0.165.0
+  - @voyant-travel/distribution-react@0.273.0
+  - @voyant-travel/operations-react@0.164.0
+
+## 0.282.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.282.0
+- @voyant-travel/inventory-react@0.164.0
+- @voyant-travel/distribution-react@0.272.0
+- @voyant-travel/operations-react@0.163.0
+
 ## 0.281.0
 
 ### Patch Changes

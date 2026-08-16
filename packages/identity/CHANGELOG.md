@@ -1,5 +1,25 @@
 # @voyant-travel/identity
 
+## 0.236.10
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/core@0.143.0
+  - @voyant-travel/action-ledger@0.115.20
+  - @voyant-travel/db@0.122.4
+  - @voyant-travel/hono@0.143.2
+
+## 0.236.9
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/action-ledger@0.115.19
+  - @voyant-travel/db@0.122.2
+  - @voyant-travel/hono@0.143.1
+
 ## 0.236.8
 
 ### Patch Changes

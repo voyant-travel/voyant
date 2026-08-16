@@ -1,5 +1,69 @@
 # @voyant-travel/bookings-contracts
 
+## 0.119.0
+
+### Minor Changes
+
+- c6b5b12: Let an operator move a booking to a different departure, and stop the old way of doing it from silently double-booking.
+
+  **The hole first.** `updateItem` accepted `availabilitySlotId` and would repoint the item and refresh its snapshots — but never moved the allocation. The old departure kept the seat consumed forever while the new one had nothing reserved and stayed sellable, and the booking read as correctly moved the whole time. That is now refused with a 409 pointing at the move flow; scheduling a line that holds no capacity still works.
+
+  **`item_move` Amendment.** Same preview → accept → apply protocol as the rest: the new fare is resolved from the catalog for the target date (honouring departure price overrides and quantity tiers), the operator adds a change fee, and applying releases the old departure's capacity and claims the new one's in a single transaction. A target that fills up between quote and apply fails the guard and the whole move rolls back, so the booking is never left holding neither date.
+
+  Supplier-sourced inventory is included — a date change is a modify against the existing reservation, which is what the supplier port already expresses — so a connector that cannot move a booking answers `refused` rather than the move being refused up front.
+
+  **Fixes `item_add`, which had never worked.** The idempotency middleware is registered per path and `items/preview` never got a line, so `mutationContext` threw and every request to it returned 500 — the "Add a service" sheet shipped in #4660 could not complete a quote. Both item routes now carry it, and a route-level guard fails if any mutating amendment route can 500 on a missing key. Two further defects in the same sheet: a failed preview rendered nothing at all (the mutation was awaited with no catch), and the departure picker offered sold-out departures because the capacity filter written for the move picker was never applied to it.
+
+  **Pricing has a lever in both directions.** A cheaper move is the operator's call, per move rather than by policy: give the difference back, hold it as travel credit, or keep the original price. Travel credit issues a real credit against the customer; waive floors the change at zero while leaving any change fee payable. A dearer move can be discounted with `fareDiscountCents` so an operator can absorb part or all of an increase as goodwill — its own auditable line rather than an override of the fare, capped at the increase so a pricier date never turns into a payout.
+
+  **UX.** The target departure is a selector over departures that can actually take the booking — open, in the future, on the same product, and with room for the seats being carried — not a free date field. Price is never typed; the quote separates "the new date costs more" from "we charge to change it" so an operator can read it back to a customer.
+
+## 0.118.0
+
+### Minor Changes
+
+- 798b05b: Make recording a booking's payment separable from issuing a fiscal document for it.
+
+  Creating a booking with a recorded payment issued an invoice and mirrored it to the operator's accounting provider, and confirming one generated a contract. Both were consequences of the create rather than calls anyone made, so an operator's explicit "do not issue a proforma, invoice or contract" had nowhere to land, and back-filling a booking for an already-invoiced sale filed a second real fiscal document for it.
+
+  - `suppressDocuments` on booking create records the booking without producing documents for it. The invoice is still written, as an unissued draft carrying the payments, so the booking records what was paid. Persisted as `bookings.documents_suppressed` and re-read by contract generation, which runs off an event after the create commits.
+  - `documentGeneration.externalInvoice` (and `externalDocument` on `POST /invoices/from-booking`) records the sale against a fiscal document the operator already issued in their provider: the platform's invoice is issued so balances and contracts stay right, the mirror is suppressed, and the invoice's external reference names the operator's document.
+  - Issuing from a booking that already carries a live external fiscal document now refuses with `duplicate_external_document` (HTTP 409) instead of sending a duplicate; `acknowledgeExistingExternalDocument: true` overrides it.
+  - `POST /invoices/{id}/external-refs/{refId}/supersede` records that a provider document was cancelled outside the platform, keeping the superseded identity, and optionally repoints the reference at its replacement.
+
+## 0.117.0
+
+### Minor Changes
+
+- 8e2133e: Record contracts, invoices, proformas, and credit notes that were issued outside Voyant against a booking.
+
+  A Booking Document can now be one of those four commercial kinds as well as a traveller document, and carries the identity its own issuer gave it (`issuedBy`, `issuedSeries`, `issuedNumber`, `issuedAt`). Recording is not issuing: nothing allocates a number from an invoice or contract series, nothing renders from a template, and no `invoices` or `contracts` row is created. A database check requires an issued kind to carry the issuer's number and date, and a unique index over the document's whole issued identity makes recording the same document twice replay the first record instead of doubling it, while keeping two issuers' identically-numbered documents apart. The insert and its action-ledger entry commit in one transaction.
+
+  Adds the `record_booking_document` and `list_booking_documents` Tools so an agent migrating historical bookings can attach the paperwork itself, and adds the matching fields to the admin Upload document dialog.
+
+## 0.116.0
+
+### Minor Changes
+
+- 1858c5b: Issue the invoice a booking creates, and stop billing a buyer the invoice cannot name.
+
+  An invoice created from a booking was never issued. Nothing called the issuing path, so `invoice.issued` never fired: an external number series stayed on its `PENDING-…` placeholder, an installed accounting app received nothing for the lifetime of the deployment, and the only route to a real invoice number was an operator opening each one and pressing the app's own button. Booking create now issues the invoice it writes, and hands `invoice.issued` (or `invoice.proforma.issued`) plus any `invoice.payment.recorded` to the transactional outbox, so the events commit or roll back with the booking that caused them. `FinanceServiceRuntime` gains `domainEventSink` for services that raise events inside a caller's transaction, where an event-bus emit would escape a rollback.
+
+  The manual booking form collected no billing address, so an operator-created booking carried none and its invoice was fiscally invalid — the buyer's name and address are mandatory. The form now collects the billing address and a company's fiscal code, prefilled from the selected person's or organization's primary address, and requires them when the booking will produce a document. `missingFiscalBillingFields` in `@voyant-travel/bookings-contracts` is the single rule behind the form, the issuance decision, and the booking detail; an invoice whose buyer is incomplete stays a draft and says what is missing rather than becoming an invalid fiscal record. The booking's fiscal code and postal code now reach `invoice.issued`, which hardcoded `clientVatCode: null`.
+
+  A booking confirmation whose template declares a document attachment no longer sends before the document exists. The readiness gate that `payment_complete` already had now applies to any booking event whose template promises an attachment, and the `invoice.rendered` / `contract.document.generated` retries re-deliver the confirmation too, not only the post-payment bundle.
+
+## 0.115.0
+
+### Minor Changes
+
+- 0fe4ce8: Make changing a live booking a first-class operation instead of free-text data entry.
+
+  - **Deleting or resizing a Booking Item now returns the inventory it held.** `booking_allocations.booking_item_id` cascades, so deleting an item destroyed its allocation without giving the seats back — `availability_slots.remaining_pax` stayed decremented permanently with no row left to reconcile from. `deleteItem` now releases before the cascade, and `updateItem` keeps the allocation in step with a `quantity` change, refusing to oversell rather than silently desyncing.
+  - **The Booking Amendment engine is reachable from the operator.** Adding or removing a traveller on a confirmed booking runs preview → accept → apply: the change is priced, the departure is capacity-checked, and the supplier consequence is shown before anything is written.
+  - **A new `item_add` Amendment adds a catalog-linked service** — an extra excursion, a transfer — priced from the catalog and holding a real allocation. Supplier-sourced products are refused, since adding one needs a supplier reservation this system cannot make.
+  - **The money follows.** Applying an Amendment that owes money now raises a payment schedule for the difference, so "Generate payment link" pre-fills the delta instead of the booking total, and the generated link can be emailed to the customer from the same dialog.
+
 ## 0.114.2
 
 ### Patch Changes

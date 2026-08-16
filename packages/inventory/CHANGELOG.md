@@ -1,5 +1,257 @@
 # @voyant-travel/inventory
 
+## 0.42.17
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/catalog@0.258.0
+  - @voyant-travel/commerce@0.53.0
+  - @voyant-travel/core@0.143.0
+  - @voyant-travel/products-contracts@0.111.7
+  - @voyant-travel/operations@0.23.4
+  - @voyant-travel/operator-settings@0.18.10
+  - @voyant-travel/action-ledger@0.115.20
+  - @voyant-travel/bookings@0.246.3
+  - @voyant-travel/db@0.122.4
+  - @voyant-travel/finance@0.258.1
+  - @voyant-travel/hono@0.143.2
+  - @voyant-travel/storage@0.115.8
+
+## 0.42.16
+
+### Patch Changes
+
+- Updated dependencies [b78b724]
+  - @voyant-travel/finance@0.258.0
+  - @voyant-travel/bookings@0.246.2
+  - @voyant-travel/core@0.142.1
+  - @voyant-travel/catalog@0.257.3
+  - @voyant-travel/commerce@0.52.1
+  - @voyant-travel/operator-settings@0.18.9
+
+## 0.42.15
+
+### Patch Changes
+
+- 50e518b: Restore the content catalog detail pages were dropping.
+
+  Resolve a sourced cruise's adapter by its own `source_kind` scoped to the
+  connection before falling back to the bare connection id. A channel registers
+  several adapters per connection and keys them apart by suffixing the registry
+  key (`<connectionId>:cruises`), so resolving by connection alone returned the
+  connection's _generic_ adapter. That adapter carries no `cruiseAdapter`, so
+  `getCruiseSailingPricing` reached through it for nothing and every
+  connection-scoped cruise reported no cabin pricing at all.
+
+  Read the projection's own camelCase keys in the cruise content synthesizer. It
+  read the snake_case names of the content shape it produces, which overlapped the
+  shim's projection on `id`/`name`/`status` and nothing else, so the fallback
+  rendered blank even when discovery had captured the data.
+
+  Stamp the provider key rather than the connection id as a sourced cruise's
+  `source_provider`, and project the cruise line, ship and port display names
+  alongside their faceted ids. The shim read `sourceRef.provider` while Voyant
+  Connect writes `providerKey`, so the fallback fired every time and a raw
+  `conn_…` string surfaced as the cruise line on the detail page.
+
+  Read the indexed document by id on the URL-addressable vertical detail pages.
+  Entered by id there is no result row to carry the index projection, so price,
+  offers, status, categories, destinations and the whole Attributes tab were
+  dropped — the same record showed far more when opened as a sheet from the list.
+  The supplier formatter is now held by ref so the supplier directory settling no
+  longer rebuilds the fetchers and re-requests the record (one page load issued the
+  content route three times).
+
+  Fall back to an itinerary-day image for an owned product's hero when it has no
+  product-level image, instead of reporting no hero while the same image sits in
+  `content.media`.
+
+  Degrade to the synthesizer when a cruise adapter's `getContent` fails, rather
+  than letting the throw escape and 500 the detail route. We hold a durable
+  sourced-entry projection and §3.6 defines the synthesizer as exactly that
+  degraded read, so an upstream miss should not blank the page. On sandbox,
+  `resolveCruiseRow` in `@voyant-travel/connect-adapter` throws
+  `Connect cruise content not found` for cruises discovery has already indexed,
+  which turned every concurrent cruise detail open into a 500. The failure is
+  reported through the new `onContentFetchError` option (defaulting to
+  `console.warn`) so an upstream outage stays visible instead of silently
+  degrading every cruise to a stub.
+
+## 0.42.14
+
+### Patch Changes
+
+- Updated dependencies [b11c10e]
+  - @voyant-travel/commerce@0.52.0
+  - @voyant-travel/finance@0.257.0
+  - @voyant-travel/bookings@0.246.1
+  - @voyant-travel/operator-settings@0.18.8
+  - @voyant-travel/catalog@0.257.2
+
+## 0.42.13
+
+### Patch Changes
+
+- Updated dependencies [c6b5b12]
+  - @voyant-travel/bookings@0.246.0
+  - @voyant-travel/finance@0.256.0
+  - @voyant-travel/catalog@0.257.1
+  - @voyant-travel/commerce@0.51.11
+  - @voyant-travel/operations@0.23.3
+  - @voyant-travel/operator-settings@0.18.7
+
+## 0.42.12
+
+### Patch Changes
+
+- c7bccba: Record a Booking Document that carries the issuer's identity.
+
+  Every `POST /v1/admin/bookings/{id}/documents` request carrying the `issued*`
+  group answered 500, so `contract` and `invoice` — the types whose validation
+  _requires_ that group — could not be created at all: without the fields the
+  request was refused 400, with them it crashed.
+
+  The insert was never the problem. The replay lookup that runs before it
+  interpolated the issue date straight into a `sql` fragment, and an interpolated
+  value goes to the driver unencoded — unlike `eq(column, value)`, which encodes
+  it through the column first. postgres-js cannot bind a `Date`, so the query
+  threw before it was ever sent, which is why writing the same values to the same
+  columns by hand always worked. The lookup now binds through the column, so it
+  and the insert agree by construction.
+
+  The same interpolation sat in `buildCreatedAtCondition` in all three
+  action-ledger drift checkers, where it crashed
+  `check_booking_action_ledger_drift`, `check_finance_action_ledger_drift` and
+  `check_product_action_ledger_drift` for any caller that narrowed by
+  `createdAtFrom`. Each is bound as an encoded timestamp now, and each package's
+  unit test pins the parameter's type rather than just the SQL it builds.
+
+- Updated dependencies [c7bccba]
+  - @voyant-travel/bookings@0.245.1
+  - @voyant-travel/finance@0.255.1
+
+## 0.42.11
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/catalog@0.257.0
+  - @voyant-travel/commerce@0.51.10
+  - @voyant-travel/operations@0.23.2
+
+## 0.42.10
+
+### Patch Changes
+
+- Updated dependencies [1f36964]
+  - @voyant-travel/finance@0.255.0
+  - @voyant-travel/catalog@0.256.7
+  - @voyant-travel/commerce@0.51.9
+  - @voyant-travel/operator-settings@0.18.6
+
+## 0.42.9
+
+### Patch Changes
+
+- Updated dependencies [798b05b]
+- Updated dependencies [05c2202]
+  - @voyant-travel/bookings@0.245.0
+  - @voyant-travel/finance@0.254.0
+  - @voyant-travel/catalog@0.256.6
+  - @voyant-travel/operations@0.23.1
+  - @voyant-travel/commerce@0.51.8
+  - @voyant-travel/operator-settings@0.18.5
+
+## 0.42.8
+
+### Patch Changes
+
+- Updated dependencies [e99380d]
+  - @voyant-travel/operations@0.23.0
+
+## 0.42.7
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+- Updated dependencies [c2aedcb]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/finance@0.253.0
+  - @voyant-travel/action-ledger@0.115.19
+  - @voyant-travel/bookings@0.244.1
+  - @voyant-travel/catalog@0.256.5
+  - @voyant-travel/commerce@0.51.7
+  - @voyant-travel/db@0.122.2
+  - @voyant-travel/hono@0.143.1
+  - @voyant-travel/operations@0.22.22
+  - @voyant-travel/operator-settings@0.18.4
+  - @voyant-travel/storage@0.115.7
+
+## 0.42.6
+
+### Patch Changes
+
+- e7ea666: Keep occupancy supplements out of the projected "price from" amount. A room price only contributes to the MIN when its rule prices the room all-in; under a `supplement` basis — explicit, or unset while the rule still prices a traveler — the amount is a surcharge on top of the fare, so the traveler fare becomes the "from" value instead. Storefronts were advertising a 100 EUR single supplement as the headline price of a 165 EUR tour.
+- Updated dependencies [e7ea666]
+  - @voyant-travel/commerce@0.51.6
+
+## 0.42.5
+
+### Patch Changes
+
+- Updated dependencies [8e2133e]
+  - @voyant-travel/bookings@0.244.0
+  - @voyant-travel/catalog@0.256.4
+  - @voyant-travel/finance@0.252.1
+  - @voyant-travel/operations@0.22.21
+  - @voyant-travel/commerce@0.51.5
+
+## 0.42.4
+
+### Patch Changes
+
+- Updated dependencies [1858c5b]
+  - @voyant-travel/finance@0.252.0
+  - @voyant-travel/bookings@0.243.1
+  - @voyant-travel/catalog@0.256.3
+  - @voyant-travel/operations@0.22.20
+  - @voyant-travel/commerce@0.51.4
+  - @voyant-travel/operator-settings@0.18.3
+
+## 0.42.3
+
+### Patch Changes
+
+- Updated dependencies [0fe4ce8]
+- Updated dependencies [a414f2c]
+  - @voyant-travel/bookings@0.243.0
+  - @voyant-travel/finance@0.251.0
+  - @voyant-travel/catalog@0.256.2
+  - @voyant-travel/commerce@0.51.3
+  - @voyant-travel/operations@0.22.19
+  - @voyant-travel/operator-settings@0.18.2
+
+## 0.42.2
+
+### Patch Changes
+
+- Updated dependencies [d3b17e2]
+  - @voyant-travel/finance@0.250.0
+  - @voyant-travel/catalog@0.256.1
+  - @voyant-travel/commerce@0.51.2
+  - @voyant-travel/operator-settings@0.18.1
+
+## 0.42.1
+
+### Patch Changes
+
+- Updated dependencies [a41a73a]
+  - @voyant-travel/catalog@0.256.0
+  - @voyant-travel/products-contracts@0.111.5
+  - @voyant-travel/commerce@0.51.1
+  - @voyant-travel/operations@0.22.18
+
 ## 0.42.0
 
 ### Minor Changes

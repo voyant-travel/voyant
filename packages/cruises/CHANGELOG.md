@@ -1,5 +1,161 @@
 # @voyant-travel/cruises
 
+## 0.239.13
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/catalog@0.258.0
+  - @voyant-travel/core@0.143.0
+  - @voyant-travel/cruises-contracts@0.105.35
+  - @voyant-travel/action-ledger@0.115.20
+  - @voyant-travel/db@0.122.4
+  - @voyant-travel/finance@0.258.1
+  - @voyant-travel/hono@0.143.2
+
+## 0.239.12
+
+### Patch Changes
+
+- Updated dependencies [b78b724]
+  - @voyant-travel/finance@0.258.0
+  - @voyant-travel/core@0.142.1
+  - @voyant-travel/catalog@0.257.3
+
+## 0.239.11
+
+### Patch Changes
+
+- 50e518b: Restore the content catalog detail pages were dropping.
+
+  Resolve a sourced cruise's adapter by its own `source_kind` scoped to the
+  connection before falling back to the bare connection id. A channel registers
+  several adapters per connection and keys them apart by suffixing the registry
+  key (`<connectionId>:cruises`), so resolving by connection alone returned the
+  connection's _generic_ adapter. That adapter carries no `cruiseAdapter`, so
+  `getCruiseSailingPricing` reached through it for nothing and every
+  connection-scoped cruise reported no cabin pricing at all.
+
+  Read the projection's own camelCase keys in the cruise content synthesizer. It
+  read the snake_case names of the content shape it produces, which overlapped the
+  shim's projection on `id`/`name`/`status` and nothing else, so the fallback
+  rendered blank even when discovery had captured the data.
+
+  Stamp the provider key rather than the connection id as a sourced cruise's
+  `source_provider`, and project the cruise line, ship and port display names
+  alongside their faceted ids. The shim read `sourceRef.provider` while Voyant
+  Connect writes `providerKey`, so the fallback fired every time and a raw
+  `conn_…` string surfaced as the cruise line on the detail page.
+
+  Read the indexed document by id on the URL-addressable vertical detail pages.
+  Entered by id there is no result row to carry the index projection, so price,
+  offers, status, categories, destinations and the whole Attributes tab were
+  dropped — the same record showed far more when opened as a sheet from the list.
+  The supplier formatter is now held by ref so the supplier directory settling no
+  longer rebuilds the fetchers and re-requests the record (one page load issued the
+  content route three times).
+
+  Fall back to an itinerary-day image for an owned product's hero when it has no
+  product-level image, instead of reporting no hero while the same image sits in
+  `content.media`.
+
+  Degrade to the synthesizer when a cruise adapter's `getContent` fails, rather
+  than letting the throw escape and 500 the detail route. We hold a durable
+  sourced-entry projection and §3.6 defines the synthesizer as exactly that
+  degraded read, so an upstream miss should not blank the page. On sandbox,
+  `resolveCruiseRow` in `@voyant-travel/connect-adapter` throws
+  `Connect cruise content not found` for cruises discovery has already indexed,
+  which turned every concurrent cruise detail open into a 500. The failure is
+  reported through the new `onContentFetchError` option (defaulting to
+  `console.warn`) so an upstream outage stays visible instead of silently
+  degrading every cruise to a stub.
+
+## 0.239.10
+
+### Patch Changes
+
+- Updated dependencies [b11c10e]
+  - @voyant-travel/finance@0.257.0
+  - @voyant-travel/catalog@0.257.2
+
+## 0.239.9
+
+### Patch Changes
+
+- Updated dependencies [c6b5b12]
+  - @voyant-travel/finance@0.256.0
+  - @voyant-travel/catalog@0.257.1
+
+## 0.239.8
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/catalog@0.257.0
+
+## 0.239.7
+
+### Patch Changes
+
+- Updated dependencies [1f36964]
+  - @voyant-travel/finance@0.255.0
+  - @voyant-travel/catalog@0.256.7
+
+## 0.239.6
+
+### Patch Changes
+
+- Updated dependencies [798b05b]
+- Updated dependencies [05c2202]
+  - @voyant-travel/finance@0.254.0
+  - @voyant-travel/catalog@0.256.6
+
+## 0.239.5
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+- Updated dependencies [c2aedcb]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/finance@0.253.0
+  - @voyant-travel/action-ledger@0.115.19
+  - @voyant-travel/catalog@0.256.5
+  - @voyant-travel/db@0.122.2
+  - @voyant-travel/hono@0.143.1
+
+## 0.239.4
+
+### Patch Changes
+
+- Updated dependencies [1858c5b]
+  - @voyant-travel/finance@0.252.0
+  - @voyant-travel/catalog@0.256.3
+
+## 0.239.3
+
+### Patch Changes
+
+- Updated dependencies [0fe4ce8]
+- Updated dependencies [a414f2c]
+  - @voyant-travel/finance@0.251.0
+  - @voyant-travel/catalog@0.256.2
+
+## 0.239.2
+
+### Patch Changes
+
+- Updated dependencies [d3b17e2]
+  - @voyant-travel/finance@0.250.0
+  - @voyant-travel/catalog@0.256.1
+
+## 0.239.1
+
+### Patch Changes
+
+- Updated dependencies [a41a73a]
+  - @voyant-travel/catalog@0.256.0
+  - @voyant-travel/cruises-contracts@0.105.33
+
 ## 0.239.0
 
 ### Minor Changes

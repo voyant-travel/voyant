@@ -1,5 +1,371 @@
 # @voyant-travel/bookings-react
 
+## 0.298.0
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/catalog-contracts@0.136.0
+  - @voyant-travel/catalog@0.258.0
+  - @voyant-travel/catalog-react@0.296.0
+  - @voyant-travel/inventory-react@0.180.0
+  - @voyant-travel/products-contracts@0.111.7
+  - @voyant-travel/storefront-react@0.300.0
+  - @voyant-travel/commerce-react@0.180.0
+  - @voyant-travel/react@0.106.3
+  - @voyant-travel/distribution-react@0.288.0
+  - @voyant-travel/finance-react@0.298.0
+  - @voyant-travel/identity-react@0.298.0
+  - @voyant-travel/legal-react@0.298.0
+  - @voyant-travel/operations-react@0.179.0
+  - @voyant-travel/relationships-react@0.298.0
+
+## 0.297.0
+
+### Patch Changes
+
+- Updated dependencies [1a903c5]
+  - @voyant-travel/catalog-contracts@0.135.0
+  - @voyant-travel/catalog-react@0.295.0
+  - @voyant-travel/inventory-react@0.179.0
+  - @voyant-travel/products-contracts@0.111.6
+  - @voyant-travel/storefront-react@0.299.0
+  - @voyant-travel/commerce-react@0.179.0
+  - @voyant-travel/distribution-react@0.287.0
+  - @voyant-travel/finance-react@0.297.0
+  - @voyant-travel/identity-react@0.297.0
+  - @voyant-travel/legal-react@0.297.0
+  - @voyant-travel/operations-react@0.178.0
+  - @voyant-travel/relationships-react@0.297.0
+
+## 0.296.0
+
+### Patch Changes
+
+- Updated dependencies [3b9cd41]
+- Updated dependencies [b78b724]
+  - @voyant-travel/distribution-react@0.286.0
+  - @voyant-travel/finance@0.258.0
+  - @voyant-travel/catalog-react@0.294.0
+  - @voyant-travel/commerce-react@0.178.0
+  - @voyant-travel/finance-react@0.296.0
+  - @voyant-travel/identity-react@0.296.0
+  - @voyant-travel/legal-react@0.296.0
+  - @voyant-travel/inventory-react@0.178.0
+  - @voyant-travel/operations-react@0.177.0
+  - @voyant-travel/storefront-react@0.298.0
+  - @voyant-travel/relationships-react@0.296.0
+
+## 0.295.0
+
+### Patch Changes
+
+- Updated dependencies [46bb84e]
+  - @voyant-travel/legal-react@0.295.0
+  - @voyant-travel/storefront-react@0.297.0
+  - @voyant-travel/distribution-react@0.285.0
+  - @voyant-travel/finance-react@0.295.0
+  - @voyant-travel/identity-react@0.295.0
+  - @voyant-travel/operations-react@0.176.0
+  - @voyant-travel/inventory-react@0.177.0
+  - @voyant-travel/catalog-react@0.293.0
+  - @voyant-travel/commerce-react@0.177.0
+  - @voyant-travel/relationships-react@0.295.0
+
+## 0.294.0
+
+### Patch Changes
+
+- Updated dependencies [b11c10e]
+  - @voyant-travel/finance@0.257.0
+  - @voyant-travel/commerce-react@0.176.0
+  - @voyant-travel/finance-react@0.294.0
+  - @voyant-travel/inventory-react@0.176.0
+  - @voyant-travel/catalog-react@0.292.0
+  - @voyant-travel/legal-react@0.294.0
+  - @voyant-travel/distribution-react@0.284.0
+  - @voyant-travel/identity-react@0.294.0
+  - @voyant-travel/operations-react@0.175.0
+  - @voyant-travel/storefront-react@0.296.0
+  - @voyant-travel/relationships-react@0.294.0
+
+## 0.293.0
+
+### Patch Changes
+
+- Updated dependencies [c6ccc30]
+  - @voyant-travel/catalog-react@0.291.0
+  - @voyant-travel/i18n@0.126.0
+  - @voyant-travel/inventory-react@0.175.0
+  - @voyant-travel/storefront-react@0.295.0
+  - @voyant-travel/commerce-react@0.175.0
+  - @voyant-travel/distribution-react@0.283.0
+  - @voyant-travel/finance-react@0.293.0
+  - @voyant-travel/identity-react@0.293.0
+  - @voyant-travel/legal-react@0.293.0
+  - @voyant-travel/operations-react@0.174.0
+  - @voyant-travel/relationships-react@0.293.0
+
+## 0.292.0
+
+### Minor Changes
+
+- c6b5b12: Let an operator move a booking to a different departure, and stop the old way of doing it from silently double-booking.
+
+  **The hole first.** `updateItem` accepted `availabilitySlotId` and would repoint the item and refresh its snapshots — but never moved the allocation. The old departure kept the seat consumed forever while the new one had nothing reserved and stayed sellable, and the booking read as correctly moved the whole time. That is now refused with a 409 pointing at the move flow; scheduling a line that holds no capacity still works.
+
+  **`item_move` Amendment.** Same preview → accept → apply protocol as the rest: the new fare is resolved from the catalog for the target date (honouring departure price overrides and quantity tiers), the operator adds a change fee, and applying releases the old departure's capacity and claims the new one's in a single transaction. A target that fills up between quote and apply fails the guard and the whole move rolls back, so the booking is never left holding neither date.
+
+  Supplier-sourced inventory is included — a date change is a modify against the existing reservation, which is what the supplier port already expresses — so a connector that cannot move a booking answers `refused` rather than the move being refused up front.
+
+  **Fixes `item_add`, which had never worked.** The idempotency middleware is registered per path and `items/preview` never got a line, so `mutationContext` threw and every request to it returned 500 — the "Add a service" sheet shipped in #4660 could not complete a quote. Both item routes now carry it, and a route-level guard fails if any mutating amendment route can 500 on a missing key. Two further defects in the same sheet: a failed preview rendered nothing at all (the mutation was awaited with no catch), and the departure picker offered sold-out departures because the capacity filter written for the move picker was never applied to it.
+
+  **Pricing has a lever in both directions.** A cheaper move is the operator's call, per move rather than by policy: give the difference back, hold it as travel credit, or keep the original price. Travel credit issues a real credit against the customer; waive floors the change at zero while leaving any change fee payable. A dearer move can be discounted with `fareDiscountCents` so an operator can absorb part or all of an increase as goodwill — its own auditable line rather than an override of the fare, capped at the increase so a pricier date never turns into a payout.
+
+  **UX.** The target departure is a selector over departures that can actually take the booking — open, in the future, on the same product, and with room for the seats being carried — not a free date field. Price is never typed; the quote separates "the new date costs more" from "we charge to change it" so an operator can read it back to a customer.
+
+### Patch Changes
+
+- Updated dependencies [c6b5b12]
+  - @voyant-travel/bookings@0.246.0
+  - @voyant-travel/bookings-contracts@0.119.0
+  - @voyant-travel/finance@0.256.0
+  - @voyant-travel/accommodations@0.212.0
+  - @voyant-travel/distribution-react@0.282.0
+  - @voyant-travel/finance-react@0.292.0
+  - @voyant-travel/identity-react@0.292.0
+  - @voyant-travel/legal-react@0.292.0
+  - @voyant-travel/operations-react@0.173.0
+  - @voyant-travel/inventory-react@0.174.0
+  - @voyant-travel/storefront-react@0.294.0
+  - @voyant-travel/catalog-react@0.290.0
+  - @voyant-travel/commerce-react@0.174.0
+  - @voyant-travel/relationships-react@0.292.0
+
+## 0.291.1
+
+### Patch Changes
+
+- da4ec35: Ask staff whether to notify the customer, rather than whether to suppress the notification.
+
+  The status-change dialog carried a switch labelled "Don't notify the customer", off by default — a box you tick to make less happen. The booking journey's equivalent already asks the question positively ("Notify traveler", on by default) and maps it to the wire flag itself, so the same decision had two opposite presentations depending on where an operator made it. The status dialog now matches: `notifyCustomer` is on by default and sends `suppressNotifications: true` only when switched off.
+
+  The domain flag stays negative. `suppressNotifications` is the safe default at the boundary — a call site that forgets it sends a redundant email, where an opt-in flag that is forgotten leaves the customer never told, and every downstream consumer in `notifications` is a skip-guard that would have to read a missing field as "stay silent".
+
+  Both toggles now also disclose what switching notifications off actually does. Turning it off latches `bookings.notifications_suppressed`, which `updateBookingSchema` types as `z.literal(true)` — nothing can clear it, so the booking is silent for good, future reminders included. The old helper text described it as confirming "silently", which reads as a one-time choice about this action.
+
+## 0.291.0
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/catalog-react@0.289.0
+  - @voyant-travel/catalog@0.257.0
+  - @voyant-travel/i18n@0.125.0
+  - @voyant-travel/inventory-react@0.173.0
+  - @voyant-travel/storefront-react@0.293.0
+  - @voyant-travel/commerce-react@0.173.0
+  - @voyant-travel/distribution-react@0.281.0
+  - @voyant-travel/finance-react@0.291.0
+  - @voyant-travel/identity-react@0.291.0
+  - @voyant-travel/legal-react@0.291.0
+  - @voyant-travel/operations-react@0.172.0
+  - @voyant-travel/relationships-react@0.291.0
+
+## 0.290.0
+
+### Patch Changes
+
+- Updated dependencies [1f36964]
+  - @voyant-travel/finance@0.255.0
+  - @voyant-travel/finance-react@0.290.0
+  - @voyant-travel/inventory-react@0.172.0
+  - @voyant-travel/legal-react@0.290.0
+  - @voyant-travel/distribution-react@0.280.0
+  - @voyant-travel/identity-react@0.290.0
+  - @voyant-travel/operations-react@0.171.0
+  - @voyant-travel/catalog-react@0.288.0
+  - @voyant-travel/commerce-react@0.172.0
+  - @voyant-travel/storefront-react@0.292.0
+  - @voyant-travel/relationships-react@0.290.0
+
+## 0.289.0
+
+### Patch Changes
+
+- Updated dependencies [798b05b]
+- Updated dependencies [05c2202]
+  - @voyant-travel/bookings-contracts@0.118.0
+  - @voyant-travel/bookings@0.245.0
+  - @voyant-travel/finance@0.254.0
+  - @voyant-travel/catalog-contracts@0.134.1
+  - @voyant-travel/accommodations@0.211.0
+  - @voyant-travel/finance-react@0.289.0
+  - @voyant-travel/inventory-react@0.171.0
+  - @voyant-travel/legal-react@0.289.0
+  - @voyant-travel/distribution-react@0.279.0
+  - @voyant-travel/identity-react@0.289.0
+  - @voyant-travel/operations-react@0.170.0
+  - @voyant-travel/storefront-react@0.291.0
+  - @voyant-travel/catalog-react@0.287.0
+  - @voyant-travel/commerce-react@0.171.0
+  - @voyant-travel/relationships-react@0.289.0
+
+## 0.288.0
+
+### Patch Changes
+
+- Updated dependencies [e99380d]
+  - @voyant-travel/operations-react@0.169.0
+  - @voyant-travel/i18n@0.124.0
+  - @voyant-travel/inventory-react@0.170.0
+  - @voyant-travel/finance-react@0.288.0
+  - @voyant-travel/catalog-react@0.286.0
+  - @voyant-travel/commerce-react@0.170.0
+  - @voyant-travel/distribution-react@0.278.0
+  - @voyant-travel/identity-react@0.288.0
+  - @voyant-travel/legal-react@0.288.0
+  - @voyant-travel/relationships-react@0.288.0
+  - @voyant-travel/storefront-react@0.290.0
+
+## 0.287.0
+
+### Patch Changes
+
+- Updated dependencies [c2aedcb]
+  - @voyant-travel/finance@0.253.0
+  - @voyant-travel/react@0.106.2
+  - @voyant-travel/finance-react@0.287.0
+  - @voyant-travel/inventory-react@0.169.0
+  - @voyant-travel/distribution-react@0.277.0
+  - @voyant-travel/identity-react@0.287.0
+  - @voyant-travel/legal-react@0.287.0
+  - @voyant-travel/operations-react@0.168.0
+  - @voyant-travel/catalog-react@0.285.0
+  - @voyant-travel/commerce-react@0.169.0
+  - @voyant-travel/storefront-react@0.289.0
+  - @voyant-travel/relationships-react@0.287.0
+
+## 0.286.0
+
+### Minor Changes
+
+- 8e2133e: Record contracts, invoices, proformas, and credit notes that were issued outside Voyant against a booking.
+
+  A Booking Document can now be one of those four commercial kinds as well as a traveller document, and carries the identity its own issuer gave it (`issuedBy`, `issuedSeries`, `issuedNumber`, `issuedAt`). Recording is not issuing: nothing allocates a number from an invoice or contract series, nothing renders from a template, and no `invoices` or `contracts` row is created. A database check requires an issued kind to carry the issuer's number and date, and a unique index over the document's whole issued identity makes recording the same document twice replay the first record instead of doubling it, while keeping two issuers' identically-numbered documents apart. The insert and its action-ledger entry commit in one transaction.
+
+  Adds the `record_booking_document` and `list_booking_documents` Tools so an agent migrating historical bookings can attach the paperwork itself, and adds the matching fields to the admin Upload document dialog.
+
+### Patch Changes
+
+- Updated dependencies [8e2133e]
+  - @voyant-travel/bookings-contracts@0.117.0
+  - @voyant-travel/bookings@0.244.0
+  - @voyant-travel/distribution-react@0.276.0
+  - @voyant-travel/finance-react@0.286.0
+  - @voyant-travel/identity-react@0.286.0
+  - @voyant-travel/legal-react@0.286.0
+  - @voyant-travel/operations-react@0.167.0
+  - @voyant-travel/accommodations@0.210.0
+  - @voyant-travel/storefront-react@0.288.0
+  - @voyant-travel/catalog-react@0.284.0
+  - @voyant-travel/commerce-react@0.168.0
+  - @voyant-travel/inventory-react@0.168.0
+  - @voyant-travel/relationships-react@0.286.0
+
+## 0.285.0
+
+### Minor Changes
+
+- 1858c5b: Issue the invoice a booking creates, and stop billing a buyer the invoice cannot name.
+
+  An invoice created from a booking was never issued. Nothing called the issuing path, so `invoice.issued` never fired: an external number series stayed on its `PENDING-…` placeholder, an installed accounting app received nothing for the lifetime of the deployment, and the only route to a real invoice number was an operator opening each one and pressing the app's own button. Booking create now issues the invoice it writes, and hands `invoice.issued` (or `invoice.proforma.issued`) plus any `invoice.payment.recorded` to the transactional outbox, so the events commit or roll back with the booking that caused them. `FinanceServiceRuntime` gains `domainEventSink` for services that raise events inside a caller's transaction, where an event-bus emit would escape a rollback.
+
+  The manual booking form collected no billing address, so an operator-created booking carried none and its invoice was fiscally invalid — the buyer's name and address are mandatory. The form now collects the billing address and a company's fiscal code, prefilled from the selected person's or organization's primary address, and requires them when the booking will produce a document. `missingFiscalBillingFields` in `@voyant-travel/bookings-contracts` is the single rule behind the form, the issuance decision, and the booking detail; an invoice whose buyer is incomplete stays a draft and says what is missing rather than becoming an invalid fiscal record. The booking's fiscal code and postal code now reach `invoice.issued`, which hardcoded `clientVatCode: null`.
+
+  A booking confirmation whose template declares a document attachment no longer sends before the document exists. The readiness gate that `payment_complete` already had now applies to any booking event whose template promises an attachment, and the `invoice.rendered` / `contract.document.generated` retries re-deliver the confirmation too, not only the post-payment bundle.
+
+### Patch Changes
+
+- Updated dependencies [1858c5b]
+  - @voyant-travel/bookings-contracts@0.116.0
+  - @voyant-travel/finance@0.252.0
+  - @voyant-travel/finance-react@0.285.0
+  - @voyant-travel/inventory-react@0.167.0
+  - @voyant-travel/distribution-react@0.275.0
+  - @voyant-travel/identity-react@0.285.0
+  - @voyant-travel/legal-react@0.285.0
+  - @voyant-travel/operations-react@0.166.0
+  - @voyant-travel/storefront-react@0.287.0
+  - @voyant-travel/catalog-react@0.283.0
+  - @voyant-travel/commerce-react@0.167.0
+  - @voyant-travel/relationships-react@0.285.0
+
+## 0.284.0
+
+### Minor Changes
+
+- 0fe4ce8: Make changing a live booking a first-class operation instead of free-text data entry.
+
+  - **Deleting or resizing a Booking Item now returns the inventory it held.** `booking_allocations.booking_item_id` cascades, so deleting an item destroyed its allocation without giving the seats back — `availability_slots.remaining_pax` stayed decremented permanently with no row left to reconcile from. `deleteItem` now releases before the cascade, and `updateItem` keeps the allocation in step with a `quantity` change, refusing to oversell rather than silently desyncing.
+  - **The Booking Amendment engine is reachable from the operator.** Adding or removing a traveller on a confirmed booking runs preview → accept → apply: the change is priced, the departure is capacity-checked, and the supplier consequence is shown before anything is written.
+  - **A new `item_add` Amendment adds a catalog-linked service** — an extra excursion, a transfer — priced from the catalog and holding a real allocation. Supplier-sourced products are refused, since adding one needs a supplier reservation this system cannot make.
+  - **The money follows.** Applying an Amendment that owes money now raises a payment schedule for the difference, so "Generate payment link" pre-fills the delta instead of the booking total, and the generated link can be emailed to the customer from the same dialog.
+
+### Patch Changes
+
+- Updated dependencies [0fe4ce8]
+- Updated dependencies [a414f2c]
+  - @voyant-travel/bookings@0.243.0
+  - @voyant-travel/finance@0.251.0
+  - @voyant-travel/finance-react@0.284.0
+  - @voyant-travel/accommodations@0.209.0
+  - @voyant-travel/distribution-react@0.274.0
+  - @voyant-travel/identity-react@0.284.0
+  - @voyant-travel/legal-react@0.284.0
+  - @voyant-travel/operations-react@0.165.0
+  - @voyant-travel/inventory-react@0.166.0
+  - @voyant-travel/storefront-react@0.286.0
+  - @voyant-travel/catalog-react@0.282.0
+  - @voyant-travel/commerce-react@0.166.0
+  - @voyant-travel/relationships-react@0.284.0
+
+## 0.283.0
+
+### Patch Changes
+
+- Updated dependencies [d3b17e2]
+  - @voyant-travel/finance@0.250.0
+  - @voyant-travel/finance-react@0.283.0
+  - @voyant-travel/inventory-react@0.165.0
+  - @voyant-travel/distribution-react@0.273.0
+  - @voyant-travel/identity-react@0.283.0
+  - @voyant-travel/legal-react@0.283.0
+  - @voyant-travel/operations-react@0.164.0
+  - @voyant-travel/catalog-react@0.281.0
+  - @voyant-travel/commerce-react@0.165.0
+  - @voyant-travel/storefront-react@0.285.0
+  - @voyant-travel/relationships-react@0.283.0
+
+## 0.282.0
+
+### Patch Changes
+
+- Updated dependencies [a41a73a]
+  - @voyant-travel/catalog-contracts@0.134.0
+  - @voyant-travel/catalog-react@0.280.0
+  - @voyant-travel/catalog@0.256.0
+  - @voyant-travel/inventory-react@0.164.0
+  - @voyant-travel/products-contracts@0.111.5
+  - @voyant-travel/storefront-react@0.284.0
+  - @voyant-travel/distribution-react@0.272.0
+  - @voyant-travel/finance-react@0.282.0
+  - @voyant-travel/identity-react@0.282.0
+  - @voyant-travel/legal-react@0.282.0
+  - @voyant-travel/operations-react@0.163.0
+  - @voyant-travel/commerce-react@0.164.0
+  - @voyant-travel/relationships-react@0.282.0
+
 ## 0.281.1
 
 ### Patch Changes

@@ -1,5 +1,224 @@
 # @voyant-travel/commerce
 
+## 0.53.0
+
+### Minor Changes
+
+- f6c85ee: Refuse an over-long billing value at the Booking Session write path instead of after the card is captured, and stop a settled payment from being stranded by the Session's own expiry.
+
+  The Session's selection normalizer projected the billing block field by field rather than parsing it, so the widths `bookingSelectionPublicV1` declared never ran while the Booking create enforced its own. A 25-character postal code was accepted at every step and refused once, at settlement. `requirements.bookingFields` now publishes `maxLength`, advertises the whole billing address, and the write path rejects with `invalid_selection` / `value_too_long` naming the field as the caller sent it (`billing.address.postal`, not `contactPostalCode`).
+
+  A Session whose money is with a processor is no longer expired by the commit preflight or the expiry sweep, and can no longer be abandoned; `BookingSessionRecordV1` carries `requirementsFingerprint`, so a Commit is reachable from a read rather than only from a Quote. A settlement that produces no Booking emits `booking_session.settlement.failed`, and `ANALYTICS_FAILURE_REASONS` gains `value_too_long` so the new rejection reaches the breakdown rather than the `unknown` bucket.
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/catalog@0.258.0
+  - @voyant-travel/core@0.143.0
+  - @voyant-travel/products-contracts@0.111.7
+  - @voyant-travel/distribution@0.228.13
+  - @voyant-travel/action-ledger@0.115.20
+  - @voyant-travel/bookings@0.246.3
+  - @voyant-travel/db@0.122.4
+  - @voyant-travel/finance@0.258.1
+  - @voyant-travel/hono@0.143.2
+
+## 0.52.1
+
+### Patch Changes
+
+- Updated dependencies [b78b724]
+  - @voyant-travel/finance@0.258.0
+  - @voyant-travel/bookings@0.246.2
+  - @voyant-travel/core@0.142.1
+  - @voyant-travel/catalog@0.257.3
+  - @voyant-travel/distribution@0.228.12
+
+## 0.52.0
+
+### Minor Changes
+
+- b11c10e: Capture FX rates, and stamp foreign-currency documents with the rate of their own date.
+
+  The FX model was fully built and never populated: on a live tenant with 53
+  foreign-currency invoices, `exchange_rates` held zero rows and not one document
+  carried an `fx_rate_set_id`. The platform could say a contract was worth
+  1,980 EUR but not what that was in the operator's reporting currency on the day
+  it was transacted — which is the figure the regulator asks for.
+
+  Four things were missing, and all four are here.
+
+  **The operator's FX settings never reached the write paths.** `createFinanceRuntime`
+  resolved the document-generation seams but not `resolveInvoiceFxSettings`, so every
+  document-stamping path saw "no configured base currency", fell through to null, and
+  left `base_*` and `fx_rate_set_id` empty. The operator-settings port now supplies them.
+
+  **Nothing could persist a resolved rate.** Markets owns `fx_rate_sets`/`exchange_rates`
+  and finance only reads them, so finance had no way to turn a rate into a durable
+  identity. Markets now provides `finance.fx-rate-capture.runtime`, an idempotent
+  capture keyed on (source, reporting currency, day). A captured rate is never
+  rewritten: re-capturing a day leaves the standing rate alone, because restating a
+  number under an id historical documents already point at would silently restate them.
+
+  **The rate source ignored the requested date.** The Voyant Data resolver called the
+  live pair route whatever date it was handed, so an invoice issued last March
+  resolved at today's rate. It now uses the dated history route, and the host's own
+  `finance.fx-reference.runtime` — shipped as a seam and never bound — is wired as the
+  preferred source, which is what lets a Romanian operator use BNR without a cloud key.
+
+  **The margin was applied but never recorded.** `exchange_rates` gains
+  `effective_rate_decimal` and `commission_bps`, so a row shows both halves of the
+  arithmetic on the invoice: the published rate, and the rate the document was actually
+  converted at once the operator's currency-risk commission is folded in. A stamped
+  document keeps the margin in force when it was stamped, so changing the setting no
+  longer restates history.
+
+  Resolution order now puts the document's own day first — a rate captured for that
+  day, else a fresh capture for that day, and only then an older standing rate, never
+  one observed after the document. Reaching for the newest rate on hand is worth about
+  1.8% across one month of BNR quotes, which is the difference between a figure tied to
+  documents and one that is derived.
+
+  Also:
+
+  - `payments` gains `reporting_currency` / `reporting_amount_cents` /
+    `reporting_fx_rate_set_id`, stamped at the payment's own date. These are new
+    columns rather than a reuse of `payments.base_*`, which on this table alone means
+    the _invoice's_ currency — a settlement conversion `paymentSettlementAmountSql`
+    depends on. Unifying that naming needs a data migration and is left for follow-up.
+  - `POST /v1/admin/finance/invoices/{id}/fx-stamp` and
+    `POST /v1/admin/finance/payments/{id}/fx-stamp` let an operator repair a historical
+    document, either from the configured source or from the rate printed on the
+    paperwork their accounting provider issued. Both are also agent Tools
+    (`stamp_invoice_fx_rate`, `stamp_payment_fx_rate`), because reading a month of rates
+    off PDFs is exactly the work that made the last period return manual.
+  - Booking FX rollups use the applied rate too, so a booking total and the invoice
+    raised from it no longer disagree by exactly the margin. An applied rate read in
+    the reverse direction is now `1 / applied` in both finance and bookings: a row
+    saying the operator converts at 5.352144 RON per EUR means one RON is 1/5.352144
+    EUR. Inverting the source rate and re-applying the margin — which finance did —
+    implied 5.1443 RON per EUR, contradicting the row it came from.
+  - A payment whose amount, currency or date changes and can no longer be converted
+    has its reporting stamp **cleared** rather than left describing the values it no
+    longer has.
+  - `fx_rate_source` gains `bnr`.
+
+### Patch Changes
+
+- Updated dependencies [b11c10e]
+  - @voyant-travel/finance@0.257.0
+  - @voyant-travel/bookings@0.246.1
+  - @voyant-travel/catalog@0.257.2
+  - @voyant-travel/distribution@0.228.11
+
+## 0.51.11
+
+### Patch Changes
+
+- Updated dependencies [c6b5b12]
+  - @voyant-travel/bookings@0.246.0
+  - @voyant-travel/finance@0.256.0
+  - @voyant-travel/catalog@0.257.1
+  - @voyant-travel/distribution@0.228.10
+
+## 0.51.10
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/catalog@0.257.0
+  - @voyant-travel/distribution@0.228.9
+
+## 0.51.9
+
+### Patch Changes
+
+- Updated dependencies [1f36964]
+  - @voyant-travel/finance@0.255.0
+  - @voyant-travel/catalog@0.256.7
+  - @voyant-travel/distribution@0.228.8
+
+## 0.51.8
+
+### Patch Changes
+
+- Updated dependencies [798b05b]
+- Updated dependencies [05c2202]
+  - @voyant-travel/bookings@0.245.0
+  - @voyant-travel/finance@0.254.0
+  - @voyant-travel/catalog@0.256.6
+  - @voyant-travel/distribution@0.228.7
+
+## 0.51.7
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+- Updated dependencies [c2aedcb]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/finance@0.253.0
+  - @voyant-travel/action-ledger@0.115.19
+  - @voyant-travel/bookings@0.244.1
+  - @voyant-travel/catalog@0.256.5
+  - @voyant-travel/db@0.122.2
+  - @voyant-travel/distribution@0.228.6
+  - @voyant-travel/hono@0.143.1
+
+## 0.51.6
+
+### Patch Changes
+
+- e7ea666: Keep occupancy supplements out of the projected "price from" amount. A room price only contributes to the MIN when its rule prices the room all-in; under a `supplement` basis — explicit, or unset while the rule still prices a traveler — the amount is a surcharge on top of the fare, so the traveler fare becomes the "from" value instead. Storefronts were advertising a 100 EUR single supplement as the headline price of a 165 EUR tour.
+
+## 0.51.5
+
+### Patch Changes
+
+- Updated dependencies [8e2133e]
+  - @voyant-travel/bookings@0.244.0
+  - @voyant-travel/catalog@0.256.4
+  - @voyant-travel/finance@0.252.1
+  - @voyant-travel/distribution@0.228.5
+
+## 0.51.4
+
+### Patch Changes
+
+- Updated dependencies [1858c5b]
+  - @voyant-travel/finance@0.252.0
+  - @voyant-travel/bookings@0.243.1
+  - @voyant-travel/catalog@0.256.3
+  - @voyant-travel/distribution@0.228.4
+
+## 0.51.3
+
+### Patch Changes
+
+- Updated dependencies [0fe4ce8]
+- Updated dependencies [a414f2c]
+  - @voyant-travel/bookings@0.243.0
+  - @voyant-travel/finance@0.251.0
+  - @voyant-travel/catalog@0.256.2
+  - @voyant-travel/distribution@0.228.3
+
+## 0.51.2
+
+### Patch Changes
+
+- Updated dependencies [d3b17e2]
+  - @voyant-travel/finance@0.250.0
+  - @voyant-travel/catalog@0.256.1
+  - @voyant-travel/distribution@0.228.2
+
+## 0.51.1
+
+### Patch Changes
+
+- Updated dependencies [a41a73a]
+  - @voyant-travel/catalog@0.256.0
+  - @voyant-travel/products-contracts@0.111.5
+  - @voyant-travel/distribution@0.228.1
+
 ## 0.51.0
 
 ### Minor Changes

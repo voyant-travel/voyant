@@ -55,8 +55,46 @@ import {
  *
  * It landed on main without this adjustment because `operator#test` was a turbo
  * cache hit there and never ran.
+ *
+ * **Raised 5,000 -> 20,000 for voyant#4656**, and this one is a real trade rather
+ * than a measurement artefact, so the numbers are here to be argued with.
+ *
+ * The eager DOMAIN tier is no longer empty: `DEFAULT_EAGER_TOOL_NAMES` makes the
+ * two writes an operator delegates most resident. Measured **18,395 bytes across
+ * 7 entries** — `book_product` 9,700 and `record_payment` 4,538 on top of the
+ * 4,157-byte tier-0 — so ~4,600 tokens per connection against ~1,040 before.
+ *
+ * What was bought: an empty default made every write depend on the consumer
+ * admitting three meta-tools it had no way to classify, and when one did not, an
+ * operator asking for a booking was told the capability did not exist. A write
+ * journey also pays the difference back — the eval measures ~1,200 tokens for a
+ * three-call discovery sequence, and this removes two of them — so the real cost
+ * falls on a read-only session, which pays nothing at all, because a name is
+ * promoted only for a caller authorized for it.
+ *
+ * The tripwire still works, and is what the headroom is sized for: at ~880 bytes
+ * for a median domain tool and ~4,500-9,700 for these two, a THIRD eager write
+ * trips this. That is the regression worth catching — not the two that were
+ * chosen deliberately.
+ *
+ * **Raised 20,000 -> 21,500 for voyant#4704.** Not a new eager tool — still the
+ * same 7 entries, and the per-tool breakdown confirms it. The two deliberate
+ * domain writes grew their own schemas: `book_product` 9,700 -> 10,999 from
+ * voyant#4698, which added `externalInvoice` and `suppressDocuments` with the
+ * long `.describe()` text that stops an agent issuing documents when the
+ * operator said not to; and `record_payment` 4,538 -> 4,912 from voyant#4712,
+ * which added the three `reporting_*` columns to the payment contract. Measured
+ * **20,068**.
+ *
+ * Both landed on main without this test running — `operator#test` was a turbo
+ * cache hit on each, the same way the voyant#4592 adjustment did, which is why
+ * an unrelated PR is the one that found it.
+ *
+ * Headroom returns to 1,432 (was 1,605 before those two grew), well under the
+ * ~4,500 a third eager write costs, so the tripwire this exists for is
+ * unchanged.
  */
-const PAYLOAD_CEILING_BYTES = 5_000
+const PAYLOAD_CEILING_BYTES = 21_500
 
 /**
  * Ceiling for the AGGREGATE describe schema of the collapsed READ surface — the
@@ -94,8 +132,21 @@ const ALL_TOOLS_AGGREGATE_CEILING_BYTES = 275_000
 
 const AGGREGATE_CEILING_BYTES = 130_000
 
-/** Real Terra max: 10,421 bytes; advanced exact-command Tools retain 40 KB headroom. */
-const DESCRIBE_RESPONSE_CEILING_BYTES = 40_000
+/**
+ * Real Terra max: 10,421 bytes; advanced exact-command Tools retain 40 KB
+ * headroom.
+ *
+ * **Raised 40,000 -> 44,000 for voyant#4704.** `issue_invoice_from_booking`
+ * measures **41,103**, having grown with `invoiceFromBookingSchema` in
+ * voyant#4698 — which, like the payload ceiling above, landed while
+ * `operator#test` was a turbo cache hit.
+ *
+ * Worth saying plainly rather than normalising: one `describe_tool` call on
+ * that tool costs ~10,000 tokens, and it is four times the next heaviest. The
+ * ceiling is raised to unblock, not because the number is fine — reshaping that
+ * command schema is its own piece of work.
+ */
+const DESCRIBE_RESPONSE_CEILING_BYTES = 44_000
 
 /** Real Terra max after domain-scoped fallback: 6,485 bytes. */
 const SEARCH_RESPONSE_CEILING_BYTES = 8_000
@@ -221,17 +272,23 @@ describe("selected-graph MCP tool surface cost", () => {
     expect(totalBytes, diagnose(tools, totalBytes)).toBeLessThanOrEqual(PAYLOAD_CEILING_BYTES)
   })
 
-  it("advertises exactly the tier-0 resident surface eagerly", async () => {
+  it("advertises exactly the tier-0 resident surface plus the default eager writes", async () => {
     const { tools } = await serializeEagerToolSurface()
 
     expect(tools.map(({ name }) => name).sort()).toEqual([
+      // The two core operator writes (voyant#4656). Named here, not counted:
+      // "some domain tools are eager" is what the empty default already claimed
+      // while a booking was unreachable. A fourth appearing silently is the drift
+      // this exists to catch, and so is either of these two disappearing.
+      "book_product",
       "call_tool",
       "describe_tool",
+      "record_payment",
       "search_tools",
-      // The guide layer (voyant#3931) is resident by design: with no eager domain
-      // surface, it is the only thing that tells a connecting agent what this
-      // deployment is for. A guide reachable only by first guessing a search query
-      // would be useless at exactly the moment it is needed.
+      // The guide layer (voyant#3931) is resident by design: it is what tells a
+      // connecting agent what this deployment is for. A guide reachable only by
+      // first guessing a search query would be useless at exactly the moment it
+      // is needed.
       "voyant_glossary",
       "voyant_guide",
     ])

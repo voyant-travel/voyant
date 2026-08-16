@@ -1,5 +1,215 @@
 # @voyant-travel/notifications
 
+## 0.150.10
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/core@0.143.0
+  - @voyant-travel/storefront@0.260.3
+  - @voyant-travel/legal@0.254.2
+  - @voyant-travel/proposals@0.140.12
+  - @voyant-travel/operator-settings@0.18.10
+  - @voyant-travel/action-ledger@0.115.20
+  - @voyant-travel/bookings@0.246.3
+  - @voyant-travel/db@0.122.4
+  - @voyant-travel/finance@0.258.1
+  - @voyant-travel/hono@0.143.2
+  - @voyant-travel/relationships@0.134.13
+
+## 0.150.9
+
+### Patch Changes
+
+- 1a903c5: Stop settlement refusing a captured payment over a Hold token, and make the refusal it
+  does give loud and legible.
+
+  A card checkout was captured and never became a Booking: settlement refused
+  `hold_failure` against a Hold that was `active`, unexpired, correctly sized and bound to
+  the Session's current Quote, then spent all eight outbox attempts restating it. Two
+  independent faults produced that.
+
+  `commitPaidSession` read the Quote and the Hold as a pair off the payment's metadata, and
+  took the Hold _only_ when a Quote was recorded with it. `prepare` writes that metadata
+  from the Commit it was called on and reuses an existing payment row for the same
+  idempotency key without rewriting it, so a checkout that reached `prepare` before taking
+  its Hold records the Quote alone — permanently. Settlement then passed no `holdId` and was
+  refused `hold_failure: missing` while the Hold sat there. The Hold is now resolved
+  independently, from the Session's live Holds bound to the settled Quote.
+
+  Separately, a Hold that is genuinely gone no longer refuses the Commit. Settlement runs
+  server-side against a Session whose money has already moved, and no client can keep a
+  15-minute reservation alive across a processor — the tab sleeps, 3-D Secure adds minutes,
+  a re-quote supersedes the Hold six seconds after taking it. It now asks inventory for the
+  capacity again, idempotently across the retry chain, and only a `no` from inventory
+  refuses: `hold_failure` gains a `capacity_unavailable` reason so "the token lapsed" and
+  "the seat is gone" stop arriving as the same verdict.
+
+  A refusal that no retry can change is now declared permanent, so it dead-letters on the
+  spot — the stranded-payment staff alert fires with that verdict instead of the eighth
+  attempt's, three quarters of an hour later — and the Session's Holds are released at that
+  point rather than left `active` with a null `released_at`. Retryable outcomes are
+  unchanged, and still keep their Hold.
+
+  `event_outbox` gains `attempt_errors`, one entry per failed delivery, so a chain that
+  fails several times retains what each attempt decided rather than only the last. The
+  dead-letter announcement carries it.
+
+- Updated dependencies [1a903c5]
+  - @voyant-travel/db@0.122.3
+  - @voyant-travel/storefront@0.260.2
+
+## 0.150.8
+
+### Patch Changes
+
+- Updated dependencies [b78b724]
+  - @voyant-travel/finance@0.258.0
+  - @voyant-travel/bookings@0.246.2
+  - @voyant-travel/core@0.142.1
+  - @voyant-travel/legal@0.254.1
+  - @voyant-travel/operator-settings@0.18.9
+  - @voyant-travel/proposals@0.140.11
+  - @voyant-travel/relationships@0.134.12
+  - @voyant-travel/storefront@0.260.1
+
+## 0.150.7
+
+### Patch Changes
+
+- Updated dependencies [46bb84e]
+  - @voyant-travel/legal@0.254.0
+  - @voyant-travel/storefront@0.260.0
+
+## 0.150.6
+
+### Patch Changes
+
+- Updated dependencies [b11c10e]
+  - @voyant-travel/finance@0.257.0
+  - @voyant-travel/bookings@0.246.1
+  - @voyant-travel/legal@0.253.3
+  - @voyant-travel/operator-settings@0.18.8
+  - @voyant-travel/storefront@0.259.3
+  - @voyant-travel/proposals@0.140.10
+  - @voyant-travel/relationships@0.134.11
+
+## 0.150.5
+
+### Patch Changes
+
+- Updated dependencies [c6b5b12]
+  - @voyant-travel/bookings@0.246.0
+  - @voyant-travel/finance@0.256.0
+  - @voyant-travel/legal@0.253.2
+  - @voyant-travel/relationships@0.134.10
+  - @voyant-travel/storefront@0.259.2
+  - @voyant-travel/operator-settings@0.18.7
+  - @voyant-travel/proposals@0.140.9
+
+## 0.150.4
+
+### Patch Changes
+
+- Updated dependencies [1f36964]
+  - @voyant-travel/finance@0.255.0
+  - @voyant-travel/legal@0.253.0
+  - @voyant-travel/operator-settings@0.18.6
+  - @voyant-travel/proposals@0.140.7
+  - @voyant-travel/relationships@0.134.9
+  - @voyant-travel/storefront@0.259.0
+
+## 0.150.3
+
+### Patch Changes
+
+- Updated dependencies [798b05b]
+  - @voyant-travel/bookings@0.245.0
+  - @voyant-travel/finance@0.254.0
+  - @voyant-travel/legal@0.252.0
+  - @voyant-travel/relationships@0.134.8
+  - @voyant-travel/storefront@0.258.0
+  - @voyant-travel/operator-settings@0.18.5
+  - @voyant-travel/proposals@0.140.6
+
+## 0.150.2
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+- Updated dependencies [c2aedcb]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/finance@0.253.0
+  - @voyant-travel/action-ledger@0.115.19
+  - @voyant-travel/bookings@0.244.1
+  - @voyant-travel/db@0.122.2
+  - @voyant-travel/hono@0.143.1
+  - @voyant-travel/legal@0.251.8
+  - @voyant-travel/operator-settings@0.18.4
+  - @voyant-travel/proposals@0.140.5
+  - @voyant-travel/relationships@0.134.7
+  - @voyant-travel/storefront@0.257.6
+
+## 0.150.1
+
+### Patch Changes
+
+- Updated dependencies [8e2133e]
+  - @voyant-travel/bookings@0.244.0
+  - @voyant-travel/finance@0.252.1
+  - @voyant-travel/legal@0.251.7
+  - @voyant-travel/relationships@0.134.6
+  - @voyant-travel/storefront@0.257.5
+
+## 0.150.0
+
+### Minor Changes
+
+- 1858c5b: Issue the invoice a booking creates, and stop billing a buyer the invoice cannot name.
+
+  An invoice created from a booking was never issued. Nothing called the issuing path, so `invoice.issued` never fired: an external number series stayed on its `PENDING-…` placeholder, an installed accounting app received nothing for the lifetime of the deployment, and the only route to a real invoice number was an operator opening each one and pressing the app's own button. Booking create now issues the invoice it writes, and hands `invoice.issued` (or `invoice.proforma.issued`) plus any `invoice.payment.recorded` to the transactional outbox, so the events commit or roll back with the booking that caused them. `FinanceServiceRuntime` gains `domainEventSink` for services that raise events inside a caller's transaction, where an event-bus emit would escape a rollback.
+
+  The manual booking form collected no billing address, so an operator-created booking carried none and its invoice was fiscally invalid — the buyer's name and address are mandatory. The form now collects the billing address and a company's fiscal code, prefilled from the selected person's or organization's primary address, and requires them when the booking will produce a document. `missingFiscalBillingFields` in `@voyant-travel/bookings-contracts` is the single rule behind the form, the issuance decision, and the booking detail; an invoice whose buyer is incomplete stays a draft and says what is missing rather than becoming an invalid fiscal record. The booking's fiscal code and postal code now reach `invoice.issued`, which hardcoded `clientVatCode: null`.
+
+  A booking confirmation whose template declares a document attachment no longer sends before the document exists. The readiness gate that `payment_complete` already had now applies to any booking event whose template promises an attachment, and the `invoice.rendered` / `contract.document.generated` retries re-deliver the confirmation too, not only the post-payment bundle.
+
+### Patch Changes
+
+- Updated dependencies [1858c5b]
+  - @voyant-travel/finance@0.252.0
+  - @voyant-travel/bookings@0.243.1
+  - @voyant-travel/legal@0.251.6
+  - @voyant-travel/operator-settings@0.18.3
+  - @voyant-travel/proposals@0.140.4
+  - @voyant-travel/relationships@0.134.5
+  - @voyant-travel/storefront@0.257.4
+
+## 0.149.4
+
+### Patch Changes
+
+- Updated dependencies [0fe4ce8]
+- Updated dependencies [a414f2c]
+  - @voyant-travel/bookings@0.243.0
+  - @voyant-travel/finance@0.251.0
+  - @voyant-travel/legal@0.251.5
+  - @voyant-travel/relationships@0.134.4
+  - @voyant-travel/storefront@0.257.3
+  - @voyant-travel/operator-settings@0.18.2
+  - @voyant-travel/proposals@0.140.3
+
+## 0.149.3
+
+### Patch Changes
+
+- Updated dependencies [d3b17e2]
+  - @voyant-travel/finance@0.250.0
+  - @voyant-travel/legal@0.251.4
+  - @voyant-travel/operator-settings@0.18.1
+  - @voyant-travel/proposals@0.140.2
+  - @voyant-travel/relationships@0.134.3
+  - @voyant-travel/storefront@0.257.2
+
 ## 0.149.2
 
 ### Patch Changes

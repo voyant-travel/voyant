@@ -1,5 +1,251 @@
 # @voyant-travel/trips
 
+## 0.236.15
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/catalog-contracts@0.136.0
+  - @voyant-travel/catalog@0.258.0
+  - @voyant-travel/commerce@0.53.0
+  - @voyant-travel/core@0.143.0
+  - @voyant-travel/flights@0.237.19
+  - @voyant-travel/storefront@0.260.3
+  - @voyant-travel/inventory@0.42.17
+  - @voyant-travel/operator-settings@0.18.10
+  - @voyant-travel/action-ledger@0.115.20
+  - @voyant-travel/bookings@0.246.3
+  - @voyant-travel/db@0.122.4
+  - @voyant-travel/finance@0.258.1
+  - @voyant-travel/hono@0.143.2
+
+## 0.236.14
+
+### Patch Changes
+
+- Updated dependencies [1a903c5]
+  - @voyant-travel/catalog-contracts@0.135.0
+  - @voyant-travel/catalog@0.257.4
+  - @voyant-travel/db@0.122.3
+  - @voyant-travel/flights@0.237.18
+  - @voyant-travel/storefront@0.260.2
+
+## 0.236.13
+
+### Patch Changes
+
+- Updated dependencies [b78b724]
+  - @voyant-travel/finance@0.258.0
+  - @voyant-travel/bookings@0.246.2
+  - @voyant-travel/core@0.142.1
+  - @voyant-travel/payments@0.13.2
+  - @voyant-travel/catalog@0.257.3
+  - @voyant-travel/commerce@0.52.1
+  - @voyant-travel/flights@0.237.17
+  - @voyant-travel/inventory@0.42.16
+  - @voyant-travel/operator-settings@0.18.9
+  - @voyant-travel/storefront@0.260.1
+
+## 0.236.12
+
+### Patch Changes
+
+- @voyant-travel/storefront@0.260.0
+
+## 0.236.11
+
+### Patch Changes
+
+- Updated dependencies [b11c10e]
+  - @voyant-travel/commerce@0.52.0
+  - @voyant-travel/finance@0.257.0
+  - @voyant-travel/bookings@0.246.1
+  - @voyant-travel/inventory@0.42.14
+  - @voyant-travel/operator-settings@0.18.8
+  - @voyant-travel/storefront@0.259.3
+  - @voyant-travel/catalog@0.257.2
+  - @voyant-travel/flights@0.237.16
+
+## 0.236.10
+
+### Patch Changes
+
+- Updated dependencies [c6b5b12]
+  - @voyant-travel/bookings@0.246.0
+  - @voyant-travel/finance@0.256.0
+  - @voyant-travel/catalog@0.257.1
+  - @voyant-travel/commerce@0.51.11
+  - @voyant-travel/inventory@0.42.13
+  - @voyant-travel/storefront@0.259.2
+  - @voyant-travel/flights@0.237.15
+  - @voyant-travel/operator-settings@0.18.7
+
+## 0.236.9
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/catalog@0.257.0
+  - @voyant-travel/commerce@0.51.10
+  - @voyant-travel/flights@0.237.14
+  - @voyant-travel/inventory@0.42.11
+  - @voyant-travel/storefront@0.259.1
+
+## 0.236.8
+
+### Patch Changes
+
+- Updated dependencies [1f36964]
+  - @voyant-travel/finance@0.255.0
+  - @voyant-travel/catalog@0.256.7
+  - @voyant-travel/commerce@0.51.9
+  - @voyant-travel/flights@0.237.13
+  - @voyant-travel/inventory@0.42.10
+  - @voyant-travel/operator-settings@0.18.6
+  - @voyant-travel/storefront@0.259.0
+
+## 0.236.7
+
+### Patch Changes
+
+- 05c2202: Stop the policy capture instant from superseding every Quote it is attached to.
+
+  Commit re-composes the Quote and compares price fingerprints to decide whether
+  the price still stands. The composed pricing carries
+  `policyEvidence.cancellation.capturedAt`, which
+  `captureCancellationPolicySnapshot` stamps with `new Date()` on every read — so
+  the two fingerprints could never agree. Every Commit against a product with a
+  published cancellation policy was refused `quote_failure / superseded` and had
+  its Hold released, deterministically and on the first attempt. Online checkout
+  was down for those products, on any payment method, with no race involved.
+
+  The capture instant now leaves the fingerprint input and nothing else does:
+  `policyId`, `policyVersionId`, `version` and the rules themselves stay in, so a
+  genuine price change or a policy version change still supersedes the Quote.
+  Both comparison sites use one helper with the value written at quote time, so a
+  normalization cannot be applied to some of them and not others.
+
+  The same comparison in `materialPolicyChanged` had the same defect, reporting
+  every catalog-backed Trip component as materially changed and demanding a
+  proposal re-acceptance no traveller could clear.
+
+- Updated dependencies [798b05b]
+- Updated dependencies [05c2202]
+  - @voyant-travel/bookings@0.245.0
+  - @voyant-travel/finance@0.254.0
+  - @voyant-travel/catalog-contracts@0.134.1
+  - @voyant-travel/catalog@0.256.6
+  - @voyant-travel/commerce@0.51.8
+  - @voyant-travel/inventory@0.42.9
+  - @voyant-travel/storefront@0.258.0
+  - @voyant-travel/flights@0.237.12
+  - @voyant-travel/operator-settings@0.18.5
+
+## 0.236.6
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+- Updated dependencies [c2aedcb]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/finance@0.253.0
+  - @voyant-travel/action-ledger@0.115.19
+  - @voyant-travel/bookings@0.244.1
+  - @voyant-travel/catalog@0.256.5
+  - @voyant-travel/commerce@0.51.7
+  - @voyant-travel/db@0.122.2
+  - @voyant-travel/flights@0.237.11
+  - @voyant-travel/hono@0.143.1
+  - @voyant-travel/inventory@0.42.7
+  - @voyant-travel/operator-settings@0.18.4
+  - @voyant-travel/storefront@0.257.6
+
+## 0.236.5
+
+### Patch Changes
+
+- Updated dependencies [8e2133e]
+  - @voyant-travel/bookings@0.244.0
+  - @voyant-travel/catalog@0.256.4
+  - @voyant-travel/finance@0.252.1
+  - @voyant-travel/commerce@0.51.5
+  - @voyant-travel/inventory@0.42.5
+  - @voyant-travel/storefront@0.257.5
+
+## 0.236.4
+
+### Patch Changes
+
+- Updated dependencies [1858c5b]
+  - @voyant-travel/finance@0.252.0
+  - @voyant-travel/bookings@0.243.1
+  - @voyant-travel/catalog@0.256.3
+  - @voyant-travel/commerce@0.51.4
+  - @voyant-travel/flights@0.237.10
+  - @voyant-travel/inventory@0.42.4
+  - @voyant-travel/operator-settings@0.18.3
+  - @voyant-travel/storefront@0.257.4
+
+## 0.236.3
+
+### Patch Changes
+
+- Updated dependencies [0fe4ce8]
+- Updated dependencies [a414f2c]
+  - @voyant-travel/bookings@0.243.0
+  - @voyant-travel/finance@0.251.0
+  - @voyant-travel/catalog@0.256.2
+  - @voyant-travel/commerce@0.51.3
+  - @voyant-travel/inventory@0.42.3
+  - @voyant-travel/storefront@0.257.3
+  - @voyant-travel/flights@0.237.9
+  - @voyant-travel/operator-settings@0.18.2
+
+## 0.236.2
+
+### Patch Changes
+
+- Updated dependencies [d3b17e2]
+  - @voyant-travel/finance@0.250.0
+  - @voyant-travel/catalog@0.256.1
+  - @voyant-travel/commerce@0.51.2
+  - @voyant-travel/flights@0.237.8
+  - @voyant-travel/inventory@0.42.2
+  - @voyant-travel/operator-settings@0.18.1
+  - @voyant-travel/storefront@0.257.2
+
+## 0.236.1
+
+### Patch Changes
+
+- a41a73a: Hold capacity for the party the Booking Session is already for. An unstated
+  Hold quantity is now derived from the Session's own selection instead of
+  becoming a literal `1`, which no multi-traveler checkout could ever satisfy: the
+  capacity port expects the real traveler count, so every Hold for two or more
+  people was rejected as a quantity mismatch, and the rejection asked the client
+  to retry — with the same invented `1`, forever.
+
+  `placeBookingHoldV1.quantity` loses its `.default(1)`. A default there was not a
+  fallback at all — parsing filled the field in before any code could consult the
+  Session — and the same invented `1` was applied again in `useBookingHold` and
+  required by the shared journey. All three now leave it absent and let the server
+  derive it. `partySizeFromSelection` is that one derivation, replacing the two
+  private copies in the capacity port and the Trips composite handler.
+
+  A genuine mismatch — a caller that names a quantity other than the Session's
+  party size — no longer answers `request_new_hold`. Repeating a request whose
+  quantity is derived cannot succeed, so that next action described a livelock;
+  `hold_quantity_mismatch` now answers `request_hold_for_expected_quantity` and
+  `expectedQuantity` is the value to hold instead.
+
+- Updated dependencies [a41a73a]
+  - @voyant-travel/catalog-contracts@0.134.0
+  - @voyant-travel/catalog@0.256.0
+  - @voyant-travel/flights@0.237.7
+  - @voyant-travel/storefront@0.257.1
+  - @voyant-travel/commerce@0.51.1
+  - @voyant-travel/inventory@0.42.1
+
 ## 0.236.0
 
 ### Minor Changes

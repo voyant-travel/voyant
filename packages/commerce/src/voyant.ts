@@ -14,6 +14,7 @@ import {
   financeAccommodationsPaymentPolicyRuntimePort,
   financeCruisesPaymentPolicyRuntimePort,
   financeDistributionPaymentPolicyRuntimePort,
+  financeFxRateCaptureRuntimePort,
   financeInventoryPaymentPolicyRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
 import {
@@ -36,6 +37,7 @@ import {
 } from "./runtime-port.js"
 import { commerceAccess } from "./voyant-access.js"
 import {
+  bookingSessionSettlementFailedPayloadSchema,
   checkoutFinalizedPayloadSchema,
   inquiryCreatedPayloadSchema,
   pricingRuleChangedPayloadSchema,
@@ -77,6 +79,7 @@ export const commerceVoyantModule = defineModule({
       providePort(promotionsBulkReindexRuntimePort),
       providePort(promotionBoundaryJobRuntimePort),
       providePort(promotionReindexJobRuntimePort),
+      providePort(financeFxRateCaptureRuntimePort),
     ],
   },
   api: [
@@ -342,6 +345,14 @@ export const commerceVoyantModule = defineModule({
       eventType: "checkout.finalized",
       version: "1.0.0",
       payloadSchema: checkoutFinalizedPayloadSchema,
+      visibility: "internal",
+      audit: { sourceModule: "commerce", category: "domain" },
+    },
+    {
+      id: "@voyant-travel/commerce#event.booking-session.settlement-failed",
+      eventType: "booking_session.settlement.failed",
+      version: "1.0.0",
+      payloadSchema: bookingSessionSettlementFailedPayloadSchema,
       visibility: "internal",
       audit: { sourceModule: "commerce", category: "domain" },
     },

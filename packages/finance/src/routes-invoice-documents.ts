@@ -2,7 +2,7 @@
  * Admin invoice-document routes — mounted by the operator starter under
  * `/v1/admin/finance/...`. Covers invoice renditions (list + render), invoice
  * attachments (list/create/update/delete + signed download redirect), and
- * invoice external refs (list/register/delete).
+ * invoice external refs (list/register/supersede/delete).
  *
  * Migrated to `@hono/zod-openapi` for the OpenAPI admin backfill (voyant#2114 /
  * voyant#2208 — finance sub-batch 9B). Request schemas reuse the existing
@@ -17,6 +17,7 @@
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { openApiValidationHook } from "@voyant-travel/hono"
+import { fulfilInvoiceRendition } from "./invoice-document-fulfilment.js"
 import {
   errorResponseSchema,
   invoiceAttachmentSchema,
@@ -24,7 +25,11 @@ import {
   invoiceRenditionSchema,
   successResponseSchema,
 } from "./routes-invoice-schemas.js"
-import { buildInlineDownload, resolveWaitRequest } from "./routes-runtime.js"
+import {
+  buildInlineDownload,
+  getFinanceRouteRuntime,
+  resolveWaitRequest,
+} from "./routes-runtime.js"
 import type { Env } from "./routes-shared.js"
 import { financeService } from "./service.js"
 import { waitForInvoiceRendition, waitFormatForMode } from "./service-rendition-wait.js"
@@ -33,6 +38,7 @@ import {
   insertInvoiceExternalRefSchema,
   invoiceDocumentWaitQuerySchema,
   renderInvoiceInputSchema,
+  supersedeInvoiceExternalRefSchema,
   updateInvoiceAttachmentSchema,
 } from "./validation.js"
 
@@ -133,13 +139,36 @@ const renditionRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHoo
     if (result.status === "not_found") {
       return c.json({ error: "Invoice not found" }, 404)
     }
-    if (waitRequest.mode !== "none" && result.rendition) {
+
+    // Fulfil inline only for a caller that asked to wait. `docs/architecture/
+    // invoice-rendition-wait.md` makes the wait additive — "omitted or `wait:
+    // "none"` preserves the historical response shape" — and rendering can hold
+    // the request for the renderer's full 30s navigation timeout, so doing it
+    // unconditionally would turn every fire-and-forget request into a blocking
+    // one. Without a wait the row is still durable and the subscriber and the
+    // recovery job produce the document; that is what they are for.
+    const runtime = getFinanceRouteRuntime(c)
+    let rendition = result.rendition
+    if (rendition && waitRequest.mode !== "none") {
+      await fulfilInvoiceRendition(c.get("db"), rendition.id, {
+        ...(runtime?.invoiceDocumentProvider ? { provider: runtime.invoiceDocumentProvider } : {}),
+        ...(runtime?.eventBus ? { eventBus: runtime.eventBus } : {}),
+        ...(runtime?.resolveCustomFields
+          ? { resolveCustomFields: runtime.resolveCustomFields }
+          : {}),
+      })
+      // Report what the row *is*, not what it was a moment ago.
+      rendition =
+        (await financeService.getInvoiceRenditionById(c.get("db"), rendition.id)) ?? rendition
+    }
+
+    if (waitRequest.mode !== "none" && rendition) {
       const waitResult = await waitForInvoiceRendition(c.get("db"), invoiceId, {
-        renditionId: result.rendition.id,
+        renditionId: rendition.id,
         format: waitFormatForMode(waitRequest.mode),
         timeoutMs: waitRequest.timeoutMs,
       })
-      const payload = { rendition: waitResult.rendition ?? result.rendition }
+      const payload = { rendition: waitResult.rendition ?? rendition }
       if (waitResult.status !== "ready") {
         return c.json({ data: payload }, 202)
       }
@@ -149,7 +178,7 @@ const renditionRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHoo
       }
       return c.json({ data: { ...payload, download: download.download } }, 201)
     }
-    return c.json({ data: result.rendition }, 201)
+    return c.json({ data: rendition }, 201)
   })
 
 // --- attachments -----------------------------------------------------------
@@ -347,6 +376,38 @@ const registerExternalRefRoute = createRoute({
   },
 })
 
+const supersedeExternalRefRoute = createRoute({
+  method: "post",
+  path: "/invoices/{id}/external-refs/{refId}/supersede",
+  description:
+    "Record that the provider document this reference points at was cancelled " +
+    "in the provider's own UI, and optionally repoint the reference at its " +
+    "replacement. The superseded identity is kept in the reference's metadata; " +
+    "with no replacement the reference is marked `cancelled`, which is what " +
+    "lets the booking be invoiced again (voyant#4688).",
+  request: {
+    params: refParamSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: supersedeInvoiceExternalRefSchema } },
+    },
+  },
+  responses: {
+    200: {
+      description: "The superseded external ref",
+      content: { "application/json": { schema: z.object({ data: invoiceExternalRefSchema }) } },
+    },
+    400: {
+      description: "invalid_request: request body failed validation",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+    404: {
+      description: "External ref not found",
+      content: { "application/json": { schema: errorResponseSchema } },
+    },
+  },
+})
+
 const deleteExternalRefRoute = createRoute({
   method: "delete",
   path: "/invoices/{id}/external-refs/{refId}",
@@ -377,6 +438,16 @@ const externalRefRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationH
       c.req.valid("json"),
     )
     return row ? c.json({ data: row }, 201) : c.json({ error: "Invoice not found" }, 404)
+  })
+  .openapi(supersedeExternalRefRoute, async (c) => {
+    const { id, refId } = c.req.valid("param")
+    const row = await financeService.supersedeInvoiceExternalRef(
+      c.get("db"),
+      refId,
+      c.req.valid("json"),
+      { invoiceId: id },
+    )
+    return row ? c.json({ data: row }, 200) : c.json({ error: "External ref not found" }, 404)
   })
   .openapi(deleteExternalRefRoute, async (c) => {
     const row = await financeService.deleteInvoiceExternalRef(

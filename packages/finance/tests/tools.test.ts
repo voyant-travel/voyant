@@ -19,6 +19,8 @@ import {
   issueInvoiceRefundInputSchema,
   issueInvoiceRefundTool,
   issueUnsyncedProformaFromBookingToolInputSchema,
+  recordPaymentTool,
+  recordPaymentToolInputSchema,
   refundCancelledBookingTool,
   refundCancelledBookingToolInputSchema,
   VOID_INVOICE_HANDLER_POLICY,
@@ -77,6 +79,7 @@ function bookingDetail(id = "booking_1") {
     pax: 1,
     internalNotes: null,
     notificationsSuppressed: false,
+    documentsSuppressed: false,
     customerPaymentPolicy: null,
     priceOverride: null,
     customFields: {},
@@ -246,6 +249,80 @@ describe("finance tools", () => {
     ).toBe(false)
   })
 
+  it("records a received payment, defaulting it to settled", async () => {
+    // The route's `insertPaymentSchema` defaults `status` to `pending`, which is
+    // right for a checkout session that will settle later and wrong for an
+    // operator entering money it already has: the invoice would stay unpaid while
+    // the agent reported success. The Tool defaults the other way (voyant#4656).
+    const parsed = recordPaymentToolInputSchema.parse({
+      invoiceId: "invoice_1",
+      amountCents: 25_000,
+      currency: "EUR",
+      paymentMethod: "bank_transfer",
+      paymentDate: "2026-03-04",
+    })
+    expect(parsed.status).toBe("completed")
+
+    // The invoice is a body field, not a path parameter — a Tool has no path, and
+    // the graph action resolves its target from `invoiceId`.
+    expect(
+      recordPaymentToolInputSchema.safeParse({ amountCents: 1, currency: "EUR" }).success,
+    ).toBe(false)
+
+    // Only the two RECORDABLE states. `failed` is not money received and
+    // `refunded` is reached by refunding a payment, never by recording one —
+    // both used to insert a row the balance recomputation then ignored, so the
+    // agent reported success against an invoice that never moved.
+    const withStatus = (status: string) =>
+      recordPaymentToolInputSchema.safeParse({
+        invoiceId: "invoice_1",
+        amountCents: 25_000,
+        currency: "EUR",
+        paymentMethod: "bank_transfer",
+        paymentDate: "2026-03-04",
+        status,
+      }).success
+    expect(withStatus("completed")).toBe(true)
+    expect(withStatus("pending")).toBe(true)
+    expect(withStatus("failed")).toBe(false)
+    expect(withStatus("refunded")).toBe(false)
+
+    let received: unknown
+    const result = await recordPaymentTool.handler(
+      parsed,
+      ctx({
+        recordPayment(input) {
+          received = input
+          return Promise.resolve({
+            id: "pay_1",
+            invoiceId: "invoice_1",
+            amountCents: 25_000,
+            currency: "EUR",
+            baseCurrency: null,
+            baseAmountCents: null,
+            fxRateSetId: null,
+            reportingCurrency: "RON",
+            reportingAmountCents: 124_305,
+            reportingFxRateSetId: "fxrs_1",
+            paymentMethod: "bank_transfer",
+            paymentInstrumentId: null,
+            paymentAuthorizationId: null,
+            paymentCaptureId: null,
+            status: "completed",
+            referenceNumber: null,
+            paymentDate: new Date("2026-03-04T00:00:00.000Z"),
+            notes: null,
+            createdAt: new Date("2026-03-05T09:00:00.000Z"),
+            updatedAt: new Date("2026-03-05T09:00:00.000Z"),
+          })
+        },
+      }),
+    )
+
+    expect(received).toMatchObject({ invoiceId: "invoice_1", status: "completed" })
+    expect(result).toMatchObject({ id: "pay_1", status: "completed" })
+  })
+
   it("registers read tools and destructive finance actions", () => {
     const registry = createToolRegistry()
     registry.registerAll(financeTools)
@@ -258,9 +335,12 @@ describe("finance tools", () => {
       "issue_unsynced_proforma_from_booking",
       "list_invoices",
       "preview_unsynced_proforma_from_booking",
+      "record_payment",
       "record_payment_dispute",
       "record_refund_settlement",
       "refund_cancelled_booking",
+      "stamp_invoice_fx_rate",
+      "stamp_payment_fx_rate",
       "void_invoice",
     ])
     // The money leg carries the same scope and the same destructive posture as
@@ -271,6 +351,17 @@ describe("finance tools", () => {
       requiredScopes: ["finance:refund"],
       riskPolicy: { destructive: true, reversible: false, confirmationRequired: true },
     })
+    // Recording money already received is a `write`, not a `destructive`: it adds
+    // a record and recomputes the invoice from its payments (voyant#4656).
+    const paymentTool = list.find((t) => t.name === "record_payment")
+    expect(paymentTool).toMatchObject({
+      tier: "write",
+      requiredScopes: ["finance:write"],
+      riskPolicy: { destructive: false, reversible: false, confirmationRequired: true },
+    })
+    // Idempotent only when the caller sends a key, and the key is optional — so
+    // the hint that says "repeating this is free" must be absent.
+    expect(paymentTool?.annotations?.idempotentHint).not.toBe(true)
     const disputeTool = list.find((t) => t.name === "record_payment_dispute")
     expect(disputeTool).toMatchObject({
       tier: "write",

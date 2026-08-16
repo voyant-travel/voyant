@@ -15,6 +15,15 @@ export const bookingsUiEnCreateList = {
       contactLastName: "Contact last name",
       contactEmail: "Contact email",
       contactPhone: "Contact phone",
+      billingAddress: "Billing address",
+      billingAddressRequired: "Billing address (required for the invoice)",
+      billingAddressLine1: "Street address",
+      billingAddressLine2: "Address line 2",
+      billingCity: "City",
+      billingRegion: "County / region",
+      billingPostalCode: "Postal code",
+      billingCountry: "Country",
+      billingTaxId: "Fiscal code",
       addPayment: "Add an initial payment schedule",
       notes: "Internal notes",
     },
@@ -31,6 +40,11 @@ export const bookingsUiEnCreateList = {
         "We couldn't load this contact. Try again, or select or create another contact.",
       contactIncomplete:
         "This contact needs a first and last name plus an email address or phone number. Edit the contact above, or select or create another contact.",
+      billingAddress:
+        "Prefilled from this contact's primary address. Correct it if the invoice is billed elsewhere.",
+      billingAddressRequired:
+        "An invoice must name the buyer and their address, so this booking cannot be created without one.",
+      billingAddressLoading: "Loading the billing address...",
     },
     validation: {
       product: "Select a product.",
@@ -41,6 +55,9 @@ export const bookingsUiEnCreateList = {
       contact: "Add a contact name for the booking.",
       contactName: "Add the billing person's first and last name.",
       contactMethod: "Add an email address or phone number for the billing person.",
+      billingAddress:
+        "Add the billing address — street, city and country. An invoice is not valid without the buyer's address.",
+      billingTaxId: "Add the organization's fiscal code. A company invoice must carry one.",
       email: "Enter a valid contact email.",
       travelers: "Add at least one traveler.",
       travelerNames: "Each traveler needs a first and last name.",
@@ -66,6 +83,14 @@ export const bookingsUiEnCreateList = {
         requirementsChanged:
           "The booking details this product requires changed. Review the refreshed form and try again.",
         commitRejected: "The booking could not be committed from the current selection.",
+        commitInFlight:
+          "This booking is still being confirmed. Do not submit it again — refresh in a moment to see the result.",
+        alreadyCommitted:
+          "This booking session was already completed by another attempt. Find the booking it created instead of submitting again.",
+        supplierUnavailable:
+          "The supplier could not confirm this booking. Choose different inventory or send it for manual review.",
+        proposalAcceptanceRequired:
+          "The proposal changed since it was accepted. Have the traveller accept the current version and try again.",
         notAuthorized: "You do not have permission to commit this booking.",
         unknown: "The Booking Session rejected this request. Review the booking and try again.",
       },
@@ -141,7 +166,7 @@ export const bookingsUiEnCreateList = {
       internalNotes: "Internal notes",
       notifyTraveler: "Notify traveler",
       notifyTravelerHint:
-        "Sends the customer their booking confirmation and documents. Turn off for a silent operator commit.",
+        "Sends the customer their booking confirmation and documents. Turning it off silences the booking permanently, including future reminders — it cannot be switched back on.",
     },
     placeholders: {
       departure: "Select a departure...",

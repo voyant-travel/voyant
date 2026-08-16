@@ -1,5 +1,111 @@
 # @voyant-travel/admin-host
 
+## 0.149.0
+
+### Patch Changes
+
+- @voyant-travel/hono@0.143.2
+- @voyant-travel/admin-app@0.191.0
+
+## 0.148.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.190.0
+
+## 0.147.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.189.0
+
+## 0.146.0
+
+### Patch Changes
+
+- Updated dependencies [46bb84e]
+  - @voyant-travel/admin-react@0.137.0
+  - @voyant-travel/admin-app@0.188.0
+
+## 0.145.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.187.0
+
+## 0.144.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.186.0
+
+## 0.143.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.185.0
+
+## 0.142.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.184.0
+
+## 0.141.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.183.0
+
+## 0.140.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.182.0
+
+## 0.139.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.181.0
+
+## 0.138.0
+
+### Patch Changes
+
+- @voyant-travel/hono@0.143.1
+- @voyant-travel/admin-app@0.180.0
+
+## 0.137.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.179.0
+
+## 0.136.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.178.0
+
+## 0.135.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.177.0
+
+## 0.134.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.176.0
+
+## 0.133.0
+
+### Patch Changes
+
+- @voyant-travel/admin-app@0.175.0
+
 ## 0.132.0
 
 ### Patch Changes

@@ -66,6 +66,7 @@ function bookingDetail(id: string, status: "confirmed" | "cancelled") {
     pax: null,
     internalNotes: null,
     notificationsSuppressed: false,
+    documentsSuppressed: false,
     customerPaymentPolicy: null,
     priceOverride: null,
     customFields: {},
@@ -120,10 +121,12 @@ describe("bookings tools", () => {
       "apply_booking_amendment",
       "cancel_booking",
       "get_booking",
+      "list_booking_documents",
       "list_bookings",
       "preview_traveler_correction_amendment",
       "preview_traveler_roster_change_amendment",
       "reconcile_booking_amendment",
+      "record_booking_document",
     ])
     for (const t of list.filter((tool) => ["get_booking", "list_bookings"].includes(tool.name))) {
       expect(t.tier).toBe("read")

@@ -69,6 +69,7 @@ import {
 } from "./products-ref.js"
 import { bookingTravelerTravelDetails } from "./schema/travel-details.js"
 import {
+  type BookingDocument,
   bookingActivityLog,
   bookingAllocations,
   bookingDocuments,
@@ -621,7 +622,12 @@ export interface BookingTravelerSharingGroupSummary {
 const travelerParticipantTypes = ["traveler", "occupant"] as const
 type TravelerParticipantType = (typeof travelerParticipantTypes)[number]
 
-class BookingServiceError extends Error {
+/**
+ * Exported so routes can distinguish a refused domain operation from a
+ * genuine fault: without the type, a guard like
+ * `slot_change_requires_amendment` surfaces to the operator as a 500.
+ */
+export class BookingServiceError extends Error {
   constructor(
     readonly code: string,
     message?: string,
@@ -1048,7 +1054,15 @@ function isUndefinedTableError(error: unknown) {
  * OTA deployment) just yields `null` for that piece — the caller's
  * explicit values still win.
  */
-async function resolveBookingItemSnapshot(
+/**
+ * Catalog names and departure timing for a Booking Item's foreign ids.
+ *
+ * Exported so the Amendment engine snapshots an item it is about to create
+ * exactly the way `createItem` snapshots one — the same columns, resolved
+ * the same way, so "what did the customer buy?" reads identically whether
+ * the line arrived at booking time or through a later change.
+ */
+export async function resolveBookingItemSnapshot(
   db: PostgresJsDatabase,
   input: {
     productId: string | null
@@ -1257,7 +1271,10 @@ async function rollupBaseTotals(
     const key = `${from}->${to}`
     if (rateCache.has(key)) return rateCache.get(key) ?? null
     const [direct] = await db
-      .select({ rate: exchangeRatesRef.rateDecimal })
+      .select({
+        rate: exchangeRatesRef.rateDecimal,
+        effectiveRate: exchangeRatesRef.effectiveRateDecimal,
+      })
       .from(exchangeRatesRef)
       .where(
         and(
@@ -1268,13 +1285,18 @@ async function rollupBaseTotals(
       )
       .limit(1)
     if (direct) {
-      const value = Number.parseFloat(direct.rate)
+      // Prefer the applied rate: it already carries the operator's margin, and
+      // it is the rate the invoice raised from this booking will use.
+      const value = Number.parseFloat(direct.effectiveRate ?? direct.rate)
       rateCache.set(key, value)
       return value
     }
     // Try the inverse
     const [inverse] = await db
-      .select({ rate: exchangeRatesRef.inverseRateDecimal })
+      .select({
+        rate: exchangeRatesRef.inverseRateDecimal,
+        effectiveRate: exchangeRatesRef.effectiveRateDecimal,
+      })
       .from(exchangeRatesRef)
       .where(
         and(
@@ -1285,7 +1307,12 @@ async function rollupBaseTotals(
       )
       .limit(1)
     if (inverse?.rate) {
-      const value = Number.parseFloat(inverse.rate)
+      // An applied rate has two readings, not two rates: if the row says the
+      // operator converts at 5.352144 RON per EUR, then one RON is 1/5.352144
+      // EUR. Reading `inverse_rate_decimal` here instead would drop the margin
+      // in this direction only, so the same booking's two legs would disagree.
+      const appliedRate = inverse.effectiveRate ? Number.parseFloat(inverse.effectiveRate) : null
+      const value = appliedRate ? 1 / appliedRate : Number.parseFloat(inverse.rate)
       rateCache.set(key, value)
       return value
     }
@@ -1738,6 +1765,7 @@ async function releaseAllocationCapacity(
     "availabilitySlotId" | "bookingId" | "quantity" | "status" | "id"
   >,
   source: SlotChangeSource = "cancel",
+  options: { allowTerminalCapacityRelease?: boolean } = {},
 ): Promise<AvailabilitySlotChangedEventPayload | undefined> {
   if (!allocation.availabilitySlotId) {
     return undefined
@@ -1752,7 +1780,15 @@ async function releaseAllocationCapacity(
     allocation.availabilitySlotId,
     allocation.quantity,
     source,
-    { allowTerminalCapacityRelease: source === "cancel" || source === "expire" },
+    {
+      // Giving capacity back is always safe on a closed or cancelled
+      // departure — the seat stops being consumed either way. Callers
+      // that release (cancel, expire, or dropping the line item that
+      // held it) must not be blocked by the slot's terminal status,
+      // or the capacity leaks with no row left to reconcile from.
+      allowTerminalCapacityRelease:
+        options.allowTerminalCapacityRelease ?? (source === "cancel" || source === "expire"),
+    },
   )
   if (result.status === "slot_not_found") {
     await db.insert(bookingActivityLog).values({
@@ -1774,6 +1810,122 @@ async function releaseAllocationCapacity(
     throw new BookingServiceError(result.status)
   }
   return result.slotChange
+}
+
+/**
+ * Whether this item still holds capacity somewhere — the test for "is
+ * repointing this line a capacity move, or just editing a label?".
+ */
+async function hasActiveCapacityAllocation(db: PostgresJsDatabase, bookingItemId: string) {
+  const allocations = await db
+    .select({ status: bookingAllocations.status })
+    .from(bookingAllocations)
+    .where(eq(bookingAllocations.bookingItemId, bookingItemId))
+  return allocations.some((allocation) => allocationStatusConsumesSlotCapacity(allocation.status))
+}
+
+/**
+ * Take a row lock on a Booking Item before its capacity is recomputed.
+ *
+ * Every mutation that moves capacity — resize, delete — has to read the
+ * item's current quantity, decide a delta, and then adjust the slot. Two
+ * of those running concurrently would read the same starting value and
+ * both apply their delta to availability, while only one of them survives
+ * on the row. Serialising on the item makes the read-decide-write one
+ * atomic step.
+ *
+ * Returns `null` when the item is gone, which a concurrent delete makes
+ * an ordinary outcome rather than an error.
+ */
+async function lockBookingItemForCapacityChange(db: PostgresJsDatabase, itemId: string) {
+  const [row] = await db
+    .select({ id: bookingItems.id })
+    .from(bookingItems)
+    .where(eq(bookingItems.id, itemId))
+    .for("update")
+    .limit(1)
+  return row ?? null
+}
+
+/**
+ * Move an item's capacity allocation by `delta` seats and adjust the
+ * availability slot to match.
+ *
+ * Only meaningful when the item has exactly one allocation that still
+ * consumes capacity — that is the shape every allocation-creating path
+ * produces, and the same precondition `bookingAmendmentService` enforces
+ * for roster changes. Items with no such allocation (manually authored
+ * lines, sourced inventory with no slot) are left alone: there is no
+ * local capacity to move.
+ *
+ * Throws `BookingServiceError("insufficient_capacity")` rather than
+ * overselling the slot.
+ */
+async function syncAllocationQuantity(
+  db: PostgresJsDatabase,
+  bookingItemId: string,
+  delta: number,
+): Promise<AvailabilitySlotChangedEventPayload | undefined> {
+  if (delta === 0) return undefined
+
+  const allocations = await db
+    .select()
+    .from(bookingAllocations)
+    .where(eq(bookingAllocations.bookingItemId, bookingItemId))
+    .for("update")
+
+  const active = allocations.filter((allocation) =>
+    allocationStatusConsumesSlotCapacity(allocation.status),
+  )
+  if (active.length !== 1) return undefined
+
+  const allocation = active[0]!
+  const nextQuantity = allocation.quantity + delta
+  if (nextQuantity < 0) {
+    throw new BookingServiceError("insufficient_capacity")
+  }
+
+  let slotChange: AvailabilitySlotChangedEventPayload | undefined
+  if (allocation.availabilitySlotId) {
+    // Slot capacity moves opposite the allocation: consuming one more
+    // seat leaves one fewer remaining.
+    const result = await adjustSlotCapacity(
+      db,
+      allocation.availabilitySlotId,
+      -delta,
+      "modify",
+      // Releasing back into a closed departure is fine; taking more
+      // from one is not, and `adjustSlotCapacity` still refuses that.
+      { allowTerminalCapacityRelease: delta < 0 },
+    )
+    if (result.status === "slot_not_found") {
+      await db.insert(bookingActivityLog).values({
+        bookingId: allocation.bookingId,
+        actorId: "system",
+        activityType: "system_action",
+        description:
+          "Allocation quantity change requires reconciliation: availability slot missing",
+        metadata: {
+          kind: "allocation_capacity_sync_reconciliation",
+          allocationId: allocation.id,
+          availabilitySlotId: allocation.availabilitySlotId,
+          delta,
+          problem: "slot_not_found",
+        },
+      })
+    } else if (result.status !== "ok") {
+      throw new BookingServiceError(result.status)
+    } else {
+      slotChange = result.slotChange
+    }
+  }
+
+  await db
+    .update(bookingAllocations)
+    .set({ quantity: nextQuantity, updatedAt: new Date() })
+    .where(eq(bookingAllocations.id, allocation.id))
+
+  return slotChange
 }
 
 async function autoIssueFulfillmentsForBooking(
@@ -2592,6 +2744,7 @@ const bookingsServiceInternal = {
         pax: bookingPax,
         internalNotes: data.internalNotes ?? null,
         notificationsSuppressed: data.suppressNotifications === true,
+        documentsSuppressed: data.suppressDocuments === true,
       })
       .returning()
 
@@ -4353,10 +4506,40 @@ const bookingsServiceInternal = {
     })
   },
 
-  async updateItem(db: PostgresJsDatabase, itemId: string, data: UpdateBookingItemInput) {
-    return db.transaction(async (tx) => {
+  /**
+   * Update a Booking Item, keeping any capacity allocation it holds in
+   * step with its `quantity`.
+   *
+   * A quantity change on an allocation-backed item is a capacity change:
+   * leaving `booking_allocations.quantity` behind desynchronises the
+   * ledger from what the booking actually consumes. Increases are
+   * checked against the slot and fail with `insufficient_capacity`
+   * rather than overselling.
+   *
+   * This is the ad-hoc correction path. Priced, consented, supplier-aware
+   * quantity changes belong in `bookingAmendmentService`.
+   */
+  async updateItem(
+    db: PostgresJsDatabase,
+    itemId: string,
+    data: UpdateBookingItemInput,
+    runtime: BookingServiceRuntime = {},
+  ) {
+    const slotChanges: AvailabilitySlotChangedEventPayload[] = []
+    const result = await db.transaction(async (tx) => {
+      // Lock the item before reading the quantity the delta is computed
+      // from. Two concurrent updates that both read the same old value
+      // would each adjust the slot while only one survives on the row,
+      // leaving allocation and capacity permanently out of step.
+      const locked = await lockBookingItemForCapacityChange(tx as PostgresJsDatabase, itemId)
+      if (!locked) return null
+
       const [parent] = await tx
-        .select({ status: bookings.status })
+        .select({
+          status: bookings.status,
+          quantity: bookingItems.quantity,
+          availabilitySlotId: bookingItems.availabilitySlotId,
+        })
         .from(bookingItems)
         .innerJoin(bookings, eq(bookings.id, bookingItems.bookingId))
         .where(eq(bookingItems.id, itemId))
@@ -4364,6 +4547,29 @@ const bookingsServiceInternal = {
 
       if (!parent || !bookingAllowsItemMutation(parent.status)) {
         return null
+      }
+
+      if (data.quantity !== undefined && data.quantity !== parent.quantity) {
+        const change = await syncAllocationQuantity(
+          tx as PostgresJsDatabase,
+          itemId,
+          data.quantity - parent.quantity,
+        )
+        if (change) slotChanges.push(change)
+      }
+
+      // Moving an allocation-backed item between departures is not a field
+      // edit. Left to this path it would repoint the item and its snapshots
+      // while the allocation kept holding the OLD departure's seat: the old
+      // date leaks capacity forever and the new one is oversellable, with
+      // the booking reading as correct the whole time. Priced, capacity-
+      // checked moves go through `bookingAmendmentService.previewItemMove`.
+      if (
+        data.availabilitySlotId !== undefined &&
+        data.availabilitySlotId !== parent.availabilitySlotId &&
+        (await hasActiveCapacityAllocation(tx as PostgresJsDatabase, itemId))
+      ) {
+        throw new BookingServiceError("slot_change_requires_amendment")
       }
 
       // Refresh snapshots only when the foreign IDs change. Existing
@@ -4467,12 +4673,36 @@ const bookingsServiceInternal = {
       await bookingsService.recomputeBookingTotal(tx as PostgresJsDatabase, row.bookingId)
       return row
     })
+
+    await emitSlotChanges(runtime, slotChanges)
+    return result
   },
 
-  async deleteItem(db: PostgresJsDatabase, itemId: string, userId?: string) {
-    return db.transaction(async (tx) => {
+  /**
+   * Delete a Booking Item, returning any capacity its allocations still
+   * consume.
+   *
+   * `booking_allocations.booking_item_id` is `ON DELETE CASCADE`, so the
+   * allocation rows disappear with the item. Releasing BEFORE the delete
+   * is therefore not an optimisation — it is the only chance to give the
+   * seats back. Skipping it leaks `availability_slots.remaining_pax`
+   * permanently, with no allocation row left to reconcile from.
+   */
+  async deleteItem(
+    db: PostgresJsDatabase,
+    itemId: string,
+    userId?: string,
+    runtime: BookingServiceRuntime = {},
+  ) {
+    const slotChanges: AvailabilitySlotChangedEventPayload[] = []
+    const result = await db.transaction(async (tx) => {
       // Look up the parent booking BEFORE the delete so we can roll up
       // afterwards.
+      // Same lock as `updateItem`: two concurrent deletes would otherwise
+      // both read the live allocation and release its capacity twice.
+      const locked = await lockBookingItemForCapacityChange(tx as PostgresJsDatabase, itemId)
+      if (!locked) return null
+
       const [item] = await tx
         .select({
           bookingId: bookingItems.bookingId,
@@ -4489,6 +4719,26 @@ const bookingsServiceInternal = {
         return null
       }
 
+      const allocations = await tx
+        .select()
+        .from(bookingAllocations)
+        .where(eq(bookingAllocations.bookingItemId, itemId))
+        .for("update")
+
+      const releasedAllocationIds: string[] = []
+      for (const allocation of allocations) {
+        const change = await releaseAllocationCapacity(
+          tx as PostgresJsDatabase,
+          allocation,
+          "modify",
+          { allowTerminalCapacityRelease: true },
+        )
+        if (allocationStatusConsumesSlotCapacity(allocation.status)) {
+          releasedAllocationIds.push(allocation.id)
+        }
+        if (change) slotChanges.push(change)
+      }
+
       const [row] = await tx
         .delete(bookingItems)
         .where(eq(bookingItems.id, itemId))
@@ -4501,12 +4751,19 @@ const bookingsServiceInternal = {
           actorId: userId ?? "system",
           activityType: "item_update",
           description: `Booking item "${item.title}" deleted`,
-          metadata: { bookingItemId: itemId, itemType: item.itemType },
+          metadata: {
+            bookingItemId: itemId,
+            itemType: item.itemType,
+            releasedAllocationIds,
+          },
         })
       }
 
       return row ?? null
     })
+
+    await emitSlotChanges(runtime, slotChanges)
+    return result
   },
 
   listItemParticipants(db: PostgresJsDatabase, itemId: string) {
@@ -5087,11 +5344,22 @@ const bookingsServiceInternal = {
       .orderBy(bookingDocuments.createdAt)
   },
 
+  /**
+   * Record a document against a Booking.
+   *
+   * Recording is never issuing: nothing here allocates a number from an
+   * invoice or contract series and nothing renders a template. A document of
+   * an issued kind (contract/invoice/proforma/credit note) carries the identity the issuer
+   * already gave it, and recording the same one twice replays the first row
+   * rather than doubling it in the booking's audit trail (voyant#4657).
+   *
+   * Returns `null` when the booking does not exist.
+   */
   async createDocument(
     db: PostgresJsDatabase,
     bookingId: string,
     data: CreateBookingDocumentInput,
-  ) {
+  ): Promise<{ document: BookingDocument; replayed: boolean } | null> {
     const [booking] = await db
       .select({ id: bookings.id })
       .from(bookings)
@@ -5102,6 +5370,22 @@ const bookingsServiceInternal = {
       return null
     }
 
+    const issuedNumber = data.issuedNumber ?? null
+    const identity = issuedNumber
+      ? {
+          bookingId,
+          type: data.type,
+          issuedBy: data.issuedBy ?? null,
+          issuedSeries: data.issuedSeries ?? null,
+          issuedNumber,
+          issuedAt: data.issuedAt ? new Date(data.issuedAt) : null,
+        }
+      : null
+    const existing = identity ? await findBookingDocumentByIssuedIdentity(db, identity) : null
+    if (existing) {
+      return { document: existing, replayed: true }
+    }
+
     const [row] = await db
       .insert(bookingDocuments)
       .values({
@@ -5110,16 +5394,31 @@ const bookingsServiceInternal = {
         type: data.type,
         fileName: data.fileName,
         fileUrl: data.fileUrl,
+        issuedBy: data.issuedBy ?? null,
+        issuedSeries: data.issuedSeries ?? null,
+        issuedNumber,
+        issuedAt: identity?.issuedAt ?? (data.issuedAt ? new Date(data.issuedAt) : null),
         expiresAt: data.expiresAt ? new Date(data.expiresAt) : null,
         notes: data.notes ?? null,
       })
+      // Two concurrent recordings of the same issued document race past the
+      // read above; the unique index settles it and this replays the winner
+      // instead of surfacing a constraint violation.
+      .onConflictDoNothing()
       .returning()
 
     if (row) {
       await touchBookingUpdatedAt(db, bookingId)
+      return { document: row, replayed: false }
     }
 
-    return row
+    const winner = identity ? await findBookingDocumentByIssuedIdentity(db, identity) : null
+    if (!winner) {
+      throw new Error(
+        `Recording a ${data.type} document on booking ${bookingId} inserted no row and found no conflicting record.`,
+      )
+    }
+    return { document: winner, replayed: true }
   },
 
   async deleteDocument(db: PostgresJsDatabase, documentId: string) {
@@ -5139,6 +5438,59 @@ const bookingsServiceInternal = {
 const { convertProductToBooking: _commandOnlyCreate, ...bookingsService } = bookingsServiceInternal
 
 export { bookingsService }
+
+/**
+ * Resolve a Booking Document by the identity its issuer gave it. Mirrors the
+ * `uq_booking_documents_issued_identity` index, including its `coalesce` on a
+ * missing series, so a lookup and the constraint agree on what "the same
+ * document" means.
+ */
+async function findBookingDocumentByIssuedIdentity(
+  db: PostgresJsDatabase,
+  identity: {
+    bookingId: string
+    type: BookingDocument["type"]
+    issuedBy: string | null
+    issuedSeries: string | null
+    issuedNumber: string
+    issuedAt: Date | null
+  },
+): Promise<BookingDocument | null> {
+  const [row] = await db
+    .select()
+    .from(bookingDocuments)
+    .where(
+      and(
+        eq(bookingDocuments.bookingId, identity.bookingId),
+        eq(bookingDocuments.type, identity.type),
+        sql`coalesce(${bookingDocuments.issuedBy}, '') = ${identity.issuedBy ?? ""}`,
+        sql`coalesce(${bookingDocuments.issuedSeries}, '') = ${identity.issuedSeries ?? ""}`,
+        eq(bookingDocuments.issuedNumber, identity.issuedNumber),
+        sql`coalesce(${bookingDocuments.issuedAt}, '-infinity'::timestamptz) = coalesce(${issuedAtParam(identity.issuedAt)}, '-infinity'::timestamptz)`,
+      ),
+    )
+    .limit(1)
+  return row ?? null
+}
+
+/**
+ * Bind an issue date as a `timestamptz` parameter.
+ *
+ * Interpolating a value into a `sql` fragment hands it to the driver as-is —
+ * unlike `eq(column, value)`, which encodes it through the column first. A
+ * `Date` reaches postgres-js unencoded and its bind step throws, which is why
+ * every recording that carried an issue date 500ed while the insert beside it,
+ * writing the same `Date` through the same column, worked (voyant#4696).
+ *
+ * The column is the encoder, so the lookup and the insert agree by
+ * construction. `null` cannot go through it — the timestamp encoder calls
+ * `toISOString()` — so it is bound as a plain typed null instead.
+ */
+function issuedAtParam(issuedAt: Date | null): SQL {
+  return issuedAt
+    ? sql`${sql.param(issuedAt, bookingDocuments.issuedAt)}::timestamptz`
+    : sql`null::timestamptz`
+}
 
 /**
  * Command-only booking-domain settlement. The runtime lease is minted by the

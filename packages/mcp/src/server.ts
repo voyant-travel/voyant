@@ -44,6 +44,7 @@ import {
   type AuthorizedSurface,
   collectAuthorizedTools,
   META_TOOL_NAMES,
+  registerFoldedReadNotice,
   registerMetaTools,
   selectEagerToolNames,
 } from "./meta-tools.js"
@@ -176,6 +177,12 @@ export function createMcpApiRoutes(options: McpApiRoutesOptions): OpenAPIHono {
     // prunes an unauthorized read out of its group.
     const projection = buildReadProjection(surface)
 
+    // Which domain tools are eager is resolved BEFORE the server is built,
+    // because the guide describes the eager surface and must describe the one
+    // this caller will actually receive — an authorized-and-selected set, not the
+    // configured list (voyant#4661 review).
+    const eagerNames = selectEagerToolNames(surface, options.eagerToolNames)
+
     // The guide layer's `instructions` are scope-aware — a read-only key is told
     // the write journeys are unreachable rather than shown workflows it cannot
     // perform — so whether any write Tool is reachable must be known before the
@@ -185,6 +192,7 @@ export function createMcpApiRoutes(options: McpApiRoutesOptions): OpenAPIHono {
         ({ entry }) => entry.annotations.readOnlyHint !== true,
       ),
       anyToolReachable: surface.size > 0,
+      eagerToolNames: [...eagerNames],
     }
     const server = new McpServer(serverInfo, {
       instructions: buildServerInstructions(guideScope),
@@ -192,7 +200,6 @@ export function createMcpApiRoutes(options: McpApiRoutesOptions): OpenAPIHono {
     const guideToolNames = new Set(registerGuideTools(server, guideScope))
 
     // Register only the tier-0 domain tools eagerly; the long tail stays lazy.
-    const eagerNames = selectEagerToolNames(surface, options.eagerToolNames)
     for (const name of eagerNames)
       registerSurfaceTool(server, registry, surface, name, ctx, requireActionPolicy, budgetBytes)
 
@@ -227,6 +234,13 @@ export function createMcpApiRoutes(options: McpApiRoutesOptions): OpenAPIHono {
       const queryTool = projection.queryToolFor(requestedName)
       if (queryTool) {
         registerQueryTool(server, registry, queryTool, ctx, requireActionPolicy, budgetBytes)
+      } else if (surface.has(requestedName) && projection.hiddenReadNames.has(requestedName)) {
+        // A folded read called by its old flat name. Without this the SDK answers
+        // "tool not found", which is the same thing it says for a typo — so the
+        // one case that is a discovery defect looked exactly like caller error
+        // (voyant#4656). Registered only for THIS request, so it never appears in
+        // a `tools/list`.
+        registerFoldedReadNotice(server, projection, requestedName)
       } else if (surface.has(requestedName) && !projection.hiddenReadNames.has(requestedName)) {
         registerSurfaceTool(
           server,
@@ -366,7 +380,13 @@ async function instrumentRpc(
       queryTool !== undefined ||
       META_TOOL_NAMES.includes(name) ||
       guideToolNames.has(name)
-    const { outcome, code } = classifyToolCallResult(payload, known)
+    // A folded read called by its flat name is not an unknown tool: it exists,
+    // the caller is authorized, and discovery moved it. Counting it as a miss
+    // buried the one outcome that is a defect rather than caller error.
+    const folded = surface.has(name) && projection.hiddenReadNames.has(name)
+    const { outcome, code } = folded
+      ? { outcome: "unreachable" as const, code: undefined }
+      : classifyToolCallResult(payload, known)
     observer.toolCall({
       tool: name,
       outcome,

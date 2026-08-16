@@ -1,5 +1,175 @@
 # @voyant-travel/inventory-react
 
+## 0.180.0
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/catalog-contracts@0.136.0
+  - @voyant-travel/catalog-react@0.296.0
+  - @voyant-travel/storefront-react@0.300.0
+  - @voyant-travel/react@0.106.3
+  - @voyant-travel/finance-react@0.298.0
+
+## 0.179.0
+
+### Patch Changes
+
+- Updated dependencies [1a903c5]
+  - @voyant-travel/catalog-contracts@0.135.0
+  - @voyant-travel/catalog-react@0.295.0
+  - @voyant-travel/storefront-react@0.299.0
+  - @voyant-travel/finance-react@0.297.0
+
+## 0.178.0
+
+### Patch Changes
+
+- Updated dependencies [b78b724]
+  - @voyant-travel/finance@0.258.0
+  - @voyant-travel/catalog-react@0.294.0
+  - @voyant-travel/finance-react@0.296.0
+  - @voyant-travel/storefront-react@0.298.0
+
+## 0.177.0
+
+### Patch Changes
+
+- @voyant-travel/storefront-react@0.297.0
+- @voyant-travel/finance-react@0.295.0
+- @voyant-travel/catalog-react@0.293.0
+
+## 0.176.0
+
+### Patch Changes
+
+- Updated dependencies [b11c10e]
+  - @voyant-travel/finance@0.257.0
+  - @voyant-travel/finance-react@0.294.0
+  - @voyant-travel/catalog-react@0.292.0
+  - @voyant-travel/storefront-react@0.296.0
+
+## 0.175.0
+
+### Patch Changes
+
+- Updated dependencies [c6ccc30]
+  - @voyant-travel/catalog-react@0.291.0
+  - @voyant-travel/i18n@0.126.0
+  - @voyant-travel/storefront-react@0.295.0
+  - @voyant-travel/finance-react@0.293.0
+
+## 0.174.0
+
+### Patch Changes
+
+- Updated dependencies [c6b5b12]
+  - @voyant-travel/finance@0.256.0
+  - @voyant-travel/finance-react@0.292.0
+  - @voyant-travel/storefront-react@0.294.0
+  - @voyant-travel/catalog-react@0.290.0
+
+## 0.173.0
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/catalog-react@0.289.0
+  - @voyant-travel/i18n@0.125.0
+  - @voyant-travel/storefront-react@0.293.0
+  - @voyant-travel/finance-react@0.291.0
+
+## 0.172.0
+
+### Patch Changes
+
+- Updated dependencies [1f36964]
+  - @voyant-travel/finance@0.255.0
+  - @voyant-travel/finance-react@0.290.0
+  - @voyant-travel/catalog-react@0.288.0
+  - @voyant-travel/storefront-react@0.292.0
+
+## 0.171.0
+
+### Patch Changes
+
+- Updated dependencies [798b05b]
+  - @voyant-travel/finance@0.254.0
+  - @voyant-travel/finance-react@0.289.0
+  - @voyant-travel/storefront-react@0.291.0
+  - @voyant-travel/catalog-react@0.287.0
+
+## 0.170.0
+
+### Patch Changes
+
+- Updated dependencies [e99380d]
+  - @voyant-travel/operations@0.23.0
+  - @voyant-travel/i18n@0.124.0
+  - @voyant-travel/finance-react@0.288.0
+  - @voyant-travel/catalog-react@0.286.0
+  - @voyant-travel/storefront-react@0.290.0
+
+## 0.169.0
+
+### Patch Changes
+
+- Updated dependencies [c2aedcb]
+  - @voyant-travel/finance@0.253.0
+  - @voyant-travel/react@0.106.2
+  - @voyant-travel/finance-react@0.287.0
+  - @voyant-travel/catalog-react@0.285.0
+  - @voyant-travel/storefront-react@0.289.0
+
+## 0.168.0
+
+### Patch Changes
+
+- @voyant-travel/finance-react@0.286.0
+- @voyant-travel/storefront-react@0.288.0
+- @voyant-travel/catalog-react@0.284.0
+
+## 0.167.0
+
+### Patch Changes
+
+- Updated dependencies [1858c5b]
+  - @voyant-travel/finance@0.252.0
+  - @voyant-travel/finance-react@0.285.0
+  - @voyant-travel/storefront-react@0.287.0
+  - @voyant-travel/catalog-react@0.283.0
+
+## 0.166.0
+
+### Patch Changes
+
+- Updated dependencies [0fe4ce8]
+- Updated dependencies [a414f2c]
+  - @voyant-travel/finance@0.251.0
+  - @voyant-travel/finance-react@0.284.0
+  - @voyant-travel/storefront-react@0.286.0
+  - @voyant-travel/catalog-react@0.282.0
+
+## 0.165.0
+
+### Patch Changes
+
+- Updated dependencies [d3b17e2]
+  - @voyant-travel/finance@0.250.0
+  - @voyant-travel/finance-react@0.283.0
+  - @voyant-travel/catalog-react@0.281.0
+  - @voyant-travel/storefront-react@0.285.0
+
+## 0.164.0
+
+### Patch Changes
+
+- Updated dependencies [a41a73a]
+  - @voyant-travel/catalog-contracts@0.134.0
+  - @voyant-travel/catalog-react@0.280.0
+  - @voyant-travel/storefront-react@0.284.0
+  - @voyant-travel/finance-react@0.282.0
+
 ## 0.163.0
 
 ### Patch Changes

@@ -1241,7 +1241,17 @@
                               },
                               "type": {
                                 "type": "string",
-                                "enum": ["visa", "insurance", "health", "passport_copy", "other"]
+                                "enum": [
+                                  "visa",
+                                  "insurance",
+                                  "health",
+                                  "passport_copy",
+                                  "contract",
+                                  "invoice",
+                                  "proforma",
+                                  "credit_note",
+                                  "other"
+                                ]
                               },
                               "fileName": {
                                 "type": "string"
@@ -1648,6 +1658,10 @@
                                       "insurance",
                                       "health",
                                       "passport_copy",
+                                      "contract",
+                                      "invoice",
+                                      "proforma",
+                                      "credit_note",
                                       "other"
                                     ]
                                   },

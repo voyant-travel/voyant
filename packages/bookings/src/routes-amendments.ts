@@ -4,6 +4,8 @@ import {
   acceptBookingAmendmentSchema,
   applyBookingAmendmentSchema,
   bookingAmendmentSchema,
+  previewBookingItemAdditionSchema,
+  previewBookingItemMoveSchema,
   previewTravelerCorrectionSchema,
   previewTravelerRosterChangeSchema,
 } from "@voyant-travel/bookings-contracts"
@@ -225,7 +227,13 @@ async function visibleAdminAmendment(
   metadata: Record<string, unknown>,
 ) {
   const reveal = shouldRevealAdminHistory(c)
-  await logAmendmentHistoryRead(c, amendment.bookingId, reveal, metadata, amendment.travelerId)
+  await logAmendmentHistoryRead(
+    c,
+    amendment.bookingId,
+    reveal,
+    metadata,
+    amendment.travelerId ?? undefined,
+  )
   return reveal ? amendment : redactAmendmentHistory(amendment)
 }
 
@@ -234,7 +242,13 @@ async function auditedPublicAmendment(
   amendment: z.infer<typeof bookingAmendmentSchema>,
   metadata: Record<string, unknown>,
 ) {
-  await logAmendmentHistoryRead(c, amendment.bookingId, true, metadata, amendment.travelerId)
+  await logAmendmentHistoryRead(
+    c,
+    amendment.bookingId,
+    true,
+    metadata,
+    amendment.travelerId ?? undefined,
+  )
   return publicAmendmentHistory(amendment)
 }
 
@@ -277,6 +291,32 @@ const adminRosterPreviewRoute = createBookingsAdminRoute({
     body: {
       required: true,
       content: { "application/json": { schema: previewTravelerRosterChangeSchema } },
+    },
+  },
+  responses: adminPreviewRoute.responses,
+})
+
+const adminItemAdditionPreviewRoute = createBookingsAdminRoute({
+  method: "post",
+  path: "/{bookingId}/amendments/items/preview",
+  request: {
+    params: bookingParamsSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: previewBookingItemAdditionSchema } },
+    },
+  },
+  responses: adminPreviewRoute.responses,
+})
+
+const adminItemMovePreviewRoute = createBookingsAdminRoute({
+  method: "post",
+  path: "/{bookingId}/amendments/items/move/preview",
+  request: {
+    params: bookingParamsSchema,
+    body: {
+      required: true,
+      content: { "application/json": { schema: previewBookingItemMoveSchema } },
     },
   },
   responses: adminPreviewRoute.responses,
@@ -384,6 +424,17 @@ adminApp.use(
   "/:bookingId/amendments/traveler-roster/preview",
   idempotencyKey<Env["Bindings"], Env["Variables"]>({ required: true }),
 )
+// Every Amendment mutation needs one, and the middleware is registered per
+// path — a new preview route that forgets this line 500s on its first real
+// request while every service-level test still passes.
+adminApp.use(
+  "/:bookingId/amendments/items/preview",
+  idempotencyKey<Env["Bindings"], Env["Variables"]>({ required: true }),
+)
+adminApp.use(
+  "/:bookingId/amendments/items/move/preview",
+  idempotencyKey<Env["Bindings"], Env["Variables"]>({ required: true }),
+)
 adminApp.use(
   "/:bookingId/amendments/:amendmentId/accept",
   idempotencyKey<Env["Bindings"], Env["Variables"]>({ required: true }),
@@ -447,6 +498,54 @@ export const bookingAmendmentAdminRoutes = adminApp
     }
     return amendmentError(c, result)
   })
+  .openapi(adminItemAdditionPreviewRoute, async (c) => {
+    const result = await bookingAmendmentService.previewItemAddition(
+      c.get("db"),
+      c.req.valid("param").bookingId,
+      c.req.valid("json"),
+      mutationContext(c, "staff"),
+      amendmentDependencies(c),
+    )
+    if (result.status === "ok") {
+      return c.json(
+        {
+          data: {
+            ...result,
+            amendment: await visibleAdminAmendment(c, result.amendment, {
+              amendmentId: result.amendment.id,
+              operation: "preview_item_addition",
+            }),
+          },
+        },
+        201,
+      )
+    }
+    return amendmentError(c, result)
+  })
+  .openapi(adminItemMovePreviewRoute, async (c) => {
+    const result = await bookingAmendmentService.previewItemMove(
+      c.get("db"),
+      c.req.valid("param").bookingId,
+      c.req.valid("json"),
+      mutationContext(c, "staff"),
+      amendmentDependencies(c),
+    )
+    if (result.status === "ok") {
+      return c.json(
+        {
+          data: {
+            ...result,
+            amendment: await visibleAdminAmendment(c, result.amendment, {
+              amendmentId: result.amendment.id,
+              operation: "preview_item_move",
+            }),
+          },
+        },
+        201,
+      )
+    }
+    return amendmentError(c, result)
+  })
   .openapi(adminListRoute, async (c) => {
     const bookingId = c.req.valid("param").bookingId
     const rows = await bookingAmendmentService.list(c.get("db"), bookingId)
@@ -459,7 +558,13 @@ export const bookingAmendmentAdminRoutes = adminApp
     const row = await bookingAmendmentService.get(c.get("db"), bookingId, amendmentId)
     if (!row) return c.json({ error: "amendment_not_found" }, 404)
     const reveal = shouldRevealAdminHistory(c)
-    await logAmendmentHistoryRead(c, bookingId, reveal, { amendmentId }, row.travelerId)
+    await logAmendmentHistoryRead(
+      c,
+      bookingId,
+      reveal,
+      { amendmentId },
+      row.travelerId ?? undefined,
+    )
     return c.json({ data: reveal ? row : redactAmendmentHistory(row) }, 200)
   })
   .openapi(adminAcceptRoute, async (c) => {
@@ -716,7 +821,7 @@ export const bookingAmendmentPublicRoutes = publicApp
     if (denied) return denied
     const row = await bookingAmendmentService.get(c.get("db"), bookingId, amendmentId)
     if (!row) return c.json({ error: "amendment_not_found" }, 404)
-    await logAmendmentHistoryRead(c, bookingId, true, { amendmentId }, row.travelerId)
+    await logAmendmentHistoryRead(c, bookingId, true, { amendmentId }, row.travelerId ?? undefined)
     return c.json({ data: publicAmendmentHistory(row) }, 200)
   })
   .openapi(publicAcceptRoute, async (c) => {

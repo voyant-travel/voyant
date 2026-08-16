@@ -1,5 +1,137 @@
 # @voyant-travel/commerce-react
 
+## 0.180.0
+
+### Patch Changes
+
+- Updated dependencies [f6c85ee]
+  - @voyant-travel/commerce@0.53.0
+  - @voyant-travel/inventory-react@0.180.0
+  - @voyant-travel/react@0.106.3
+  - @voyant-travel/distribution-react@0.288.0
+
+## 0.179.0
+
+### Patch Changes
+
+- @voyant-travel/inventory-react@0.179.0
+- @voyant-travel/distribution-react@0.287.0
+
+## 0.178.0
+
+### Patch Changes
+
+- Updated dependencies [3b9cd41]
+  - @voyant-travel/distribution-react@0.286.0
+  - @voyant-travel/inventory-react@0.178.0
+
+## 0.177.0
+
+### Patch Changes
+
+- @voyant-travel/distribution-react@0.285.0
+- @voyant-travel/inventory-react@0.177.0
+
+## 0.176.0
+
+### Patch Changes
+
+- Updated dependencies [b11c10e]
+  - @voyant-travel/commerce@0.52.0
+  - @voyant-travel/inventory-react@0.176.0
+  - @voyant-travel/distribution-react@0.284.0
+
+## 0.175.0
+
+### Patch Changes
+
+- Updated dependencies [c6ccc30]
+  - @voyant-travel/i18n@0.126.0
+  - @voyant-travel/inventory-react@0.175.0
+  - @voyant-travel/distribution-react@0.283.0
+
+## 0.174.0
+
+### Patch Changes
+
+- @voyant-travel/distribution-react@0.282.0
+- @voyant-travel/inventory-react@0.174.0
+
+## 0.173.0
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/i18n@0.125.0
+  - @voyant-travel/inventory-react@0.173.0
+  - @voyant-travel/distribution-react@0.281.0
+
+## 0.172.0
+
+### Patch Changes
+
+- @voyant-travel/inventory-react@0.172.0
+- @voyant-travel/distribution-react@0.280.0
+
+## 0.171.0
+
+### Patch Changes
+
+- @voyant-travel/inventory-react@0.171.0
+- @voyant-travel/distribution-react@0.279.0
+
+## 0.170.0
+
+### Patch Changes
+
+- Updated dependencies [e99380d]
+  - @voyant-travel/i18n@0.124.0
+  - @voyant-travel/inventory-react@0.170.0
+  - @voyant-travel/distribution-react@0.278.0
+
+## 0.169.0
+
+### Patch Changes
+
+- @voyant-travel/react@0.106.2
+- @voyant-travel/inventory-react@0.169.0
+- @voyant-travel/distribution-react@0.277.0
+
+## 0.168.0
+
+### Patch Changes
+
+- @voyant-travel/distribution-react@0.276.0
+- @voyant-travel/inventory-react@0.168.0
+
+## 0.167.0
+
+### Patch Changes
+
+- @voyant-travel/inventory-react@0.167.0
+- @voyant-travel/distribution-react@0.275.0
+
+## 0.166.0
+
+### Patch Changes
+
+- @voyant-travel/distribution-react@0.274.0
+- @voyant-travel/inventory-react@0.166.0
+
+## 0.165.0
+
+### Patch Changes
+
+- @voyant-travel/inventory-react@0.165.0
+- @voyant-travel/distribution-react@0.273.0
+
+## 0.164.0
+
+### Patch Changes
+
+- @voyant-travel/inventory-react@0.164.0
+- @voyant-travel/distribution-react@0.272.0
+
 ## 0.163.0
 
 ### Patch Changes

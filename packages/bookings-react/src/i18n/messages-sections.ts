@@ -317,17 +317,38 @@ export type BookingsUiSectionsMessages = {
   }
   bookingDocumentDialog: {
     title: string
-    documentTypeLabels: Record<"visa" | "insurance" | "health" | "passport_copy" | "other", string>
+    documentTypeLabels: Record<
+      | "visa"
+      | "insurance"
+      | "health"
+      | "passport_copy"
+      | "contract"
+      | "invoice"
+      | "proforma"
+      | "credit_note"
+      | "other",
+      string
+    >
+    /** Shown when the selected kind records paperwork issued outside Voyant. */
+    issuedNotice: string
     fields: {
       type: string
       traveler: string
       file: string
+      issuedBy: string
+      issuedSeries: string
+      issuedNumber: string
+      issuedAt: string
       expiresAt: string
       notes: string
     }
     placeholders: {
       travelerUnassigned: string
       helperText: string
+      issuedBy: string
+      issuedSeries: string
+      issuedNumber: string
+      issuedAt: string
       expiresAt: string
       notes: string
     }
@@ -335,6 +356,8 @@ export type BookingsUiSectionsMessages = {
       fileRequired: string
       fileNameRequired: string
       fileUrlInvalid: string
+      issuedNumberRequired: string
+      issuedAtRequired: string
     }
     actions: {
       addDocument: string
@@ -358,6 +381,139 @@ export type BookingsUiSectionsMessages = {
     }
     actions: {
       deleteConfirm: string
+    }
+  }
+  rosterAmendmentDialog: {
+    titles: {
+      add: string
+      drop: string
+    }
+    fields: {
+      firstName: string
+      lastName: string
+      email: string
+      unknownTraveler: string
+      items: string
+      itemsHint: string
+      noItems: string
+      reason: string
+      reasonPlaceholder: string
+    }
+    actions: {
+      cancel: string
+      quote: string
+      apply: string
+    }
+    quote: {
+      title: string
+      subtotal: string
+      tax: string
+    }
+    consequences: {
+      /** `{amount}` is replaced with the money to collect. */
+      collect: string
+      /** `{amount}` is replaced with the money to refund. */
+      refund: string
+      supplier: string
+      documents: string
+    }
+    blocked: {
+      noOp: string
+      availabilityChanged: string
+      unsupported: string
+      staleRevision: string
+      generic: string
+    }
+  }
+  itemAdditionDialog: {
+    title: string
+    sourcedUnsupported: string
+    /** Why the quote button is disabled, shown next to it. */
+    missing: {
+      product: string
+      reason: string
+    }
+    fields: {
+      departure: string
+      departurePlaceholder: string
+      departureEmpty: string
+      /** `{count}` is replaced with remaining capacity. */
+      seatsLeft: string
+      unit: string
+      unitNone: string
+      quantity: string
+      reason: string
+      reasonPlaceholder: string
+    }
+    actions: {
+      cancel: string
+      quote: string
+      apply: string
+    }
+    quote: {
+      title: string
+      /** `{amount}` is replaced with the money to collect. */
+      collect: string
+    }
+    blocked: {
+      availabilityChanged: string
+      unsupported: string
+      staleRevision: string
+      generic: string
+    }
+  }
+  itemMoveDialog: {
+    title: string
+    currentUnscheduled: string
+    noTargets: string
+    /** Why the quote button is disabled, shown next to it. */
+    missing: {
+      departure: string
+      reason: string
+    }
+    fields: {
+      departure: string
+      departurePlaceholder: string
+      departureHint: string
+      seatsLeft: string
+      changeFee: string
+      changeFeeHint: string
+      fareDiscount: string
+      fareDiscountHint: string
+      refundHandling: string
+      refundHandlingHint: string
+      reason: string
+      reasonPlaceholder: string
+    }
+    refundHandling: {
+      refund: string
+      travelCredit: string
+      waive: string
+    }
+    actions: {
+      cancel: string
+      quote: string
+      apply: string
+    }
+    quote: {
+      title: string
+      fareDifference: string
+      changeFee: string
+      tax: string
+      /** Shown when the operator absorbed part of a price increase. */
+      discountApplied: string
+      /** `{amount}` is replaced with the money to collect. */
+      collect: string
+      /** `{amount}` is replaced with the money owed back. */
+      owedBack: string
+      supplier: string
+      documents: string
+    }
+    blocked: {
+      availabilityChanged: string
+      unsupported: string
+      staleRevision: string
+      generic: string
     }
   }
 }
