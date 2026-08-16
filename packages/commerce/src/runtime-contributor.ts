@@ -1,4 +1,5 @@
 import {
+  type CatalogCommerceRuntimeExtension,
   type CatalogPublicationRuntime,
   type CatalogRuntimeServices,
   catalogCommerceRuntimeExtensionPort,
@@ -107,7 +108,20 @@ export function createCommerceRuntimePortContribution(
         }),
     )
   return {
-    [catalogCommerceRuntimeExtensionPort.id]: catalogCommerceRuntimeExtension,
+    [catalogCommerceRuntimeExtensionPort.id]: {
+      ...catalogCommerceRuntimeExtension,
+      // Bound through the pending contribution rather than resolved here: the
+      // extension is a plain object the catalog reads synchronously, and the
+      // cascade it publishes is composed from ports that settle later.
+      entityPaymentPolicy: {
+        resolveListingPolicyForEntity: async (db, context) =>
+          (await contribution).entityPaymentPolicy.resolveListingPolicyForEntity(db, context),
+        resolveCategoryPolicyForEntity: async (db, context) =>
+          (await contribution).entityPaymentPolicy.resolveCategoryPolicyForEntity(db, context),
+        resolveSupplierPolicyForEntity: async (db, context) =>
+          (await contribution).entityPaymentPolicy.resolveSupplierPolicyForEntity(db, context),
+      },
+    } satisfies CatalogCommerceRuntimeExtension,
     // Markets owns `fx_rate_sets`/`exchange_rates`, so it is what turns a
     // resolved reference rate into a durable rate-set identity for finance to
     // stamp documents with (voyant#4703).
