@@ -264,6 +264,13 @@ export async function resolveDocumentFxRate(
       resolution,
     })
     if (captured) return captured
+
+    // Capture is durability, not correctness, and the two must not be traded
+    // for each other. The source answered for the document's OWN day; falling
+    // through to an older standing rate here would quietly convert the document
+    // at a different number because a WRITE failed. Losing the rate-set id is
+    // the cost of a failed capture; losing the right amount is not.
+    return fromResolution(resolution, commissionBps)
   }
 
   // 4. An older standing rate, for deployments that keep rates by hand or have
@@ -278,6 +285,14 @@ export async function resolveDocumentFxRate(
 
   // 5. Resolved but not persistable: the amount is still right, but nothing
   //    records which rate produced it.
+  return fromResolution(resolution, commissionBps)
+}
+
+/** A source answer nothing could be persisted for — right number, no identity. */
+function fromResolution(
+  resolution: InvoiceExchangeRateResolution,
+  commissionBps: number,
+): ResolvedDocumentFxRate {
   return {
     sourceRate: resolution.rate,
     effectiveRate: applyCommission(resolution.rate, commissionBps),
@@ -493,10 +508,19 @@ async function queryPersistedRate(
     : normalizeRate(row.rateDecimal)
   if (!sourceRate) return null
 
-  // An effective rate is quoted in the row's own direction; reading it
-  // backwards would apply the operator's margin the wrong way round, so an
-  // inverted lookup falls back to deriving from the source rate.
-  const effectiveRate = options.inverse ? null : normalizeRate(row.effectiveRateDecimal)
+  // An applied rate has two readings, not two rates: if the operator converts
+  // at 5.352144 RON per EUR then one RON is 1/5.352144 EUR, and inverting the
+  // applied rate is what keeps both directions telling the same story.
+  //
+  // Inverting the SOURCE rate and re-applying the margin does not: it would
+  // value a RON amount at an implied 5.1443 RON per EUR while the row next to
+  // it says the operator converts at 5.352144.
+  const recordedEffectiveRate = normalizeRate(row.effectiveRateDecimal)
+  const effectiveRate = options.inverse
+    ? recordedEffectiveRate === null
+      ? null
+      : 1 / recordedEffectiveRate
+    : recordedEffectiveRate
 
   return {
     sourceRate,

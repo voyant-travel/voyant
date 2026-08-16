@@ -59,5 +59,12 @@ Also:
   (`stamp_invoice_fx_rate`, `stamp_payment_fx_rate`), because reading a month of rates
   off PDFs is exactly the work that made the last period return manual.
 - Booking FX rollups use the applied rate too, so a booking total and the invoice
-  raised from it no longer disagree by exactly the margin.
+  raised from it no longer disagree by exactly the margin. An applied rate read in
+  the reverse direction is now `1 / applied` in both finance and bookings: a row
+  saying the operator converts at 5.352144 RON per EUR means one RON is 1/5.352144
+  EUR. Inverting the source rate and re-applying the margin — which finance did —
+  implied 5.1443 RON per EUR, contradicting the row it came from.
+- A payment whose amount, currency or date changes and can no longer be converted
+  has its reporting stamp **cleared** rather than left describing the values it no
+  longer has.
 - `fx_rate_source` gains `bnr`.

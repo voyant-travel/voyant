@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 
 import { resolveDocumentFxRate, resolveReportingStamp } from "../../src/fx-money.js"
-import { fakeRateStore } from "./support/rate-store.js"
+import { fakeRateStore, scriptedRateStore } from "./support/rate-store.js"
 
 /**
  * The resolution order, and what happens when the pieces are missing
@@ -76,6 +76,66 @@ describe("document FX rate resolution", () => {
 
     expect(resolved).toMatchObject({ origin: "resolver", fxRateSetId: null })
     expect(resolved?.effectiveRate).toBeCloseTo(5.352144, 6)
+  })
+
+  it("keeps the day's own rate when capture fails, rather than an older standing one", async () => {
+    // Capture is durability, not correctness, and a failed WRITE must not
+    // change the amount. Falling back to the standing rate here would convert
+    // this document at 9.0 because the rate store was briefly unavailable.
+    const resolved = await resolveDocumentFxRate(
+      scriptedRateStore([
+        [], // nothing captured for the document's own day, direct
+        [], // …nor inverted
+        [
+          {
+            fxRateSetId: "fxrs_last_week",
+            rateDecimal: "9.00000000",
+            inverseRateDecimal: null,
+            effectiveRateDecimal: null,
+            commissionBps: null,
+            observedAt: new Date("2026-02-25T00:00:00.000Z"),
+          },
+        ],
+      ]),
+      { currency: "EUR", baseCurrency: "RON", date: "2026-03-04" },
+      {
+        invoiceFxSettings: settings,
+        resolveInvoiceExchangeRate: async () => ({ rate: 5.2472 }),
+        captureFxRates: async () => {
+          throw new Error("rate store unavailable")
+        },
+      },
+    )
+
+    expect(resolved).toMatchObject({ origin: "resolver", sourceRate: 5.2472 })
+    expect(resolved?.effectiveRate).toBeCloseTo(5.352144, 6)
+  })
+
+  it("reads an applied rate backwards as one over itself", async () => {
+    // The row records 5.352144 RON per EUR. One RON is therefore 1/5.352144
+    // EUR. Inverting the SOURCE rate and re-applying the margin would imply
+    // 5.1443 RON per EUR — contradicting the row it came from.
+    const resolved = await resolveDocumentFxRate(
+      scriptedRateStore([
+        [], // no EUR→RON row for the day…
+        [
+          // …but the RON→EUR direction is captured.
+          {
+            fxRateSetId: "fxrs_captured",
+            rateDecimal: "5.24720000",
+            inverseRateDecimal: "0.19057800",
+            effectiveRateDecimal: "5.35214400",
+            commissionBps: 200,
+            observedAt: new Date("2026-03-04T00:00:00.000Z"),
+          },
+        ],
+      ]),
+      { currency: "RON", baseCurrency: "EUR", date: "2026-03-04" },
+      { invoiceFxSettings: { baseCurrency: "EUR", fxCommissionBps: 200 } },
+    )
+
+    expect(resolved?.effectiveRate).toBeCloseTo(1 / 5.352144, 8)
+    expect(resolved?.commissionBps).toBe(200)
   })
 
   it("applies the operator margin to a rate that does not record one", async () => {

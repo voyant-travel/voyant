@@ -563,11 +563,14 @@ export const financeInvoicePaymentService = {
       writePatch.baseAmountCents = normalized.baseAmountCents ?? null
       writePatch.fxRateSetId = normalized.fxRateSetId ?? null
       // Amount, currency or date moved, so the reporting figure moved with
-      // them. Re-derived from the payment's own (possibly new) date.
-      if (reporting) {
-        writePatch.reportingCurrency = reporting.reportingCurrency
-        writePatch.reportingAmountCents = reporting.reportingAmountCents
-        writePatch.reportingFxRateSetId = reporting.reportingFxRateSetId
+      // them. Written unconditionally, like the settlement leg above: when the
+      // new date has no resolvable rate the stamp is CLEARED rather than left
+      // standing, because the old one describes the amount and date this
+      // payment no longer has. No figure is honest; a stale one is not.
+      if (shouldRenormalize) {
+        writePatch.reportingCurrency = reporting?.reportingCurrency ?? null
+        writePatch.reportingAmountCents = reporting?.reportingAmountCents ?? null
+        writePatch.reportingFxRateSetId = reporting?.reportingFxRateSetId ?? null
       }
 
       const [payment] = await tx

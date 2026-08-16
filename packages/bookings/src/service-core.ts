@@ -1288,7 +1288,10 @@ async function rollupBaseTotals(
     }
     // Try the inverse
     const [inverse] = await db
-      .select({ rate: exchangeRatesRef.inverseRateDecimal })
+      .select({
+        rate: exchangeRatesRef.inverseRateDecimal,
+        effectiveRate: exchangeRatesRef.effectiveRateDecimal,
+      })
       .from(exchangeRatesRef)
       .where(
         and(
@@ -1299,7 +1302,12 @@ async function rollupBaseTotals(
       )
       .limit(1)
     if (inverse?.rate) {
-      const value = Number.parseFloat(inverse.rate)
+      // An applied rate has two readings, not two rates: if the row says the
+      // operator converts at 5.352144 RON per EUR, then one RON is 1/5.352144
+      // EUR. Reading `inverse_rate_decimal` here instead would drop the margin
+      // in this direction only, so the same booking's two legs would disagree.
+      const appliedRate = inverse.effectiveRate ? Number.parseFloat(inverse.effectiveRate) : null
+      const value = appliedRate ? 1 / appliedRate : Number.parseFloat(inverse.rate)
       rateCache.set(key, value)
       return value
     }

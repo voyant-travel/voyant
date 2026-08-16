@@ -263,6 +263,23 @@ describe.skipIf(!DB_AVAILABLE)("FX rate capture", () => {
       .from(payments)
       .where(eq(payments.id, payment?.id ?? ""))
     expect(stored?.reportingAmountCents).toBe(Math.round(42_000 * RATE_AUG_15 * 1.02))
+
+    // Re-dating the payment to a day nothing can answer for — earlier than any
+    // rate the operator holds — must CLEAR the stamp, not leave the old day's
+    // figure describing the new one. A row reporting 2246 lei for a payment it
+    // no longer describes is worse than one reporting nothing, because only
+    // the second is visibly missing.
+    const moved = await financeService.updatePayment(
+      db,
+      payment?.id ?? "",
+      { paymentDate: "2026-07-01" },
+      { invoiceFxSettings: SETTINGS },
+    )
+
+    expect(moved?.paymentDate).toBe("2026-07-01")
+    expect(moved?.reportingCurrency).toBeNull()
+    expect(moved?.reportingAmountCents).toBeNull()
+    expect(moved?.reportingFxRateSetId).toBeNull()
   })
 
   it("repairs a historical invoice from the rate printed on it", async () => {
