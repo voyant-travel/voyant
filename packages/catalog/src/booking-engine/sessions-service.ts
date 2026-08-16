@@ -1714,6 +1714,12 @@ export function createBookingSessionModule(
             })
           : ({ kind: "not_required" } as const)
       } catch (error) {
+        if (isPaymentAmountInFlightError(error)) {
+          return {
+            kind: "rejected",
+            error: { kind: "payment_in_flight", nextAction: "await_payment_outcome" },
+          }
+        }
         if (isIdempotencyConflictError(error)) return idempotencyConflict()
         throw error
       }
@@ -2967,6 +2973,20 @@ function invalidSelectionOutcome(error: unknown): BookingSessionOutcomeV1 | null
       ...(error.maxLength ? { maxLength: error.maxLength } : {}),
     },
   }
+}
+
+/**
+ * The payments port refusing to open a second checkout beside a live one for a
+ * different amount (voyant#4742).
+ *
+ * Sniffed by message, like every other error this file maps, so the generic
+ * service stays independent of which port produced it. It becomes the same
+ * `payment_in_flight` rejection that renewing, reselecting, quoting, holding
+ * and abandoning already answer with: the shopper's money is with a processor
+ * and there is nothing to do but wait for it to land or lapse.
+ */
+function isPaymentAmountInFlightError(error: unknown): boolean {
+  return error instanceof Error && error.message === "booking_session_payment_amount_in_flight"
 }
 
 function isIdempotencyConflictError(error: unknown): boolean {

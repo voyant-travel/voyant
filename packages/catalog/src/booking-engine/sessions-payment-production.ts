@@ -11,6 +11,7 @@ import {
   expirePendingBookingSessionPayments,
   financeService,
   findEstablishedBookingSessionPayment,
+  findLiveBookingSessionPayment,
   hasInFlightBookingSessionPayment,
   noDepositPolicy,
   resolveEffectivePaymentPolicy,
@@ -149,6 +150,37 @@ export function createProductionBookingSessionPaymentPorts(
         currency: dueNow.currency,
       })
       if (established) return { kind: "established", paymentSessionId: established.id }
+
+      // A Session collects one amount at a time.
+      //
+      // Commit is the one lifecycle action `rejectWhilePaymentInFlight` does
+      // not guard — renewing, reselecting, quoting, holding and abandoning all
+      // refuse while money is with a processor, but a Commit may always be
+      // retried, which is what lets a dropped response be finished. That was
+      // safe while every Commit on a Session asked for the same money. Offering
+      // the shopper a second amount ends that: click "Pay deposit", go back,
+      // click "Pay in full" — under a new idempotency key, which the request
+      // fingerprint now requires — and the lookups above both miss. The
+      // established lookup matches only settled money *at this amount*, and
+      // `createOrReuseBookingSessionPayment` is keyed on the Commit, so a second
+      // live checkout opens beside the first and both can capture. The worse
+      // sibling needs no second tab: a shopper who already paid the deposit and
+      // then asks to pay in full is charged the whole total on top of it.
+      //
+      // Refusing is the same answer the Session already gives everywhere else,
+      // and it resolves by itself the moment the first payment does — in either
+      // direction. Retrying *this* Commit is untouched: a payment already
+      // established under this idempotency key is the one being retried, not a
+      // competing one, and `createOrReuseBookingSessionPayment` reuses it (or
+      // refuses on its own idempotency grounds if the amount moved under it).
+      const live = await findLiveBookingSessionPayment(deps.db, session.id, now)
+      if (
+        live &&
+        stringValue(record(live.metadata)?.commitIdempotencyKey) !== commit.idempotencyKey &&
+        (live.amountCents !== dueNow.amountCents || live.currency !== dueNow.currency)
+      ) {
+        throw new Error("booking_session_payment_amount_in_flight")
+      }
 
       const contact = paymentContact(session.statePayload)
       let paymentSession = await createOrReuseBookingSessionPayment(

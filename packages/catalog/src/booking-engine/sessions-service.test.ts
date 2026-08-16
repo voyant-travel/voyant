@@ -850,6 +850,42 @@ describe("Booking Session v1 owned tracer", () => {
     expect(harness.repository.holds.get(hold.id)?.state).toBe("active")
   })
 
+  /**
+   * Commit is the one lifecycle action not guarded by `rejectWhilePaymentInFlight`,
+   * because retrying it is what finishes a booking whose response was dropped.
+   * A Commit that would open a *second* checkout at another amount is not that
+   * retry, and the port refusing it has to reach the shopper as the answer
+   * every other door already gives — not as a transport failure (voyant#4742).
+   */
+  it("answers a refused second checkout with the same payment_in_flight rejection", async () => {
+    const payment = createPaymentHarness()
+    const harness = createHarness({}, payment.ports)
+    const { session, quote, hold } = await createQuoteAndHold(harness)
+    payment.prepareThrows = new Error("booking_session_payment_amount_in_flight")
+
+    const outcome = await harness.module.commitSession(
+      session.id,
+      {
+        expectedRevision: harness.repository.sessions.get(session.id)!.revision,
+        quoteId: quote.id,
+        requirementsFingerprint: quote.requirementsFingerprint,
+        holdId: hold.id,
+        idempotencyKey: "switch_to_pay_in_full",
+        payInFull: true,
+      },
+      ANONYMOUS_ACCESS,
+    )
+
+    expect(outcome).toEqual({
+      kind: "rejected",
+      error: { kind: "payment_in_flight", nextAction: "await_payment_outcome" },
+    })
+    // Nothing was spent on the way to the refusal.
+    expect(harness.repository.quotes.get(quote.id)?.state).toBe("active")
+    expect(harness.repository.holds.get(hold.id)?.state).toBe("active")
+    expect(harness.inventory.bookingIds).toEqual([])
+  })
+
   it("publishes a requirementsFingerprint a Commit accepts, without a fresh Quote", async () => {
     // voyant#4733's first trap: Commit requires a fingerprint and only a Quote
     // used to produce one, so a host that lost its Quote response had no call
@@ -2777,6 +2813,8 @@ function createPaymentHarness() {
       | boolean
       | { quoteId: string | null; holdId: string | null; payInFull?: boolean },
     inFlight: false,
+    /** What `prepare` should throw instead of answering, if anything. */
+    prepareThrows: null as Error | null,
     prepareCalls: 0,
     /** Every Commit the ports were asked to prepare, in order. */
     prepared: [] as CommitBookingSessionV1[],
@@ -2788,6 +2826,7 @@ function createPaymentHarness() {
     async prepare({ commit }) {
       harness.prepareCalls += 1
       harness.prepared.push(commit)
+      if (harness.prepareThrows) throw harness.prepareThrows
       if (harness.established) {
         return { kind: "established", paymentSessionId: "payment_session_1" }
       }

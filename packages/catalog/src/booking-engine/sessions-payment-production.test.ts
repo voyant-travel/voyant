@@ -29,6 +29,14 @@ const computePaymentSchedule = vi.hoisted(() =>
   ]),
 )
 
+/**
+ * What the Session is already collecting, if anything. Null is the default —
+ * a Session with no live payment, which is every pre-existing test.
+ */
+const findLiveBookingSessionPayment = vi.hoisted(() =>
+  vi.fn(async (..._args: unknown[]) => null as unknown),
+)
+
 /** Which cascade layer answered. Spied so a plan can be asserted to report it. */
 const resolveEffectivePaymentPolicy = vi.hoisted(() =>
   vi.fn((..._args: unknown[]) => ({
@@ -59,6 +67,7 @@ vi.mock("@voyant-travel/finance", () => ({
   expirePendingBookingSessionPayments: vi.fn(),
   financeService: { getPaymentSessionById },
   findEstablishedBookingSessionPayment: async () => null,
+  findLiveBookingSessionPayment,
   noDepositPolicy: { kind: "no_deposit" },
   resolveEffectivePaymentPolicy,
   resolvePaymentCallbackUrl: () => undefined,
@@ -812,6 +821,150 @@ describe("production Booking Session pay-in-full choice", () => {
     })
 
     await expect(describeEstablished("pmts_paid")).resolves.toMatchObject({ payInFull: false })
+  })
+})
+
+/**
+ * A Session collects one amount at a time.
+ *
+ * Commit is the one lifecycle action `rejectWhilePaymentInFlight` does not
+ * guard, which was safe while every Commit on a Session asked for the same
+ * money. Offering a second amount ends that: click "Pay deposit", go back,
+ * click "Pay in full" under the new idempotency key the request fingerprint
+ * requires, and a second live checkout opens beside the first — both can
+ * capture, and whichever callback loses the race leaves its money attached to
+ * a Session that is already committed.
+ */
+describe("production Booking Session second checkout at another amount", () => {
+  const DEPOSIT_AND_BALANCE = [
+    { amountCents: 18_900, currency: "EUR", scheduleType: "deposit", dueDate: "2026-08-05" },
+    { amountCents: 18_900, currency: "EUR", scheduleType: "balance", dueDate: "2026-09-06" },
+  ]
+
+  beforeEach(() => {
+    computePaymentSchedule.mockClear()
+    createOrReuseBookingSessionPayment.mockClear()
+    findLiveBookingSessionPayment.mockReset()
+    findLiveBookingSessionPayment.mockResolvedValue(null)
+    getPaymentSessionById.mockReset()
+    getPaymentSessionById.mockResolvedValue(null)
+  })
+
+  it("refuses to open one beside a checkout the shopper is still standing in front of", async () => {
+    computePaymentSchedule.mockReturnValueOnce(DEPOSIT_AND_BALANCE)
+    findLiveBookingSessionPayment.mockResolvedValue({
+      id: "pmts_deposit",
+      status: "requires_redirect",
+      amountCents: 18_900,
+      currency: "EUR",
+      metadata: { commitIdempotencyKey: "commit-deposit" },
+    })
+
+    await expect(
+      prepare({
+        locale: "en-GB",
+        departureDate: "2026-09-20",
+        totalCents: 37_800,
+        payInFull: true,
+      }),
+    ).rejects.toThrow("booking_session_payment_amount_in_flight")
+    expect(createOrReuseBookingSessionPayment).not.toHaveBeenCalled()
+  })
+
+  // The worse sibling, which needs no second tab: the deposit is already paid,
+  // so charging the full total on top of it would take 150% of the booking.
+  it("refuses to charge the total on top of a deposit already paid", async () => {
+    computePaymentSchedule.mockReturnValueOnce(DEPOSIT_AND_BALANCE)
+    findLiveBookingSessionPayment.mockResolvedValue({
+      id: "pmts_deposit",
+      status: "paid",
+      amountCents: 18_900,
+      currency: "EUR",
+      metadata: { commitIdempotencyKey: "commit-deposit" },
+    })
+
+    await expect(
+      prepare({
+        locale: "en-GB",
+        departureDate: "2026-09-20",
+        totalCents: 37_800,
+        payInFull: true,
+      }),
+    ).rejects.toThrow("booking_session_payment_amount_in_flight")
+  })
+
+  /**
+   * Retrying a Commit is what lets a dropped response be finished without
+   * booking twice, so the payment this very Commit established is the one being
+   * retried — not a competing one. `createOrReuseBookingSessionPayment` reuses
+   * it, which is the behaviour the guard must not take away.
+   */
+  it("lets a Commit retry reach the payment it established itself", async () => {
+    computePaymentSchedule.mockReturnValueOnce(DEPOSIT_AND_BALANCE)
+    findLiveBookingSessionPayment.mockResolvedValue({
+      id: "pmts_full",
+      status: "requires_redirect",
+      amountCents: 18_900,
+      currency: "EUR",
+      // The key the `prepare` helper commits under.
+      metadata: { commitIdempotencyKey: "commit-1" },
+    })
+
+    await expect(
+      prepare({
+        locale: "en-GB",
+        departureDate: "2026-09-20",
+        totalCents: 37_800,
+        payInFull: true,
+      }),
+    ).resolves.toMatchObject({ kind: "required" })
+  })
+
+  // Nothing has changed, so nothing is being guarded against. A live payment at
+  // the amount this Commit collects is not a second amount.
+  it("says nothing about a live payment that collects what this Commit asks for", async () => {
+    computePaymentSchedule.mockReturnValueOnce(DEPOSIT_AND_BALANCE)
+    findLiveBookingSessionPayment.mockResolvedValue({
+      id: "pmts_other",
+      status: "requires_redirect",
+      amountCents: 18_900,
+      currency: "EUR",
+      metadata: { commitIdempotencyKey: "commit-other" },
+    })
+
+    await expect(
+      prepare({ locale: "en-GB", departureDate: "2026-09-20", totalCents: 37_800 }),
+    ).resolves.toMatchObject({ kind: "required" })
+  })
+
+  // Settlement is finishing the payment it names, not starting a competing one.
+  it("does not stand between a settlement and the payment it came to settle", async () => {
+    computePaymentSchedule.mockReturnValueOnce(DEPOSIT_AND_BALANCE)
+    findLiveBookingSessionPayment.mockResolvedValue({
+      id: "pmts_deposit",
+      status: "paid",
+      amountCents: 18_900,
+      currency: "EUR",
+      metadata: { commitIdempotencyKey: "commit-deposit" },
+    })
+    getPaymentSessionById.mockResolvedValue({
+      id: "pmts_paid",
+      targetType: "booking_session",
+      targetId: "bses_01k",
+      status: "paid",
+      amountCents: 37_800,
+      currency: "EUR",
+    })
+
+    await expect(
+      prepare({
+        locale: "en-GB",
+        departureDate: "2026-09-20",
+        totalCents: 37_800,
+        payInFull: true,
+        settlementPaymentSessionId: "pmts_paid",
+      }),
+    ).resolves.toEqual({ kind: "established", paymentSessionId: "pmts_paid" })
   })
 })
 
