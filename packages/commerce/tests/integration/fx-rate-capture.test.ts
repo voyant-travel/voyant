@@ -282,6 +282,55 @@ describe.skipIf(!DB_AVAILABLE)("FX rate capture", () => {
     expect(moved?.reportingFxRateSetId).toBeNull()
   })
 
+  it("captures inside a caller's open transaction", async () => {
+    // The booking-create saga records already-paid schedules by calling
+    // `createPayment` with its own transaction handle. Capture opens a
+    // transaction of its own, which has to compose as a savepoint rather than
+    // fight the outer one — otherwise stamping a payment would take the whole
+    // booking down with it.
+    const resolveInvoiceExchangeRate = referenceSource({ "2026-08-15": RATE_AUG_15 })
+
+    const invoiceId = newId("invoices")
+    const payment = await db.transaction(async (tx) => {
+      await tx.insert(invoices).values({
+        id: invoiceId,
+        invoiceNumber: "INV-FX-4703-TX",
+        bookingId: newId("bookings"),
+        status: "issued",
+        currency: "HUF",
+        subtotalCents: 42_000,
+        totalCents: 42_000,
+        balanceDueCents: 42_000,
+        issueDate: "2026-08-15",
+        dueDate: "2026-08-22",
+      })
+
+      return financeService.createPayment(
+        tx as never,
+        invoiceId,
+        {
+          amountCents: 42_000,
+          currency: "HUF",
+          paymentMethod: "bank_transfer",
+          paymentDate: "2026-08-15",
+          status: "completed",
+        },
+        { invoiceFxSettings: SETTINGS, resolveInvoiceExchangeRate, captureFxRates },
+      )
+    })
+
+    expect(payment?.reportingAmountCents).toBe(Math.round(42_000 * RATE_AUG_15 * 1.02))
+    expect(payment?.reportingFxRateSetId).toEqual(expect.any(String))
+
+    // The rate outlives the caller's transaction, which is the whole point of
+    // capturing it rather than resolving it again later.
+    const [captured] = await db
+      .select()
+      .from(exchangeRates)
+      .where(eq(exchangeRates.baseCurrency, "HUF"))
+    expect(captured?.effectiveRateDecimal).toBe("5.35214400")
+  })
+
   it("repairs a historical invoice from the rate printed on it", async () => {
     const invoiceId = newId("invoices")
     await db.insert(invoices).values({
