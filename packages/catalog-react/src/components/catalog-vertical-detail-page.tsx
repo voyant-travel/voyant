@@ -215,7 +215,15 @@ export function CatalogVerticalDetailPage({
   }
 
   const heroUrl = enrichment.heroImageUrl
+  // `enrichment.supplier` was resolved once, when the content was mapped. If
+  // the content request won the race against the supplier directory, that
+  // snapshot is the raw id — and nothing refetches to correct it, because the
+  // fetchers deliberately do not depend on the directory. So resolve again
+  // here, where the directory is whatever it is now. The lookup returns its
+  // input on a miss, which makes it idempotent over an already-resolved name.
   const subtitle = enrichment.supplier
+    ? (formatSupplier?.(enrichment.supplier) ?? enrichment.supplier)
+    : null
 
   return (
     <div className="mx-auto w-full max-w-screen-2xl px-6 py-6 lg:px-8">
