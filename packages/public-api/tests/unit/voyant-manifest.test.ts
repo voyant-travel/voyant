@@ -24,7 +24,6 @@ import {
 } from "../../src/shopping/runtime-port.js"
 import {
   publicApiCustomerPortalVoyantModule,
-  publicApiCustomerVerificationVoyantModule,
   publicApiPaymentLinkVoyantModule,
   publicApiShoppingProviderVoyantModule,
   publicApiVoyantModule,
@@ -179,10 +178,7 @@ describe("storefront deployment manifest", () => {
   })
 
   it("owns package-namespaced storefront fragments", () => {
-    expect([
-      publicApiCustomerPortalVoyantModule,
-      publicApiCustomerVerificationVoyantModule,
-    ]).toMatchObject([
+    expect([publicApiCustomerPortalVoyantModule]).toMatchObject([
       {
         schemaVersion: "voyant.module.v1",
         id: "@voyant-travel/public-api#customer-portal",
@@ -207,15 +203,6 @@ describe("storefront deployment manifest", () => {
             },
           },
         ],
-      },
-      {
-        schemaVersion: "voyant.module.v1",
-        // The verification DOMAIN moved to identity (voyant#4627); what stays
-        // here is the Tools half, which resolves the authenticated customer's
-        // own destination through the customer portal's profile.
-        id: "@voyant-travel/public-api#customer-verification",
-        packageName: "@voyant-travel/public-api",
-        requires: { capabilities: ["identity.data-owner"] },
       },
     ])
     expect(publicApiVoyantModule.provides?.ports).not.toContainEqual({
@@ -288,24 +275,22 @@ describe("storefront deployment manifest", () => {
   it("declares executable Tools and action-ledger bindings for every extension surface", () => {
     expect(publicApiCustomerPortalVoyantModule.tools).toHaveLength(13)
     expect(publicApiCustomerPortalVoyantModule.actions).toHaveLength(5)
-    expect(publicApiCustomerVerificationVoyantModule.tools).toHaveLength(4)
-    expect(publicApiCustomerVerificationVoyantModule.actions).toHaveLength(2)
+    // The verification DOMAIN moved to identity (voyant#4627). Its four Tools
+    // stayed, because resolving the customer's OWN destination needs the
+    // customer portal's composed profile — so they hang off this package's
+    // main graph unit rather than a module of their own.
+    expect(publicApiVoyantModule.tools).toHaveLength(4)
+    expect(publicApiVoyantModule.actions).toHaveLength(2)
     expect(publicApiPaymentLinkVoyantModule.tools).toHaveLength(2)
     expect(publicApiPaymentLinkVoyantModule.actions).toHaveLength(2)
-    expect(
-      publicApiCustomerVerificationVoyantModule.tools?.every(({ risk }) => risk === "high"),
-    ).toBe(true)
+    expect(publicApiVoyantModule.tools?.every(({ risk }) => risk === "high")).toBe(true)
     expect(
       publicApiPaymentLinkVoyantModule.tools?.find(
         ({ name }) => name === "create_invoice_payment_link",
       )?.risk,
     ).toBe("high")
 
-    for (const module of [
-      publicApiCustomerPortalVoyantModule,
-      publicApiCustomerVerificationVoyantModule,
-      publicApiPaymentLinkVoyantModule,
-    ]) {
+    for (const module of [publicApiCustomerPortalVoyantModule, publicApiPaymentLinkVoyantModule]) {
       expect(module.meta?.agentTools).toBeUndefined()
       expect(
         module.tools?.every(({ runtime }) => runtime.entry === "@voyant-travel/public-api/tools"),
@@ -319,7 +304,7 @@ describe("storefront deployment manifest", () => {
       ]),
     )
     expect(
-      publicApiCustomerVerificationVoyantModule.actions?.find(
+      publicApiVoyantModule.actions?.find(
         ({ id }) => id === "@voyant-travel/public-api#action.start-my-verification",
       ),
     ).toMatchObject({

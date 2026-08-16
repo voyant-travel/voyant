@@ -45,7 +45,9 @@ describe("storefront Tools", () => {
       expect(tool.owner).toBe("@voyant-travel/public-api#payment-link")
     }
     for (const tool of publicApiCustomerVerificationTools) {
-      expect(tool.owner).toBe("@voyant-travel/public-api#verification")
+      // The verification Tools moved onto the package's main graph unit when the
+      // verification module itself went to identity (voyant#4627).
+      expect(tool.owner).toBe("@voyant-travel/public-api")
     }
     for (const tool of manifest) {
       expect(tool.capabilityVersion).toBe("v1")

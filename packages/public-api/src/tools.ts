@@ -33,7 +33,6 @@ const PAYMENT_LINK_OWNER = `${OWNER}#payment-link`
 const VERSION = "v1"
 const READ_SCOPES = ["public-api:read"] as const
 const WRITE_SCOPES = ["public-api:write"] as const
-const VERIFICATION_OWNER = `${OWNER}#verification`
 const CUSTOMER_AUDIENCE = { source: "grant", allowed: ["customer"] } as const
 const STAFF_AUDIENCE = { source: "grant", allowed: ["staff"] } as const
 const idSchema = z.string().trim().min(1)
@@ -429,7 +428,7 @@ function verification(ctx: PublicApiToolContext) {
   return requireService(ctx.customerVerification, "customerVerification")
 }
 const verificationReadWrite = {
-  owner: VERIFICATION_OWNER,
+  owner: OWNER,
   capabilityVersion: VERSION,
   requiredScopes: WRITE_SCOPES,
   audience: CUSTOMER_AUDIENCE,

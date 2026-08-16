@@ -160,13 +160,75 @@ export const publicApiVoyantModule = defineModule({
       ],
     },
   ],
+  tools: [
+    ["start-my-email-verification", "start_my_email_verification", "startMyEmailVerificationTool"],
+    [
+      "confirm-my-email-verification",
+      "confirm_my_email_verification",
+      "confirmMyEmailVerificationTool",
+    ],
+    ["start-my-sms-verification", "start_my_sms_verification", "startMySmsVerificationTool"],
+    ["confirm-my-sms-verification", "confirm_my_sms_verification", "confirmMySmsVerificationTool"],
+  ].map(([id, name, exportName]) => ({
+    id: `@voyant-travel/public-api#tool.${id}`,
+    name: name!,
+    runtime: { entry: "@voyant-travel/public-api/tools", export: exportName! },
+    requiredScopes: ["public-api:write"],
+    context: ["customerVerification"],
+    risk: "high" as const,
+  })),
+  actions: [
+    {
+      id: "@voyant-travel/public-api#action.start-my-verification",
+      version: "v1",
+      kind: "execute",
+      targetType: "storefront-verification-challenge",
+      availability: {
+        status: "unavailable",
+        reasonCode: "unsafe-nontransactional-effect",
+      },
+      effectBoundary: "multistage",
+      resource: "public-api",
+      action: "write",
+      requiredScopes: ["public-api:write"],
+      risk: "high",
+      ledger: "required",
+      approval: "never",
+      reversible: false,
+      allowedActorTypes: ["customer"],
+      from: {
+        tools: [
+          "@voyant-travel/public-api#tool.start-my-email-verification",
+          "@voyant-travel/public-api#tool.start-my-sms-verification",
+        ],
+      },
+    },
+    {
+      id: "@voyant-travel/public-api#action.confirm-my-verification",
+      version: "v1",
+      kind: "execute",
+      targetType: "storefront-verification-challenge",
+      resource: "public-api",
+      action: "write",
+      requiredScopes: ["public-api:write"],
+      risk: "high",
+      ledger: "required",
+      approval: "never",
+      reversible: false,
+      allowedActorTypes: ["customer"],
+      availability: { status: "available" },
+      effectBoundary: "local",
+      targetLifecycle: "existing",
+      from: {
+        tools: [
+          "@voyant-travel/public-api#tool.confirm-my-email-verification",
+          "@voyant-travel/public-api#tool.confirm-my-sms-verification",
+        ],
+      },
+    },
+  ],
   meta: {
     ownership: "package",
-    agentTools: {
-      posture: "not-applicable",
-      rationale:
-        "The storefront root composes customer HTTP surfaces; submodules own agent capabilities.",
-    },
   },
 })
 
@@ -555,83 +617,6 @@ export const publicApiPaymentLinkVoyantModule = defineModule({
       availability: { status: "available" },
       effectBoundary: "local",
       from: { tools: ["@voyant-travel/public-api#tool.create-invoice-payment-link"] },
-    },
-  ],
-  meta: {
-    ownership: "package",
-  },
-})
-
-export const publicApiCustomerVerificationVoyantModule = defineModule({
-  id: "@voyant-travel/public-api#customer-verification",
-  packageName: "@voyant-travel/public-api",
-  localId: "public-api.customer-verification",
-  requires: { capabilities: ["identity.data-owner"] },
-  tools: [
-    ["start-my-email-verification", "start_my_email_verification", "startMyEmailVerificationTool"],
-    [
-      "confirm-my-email-verification",
-      "confirm_my_email_verification",
-      "confirmMyEmailVerificationTool",
-    ],
-    ["start-my-sms-verification", "start_my_sms_verification", "startMySmsVerificationTool"],
-    ["confirm-my-sms-verification", "confirm_my_sms_verification", "confirmMySmsVerificationTool"],
-  ].map(([id, name, exportName]) => ({
-    id: `@voyant-travel/public-api#tool.${id}`,
-    name: name!,
-    runtime: { entry: "@voyant-travel/public-api/tools", export: exportName! },
-    requiredScopes: ["public-api:write"],
-    context: ["customerVerification"],
-    risk: "high" as const,
-  })),
-  actions: [
-    {
-      id: "@voyant-travel/public-api#action.start-my-verification",
-      version: "v1",
-      kind: "execute",
-      targetType: "storefront-verification-challenge",
-      availability: {
-        status: "unavailable",
-        reasonCode: "unsafe-nontransactional-effect",
-      },
-      effectBoundary: "multistage",
-      resource: "public-api",
-      action: "write",
-      requiredScopes: ["public-api:write"],
-      risk: "high",
-      ledger: "required",
-      approval: "never",
-      reversible: false,
-      allowedActorTypes: ["customer"],
-      from: {
-        tools: [
-          "@voyant-travel/public-api#tool.start-my-email-verification",
-          "@voyant-travel/public-api#tool.start-my-sms-verification",
-        ],
-      },
-    },
-    {
-      id: "@voyant-travel/public-api#action.confirm-my-verification",
-      version: "v1",
-      kind: "execute",
-      targetType: "storefront-verification-challenge",
-      resource: "public-api",
-      action: "write",
-      requiredScopes: ["public-api:write"],
-      risk: "high",
-      ledger: "required",
-      approval: "never",
-      reversible: false,
-      allowedActorTypes: ["customer"],
-      availability: { status: "available" },
-      effectBoundary: "local",
-      targetLifecycle: "existing",
-      from: {
-        tools: [
-          "@voyant-travel/public-api#tool.confirm-my-email-verification",
-          "@voyant-travel/public-api#tool.confirm-my-sms-verification",
-        ],
-      },
     },
   ],
   meta: {
