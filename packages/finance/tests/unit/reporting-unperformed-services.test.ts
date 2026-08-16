@@ -142,11 +142,18 @@ describe("unperformed services executor", () => {
     ).rejects.toThrow("finance:read")
   })
 
-  it("warns rather than quietly shortening a total when a contract is unstamped", async () => {
-    const execute = vi.fn().mockResolvedValue([
-      { bookingNumber: "C1", reportingCurrency: "RON", contractValueReportingCents: "1000" },
-      { bookingNumber: "C2", reportingCurrency: null, contractValueReportingCents: null },
-    ])
+  it("asks the relation how many contracts are unstamped, not the returned rows", async () => {
+    // The executor issues the data query, then a companion count over the same
+    // relation. Inspecting the returned rows cannot work: on the KPI widgets
+    // they are already aggregated, so an unstamped contract leaves no null
+    // behind to find.
+    const execute = vi
+      .fn()
+      .mockResolvedValueOnce([
+        { bookingNumber: "C1", reportingCurrency: "RON", contractValueReportingCents: "1000" },
+        { bookingNumber: "C2", reportingCurrency: null, contractValueReportingCents: null },
+      ])
+      .mockResolvedValueOnce([{ unstamped: "1", total: "2" }])
 
     const result = await financeUnperformedServicesDataset.execute(
       { db: { execute }, grantedScopes: ["finance:read"] },
@@ -158,5 +165,26 @@ describe("unperformed services executor", () => {
       { bookingNumber: "C2", reportingCurrency: null, contractValueReportingCents: null },
     ])
     expect(result.warnings.join(" ")).toContain("1 of 2 contracts")
+  })
+
+  it("does not pay for a count on a figure stamping cannot shorten", async () => {
+    const execute = vi.fn().mockResolvedValue([{ contracts: "3" }])
+
+    const result = await financeUnperformedServicesDataset.execute(
+      { db: { execute }, grantedScopes: ["finance:read"] },
+      {
+        query: {
+          ...lineListQuery,
+          select: [{ kind: "aggregate" as const, operation: "count" as const, as: "contracts" }],
+        },
+        parameters: PERIOD as never,
+        maximumRows: 10,
+      },
+    )
+
+    expect(result.warnings).toEqual([])
+    // A contract count is complete whether or not the contract is stamped, so
+    // the companion query is not issued at all.
+    expect(execute).toHaveBeenCalledTimes(1)
   })
 })

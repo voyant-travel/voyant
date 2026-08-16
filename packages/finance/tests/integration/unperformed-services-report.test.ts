@@ -77,6 +77,8 @@ describe.skipIf(!DB_AVAILABLE)("unperformed services report", () => {
     /** Omit to leave the contract unstamped — no document has converted it. */
     stamped?: boolean
     payments?: Array<{ date: string; cents: number; status: "completed" | "refunded" }>
+    /** Money paid back the way the product actually records it. */
+    refundSettlements?: Array<{ date: string; cents: number; status: "settled" | "pending" }>
   }) {
     const bookingId = newId("bookings")
     await db.insert(bookings).values({
@@ -124,9 +126,12 @@ describe.skipIf(!DB_AVAILABLE)("unperformed services report", () => {
         : {}),
     })
 
+    const paymentIds: string[] = []
     for (const payment of input.payments ?? []) {
+      const paymentId = newId("payments")
+      paymentIds.push(paymentId)
       await db.insert(payments).values({
-        id: newId("payments"),
+        id: paymentId,
         invoiceId,
         amountCents: payment.cents,
         currency: "EUR",
@@ -137,6 +142,19 @@ describe.skipIf(!DB_AVAILABLE)("unperformed services report", () => {
         reportingAmountCents: lei(payment.cents),
         reportingFxRateSetId: rateSetId,
       })
+    }
+    for (const settlement of input.refundSettlements ?? []) {
+      await db.execute(sql`
+        INSERT INTO refund_settlements (
+          id, payment_id, invoice_id, booking_id, method, status,
+          amount_cents, currency, settled_at
+        ) VALUES (
+          ${newId("refund_settlements")}, ${paymentIds[0] ?? null}, ${invoiceId}, ${bookingId},
+          'bank_transfer', ${settlement.status},
+          ${settlement.cents}, 'EUR',
+          ${settlement.status === "settled" ? `${settlement.date}T12:00:00Z` : null}
+        )
+      `)
     }
     return bookingId
   }
@@ -318,6 +336,132 @@ describe.skipIf(!DB_AVAILABLE)("unperformed services report", () => {
     // A contract whose payments match its invoice is not flagged.
     const settled = result.rows.find((row) => row.bookingNumber === "C2")
     expect(settled?.invoicedNotCollectedReportingCents).toBe(0)
+  })
+
+  it("nets a refund recorded the way the product records it", async () => {
+    // The refund workflow writes a settled `refund_settlements` row and leaves
+    // the payment `completed`. Netting only payments marked `refunded` would
+    // report this contract as fully collected — the exact case the return
+    // exists to get right, and the one the original fixture papered over by
+    // hand-inserting a synthetic refunded payment.
+    await seedContract({
+      number: "C6-SETTLED-REFUND",
+      confirmedAt: "2026-07-01",
+      serviceDate: "2026-09-10",
+      sellCents: 80_000,
+      payments: [{ date: "2026-07-02", cents: 80_000, status: "completed" }],
+      refundSettlements: [{ date: "2026-08-12", cents: 80_000, status: "settled" }],
+    })
+
+    const result = await run(["bookingNumber", "collectionsTotalReportingCents"])
+    const refunded = result.rows.find((row) => row.bookingNumber === "C6-SETTLED-REFUND")
+    expect(refunded?.collectionsTotalReportingCents).toBe(0)
+  })
+
+  it("ignores a refund that has not settled, and one settled after period end", async () => {
+    await seedContract({
+      number: "C7-PENDING-REFUND",
+      confirmedAt: "2026-07-01",
+      serviceDate: "2026-09-10",
+      sellCents: 40_000,
+      payments: [{ date: "2026-07-02", cents: 40_000, status: "completed" }],
+      refundSettlements: [{ date: "2026-08-12", cents: 40_000, status: "pending" }],
+    })
+    await seedContract({
+      number: "C8-LATE-REFUND",
+      confirmedAt: "2026-07-01",
+      serviceDate: "2026-09-10",
+      sellCents: 40_000,
+      payments: [{ date: "2026-07-02", cents: 40_000, status: "completed" }],
+      refundSettlements: [{ date: "2026-09-20", cents: 40_000, status: "settled" }],
+    })
+
+    const result = await run(["bookingNumber", "collectionsTotalReportingCents"])
+    const byNumber = new Map(result.rows.map((row) => [row.bookingNumber, row]))
+    // Money that has not moved is still collected.
+    expect(byNumber.get("C7-PENDING-REFUND")?.collectionsTotalReportingCents).toBe(lei(40_000))
+    // And a refund after period end had not happened yet at period end.
+    expect(byNumber.get("C8-LATE-REFUND")?.collectionsTotalReportingCents).toBe(lei(40_000))
+  })
+
+  it("does not inflate the invoiced figure for an installment-paid contract", async () => {
+    // Joining invoices to payments fans the invoice out once per payment. Summed
+    // naively, a three-installment contract counts its invoice three times and
+    // invents a collection gap twice its value.
+    await seedContract({
+      number: "C9-INSTALMENTS",
+      confirmedAt: "2026-07-05",
+      serviceDate: "2026-10-10",
+      sellCents: 90_000,
+      payments: [
+        { date: "2026-07-06", cents: 30_000, status: "completed" },
+        { date: "2026-07-20", cents: 30_000, status: "completed" },
+        { date: "2026-08-04", cents: 30_000, status: "completed" },
+      ],
+    })
+
+    const result = await run([
+      "bookingNumber",
+      "collectionsTotalReportingCents",
+      "invoicedNotCollectedReportingCents",
+    ])
+    const instalments = result.rows.find((row) => row.bookingNumber === "C9-INSTALMENTS")
+
+    expect(instalments?.collectionsTotalReportingCents).toBe(lei(30_000) * 3)
+    // Fully collected across three payments: no gap.
+    expect(instalments?.invoicedNotCollectedReportingCents).toBe(0)
+  })
+
+  it("warns on an aggregate total, where a null row is invisible", async () => {
+    // This is the shape the KPI widgets use. `sum` skips nulls and the compiler
+    // coalesces an all-null sum to zero, so inspecting the returned rows for a
+    // null can never detect the shortfall here — the relation has to be asked.
+    const result = await financeUnperformedServicesDataset.execute(
+      { db, grantedScopes: ["finance:read"] },
+      {
+        query: {
+          dataset: { id: "finance.unperformed-services", version: 1 },
+          select: [
+            { kind: "field" as const, field: "reportingCurrency" },
+            {
+              kind: "aggregate" as const,
+              operation: "sum" as const,
+              field: "contractValueReportingCents",
+              as: "contractValueReportingCents",
+            },
+          ],
+          filters: [],
+          groupBy: [{ field: "reportingCurrency" }],
+          orderBy: [],
+        },
+        parameters: PERIOD,
+        maximumRows: 100,
+      },
+    )
+
+    // The unstamped contract seeded earlier contributes nothing to the sum and
+    // no null row to inspect, so the total is short and only the warning says so.
+    expect(result.rows.every((row) => row.contractValueReportingCents !== null)).toBe(true)
+    expect(result.warnings.join(" ")).toMatch(/contracts have no stamped reporting-currency value/)
+  })
+
+  it("does not warn on a figure stamping cannot shorten", async () => {
+    const result = await financeUnperformedServicesDataset.execute(
+      { db, grantedScopes: ["finance:read"] },
+      {
+        query: {
+          dataset: { id: "finance.unperformed-services", version: 1 },
+          select: [{ kind: "aggregate" as const, operation: "count" as const, as: "contracts" }],
+          filters: [],
+          groupBy: [],
+          orderBy: [],
+        },
+        parameters: PERIOD,
+        maximumRows: 100,
+      },
+    )
+    // A contract count is complete whether or not the contract is stamped.
+    expect(result.warnings).toEqual([])
   })
 
   it("refuses a period it was not given", async () => {

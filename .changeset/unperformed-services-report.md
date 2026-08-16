@@ -1,6 +1,7 @@
 ---
 "@voyant-travel/reporting-contracts": minor
 "@voyant-travel/reporting": minor
+"@voyant-travel/reporting-react": minor
 "@voyant-travel/graph-contracts": minor
 "@voyant-travel/framework": minor
 "@voyant-travel/finance": minor
@@ -48,6 +49,11 @@ template is not usable:
 - **Export accepts parameters from the caller.** The export route passed an
   empty bag, so exporting a different period meant editing and saving the report
   first — leaving it permanently describing whichever period was exported last.
+- **The report builder renders a template's declared parameters.** It knew only
+  the reserved `dateFrom`/`dateTo`, so a period-scoped template landed as a
+  report whose every widget errored on a missing parameter with nowhere to say
+  which period. Declared parameters now render as labelled, typed inputs, and
+  the export carries them.
 - **A dataset may own its period.** The page-level date window is one field with
   both bounds; this period is two fields with opposite open bounds. Datasets that
   do not fit it declare no `defaultDateField` and read their own parameters,

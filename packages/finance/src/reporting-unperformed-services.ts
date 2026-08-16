@@ -2,6 +2,7 @@ import type {
   ReportDatasetContribution,
   ReportDatasetExecutionInput,
   ReportParameters,
+  ReportQuery,
   ReportResult,
 } from "@voyant-travel/reporting-contracts"
 import { ReportDatasetQueryError } from "@voyant-travel/reporting-contracts"
@@ -115,8 +116,18 @@ function unperformedServicesRelation(periodStart: string, periodEnd: string): SQ
         WHEN stamp.contract_value_reporting_cents IS NULL THEN NULL
         ELSE greatest(stamp.contract_value_reporting_cents - collected.collections_cents, 0)
       END::bigint AS "balanceReportingCents",
-      greatest(collected.fiscal_invoiced_cents - collected.collections_cents, 0)::bigint
-        AS "invoicedNotCollectedReportingCents"
+      -- Converting an invoice whole and converting its installments separately
+      -- do not have to agree to the minor unit: each conversion rounds once. An
+      -- allowance of one unit per payment is the actual bound on that, and
+      -- without it every installment-paid contract carries a one-cent "missing
+      -- payment record" flag — noise that teaches an operator to ignore the
+      -- flag that exists to be read.
+      CASE
+        WHEN invoiced.fiscal_invoiced_cents - collected.collections_cents
+             > coalesce(collected.payment_count, 0)
+          THEN invoiced.fiscal_invoiced_cents - collected.collections_cents
+        ELSE 0
+      END::bigint AS "invoicedNotCollectedReportingCents"
     FROM bookings booking
     LEFT JOIN people person ON person.id = booking.person_id
     LEFT JOIN organizations organization ON organization.id = booking.organization_id
@@ -129,6 +140,10 @@ function unperformedServicesRelation(periodStart: string, periodEnd: string): SQ
         AND item.service_date IS NOT NULL
     ) service ON true
     LEFT JOIN LATERAL (
+      -- Collections and invoiced value are aggregated at their OWN grains. A
+      -- single query joining invoices to payments fans an installment-paid
+      -- invoice out once per payment and counts its total that many times,
+      -- inventing a collection gap that does not exist.
       SELECT
         -- Collections net of reversals, at each payment's own stamped rate.
         -- A departure cancelled and refunded inside the period therefore
@@ -139,26 +154,48 @@ function unperformedServicesRelation(periodStart: string, periodEnd: string): SQ
             WHEN 'refunded' THEN -payment.reporting_amount_cents
             ELSE 0
           END
+          -- Money actually paid back. The refund workflow records a settlement
+          -- and leaves the payment completed, so netting only refunded
+          -- payments would report a fully refunded contract as fully collected
+          -- — the exact case the return exists to get right. Converted at the
+          -- rate the payment it reverses was stamped at, so a full refund
+          -- cancels exactly, and skipped when that payment is already marked
+          -- refunded so the reversal is not counted twice.
+          - coalesce(refunded.settled_cents, 0)
         ), 0)::bigint AS collections_cents,
-        -- A fiscal invoice means the money was taken. Counted separately so a
-        -- gap against recorded payments is visible rather than assumed away.
-        coalesce(sum(
-          CASE
-            WHEN invoice.invoice_type = 'invoice'
-              AND invoice.status <> 'void'
-              AND invoice.base_total_cents IS NOT NULL
-              THEN invoice.base_total_cents
-            ELSE 0
-          END
-        ), 0)::bigint AS fiscal_invoiced_cents
-      FROM invoices invoice
-      LEFT JOIN payments payment
-        ON payment.invoice_id = invoice.id
-        AND payment.payment_date <= ${periodEnd}::date
-        AND payment.reporting_amount_cents IS NOT NULL
+        count(*)::bigint AS payment_count
+      FROM payments payment
+      JOIN invoices invoice ON invoice.id = payment.invoice_id
+      LEFT JOIN LATERAL (
+        SELECT coalesce(sum(
+          round(
+            settlement.amount_cents::numeric
+              * payment.reporting_amount_cents::numeric
+              / nullif(payment.amount_cents, 0)
+          )
+        ), 0)::bigint AS settled_cents
+        FROM refund_settlements settlement
+        WHERE settlement.payment_id = payment.id
+          AND settlement.status = 'settled'
+          AND settlement.settled_at::date <= ${periodEnd}::date
+          AND payment.status <> 'refunded'
+      ) refunded ON true
       WHERE invoice.booking_id = booking.id
         AND invoice.status <> 'void'
+        AND payment.payment_date <= ${periodEnd}::date
+        AND payment.reporting_amount_cents IS NOT NULL
     ) collected ON true
+    LEFT JOIN LATERAL (
+      -- A fiscal invoice means the money was taken. Counted at invoice grain,
+      -- separately from collections, so a gap against recorded payments is
+      -- visible rather than assumed away or inflated by a join fan-out.
+      SELECT coalesce(sum(invoice.base_total_cents), 0)::bigint AS fiscal_invoiced_cents
+      FROM invoices invoice
+      WHERE invoice.booking_id = booking.id
+        AND invoice.invoice_type = 'invoice'
+        AND invoice.status <> 'void'
+        AND invoice.base_total_cents IS NOT NULL
+    ) invoiced ON true
     LEFT JOIN LATERAL (
       -- The rate this contract's own paperwork was stamped at. Preferring a
       -- payment over an invoice is deliberate: a deposit is usually the first
@@ -258,7 +295,11 @@ export const financeUnperformedServicesDataset: ReportDatasetContribution = {
       columns: compiled.columns,
       rows: visible.map((row) => normalizeRow(row, compiled.columns)),
       truncated,
-      warnings: unconvertedWarnings(visible, compiled.columns),
+      warnings: await unconvertedWarnings(
+        context.db as PostgresJsDatabase,
+        input.query,
+        input.parameters,
+      ),
     }
   },
 }
@@ -267,17 +308,39 @@ export const financeUnperformedServicesDataset: ReportDatasetContribution = {
  * A total that silently omits the contracts nothing has stamped reads as
  * complete when it is short. Say so instead — and the remedy is the FX stamp
  * routes from voyant#4703, not a rate invented here.
+ *
+ * This asks the relation rather than reading the result rows, because on the
+ * KPI widgets the rows are already aggregated: `sum` skips nulls and the
+ * compiler coalesces an all-null sum to zero, so an unstamped contract is
+ * invisible in exactly the output where the shortfall matters most.
  */
-function unconvertedWarnings(
-  rows: readonly Record<string, unknown>[],
-  columns: ReportResult["columns"],
-): string[] {
-  const converted = columns.find((column) => column.id.includes("Reporting"))
-  if (!converted) return []
-  const unconverted = rows.filter((row) => row[converted.id] === null).length
-  if (unconverted === 0) return []
+async function unconvertedWarnings(
+  db: PostgresJsDatabase,
+  query: ReportQuery,
+  parameters: ReportParameters,
+): Promise<string[]> {
+  // Only the converted figures can be short; a plain contract count cannot.
+  const touchesConverted = query.select.some((selection) =>
+    selection.kind === "field"
+      ? selection.field.includes("Reporting")
+      : (selection.field?.includes("Reporting") ?? false),
+  )
+  if (!touchesConverted) return []
+
+  const [row] = await executeBoundaryRows<{ unstamped: number | string; total: number | string }>(
+    db,
+    sql`
+      SELECT
+        count(*) FILTER (WHERE contract."contractValueReportingCents" IS NULL) AS unstamped,
+        count(*) AS total
+      FROM (${unperformedServicesSpec.relation(parameters)}) contract
+    `,
+  )
+  const unstamped = Number(row?.unstamped ?? 0)
+  const total = Number(row?.total ?? 0)
+  if (unstamped === 0) return []
   return [
-    `${unconverted} of ${rows.length} contracts have no stamped reporting-currency value and are excluded from the converted totals. Stamp them to include them.`,
+    `${unstamped} of ${total} contracts have no stamped reporting-currency value and are excluded from the converted totals. Stamp them to include them.`,
   ]
 }
 
