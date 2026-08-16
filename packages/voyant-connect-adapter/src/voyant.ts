@@ -1,7 +1,7 @@
 import { catalogSourcesRuntimeExtensionPort } from "@voyant-travel/catalog/ports"
 import { defineAdapter, providePort } from "@voyant-travel/graph-contracts"
 import { insuranceProviderSourcePort } from "@voyant-travel/insurance/ports"
-import { storefrontDynamicPackageSourceProviderPort } from "@voyant-travel/storefront/shopping/runtime-port"
+import { publicApiDynamicPackageSourceProviderPort } from "@voyant-travel/public-api/shopping/runtime-port"
 
 /**
  * Voyant Connect as one catalog inventory channel.
@@ -17,7 +17,7 @@ export const voyantConnectAdapter = defineAdapter({
   provides: {
     ports: [
       providePort(catalogSourcesRuntimeExtensionPort),
-      providePort(storefrontDynamicPackageSourceProviderPort),
+      providePort(publicApiDynamicPackageSourceProviderPort),
       // One insurer among however many the deployment has bound. The insurance
       // module fans out across `insurance.provider-source`; this adapter is a
       // member of that set and holds no privileged position in it.
