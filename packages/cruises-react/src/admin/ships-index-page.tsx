@@ -20,6 +20,8 @@ export interface ShipsIndexPageProps {
   query: string
   onQueryChange: (query: string) => void
   onOpenShip: (ship: ShipRecord) => void
+  /** Rows one request can return, so a longer fleet can say so rather than look complete. */
+  pageSize?: number
 }
 
 /**
@@ -40,6 +42,7 @@ export function ShipsIndexPage({
   query,
   onQueryChange,
   onOpenShip,
+  pageSize,
 }: ShipsIndexPageProps) {
   const messages = useCruisesUiMessagesOrDefault().shipsAdmin
   const [buffer, setBuffer] = useState(query)
@@ -88,9 +91,15 @@ export function ShipsIndexPage({
       ) : (
         <>
           <div className="mb-3 text-muted-foreground text-sm">
-            {total === 1
-              ? messages.resultCountOne
-              : messages.resultCount.replace("{count}", String(total))}
+            {/* A fleet longer than one request says so. Printing the total over
+                a truncated grid would read as "this is all of them". */}
+            {pageSize != null && total > ships.length
+              ? messages.resultCountTruncated
+                  .replace("{shown}", String(ships.length))
+                  .replace("{count}", String(total))
+              : total === 1
+                ? messages.resultCountOne
+                : messages.resultCount.replace("{count}", String(total))}
           </div>
           <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4">
             {ships.map((ship) => (

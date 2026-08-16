@@ -85,6 +85,7 @@ export const cruisesUiEn: CruisesUiMessages = {
     searchLabel: "Search ships",
     resultCount: "{count} ships",
     resultCountOne: "1 ship",
+    resultCountTruncated: "Showing {shown} of {count} ships — search to narrow it down.",
     empty: "No ships yet. They arrive with the cruises you source, or you can add one.",
     emptyFiltered: "No ships match your search.",
     loadError: "Could not load ships. Try again.",

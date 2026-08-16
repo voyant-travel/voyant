@@ -85,6 +85,7 @@ export const cruisesUiRo: CruisesUiMessages = {
     searchLabel: "Cauta nave",
     resultCount: "{count} nave",
     resultCountOne: "1 nava",
+    resultCountTruncated: "Se afiseaza {shown} din {count} nave — cauta pentru a restrange.",
     empty: "Inca nu exista nave. Apar odata cu croazierele pe care le aduci sau poti adauga una.",
     emptyFiltered: "Nicio nava nu corespunde cautarii.",
     loadError: "Nu am putut incarca navele. Incearca din nou.",
