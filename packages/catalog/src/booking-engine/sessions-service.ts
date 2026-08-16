@@ -1413,7 +1413,22 @@ export function createBookingSessionModule(
           (session.target.kind === "catalog_item" && session.state === "supplier_pending") ||
           (session.target.kind === "trip_snapshot" &&
             (session.state === "supplier_pending" || session.state === "component_pending"))
-        if (!durableContinuation && session.state === "active" && session.expiresAt <= at) {
+        // `!settling` as well as the guard inside `expireSession`, and not
+        // instead of it. That guard asks the payments port whether money is
+        // outstanding, and `hasInFlight` is optional on the port — a runtime
+        // that omits it answers `undefined`, the guard reads false, and a
+        // settlement whose TTL had elapsed would expire the very Session it
+        // came to settle. The authority the caller is holding is the fact that
+        // does not depend on anyone else implementing anything: this is a
+        // settlement, so the shopping clock is not evidence about it. The port
+        // probe still earns its place — it is what protects the sweep and the
+        // shopper-facing paths, which carry no settlement authority at all.
+        if (
+          !durableContinuation &&
+          !settling &&
+          session.state === "active" &&
+          session.expiresAt <= at
+        ) {
           await expireSession(repository, options.ports, session, access, at, tx)
         }
         if (session.state !== "active" && !durableContinuation) {

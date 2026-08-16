@@ -446,6 +446,30 @@ describe("Booking Session v1 owned tracer", () => {
     expect(harness.repository.quotes.get(quote.id)?.state).toBe("consumed")
   })
 
+  it("settles a lapsed Session on a payments port that cannot say what is in flight", async () => {
+    // `hasInFlight` is optional on the port, so a runtime that omits it answers
+    // `undefined` — and a guard that asks it reads that as "no money here" and
+    // expires the Session the settlement came to settle. The authority the
+    // caller holds is the fact that does not depend on anyone implementing
+    // anything, so the preflight keys on that too.
+    const payment = createPaymentHarness()
+    const harness = createHarness(
+      { sessionTtlMs: 60_000, quoteTtlMs: 600_000, holdTtlMs: 600_000 },
+      { ...payment.ports, hasInFlight: undefined },
+    )
+    const { session, quote, hold } = await createQuoteAndHold(harness)
+    payment.established = { quoteId: quote.id, holdId: hold.id }
+    harness.advance(120_000)
+
+    const settled = await harness.module.commitPaidSession({
+      bookingSessionId: session.id,
+      paymentSessionId: "payment_session_1",
+    })
+
+    expect(harness.inventory.bookingIds).toEqual([settled.bookingId])
+    expect(harness.repository.quotes.get(quote.id)?.state).toBe("consumed")
+  })
+
   it("does not sweep away a lapsed Session whose money is with a processor", async () => {
     // The same door, opened by the expiry sweep rather than the commit. Both
     // reach `expireSession`, which is where the guard lives.
