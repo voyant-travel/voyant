@@ -22,7 +22,12 @@ import {
 import { eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { z } from "zod"
-import { AncillaryPreparationError, prepareBookingAncillaries } from "./ancillary-commit.js"
+import {
+  AncillaryApplicationExpiredError,
+  AncillaryPreparationError,
+  AncillaryTermsChangedError,
+  prepareBookingAncillaries,
+} from "./ancillary-commit.js"
 import type { AncillaryOfferSource } from "./ancillary-ports.js"
 import type { CheckoutStartOptions } from "./options.js"
 import { ANCILLARY_OFFER_SOURCES_RUNTIME_KEY } from "./runtime-ports.js"
@@ -232,13 +237,26 @@ async function chargeAcceptedAncillaries(
           ? { phone: committed.contact.phone || (booking.contactPhone ?? "") }
           : {}),
       },
-      existingItems: await listBookingPassThroughItems(context.db, booking.id),
+      listPassThroughItems: listBookingPassThroughItems,
       ...(context.options.resolveAncillaryTaxTreatmentCode
         ? { resolveTaxTreatmentCode: context.options.resolveAncillaryTaxTreatmentCode }
         : {}),
     })
-    return result.prepared.length
+    // Newly prepared AND already-charged both count. If a previous attempt
+    // committed the line and then died before the total was re-rolled, the
+    // retry finds the marker, prepares nothing, and would skip the recompute
+    // for good — leaving the card path collecting a `sellAmountCents` that
+    // omits a premium the invoice still bills.
+    return result.prepared.length + result.alreadyCharged.length
   } catch (error) {
+    if (error instanceof AncillaryApplicationExpiredError) {
+      console.error("[catalog-checkout] ancillary application expired", error)
+      throw new CatalogCheckoutStartError("ancillary_application_expired", 409)
+    }
+    if (error instanceof AncillaryTermsChangedError) {
+      console.error("[catalog-checkout] ancillary terms changed", error)
+      throw new CatalogCheckoutStartError("ancillary_terms_changed", 409)
+    }
     if (error instanceof AncillaryPreparationError) {
       console.error("[catalog-checkout] ancillary preparation failed", error)
       throw new CatalogCheckoutStartError("ancillary_preparation_failed", 502)

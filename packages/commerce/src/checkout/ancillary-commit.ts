@@ -35,14 +35,17 @@ import {
   type AncillarySelectionV1,
   ancillarySelectionKey,
 } from "@voyant-travel/catalog-contracts/booking-engine/ancillary-contracts"
+import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
   AncillaryPremiumDriftError,
   type AncillaryPremiumReconciliation,
+  isAncillaryItemExpiredAt,
   materializeAncillaryPassThroughItem,
   readAncillaryItemMarker,
   reconcileAncillaryPremium,
+  recordAncillaryActivity,
 } from "./ancillary-materialization.js"
 import type { AncillaryOfferSource } from "./ancillary-ports.js"
 
@@ -69,6 +72,39 @@ export class AncillaryPreparationError extends Error {
   }
 }
 
+/** Raised when the held application can no longer become a purchase. */
+export class AncillaryApplicationExpiredError extends Error {
+  readonly code = "ancillary_application_expired"
+  constructor(
+    readonly sourceId: string,
+    readonly expiredAt: string,
+  ) {
+    super(
+      `The held ancillary application from source "${sourceId}" expired at ${expiredAt} and ` +
+        "cannot become a purchase; the traveller has to choose again.",
+    )
+    this.name = "AncillaryApplicationExpiredError"
+  }
+}
+
+/** Raised when the source can no longer hold the price the traveller accepted. */
+export class AncillaryTermsChangedError extends Error {
+  readonly code = "ancillary_terms_changed"
+  constructor(
+    readonly sourceId: string,
+    readonly accepted: { priceMinor: number; currency: string },
+    readonly offered: { priceMinor: number; currency: string },
+  ) {
+    super(
+      `The ancillary offer from source "${sourceId}" is no longer ` +
+        `${accepted.priceMinor} ${accepted.currency} but ` +
+        `${offered.priceMinor} ${offered.currency}; charging it would collect terms ` +
+        "the traveller never agreed to.",
+    )
+    this.name = "AncillaryTermsChangedError"
+  }
+}
+
 export interface PrepareBookingAncillariesInput {
   db: PostgresJsDatabase
   bookingId: string
@@ -78,6 +114,8 @@ export interface PrepareBookingAncillariesInput {
   sources: readonly AncillaryOfferSource[]
   /** The accepted decisions, read by whoever owns the Session rows. */
   accepted: readonly AncillarySelectionV1[]
+  /** Injected so expiry is evaluated against one instant, and stays testable. */
+  now?: () => Date
   /**
    * The contracting party.
    *
@@ -88,7 +126,14 @@ export interface PrepareBookingAncillariesInput {
    */
   contact: AncillaryContact
   /** Existing pass-through lines, so a re-entered checkout charges once. */
-  existingItems: readonly BookingPassThroughItem[]
+  /**
+   * Re-read INSIDE the lock rather than handed in as a snapshot.
+   *
+   * A snapshot taken by the caller is exactly the stale view the lock exists to
+   * defeat: the second request would hold the lock and still act on a list read
+   * before the first one inserted.
+   */
+  listPassThroughItems: typeof listBookingPassThroughItemsFn
   /**
    * Namespaced tax treatment for the premium line, e.g. `"insurance/exempt"`.
    * Resolved by whoever knows the treatment for this source's kind; commerce
@@ -132,18 +177,70 @@ export interface PrepareBookingAncillariesResult {
 export async function prepareBookingAncillaries(
   input: PrepareBookingAncillariesInput,
 ): Promise<PrepareBookingAncillariesResult> {
+  const empty: PrepareBookingAncillariesResult = {
+    prepared: [],
+    alreadyCharged: [],
+    unresolvedSources: [],
+  }
+  if (input.sources.length === 0 || input.accepted.length === 0) return empty
+
+  // Serialised per Booking, because the check and the insert are not one
+  // statement. Two overlapping `/checkout/start` calls both read an
+  // `existingItems` snapshot with no line for the selection, and both then
+  // insert one: `booking_items` has no uniqueness to catch it, the provider's
+  // idempotency key deduplicates the application but not the row, and the
+  // recomputed total charges the premium twice.
+  //
+  // A session-level advisory lock rather than a transaction: `prepare` is an
+  // HTTP call to a third party and must not run inside an open transaction.
+  // The second caller waits, then sees the marker and takes the skip.
+  return withBookingAncillaryLock(input.db, input.bookingId, () => prepareUnderLock(input))
+}
+
+/**
+ * Hold a Postgres advisory lock for the duration of `operation`.
+ *
+ * Released in `finally` so a throw — which is the normal way this path reports
+ * a refusal — cannot leave the next checkout blocked on a lock nobody holds any
+ * intent over.
+ */
+async function withBookingAncillaryLock<T>(
+  db: PostgresJsDatabase,
+  bookingId: string,
+  operation: () => Promise<T>,
+): Promise<T> {
+  const key = sql`hashtextextended(${`ancillary-prepare:${bookingId}`}, 0)`
+  await db.execute(sql`select pg_advisory_lock(${key})`)
+  try {
+    return await operation()
+  } finally {
+    await db.execute(sql`select pg_advisory_unlock(${key})`)
+  }
+}
+
+async function prepareUnderLock(
+  input: PrepareBookingAncillariesInput,
+): Promise<PrepareBookingAncillariesResult> {
   const result: PrepareBookingAncillariesResult = {
     prepared: [],
     alreadyCharged: [],
     unresolvedSources: [],
   }
   const accepted = input.accepted
-  if (input.sources.length === 0 || accepted.length === 0) return result
 
+  const now = input.now?.() ?? new Date()
   const charged = new Set<string>()
-  for (const item of input.existingItems) {
+  const existingItems = await input.listPassThroughItems(input.db, input.bookingId)
+  for (const item of existingItems) {
     const marker = readAncillaryItemMarker(item.metadata)
-    if (marker?.selectionKey) charged.add(marker.selectionKey)
+    if (!marker?.selectionKey) continue
+    // An already-charged line whose application has expired cannot become an
+    // artifact, and the skip below would carry it silently through to payment.
+    // Refusing here is the only outcome that does not charge for nothing.
+    if (isAncillaryItemExpiredAt(marker, now)) {
+      throw new AncillaryApplicationExpiredError(marker.sourceId, marker.expiresAt ?? "")
+    }
+    charged.add(marker.selectionKey)
   }
 
   const { contact, bookingSessionId } = input
@@ -180,6 +277,22 @@ export async function prepareBookingAncillaries(
       })
     } catch (error) {
       throw new AncillaryPreparationError(selection.sourceId ?? source.sourceId, error)
+    }
+
+    // The source is allowed to come back with a price it can still hold. It is
+    // not allowed to have that price charged without the traveller agreeing to
+    // it, so a change stops checkout instead of quietly re-pricing the booking.
+    if (
+      selection.acceptedPriceMinor !== undefined &&
+      selection.acceptedCurrency !== undefined &&
+      (prepared.priceMinor !== selection.acceptedPriceMinor ||
+        prepared.currency !== selection.acceptedCurrency)
+    ) {
+      throw new AncillaryTermsChangedError(
+        source.sourceId,
+        { priceMinor: selection.acceptedPriceMinor, currency: selection.acceptedCurrency },
+        { priceMinor: prepared.priceMinor, currency: prepared.currency },
+      )
     }
 
     const materialized = await materializeAncillaryPassThroughItem(input.db, {
@@ -247,9 +360,14 @@ export interface FulfillBookingAncillariesResult {
 export async function fulfillBookingAncillaries(
   input: FulfillBookingAncillariesInput,
 ): Promise<FulfillBookingAncillariesResult> {
+  // Deliberately NOT short-circuited on an empty source list. A charged line
+  // whose source is unbound at delivery time — a deployment or configuration
+  // change between the charge and `payment.completed` — would otherwise be
+  // skipped, the saga would complete, `completedAt` would be recorded, and
+  // redelivery after the source came back would return early. The traveller
+  // would have paid for an artifact nobody ever issues, and nothing would say
+  // so. Inspecting the lines anyway turns that into an actionable record.
   const outcomes: FulfilledBookingAncillary[] = []
-  if (input.sources.length === 0) return { outcomes }
-
   const items = await input.listPassThroughItems(input.db, input.bookingId)
   for (const item of items) {
     const marker = readAncillaryItemMarker(item.metadata)
@@ -257,6 +375,22 @@ export async function fulfillBookingAncillaries(
 
     const source = input.sources.find((candidate) => candidate.sourceId === marker.sourceId)
     if (!source) {
+      // On the booking, not merely in the step output: the saga's own record is
+      // not somewhere an operator looks, and this is money already taken.
+      await recordAncillaryActivity(input.db, input.bookingId, {
+        event: "ancillary.fulfillment.unresolved",
+        description:
+          `A paid ancillary could not be issued: no source is bound for ` +
+          `"${marker.sourceId}". It stays unfulfilled until one is.`,
+        metadata: {
+          bookingItemId: item.bookingItemId,
+          applicationRef: marker.applicationRef,
+          sourceId: marker.sourceId,
+          chargedPriceMinor: item.priceMinor,
+          currency: item.currency,
+          retryable: true,
+        },
+      })
       outcomes.push({
         bookingItemId: item.bookingItemId,
         applicationRef: marker.applicationRef,

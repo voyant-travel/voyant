@@ -89,6 +89,15 @@ export interface AncillaryItemMarker {
   providerId: string
   applicationRef: string
   selectionKey?: string
+  /**
+   * When the held application stops being able to become a purchase.
+   *
+   * Read back off the line, not merely written to it: a traveller who returns
+   * to checkout after this instant would otherwise be charged for a premium
+   * nothing can fulfil, and the first anyone hears of it is the failed issue
+   * after the money has moved.
+   */
+  expiresAt?: string
 }
 
 /**
@@ -119,7 +128,21 @@ export function readAncillaryItemMarker(
     providerId,
     applicationRef,
     ...(typeof candidate.selectionKey === "string" ? { selectionKey: candidate.selectionKey } : {}),
+    ...(typeof candidate.expiresAt === "string" ? { expiresAt: candidate.expiresAt } : {}),
   }
+}
+
+/**
+ * Whether a charged line can still become an issued artifact.
+ *
+ * A line with no recorded expiry is treated as live: the field is optional on
+ * the marker, and refusing checkout over a line written before it existed would
+ * strand bookings for a fact nobody recorded.
+ */
+export function isAncillaryItemExpiredAt(marker: AncillaryItemMarker, at: Date): boolean {
+  if (!marker.expiresAt) return false
+  const expiresAt = Date.parse(marker.expiresAt)
+  return Number.isFinite(expiresAt) && expiresAt <= at.getTime()
 }
 
 export type AncillaryPremiumReconciliation =
@@ -248,7 +271,7 @@ export async function reconcileAncillaryPremium(
 }
 
 /** Operator-visible record of an automated outcome, written by bookings. */
-async function recordAncillaryActivity(
+export async function recordAncillaryActivity(
   db: PostgresJsDatabase,
   bookingId: string,
   entry: { event: string; description: string; metadata: Record<string, unknown> },

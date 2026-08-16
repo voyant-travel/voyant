@@ -41,22 +41,25 @@ export function buildCheckoutFinalizeDeps(
    */
   ancillaryOfferSources: readonly AncillaryOfferSource[] = [],
 ): CheckoutFinalizeDeps {
-  const fulfillAncillaries: CheckoutFinalizeDeps["fulfillAncillaries"] =
-    ancillaryOfferSources.length > 0
-      ? async ({ bookingId }) => {
-          const result = await fulfillBookingAncillaries({
-            db,
-            bookingId,
-            sources: ancillaryOfferSources,
-            listPassThroughItems: listBookingPassThroughItems,
-          })
-          if (result.outcomes.length === 0) return null
-          return { outcomes: result.outcomes }
-        }
-      : undefined
+  // Bound unconditionally, including when nothing is connected. Making the dep
+  // conditional on a non-empty source list is what let a paid ancillary vanish:
+  // the step was skipped, the saga completed, `completedAt` was written, and
+  // redelivery after the source came back returned early. With the dep always
+  // present, the charged lines are inspected and an unbound source becomes an
+  // `ancillary.fulfillment.unresolved` record on the booking instead of silence.
+  const fulfillAncillaries: CheckoutFinalizeDeps["fulfillAncillaries"] = async ({ bookingId }) => {
+    const result = await fulfillBookingAncillaries({
+      db,
+      bookingId,
+      sources: ancillaryOfferSources,
+      listPassThroughItems: listBookingPassThroughItems,
+    })
+    if (result.outcomes.length === 0) return null
+    return { outcomes: result.outcomes }
+  }
 
   return {
-    ...(fulfillAncillaries ? { fulfillAncillaries } : {}),
+    fulfillAncillaries,
     db,
     eventBus,
     assertBookingCommitted: async (bookingId) => {
