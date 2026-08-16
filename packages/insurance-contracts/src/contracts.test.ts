@@ -1,9 +1,9 @@
 import { describe, expect, it } from "vitest"
 import {
-  type InsuranceProviderAdapter,
-  type InsuranceQuote,
   assertInsuranceProviderAdapter,
   headlineSumInsured,
+  type InsuranceProviderAdapter,
+  type InsuranceQuote,
   insuranceApplicationInputSchema,
   insuranceMoneySchema,
   insurancePolicySchema,

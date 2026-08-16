@@ -98,7 +98,7 @@ export function headlineSumInsured(covers: readonly InsuranceCover[]) {
   const included = covers.filter((cover) => cover.included && cover.sumInsured)
   const medical = included.find((cover) => cover.category === "medical_expenses")
   if (medical?.sumInsured) return medical.sumInsured
-  let largest: InsuranceCover["sumInsured"] = undefined
+  let largest: InsuranceCover["sumInsured"]
   for (const cover of included) {
     if (!cover.sumInsured) continue
     if (!largest || cover.sumInsured.amountMinor > largest.amountMinor) {

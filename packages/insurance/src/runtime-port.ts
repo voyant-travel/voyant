@@ -17,6 +17,7 @@
  * nothing binds it, nothing happens.
  */
 
+import type { EventBus } from "@voyant-travel/core"
 import { definePort } from "@voyant-travel/core/project"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
@@ -31,6 +32,15 @@ export interface InsuranceRuntime {
   createPiiService(): InsurancePiiService
   /** Booking documents, notifications, staff alerts. Every part optional. */
   bookingIntegration(): InsuranceBookingIntegration
+  /**
+   * Where this module's declared events go.
+   *
+   * Optional, and deliberately not part of the port's structural check: a
+   * deployment that binds no bus still issues policies, and failing the port
+   * over a missing subscriber would make the whole module unavailable to
+   * satisfy something nobody is listening to.
+   */
+  eventBus?(): EventBus | undefined
 }
 
 export const insuranceRuntimePort = definePort<InsuranceRuntime>({

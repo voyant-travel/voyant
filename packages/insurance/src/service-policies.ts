@@ -14,6 +14,7 @@
  * no policy is a log line.
  */
 
+import type { EventBus } from "@voyant-travel/core"
 import type {
   InsuranceDocument,
   InsurancePolicy as InsurancePolicyContract,
@@ -27,6 +28,11 @@ import {
   type InsuranceBookingIntegration,
   recordInsuranceBookingActivity,
 } from "./booking-integration.js"
+import {
+  emitInsurancePolicyCancelled,
+  emitInsurancePolicyIssued,
+  emitInsurancePolicyIssueFailed,
+} from "./events.js"
 import type { InsurancePiiService } from "./pii.js"
 import type { InsuranceApplicationRow } from "./schema-applications.js"
 import { type InsurancePolicyRow, insurancePolicies } from "./schema-policies.js"
@@ -37,6 +43,8 @@ export interface InsurancePolicyServiceDeps {
   integration?: InsuranceBookingIntegration
   actorId?: string | null
   now?: () => Date
+  /** Optional: a deployment that binds no bus still issues policies. */
+  eventBus?: EventBus
 }
 
 export interface IssueInsurancePolicyInput {
@@ -207,6 +215,16 @@ export async function issueInsurancePolicy(
   await deps.pii.attachPolicy(db, input.application.id, policy.id)
   await setInsuranceApplicationStatus(db, input.application.id, "accepted")
 
+  await emitInsurancePolicyIssued(deps.eventBus, {
+    policyId: policy.id,
+    applicationId: input.application.id,
+    bookingId: policy.bookingId ?? input.bookingId ?? null,
+    providerId: policy.providerId,
+    policyNumber: policy.policyNumber,
+    premiumAmountMinor: policy.premiumAmountMinor,
+    premiumCurrency: policy.premiumCurrency,
+  })
+
   const bookingId = policy.bookingId ?? input.bookingId ?? null
   const documentIds: string[] = []
 
@@ -332,6 +350,17 @@ export async function recordInsuranceIssueFailure(
   const policy = row ?? input.policy
   const bookingId = policy.bookingId ?? input.application.bookingId ?? null
 
+  await emitInsurancePolicyIssueFailed(deps.eventBus, {
+    policyId: policy.id,
+    applicationId: input.application.id,
+    bookingId,
+    providerId: policy.providerId,
+    failureCode: input.failure.code,
+    failureMessage: input.failure.message,
+    retryable: input.failure.retryable,
+    paid: input.paid,
+  })
+
   if (bookingId) {
     await recordInsuranceBookingActivity(db, bookingId, {
       event: INSURANCE_BOOKING_ACTIVITY_EVENTS.issueFailed,
@@ -431,6 +460,16 @@ export async function cancelInsurancePolicy(
 
   const policy = row ?? input.policy
   const bookingId = policy.bookingId ?? null
+
+  await emitInsurancePolicyCancelled(deps.eventBus, {
+    policyId: policy.id,
+    bookingId,
+    providerId: policy.providerId,
+    reason: cancellation.reason,
+    refundAmountMinor: cancellation.refund?.amountMinor ?? null,
+    refundCurrency: cancellation.refund?.currency ?? null,
+  })
+
   if (bookingId) {
     await recordInsuranceBookingActivity(db, bookingId, {
       event: INSURANCE_BOOKING_ACTIVITY_EVENTS.cancelled,

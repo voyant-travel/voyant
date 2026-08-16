@@ -32,9 +32,11 @@ describe("insurance deployment manifest", () => {
           { id: "insurance.customer-portal-policies" },
         ],
       },
-      requires: {
-        ports: [{ id: "insurance.provider-source", optional: true, cardinality: "many" }],
-      },
+      // Deliberately no `requires.ports`. Cardinality is a property of a
+      // runtime read, and the graph rejects it on a statically composed
+      // requirement: "Port cardinality is supported only for statically
+      // composed runtimePorts". Declaring the insurer seam in both places
+      // fails graph resolution outright.
       runtimePorts: [
         { id: "insurance.runtime" },
         { id: "insurance.provider-source", optional: true, cardinality: "many" },

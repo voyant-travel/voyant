@@ -108,18 +108,14 @@ export const insuranceVoyantModule = defineModule({
       providePort(insuranceCustomerPortalPort),
     ],
   },
-  requires: {
-    ports: [
-      // Optional and many-valued from the start. Zero connected insurers is a
-      // supported, silent state; one is a list of length one. Building the
-      // fan-out later, after single-provider assumptions have spread, is the
-      // expensive path.
-      requirePort(insuranceProviderSourcePort, { optional: true, cardinality: "many" }),
-    ],
-  },
-  // Declared here as well as in `requires`, because the runtime resolves both at
-  // run time. Requiring a port without listing it here composes fine and then
-  // fails on first use with "requested undeclared port".
+  // Both are resolved at run time, so both are declared here and neither in
+  // `requires.ports`: cardinality is a property of a runtime read, and the
+  // graph rejects it on a statically composed requirement.
+  //
+  // The insurer source is optional and many-valued from the start. Zero
+  // connected insurers is a supported, silent state; one is a list of length
+  // one. Building the fan-out later, after single-provider assumptions have
+  // spread, is the expensive path.
   runtimePorts: [
     requirePort(insuranceRuntimePort),
     requirePort(insuranceProviderSourcePort, { optional: true, cardinality: "many" }),
@@ -303,6 +299,13 @@ export const insuranceVoyantModule = defineModule({
       // The effect lands at the insurer, not in this database.
       effectBoundary: "external",
       targetLifecycle: "existing",
+      // A saga, and the reference is what makes that a claim rather than a
+      // word: the pending row is written before the insurer is called, and a
+      // retry resumes it instead of buying a second policy.
+      durability: {
+        strategy: "saga",
+        testReference: "packages/insurance/tests/integration/durable-issue-command.test.ts",
+      },
       requiredScopes: ["insurance:write"],
       risk: "medium",
       ledger: "required",
@@ -320,6 +323,13 @@ export const insuranceVoyantModule = defineModule({
       availability: { status: "available" },
       effectBoundary: "external",
       targetLifecycle: "existing",
+      // The compensating half of the same saga: the row is marked cancelled
+      // only after the insurer confirms, because a local row saying "cancelled"
+      // over a policy that is still live is the worse of the two errors.
+      durability: {
+        strategy: "saga",
+        testReference: "packages/insurance/tests/integration/durable-issue-command.test.ts",
+      },
       requiredScopes: ["insurance:write"],
       risk: "medium",
       ledger: "required",

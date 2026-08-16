@@ -49,6 +49,7 @@ export function createInsuranceRuntimePortContribution(
       resolveDb: () => host.primitives.database.resolve<PostgresJsDatabase>(undefined),
       resolvePii: async () => (await resolveRuntime()).createPiiService(),
       resolveIntegration: async () => (await resolveRuntime()).bookingIntegration(),
+      resolveEventBus: async () => (await resolveRuntime()).eventBus?.(),
     }),
     [insuranceCustomerPortalPort.id]: createInsuranceCustomerPortalReader(),
   }

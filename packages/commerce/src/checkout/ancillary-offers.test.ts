@@ -247,9 +247,9 @@ describe("AncillaryQuoteInput carries no identified traveller data", () => {
     const withDocument: AncillaryQuoteInput = { ...quoteInput(), passportNumber: "X1234567" }
     // @ts-expect-error — nor contact details.
     const withContact: AncillaryQuoteInput = { ...quoteInput(), email: "ana@example.com" }
-    // @ts-expect-error — not even per traveller.
     const withTravelerName: AncillaryQuoteInput = {
       ...quoteInput(),
+      // @ts-expect-error — not even per traveller.
       travelers: [{ ref: "trv_1", age: 41, firstName: "Ana" }],
     }
     expect([withName, withDocument, withContact, withTravelerName]).toHaveLength(4)

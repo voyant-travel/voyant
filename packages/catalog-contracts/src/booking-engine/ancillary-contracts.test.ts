@@ -1,5 +1,4 @@
 import { describe, expect, it } from "vitest"
-import { requirementsFingerprintInput } from "./requirements-contracts.js"
 import {
   type AncillaryOfferV1,
   ancillaryOfferGroupV1,
@@ -8,6 +7,7 @@ import {
   isAncillaryOfferSelectable,
   orderAncillaryOffers,
 } from "./ancillary-contracts.js"
+import { requirementsFingerprintInput } from "./requirements-contracts.js"
 
 function offer(overrides: Partial<AncillaryOfferV1> = {}): AncillaryOfferV1 {
   return {
@@ -109,9 +109,9 @@ describe("selectability", () => {
 
 describe("comparison", () => {
   it("does not treat several offers from one provider as a comparison", () => {
-    expect(
-      hasMultipleAncillaryProviders([offer({ offerId: "a" }), offer({ offerId: "b" })]),
-    ).toBe(false)
+    expect(hasMultipleAncillaryProviders([offer({ offerId: "a" }), offer({ offerId: "b" })])).toBe(
+      false,
+    )
   })
 
   it("is a comparison once a second provider is connected", () => {
@@ -155,7 +155,9 @@ describe("requirements fingerprint", () => {
     showsAddons: false,
     paymentIntents: ["card"],
     ancillaries: {
-      groups: [{ kind: "insurance", label: "Travel insurance", offers: [offer()], diagnostics: [] }],
+      groups: [
+        { kind: "insurance", label: "Travel insurance", offers: [offer()], diagnostics: [] },
+      ],
     },
   }
 

@@ -1,8 +1,5 @@
 import { z } from "zod"
-import {
-  insuranceContractingPartySchema,
-  insuranceInsuredPersonSchema,
-} from "./application.js"
+import { insuranceContractingPartySchema, insuranceInsuredPersonSchema } from "./application.js"
 import { insuranceCoverSchema } from "./cover.js"
 import { insuranceDocumentSchema } from "./document.js"
 import { insuranceDateSchema, insuranceInstantSchema, insuranceMoneySchema } from "./money.js"

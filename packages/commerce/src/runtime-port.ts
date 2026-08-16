@@ -102,8 +102,8 @@ export {
   type AncillaryFulfillInput,
   type AncillaryFulfillmentResult,
   type AncillaryOfferSource,
-  type AncillaryPrepareInput,
   type AncillaryPreparedSelection,
+  type AncillaryPrepareInput,
   type AncillaryQuoteInput,
   ancillaryOfferSourceRuntimePort,
 } from "./checkout/ancillary-ports.js"

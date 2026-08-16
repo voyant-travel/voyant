@@ -9,6 +9,7 @@
  * must not be the charge.
  */
 
+import type { EventBus } from "@voyant-travel/core"
 import type {
   InsuranceAnswer,
   InsuranceContractingParty,
@@ -18,6 +19,7 @@ import type {
 import { and, desc, eq, inArray, lt } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
+import { emitInsuranceApplicationOpened } from "./events.js"
 import type { InsuranceInsuredPersonInput, InsurancePiiService } from "./pii.js"
 import { type InsuranceApplicationRow, insuranceApplications } from "./schema-applications.js"
 
@@ -46,6 +48,8 @@ export interface CreateInsuranceApplicationInput {
 export interface InsuranceApplicationServiceDeps {
   pii: InsurancePiiService
   actorId?: string | null
+  /** Optional: a deployment that binds no bus still opens applications. */
+  eventBus?: EventBus
 }
 
 /**
@@ -60,7 +64,7 @@ export async function createInsuranceApplication(
   deps: InsuranceApplicationServiceDeps,
   input: CreateInsuranceApplicationInput,
 ): Promise<InsuranceApplicationRow> {
-  return db.transaction(async (tx) => {
+  const row = await db.transaction(async (tx) => {
     const transaction = tx as PostgresJsDatabase
     const [row] = await transaction
       .insert(insuranceApplications)
@@ -99,6 +103,20 @@ export async function createInsuranceApplication(
 
     return row
   })
+
+  // After the transaction, not inside it: a subscriber that reads the
+  // application back has to find it, and a bus emit inside a transaction
+  // announces a row that may still roll back.
+  await emitInsuranceApplicationOpened(deps.eventBus, {
+    applicationId: row.id,
+    bookingSessionId: row.bookingSessionId,
+    providerId: row.providerId,
+    premiumAmountMinor: row.premiumAmountMinor,
+    premiumCurrency: row.premiumCurrency,
+    insuredPersonCount: input.insuredPersons.length,
+  })
+
+  return row
 }
 
 export async function getInsuranceApplication(

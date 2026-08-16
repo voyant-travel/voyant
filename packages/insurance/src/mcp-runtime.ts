@@ -12,6 +12,7 @@
  * exactly the kind of thing that ends up copied into a transcript.
  */
 
+import type { EventBus } from "@voyant-travel/core"
 import type { InsuranceProviderAdapter } from "@voyant-travel/insurance-contracts/provider"
 import { defineToolContextContribution } from "@voyant-travel/tools"
 import { eq } from "drizzle-orm"
@@ -42,6 +43,7 @@ export * from "./tools.js"
 
 type InsuranceToolRequestEnv = {
   Variables: {
+    eventBus?: EventBus
     insuranceRuntime?: InsuranceRuntime
     insuranceProviders?: readonly InsuranceProviderAdapter[]
   }
@@ -86,6 +88,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
     const db = context.db as PostgresJsDatabase
     const runtime = c.get("insuranceRuntime")
     const providers = c.get("insuranceProviders") ?? []
+    const eventBus = c.get("eventBus")
 
     const findProvider = (providerId: string) =>
       providers.find((provider) => provider.providerId === providerId) ?? null
@@ -149,7 +152,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
 
         const result = await issueInsurancePolicy(
           db,
-          { pii: runtime.createPiiService(), integration: runtime.bookingIntegration() },
+          { pii: runtime.createPiiService(), integration: runtime.bookingIntegration(), eventBus },
           {
             application,
             provider,
@@ -176,7 +179,7 @@ export const voyantToolContextContribution = defineToolContextContribution({
 
         const result = await cancelInsurancePolicy(
           db,
-          { pii: runtime.createPiiService(), integration: runtime.bookingIntegration() },
+          { pii: runtime.createPiiService(), integration: runtime.bookingIntegration(), eventBus },
           { policy, provider, reason, idempotencyKey: `insurance-cancel:${policy.id}` },
         )
         if (result.status === "failed") return { error: result.message }

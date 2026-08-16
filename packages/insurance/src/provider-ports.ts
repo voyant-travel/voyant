@@ -49,7 +49,10 @@ export const insuranceProviderSourcePort = definePort<InsuranceProviderAdapter>(
     if (provider === null || typeof provider !== "object") {
       throw new Error("insurance provider must be an object")
     }
-    const candidate = provider as Record<string, unknown>
+    // Through `unknown`: an interface has no index signature, so it does not
+    // overlap `Record<string, unknown>` directly. The point of the check is that
+    // whatever the graph bound may not be the declared type at all.
+    const candidate = provider as unknown as Record<string, unknown>
     for (const field of ["providerId", "displayName"] as const) {
       const value = candidate[field]
       if (typeof value !== "string" || value.length === 0) {

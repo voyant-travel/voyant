@@ -178,11 +178,7 @@ export const ancillarySelectionV1 = z
       .default([]),
     selectedOptionIds: z.array(z.string()).default([]),
     acceptedDisclosures: z
-      .array(
-        z
-          .object({ kind: z.string(), versionId: z.string(), acceptedAt: z.string() })
-          .strict(),
-      )
+      .array(z.object({ kind: z.string(), versionId: z.string(), acceptedAt: z.string() }).strict())
       .default([]),
   })
   .strict()

@@ -15,6 +15,7 @@
  */
 
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
+import type { EventBus } from "@voyant-travel/core"
 import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
 import type { InsuranceProviderAdapter } from "@voyant-travel/insurance-contracts/provider"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -56,6 +57,7 @@ export type InsuranceRoutesEnv = {
     scopes?: string[] | null
     callerType?: string | null
     isInternalRequest?: boolean
+    eventBus?: EventBus
     /** Bound by the deployment from `insurance.runtime`. */
     insuranceRuntime?: InsuranceRuntime
   }
@@ -254,6 +256,7 @@ export function createInsuranceAdminRoutes(options: InsuranceAdminRouteOptions) 
           pii: runtime.createPiiService(),
           integration: runtime.bookingIntegration(),
           actorId: c.get("userId") ?? null,
+          eventBus: c.get("eventBus"),
         },
         {
           application,
@@ -290,6 +293,7 @@ export function createInsuranceAdminRoutes(options: InsuranceAdminRouteOptions) 
           pii: runtime.createPiiService(),
           integration: runtime.bookingIntegration(),
           actorId: c.get("userId") ?? null,
+          eventBus: c.get("eventBus"),
         },
         {
           policy,

@@ -90,6 +90,13 @@ export {
 } from "./booking-integration.js"
 export { createInsuranceCustomerPortalReader } from "./customer-portal-runtime.js"
 export {
+  INSURANCE_EVENT_TYPES,
+  type InsuranceApplicationOpenedPayload,
+  type InsurancePolicyCancelledPayload,
+  type InsurancePolicyIssuedPayload,
+  type InsurancePolicyIssueFailedPayload,
+} from "./events.js"
+export {
   createInsurancePiiService,
   type DecryptedInsuranceInsuredPerson,
   type InsuranceInsuredIdentity,

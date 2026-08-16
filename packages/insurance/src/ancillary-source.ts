@@ -36,6 +36,7 @@ import type {
   AncillaryPrepareInput,
   AncillaryQuoteInput,
 } from "@voyant-travel/commerce/checkout/ancillary-ports"
+import type { EventBus } from "@voyant-travel/core"
 import type {
   InsuranceApplicationInput,
   InsuranceCover,
@@ -141,6 +142,12 @@ export interface InsuranceAncillarySourceOptions {
    */
   resolvePii: () => InsurancePiiService | Promise<InsurancePiiService>
   resolveIntegration?: () => InsuranceBookingIntegration | Promise<InsuranceBookingIntegration>
+  /**
+   * The bus the module's declared events go to. Resolved lazily for the same
+   * reason as everything else here: the source is constructed while the graph
+   * is still composing.
+   */
+  resolveEventBus?: () => EventBus | undefined | Promise<EventBus | undefined>
   perProviderTimeoutMs?: number
   labels?: InsuranceAncillarySourceLabels
   sourceId?: string
@@ -562,7 +569,7 @@ export function createInsuranceAncillaryOfferSource(
       const db = await options.resolveDb()
       const row = await createInsuranceApplication(
         db,
-        { pii: await options.resolvePii() },
+        { pii: await options.resolvePii(), eventBus: await options.resolveEventBus?.() },
         {
           bookingSessionId: input.bookingSessionId,
           sourceId,
@@ -628,6 +635,7 @@ export function createInsuranceAncillaryOfferSource(
         {
           pii: await options.resolvePii(),
           integration: await options.resolveIntegration?.(),
+          eventBus: await options.resolveEventBus?.(),
           now,
         },
         {
@@ -678,6 +686,7 @@ export function createInsuranceAncillaryOfferSource(
         {
           pii: await options.resolvePii(),
           integration: await options.resolveIntegration?.(),
+          eventBus: await options.resolveEventBus?.(),
           now,
         },
         {
