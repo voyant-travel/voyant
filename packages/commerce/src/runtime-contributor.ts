@@ -1,4 +1,5 @@
 import {
+  type CatalogCommerceRuntimeExtension,
   type CatalogPublicationRuntime,
   type CatalogRuntimeServices,
   catalogCommerceRuntimeExtensionPort,
@@ -23,6 +24,7 @@ import { catalogCommerceRuntimeExtension } from "./catalog-runtime-extension.js"
 import { quoteAncillaryOffers } from "./checkout/ancillary-offers.js"
 import {
   type AncillaryOfferSource,
+  type AncillaryQuoteInput,
   ancillaryOfferSourceRuntimePort,
 } from "./checkout/ancillary-ports.js"
 import {
@@ -117,6 +119,10 @@ export function createCommerceRuntimePortContribution(
         }),
     )
   return {
+    // `satisfies` rather than a bare literal: the value is handed to a
+    // `Record<string, unknown>`, so nothing would otherwise check it against
+    // the extension contract — and an un-contextually-typed callback parameter
+    // is an implicit `any` that only the build catches.
     [catalogCommerceRuntimeExtensionPort.id]: {
       ...catalogCommerceRuntimeExtension,
       // The Booking Session descriptor is composed in catalog, and the sources
@@ -124,13 +130,13 @@ export function createCommerceRuntimePortContribution(
       // this is where the two meet. Resolved per call rather than captured:
       // an operator connecting an insurer should not need a restart to sell
       // through it.
-      resolveAncillaryOffers: async (request) =>
+      resolveAncillaryOffers: async (request: AncillaryQuoteInput) =>
         quoteAncillaryOffers(
           (await host.getRuntimePorts?.<AncillaryOfferSource>(ancillaryOfferSourceRuntimePort)) ??
             [],
           request,
         ),
-    },
+    } satisfies CatalogCommerceRuntimeExtension,
     // Markets owns `fx_rate_sets`/`exchange_rates`, so it is what turns a
     // resolved reference rate into a durable rate-set identity for finance to
     // stamp documents with (voyant#4703).
