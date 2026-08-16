@@ -1,6 +1,6 @@
 {
   "name": "@voyant-travel/flights",
-  "version": "0.239.0",
+  "version": "0.240.0",
   "license": "Apache-2.0",
   "type": "module",
   "exports": {
@@ -23,7 +23,8 @@
     "./mcp-runtime": "./src/mcp-runtime.ts",
     "./tools": "./src/mcp-runtime.ts",
     "./voyant": "./src/voyant.ts",
-    "./openapi/admin": "./openapi/admin/flights.json"
+    "./openapi/admin": "./openapi/admin/flights.json",
+    "./transport-eligibility": "./src/transport-eligibility.ts"
   },
   "voyant": {
     "schemaVersion": "voyant.package.v1",
@@ -164,7 +165,11 @@
         "import": "./dist/voyant.js",
         "default": "./dist/voyant.js"
       },
-      "./openapi/admin": "./openapi/admin/flights.json"
+      "./openapi/admin": "./openapi/admin/flights.json",
+      "./transport-eligibility": {
+        "types": "./dist/transport-eligibility.d.ts",
+        "default": "./dist/transport-eligibility.js"
+      }
     },
     "main": "./dist/index.js",
     "types": "./dist/index.d.ts"
