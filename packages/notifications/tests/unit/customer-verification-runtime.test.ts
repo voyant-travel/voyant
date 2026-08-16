@@ -1,8 +1,8 @@
-import { customerVerificationRuntimePort } from "@voyant-travel/public-api/runtime-port"
 import {
   buildCustomerVerificationSenders,
   type CustomerVerificationRoutesOptions,
 } from "@voyant-travel/identity/verification"
+import { customerVerificationRuntimePort } from "@voyant-travel/public-api/runtime-port"
 import { describe, expect, it, vi } from "vitest"
 import { toCustomerVerificationNotificationProvider } from "../../src/customer-verification-runtime.js"
 import { createNotificationsRuntimePortContribution } from "../../src/runtime-contributor.js"
