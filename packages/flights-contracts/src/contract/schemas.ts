@@ -14,9 +14,15 @@ const iataCodeSchema = z.string().length(3)
  * caller never asked for and quote the wrong month back. Round-tripping the
  * parsed parts is what rejects a day that does not exist.
  */
-const isoDateSchema = z.string().refine(isCalendarDate, {
-  message: "Expected a calendar date in yyyy-MM-dd form",
-})
+const isoDateSchema = z
+  .string()
+  .refine(isCalendarDate, { message: "Expected a calendar date in yyyy-MM-dd form" })
+  // `z.toJSONSchema` drops refinements, so a caller reading only the generated
+  // schema — an agent, say — would learn the day-must-exist rule from a 400.
+  // The description is the part it can actually see.
+  .describe(
+    "A calendar date as yyyy-MM-dd. The day must exist: 2026-02-31 and 2026-13-01 are rejected rather than rolled forward.",
+  )
 
 function isCalendarDate(value: string): boolean {
   const match = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
