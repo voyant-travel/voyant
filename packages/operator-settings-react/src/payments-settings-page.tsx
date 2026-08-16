@@ -395,11 +395,63 @@ export function paymentActivationControlState(input: {
 export type PaymentProviderStatusId =
   | "error"
   | "action_required"
+  | "disconnected"
   | "active"
   | "verifying"
   | "connected"
   | "coming_soon"
   | "not_connected"
+
+/**
+ * The connections to render for a processor.
+ *
+ * `connections` is optional on both `ConnectionStatus` and the route schema
+ * (`payment-provider-routes.ts`), so a registry may answer with only the
+ * backward-compatible top-level `activeProviderId`/`status`/`mode`. The old
+ * "Active provider" card read those fields directly; this screen reads
+ * connections, so without this fallback an active processor sitting in `error`
+ * or `restricted` would render no status and no row at all — the failure would
+ * be invisible precisely when it matters.
+ *
+ * The synthesized summary is marked `active` because that is what the
+ * top-level fields describe: the active provider's one connection.
+ */
+export function paymentProviderConnections(
+  provider: Pick<ProviderDescriptor, "id">,
+  status:
+    | Pick<
+        ConnectionStatus,
+        | "activeProviderId"
+        | "status"
+        | "mode"
+        | "activeConnectionId"
+        | "connections"
+        | "requirements"
+        | "lastError"
+        | "readOnly"
+      >
+    | undefined,
+): ConnectionSummary[] {
+  const owned = (status?.connections ?? []).filter(
+    (connection) => connection.providerId === provider.id,
+  )
+  if (owned.length > 0) return owned
+  if (!status || status.activeProviderId !== provider.id) return []
+
+  return [
+    {
+      providerId: provider.id,
+      connectionId: status.activeConnectionId ?? provider.id,
+      state: status.status,
+      readiness: status.status === "connected" ? "ready" : "not_ready",
+      mode: status.mode,
+      active: true,
+      requirements: status.requirements,
+      lastError: status.lastError,
+      readOnly: status.readOnly,
+    },
+  ]
+}
 
 /**
  * Resolve a processor's headline status from its connections.
@@ -408,10 +460,17 @@ export type PaymentProviderStatusId =
  * because an active processor that cannot take money is the one thing an
  * operator must not miss. `active` then outranks the healthy-but-secondary
  * states — a second connection quietly verifying is reported on its own row.
+ *
+ * `disconnected` is one of those blocking states rather than a synonym for
+ * "never set up": `updatePaymentConnectionStatus` patches only the status, so
+ * an active provider can sit at `disconnected` with `activeProviderId` still
+ * pointing at it. It escalates only when it describes the whole processor —
+ * every connection gone, or the active one gone — so a disconnected sandbox
+ * sibling does not mislabel a working live connection.
  */
 export function paymentProviderStatus(input: {
   provider: Pick<ProviderDescriptor, "id" | "availability">
-  connections: readonly Pick<ConnectionSummary, "providerId" | "state">[] | undefined
+  connections: readonly Pick<ConnectionSummary, "providerId" | "state" | "active">[] | undefined
   activeProviderId: string | null
 }): PaymentProviderStatusId {
   const owned = (input.connections ?? []).filter(
@@ -422,6 +481,12 @@ export function paymentProviderStatus(input: {
 
   if (anyState("error")) return "error"
   if (anyState("pending_requirements", "restricted")) return "action_required"
+
+  const activeConnection = owned.find((connection) => connection.active)
+  const allDisconnected =
+    owned.length > 0 && owned.every((connection) => connection.state === "disconnected")
+  if (allDisconnected || activeConnection?.state === "disconnected") return "disconnected"
+
   if (input.activeProviderId === input.provider.id) return "active"
   if (anyState("pending_verification")) return "verifying"
   if (anyState("connected")) return "connected"
@@ -494,6 +559,9 @@ const providerStatusVariant: Record<
 > = {
   error: "destructive",
   action_required: "destructive",
+  // A connection that exists but is disconnected is not the same as a
+  // processor nobody set up, so unlike `not_connected` it does get a badge.
+  disconnected: "outline",
   active: "default",
   verifying: "secondary",
   connected: "secondary",
@@ -754,6 +822,7 @@ export function PaymentsSettingsPage({ embeddedOnboardingClient }: PaymentsSetti
   const statusBadgeLabels: Record<PaymentProviderStatusId, string> = {
     error: t.connectionError,
     action_required: t.pendingRequirements,
+    disconnected: t.disconnected,
     active: t.activeBadge,
     verifying: t.pendingVerification,
     connected: t.connected,
@@ -804,14 +873,15 @@ export function PaymentsSettingsPage({ embeddedOnboardingClient }: PaymentsSetti
         <ul className="flex list-none flex-col gap-4">
           {providers.map((provider) => {
             const isActive = provider.id === activeId
+            // Resolved rather than filtered: a registry that omits the
+            // per-connection projection still has to show its active
+            // processor's real state.
+            const owned = paymentProviderConnections(provider, connection)
             const status = paymentProviderStatus({
               provider,
-              connections: connection?.connections,
+              connections: owned,
               activeProviderId: activeId,
             })
-            const owned = (connection?.connections ?? []).filter(
-              (summary) => summary.providerId === provider.id,
-            )
             const unavailable = !canConfigurePaymentProvider(provider)
             const hosted = provider.connectionMethod === "embedded_onboarding"
             const resumable =
@@ -931,7 +1001,11 @@ export function PaymentsSettingsPage({ embeddedOnboardingClient }: PaymentsSetti
                         </ul>
                       ) : null}
 
-                      {isActive ? (
+                      {/* Only when no row carried them: the synthesized
+                          fallback connection already reports the top-level
+                          requirements, and a registry that populates only the
+                          top level has no row to put them on. */}
+                      {isActive && !owned.some((summary) => summary.requirements?.length) ? (
                         <RequirementsAlert
                           requirements={connection?.requirements}
                           title={t.requirementsTitle}
