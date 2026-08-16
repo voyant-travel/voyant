@@ -1,10 +1,13 @@
-import { defineModule } from "@voyant-travel/core/project"
+import { defineModule, requirePort } from "@voyant-travel/core/project"
+
+import { customerVerificationRuntimePort } from "./runtime-port.js"
 
 /** Import-cheap deployment declaration owned by the identity package. */
 export const identityVoyantModule = defineModule({
   id: "@voyant-travel/identity",
   packageName: "@voyant-travel/identity",
   localId: "identity",
+  provides: { capabilities: ["identity.data-owner"] },
   api: [
     {
       id: "@voyant-travel/identity#api.admin",
@@ -28,6 +31,14 @@ export const identityVoyantModule = defineModule({
     {
       id: "@voyant-travel/identity#migrations",
       source: "./migrations",
+    },
+  ],
+  links: [
+    {
+      id: "@voyant-travel/identity#linkable.customerVerificationChallenge",
+      kind: "linkable",
+      source: "@voyant-travel/identity/verification",
+      export: "customerVerificationLinkable",
     },
   ],
   access: {
@@ -233,6 +244,38 @@ export const identityVoyantModule = defineModule({
   lifecycle: {
     uninstall: { default: "retain-data", purge: "not-supported" },
   },
+  meta: {
+    ownership: "package",
+  },
+})
+
+export const customerVerificationVoyantModule = defineModule({
+  id: "@voyant-travel/identity#verification",
+  packageName: "@voyant-travel/identity",
+  localId: "identity.verification",
+  requires: { capabilities: ["identity.data-owner"] },
+  runtime: {
+    entry: "@voyant-travel/identity/verification",
+    export: "createCustomerVerificationVoyantRuntime",
+  },
+  runtimePorts: [requirePort(customerVerificationRuntimePort)],
+  api: [
+    {
+      id: "@voyant-travel/identity#verification.api",
+      surface: "public",
+      mount: "customer-verification",
+      openapi: { document: "identity-verification" },
+      anonymous: true,
+      // OTP start/confirm from the browser. Per-destination cooldowns and a
+      // per-challenge attempt limit are the challenge here, so this is not
+      // unchallenged intake.
+      publishable: true,
+      runtime: {
+        entry: "@voyant-travel/identity/verification",
+        export: "createCustomerVerificationApiModule",
+      },
+    },
+  ],
   meta: {
     ownership: "package",
   },

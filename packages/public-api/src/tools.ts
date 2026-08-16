@@ -9,6 +9,8 @@ import {
 } from "@voyant-travel/tools"
 import { z } from "zod"
 
+import { customerVerificationChallengeRecordWireSchema } from "@voyant-travel/identity/verification/validation"
+
 import {
   bootstrapCustomerPortalResultSchema,
   bootstrapCustomerPortalSchema,
@@ -25,15 +27,14 @@ import {
   updateCustomerPortalProfileDocumentSchema,
   updateCustomerPortalProfileSchema,
 } from "./customer-portal/validation-public.js"
-import { publicApiVerificationChallengeRecordWireSchema } from "./verification/validation.js"
 
 const OWNER = "@voyant-travel/public-api"
 const CUSTOMER_PORTAL_OWNER = `${OWNER}#customer-portal`
 const PAYMENT_LINK_OWNER = `${OWNER}#payment-link`
-const VERIFICATION_OWNER = `${OWNER}#verification`
 const VERSION = "v1"
 const READ_SCOPES = ["public-api:read"] as const
 const WRITE_SCOPES = ["public-api:write"] as const
+const VERIFICATION_OWNER = `${OWNER}#verification`
 const CUSTOMER_AUDIENCE = { source: "grant", allowed: ["customer"] } as const
 const STAFF_AUDIENCE = { source: "grant", allowed: ["staff"] } as const
 const idSchema = z.string().trim().min(1)
@@ -94,15 +95,6 @@ const createInvoicePaymentLinkInputSchema = z.object({
   expiresAt: z.string().datetime().nullable().optional(),
 })
 const getPaymentLinkInputSchema = z.object({ sessionId: idSchema })
-const verificationStartInputSchema = z.object({
-  locale: z.string().trim().min(2).max(16).nullable().optional(),
-})
-const verificationConfirmInputSchema = z.object({
-  code: z
-    .string()
-    .trim()
-    .regex(/^\d{4,8}$/),
-})
 
 export interface PublicApiCustomerPortalToolServices {
   getProfile(): Promise<z.infer<typeof customerPortalProfileSchema>>
@@ -146,25 +138,10 @@ export interface PublicApiPaymentLinkToolServices {
   get(sessionId: string): Promise<z.infer<typeof paymentLinkSchema>>
 }
 
-export interface PublicApiVerificationToolServices {
-  startEmail(
-    input: z.infer<typeof verificationStartInputSchema>,
-  ): Promise<z.infer<typeof publicApiVerificationChallengeRecordWireSchema>>
-  confirmEmail(
-    input: z.infer<typeof verificationConfirmInputSchema>,
-  ): Promise<z.infer<typeof publicApiVerificationChallengeRecordWireSchema>>
-  startSms(
-    input: z.infer<typeof verificationStartInputSchema>,
-  ): Promise<z.infer<typeof publicApiVerificationChallengeRecordWireSchema>>
-  confirmSms(
-    input: z.infer<typeof verificationConfirmInputSchema>,
-  ): Promise<z.infer<typeof publicApiVerificationChallengeRecordWireSchema>>
-}
-
 export type PublicApiToolContext = ToolContext & {
+  customerVerification?: CustomerVerificationToolServices
   publicApiCustomerPortal?: PublicApiCustomerPortalToolServices
   publicApiPaymentLink?: PublicApiPaymentLinkToolServices
-  publicApiVerification?: PublicApiVerificationToolServices
 }
 
 function customerPortal(ctx: PublicApiToolContext) {
@@ -182,16 +159,6 @@ function paymentLink(ctx: PublicApiToolContext) {
     throw new ToolError("Payment-link Tools require a staff grant.", "AUTHORIZATION_DENIED")
   }
   return requireService(ctx.publicApiPaymentLink, "publicApiPaymentLink")
-}
-
-function verification(ctx: PublicApiToolContext) {
-  if (ctx.actor !== "customer" || ctx.audience !== "customer") {
-    throw new ToolError(
-      "Verification Tools require the authenticated customer's own grant.",
-      "AUTHORIZATION_DENIED",
-    )
-  }
-  return requireService(ctx.publicApiVerification, "publicApiVerification")
 }
 
 const customerRead = {
@@ -413,6 +380,55 @@ export const createInvoicePaymentLinkTool = defineTool({
     ),
 })
 
+export const publicApiCustomerPortalTools = [
+  getMyCustomerPortalProfileTool,
+  updateMyCustomerPortalProfileTool,
+  bootstrapMyCustomerPortalTool,
+  listMyCustomerPortalBookingsTool,
+  getMyCustomerPortalBookingTool,
+  listMyCustomerPortalCompanionsTool,
+  createMyCustomerPortalCompanionTool,
+  updateMyCustomerPortalCompanionTool,
+  importMyBookingTravelersAsCompanionsTool,
+  listMyCustomerPortalDocumentsTool,
+  createMyCustomerPortalDocumentTool,
+  updateMyCustomerPortalDocumentTool,
+  setMyPrimaryCustomerPortalDocumentTool,
+] as const
+export const publicApiPaymentLinkTools = [getPaymentLinkTool, createInvoicePaymentLinkTool] as const
+
+const verificationStartInputSchema = z.object({
+  locale: z.string().trim().min(2).max(16).nullable().optional(),
+})
+const verificationConfirmInputSchema = z.object({
+  code: z
+    .string()
+    .trim()
+    .regex(/^\d{4,8}$/),
+})
+export interface CustomerVerificationToolServices {
+  startEmail(
+    input: z.infer<typeof verificationStartInputSchema>,
+  ): Promise<z.infer<typeof customerVerificationChallengeRecordWireSchema>>
+  confirmEmail(
+    input: z.infer<typeof verificationConfirmInputSchema>,
+  ): Promise<z.infer<typeof customerVerificationChallengeRecordWireSchema>>
+  startSms(
+    input: z.infer<typeof verificationStartInputSchema>,
+  ): Promise<z.infer<typeof customerVerificationChallengeRecordWireSchema>>
+  confirmSms(
+    input: z.infer<typeof verificationConfirmInputSchema>,
+  ): Promise<z.infer<typeof customerVerificationChallengeRecordWireSchema>>
+}
+function verification(ctx: PublicApiToolContext) {
+  if (ctx.actor !== "customer" || ctx.audience !== "customer") {
+    throw new ToolError(
+      "Verification Tools require the authenticated customer's own grant.",
+      "AUTHORIZATION_DENIED",
+    )
+  }
+  return requireService(ctx.customerVerification, "customerVerification")
+}
 const verificationReadWrite = {
   owner: VERIFICATION_OWNER,
   capabilityVersion: VERSION,
@@ -433,7 +449,7 @@ export const startMyEmailVerificationTool = defineTool({
   description:
     "Send a contact-confirmation challenge to the authenticated customer's own account email. Destination and purpose cannot be overridden.",
   inputSchema: verificationStartInputSchema,
-  outputSchema: publicApiVerificationChallengeRecordWireSchema,
+  outputSchema: customerVerificationChallengeRecordWireSchema,
   riskPolicy: { ...startVerificationRisk, sideEffects: ["data-write", "email"] },
   handler: (input, ctx: PublicApiToolContext) => verification(ctx).startEmail(input),
 })
@@ -444,7 +460,7 @@ export const confirmMyEmailVerificationTool = defineTool({
   description:
     "Confirm the latest contact-confirmation challenge for the authenticated customer's own email.",
   inputSchema: verificationConfirmInputSchema,
-  outputSchema: publicApiVerificationChallengeRecordWireSchema,
+  outputSchema: customerVerificationChallengeRecordWireSchema,
   riskPolicy: {
     ...startVerificationRisk,
     confirmationRequired: false,
@@ -459,7 +475,7 @@ export const startMySmsVerificationTool = defineTool({
   description:
     "Send a contact-confirmation challenge to the authenticated customer's own account phone. Destination and purpose cannot be overridden.",
   inputSchema: verificationStartInputSchema,
-  outputSchema: publicApiVerificationChallengeRecordWireSchema,
+  outputSchema: customerVerificationChallengeRecordWireSchema,
   riskPolicy: { ...startVerificationRisk, sideEffects: ["data-write", "sms"] },
   handler: (input, ctx: PublicApiToolContext) => verification(ctx).startSms(input),
 })
@@ -470,7 +486,7 @@ export const confirmMySmsVerificationTool = defineTool({
   description:
     "Confirm the latest contact-confirmation challenge for the authenticated customer's own phone.",
   inputSchema: verificationConfirmInputSchema,
-  outputSchema: publicApiVerificationChallengeRecordWireSchema,
+  outputSchema: customerVerificationChallengeRecordWireSchema,
   riskPolicy: {
     ...startVerificationRisk,
     confirmationRequired: false,
@@ -478,24 +494,7 @@ export const confirmMySmsVerificationTool = defineTool({
   },
   handler: (input, ctx: PublicApiToolContext) => verification(ctx).confirmSms(input),
 })
-
-export const publicApiCustomerPortalTools = [
-  getMyCustomerPortalProfileTool,
-  updateMyCustomerPortalProfileTool,
-  bootstrapMyCustomerPortalTool,
-  listMyCustomerPortalBookingsTool,
-  getMyCustomerPortalBookingTool,
-  listMyCustomerPortalCompanionsTool,
-  createMyCustomerPortalCompanionTool,
-  updateMyCustomerPortalCompanionTool,
-  importMyBookingTravelersAsCompanionsTool,
-  listMyCustomerPortalDocumentsTool,
-  createMyCustomerPortalDocumentTool,
-  updateMyCustomerPortalDocumentTool,
-  setMyPrimaryCustomerPortalDocumentTool,
-] as const
-export const publicApiPaymentLinkTools = [getPaymentLinkTool, createInvoicePaymentLinkTool] as const
-export const publicApiVerificationTools = [
+export const publicApiCustomerVerificationTools = [
   startMyEmailVerificationTool,
   confirmMyEmailVerificationTool,
   startMySmsVerificationTool,

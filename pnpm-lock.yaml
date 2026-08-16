@@ -4946,6 +4946,9 @@ importers:
       '@voyant-travel/hono':
         specifier: workspace:^
         version: link:../hono
+      '@voyant-travel/identity':
+        specifier: workspace:^
+        version: link:../identity
       '@voyant-travel/payments':
         specifier: workspace:^
         version: link:../payments
@@ -4971,9 +4974,6 @@ importers:
         specifier: 'catalog:'
         version: 4.4.3
     devDependencies:
-      '@voyant-travel/identity':
-        specifier: workspace:^
-        version: link:../identity
       '@voyant-travel/inventory':
         specifier: workspace:^
         version: link:../inventory

@@ -4,12 +4,12 @@ import { getTableName } from "drizzle-orm"
 import { describe, expect, it, vi } from "vitest"
 
 import {
-  createPublicApiVerificationApiModule,
+  createCustomerVerificationApiModule,
   customerVerificationChallenges,
   PUBLIC_API_VERIFICATION_SENDERS_CONTAINER_KEY,
 } from "../../../src/verification/index.js"
 
-describe("createPublicApiVerificationApiModule.bootstrap", () => {
+describe("createCustomerVerificationApiModule.bootstrap", () => {
   it("registers the resolved sender bundle once", async () => {
     const resolveProviders = vi.fn(() => [
       {
@@ -24,7 +24,7 @@ describe("createPublicApiVerificationApiModule.bootstrap", () => {
       },
     ])
 
-    const module = createPublicApiVerificationApiModule({
+    const module = createCustomerVerificationApiModule({
       resolveProviders,
     })
     const container = createContainer()
