@@ -398,6 +398,8 @@ jobs:
                 tests/integration/invoice-document-fulfilment.test.ts
               pnpm --filter @voyant-travel/finance exec vitest run \
                 tests/integration/unperformed-services-report.test.ts
+              pnpm --filter @voyant-travel/finance exec vitest run \
+                tests/integration/public-routes.test.ts
               pnpm --filter @voyant-travel/public-api exec vitest run \
                 tests/integration/payment-reconciliation-job.test.ts
               pnpm --filter @voyant-travel/bookings exec vitest run \
