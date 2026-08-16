@@ -37,6 +37,8 @@
 
 import { z } from "zod"
 
+import { ancillaryOfferGroupV1 } from "./ancillary-contracts.js"
+
 /**
  * Versioned checkout choices shared by quote capability discovery, Commit,
  * and Commit outcomes. A host selects one of the intents advertised by the
@@ -339,6 +341,14 @@ export const bookingRequirementsV1 = z.object({
   showsTravelers: z.boolean(),
   showsAccommodation: z.boolean(),
   showsAddons: z.boolean(),
+  /**
+   * Whether anything is quoted live from a third party for this booking.
+   *
+   * False when no ancillary source is connected, and the step then does not
+   * mount at all — no empty table, no unavailability notice. A traveller should
+   * never be told about a thing the operator does not sell.
+   */
+  showsAncillaries: z.boolean().default(false),
   showsPayment: z.boolean(),
   /** Always true today; flagged for symmetry with the doc. */
   showsReview: z.literal(true),
@@ -380,6 +390,17 @@ export const bookingRequirementsV1 = z.object({
       catalog: z.array(addonOfferV1).optional(),
       /** Grouped catalog — used by cruises with per-port excursions etc. */
       groups: z.array(addonGroupV1).optional(),
+    })
+    .optional(),
+
+  // ── Ancillaries step ──────────────────────────────────────────
+  /**
+   * Live third-party offers, one group per ancillary kind. Absent when nothing
+   * is connected; see `showsAncillaries`.
+   */
+  ancillaries: z
+    .object({
+      groups: z.array(ancillaryOfferGroupV1).default([]),
     })
     .optional(),
 

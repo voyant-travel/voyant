@@ -424,6 +424,9 @@
       "@voyant-travel/catalog-contracts/adapter/schemas": [
         "../catalog-contracts/dist/adapter/schemas.d.ts"
       ],
+      "@voyant-travel/catalog-contracts/booking-engine/ancillary-contracts": [
+        "../catalog-contracts/dist/booking-engine/ancillary-contracts.d.ts"
+      ],
       "@voyant-travel/catalog-contracts/booking-engine/contracts": [
         "../catalog-contracts/dist/booking-engine/contracts.d.ts"
       ],
@@ -735,6 +738,9 @@
         "../commerce/dist/catalog-runtime-extension.d.ts"
       ],
       "@voyant-travel/commerce/checkout": ["../commerce/dist/checkout/index.d.ts"],
+      "@voyant-travel/commerce/checkout/ancillary-port": [
+        "../commerce/dist/checkout/ancillary-port.d.ts"
+      ],
       "@voyant-travel/commerce/promotion-boundary-job": [
         "../commerce/dist/promotions/job-boundary-scheduler.d.ts"
       ],
@@ -1286,6 +1292,22 @@
       "@voyant-travel/identity/tools": ["../identity/dist/mcp-runtime.d.ts"],
       "@voyant-travel/identity/validation": ["../identity/dist/validation.d.ts"],
       "@voyant-travel/identity/voyant": ["../identity/dist/voyant.d.ts"],
+      "@voyant-travel/insurance-contracts": ["../insurance-contracts/dist/index.d.ts"],
+      "@voyant-travel/insurance-contracts/application": [
+        "../insurance-contracts/dist/application.d.ts"
+      ],
+      "@voyant-travel/insurance-contracts/cover": ["../insurance-contracts/dist/cover.d.ts"],
+      "@voyant-travel/insurance-contracts/disclosure": [
+        "../insurance-contracts/dist/disclosure.d.ts"
+      ],
+      "@voyant-travel/insurance-contracts/document": ["../insurance-contracts/dist/document.d.ts"],
+      "@voyant-travel/insurance-contracts/eligibility": [
+        "../insurance-contracts/dist/eligibility.d.ts"
+      ],
+      "@voyant-travel/insurance-contracts/money": ["../insurance-contracts/dist/money.d.ts"],
+      "@voyant-travel/insurance-contracts/policy": ["../insurance-contracts/dist/policy.d.ts"],
+      "@voyant-travel/insurance-contracts/provider": ["../insurance-contracts/dist/provider.d.ts"],
+      "@voyant-travel/insurance-contracts/quote": ["../insurance-contracts/dist/quote.d.ts"],
       "@voyant-travel/inventory": ["../inventory/dist/index.d.ts"],
       "@voyant-travel/inventory-react": ["../inventory-react/dist/index.d.ts"],
       "@voyant-travel/inventory-react/admin": ["../inventory-react/dist/admin/index.d.ts"],
