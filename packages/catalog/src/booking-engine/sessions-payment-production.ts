@@ -25,7 +25,10 @@ import type { BookingSessionPaymentPorts } from "./sessions-service.js"
 
 export interface ProductionBookingSessionPaymentDeps {
   db: PostgresJsDatabase
-  inventory: Pick<CatalogInventoryRuntimeExtension, "loadProductPaymentPolicyContext">
+  inventory: Pick<
+    CatalogInventoryRuntimeExtension,
+    "loadProductPaymentPolicyContext" | "resolveSelectedDepartureDate"
+  >
   distribution: Pick<CatalogDistributionRuntimeExtension, "loadSupplierPaymentPolicy">
   settings: Pick<FinanceOperatorSettingsRuntime, "resolveOperatorDefaultPaymentPolicy">
   resolvePaymentAdapter?: () => PaymentAdapter | null | Promise<PaymentAdapter | null>
@@ -96,11 +99,19 @@ export function createProductionBookingSessionPaymentPorts(
       // same Commit transaction, by `establishBankTransfer` below.
       if (commit.checkoutIntent === "bank_transfer") return { kind: "not_required" }
 
-      const context = await deps.inventory.loadProductPaymentPolicyContext(
-        deps.db,
-        session.target.productId,
-        { locale: session.scope.locale },
-      )
+      // The policy cascade and the departure are two different questions about
+      // two different things — the listing, and what the shopper selected off
+      // it. They were one call until voyant#4740, which is how every deposit
+      // gate came to be measured from `products.startDate`.
+      const [context, departureDate] = await Promise.all([
+        deps.inventory.loadProductPaymentPolicyContext(deps.db, session.target.productId, {
+          locale: session.scope.locale,
+        }),
+        deps.inventory.resolveSelectedDepartureDate(deps.db, {
+          productId: session.target.productId,
+          ...selectedDeparture(session.statePayload),
+        }),
+      ])
       if (!context) throw new Error("booking_session_payment_product_not_found")
       const [supplierPolicy, operatorDefault] = await Promise.all([
         context.supplierId
@@ -118,7 +129,7 @@ export function createProductionBookingSessionPaymentPorts(
         {
           totalCents: quote.pricing.total,
           currency: quote.pricing.currency,
-          departureDate: context.departureDate,
+          departureDate,
           today: now,
         },
         resolved.policy,
@@ -209,7 +220,7 @@ export function createProductionBookingSessionPaymentPorts(
             },
             description: checkoutLineItem({
               productName: context.name,
-              departureDate: context.departureDate,
+              departureDate,
               locale: session.scope.locale,
             }),
             locale: session.scope.locale,
@@ -341,6 +352,26 @@ function customerReference(session: {
   if (personId) return personId
   if (session.actorKind !== "customer") return undefined
   return identifiedUserId(session.ownerPrincipalId) ?? undefined
+}
+
+/**
+ * Which departure the Session's selection names, as the shopper stated it.
+ *
+ * Both halves are carried because they are two different claims: a slot id
+ * names a row the operator publishes and is the authority on, while an inline
+ * `departureDate` is a bare date for a product that sells without slots. The
+ * resolver decides between them — this only reads the Session's own
+ * `configure` step, the same place quoting and the Commit read it from.
+ */
+function selectedDeparture(payload: Record<string, unknown>): {
+  departureSlotId: string | null
+  departureDate: string | null
+} {
+  const configure = record(payload.configure)
+  return {
+    departureSlotId: stringValue(configure?.departureSlotId),
+    departureDate: stringValue(configure?.departureDate),
+  }
 }
 
 function hasStaffPaymentSchedule(payload: Record<string, unknown>): boolean {

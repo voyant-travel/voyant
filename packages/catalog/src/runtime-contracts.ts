@@ -235,6 +235,12 @@ export interface CatalogInventoryRuntimeExtension {
    * shopper is being asked to pay for. `locale` selects the language `name` is
    * returned in — the checkout line item a hosted provider renders is built
    * from it, so it has to be the shopper's language, not the operator's.
+   *
+   * This is a policy cascade over the *listing*. It deliberately says nothing
+   * about when the shopper travels: the departure is a property of the
+   * selection, and reading it off the product row measured every payment
+   * policy from the wrong date (voyant#4740). Ask
+   * {@link resolveSelectedDepartureDate} instead.
    */
   loadProductPaymentPolicyContext(
     db: AnyDrizzleDb,
@@ -244,13 +250,35 @@ export interface CatalogInventoryRuntimeExtension {
     listingPolicy: PaymentPolicy | null
     categoryPolicy: PaymentPolicy | null
     supplierId: string | null
-    departureDate: string | null
     /**
      * The product's name in the requested locale, falling back to its base
      * `name` when that language has no translation.
      */
     name: string | null
   } | null>
+  /**
+   * The departure a Session's selection actually buys.
+   *
+   * A customer payment policy gates on the distance to departure, and so does
+   * the checkout line item the shopper reads, so both have to measure from the
+   * date the shopper picked — not from `products.startDate`, which for a
+   * slot-based product is the listing's own window and has nothing to do with
+   * the departure being sold (voyant#4740).
+   *
+   * Resolves the same way the Booking does: the selected slot's local date
+   * wins, then a date stated inline on the selection, then the product row as
+   * the last resort for a product that genuinely has no departures. A slot id
+   * that does not belong to this product is ignored — the Commit refuses that
+   * combination outright, so its date is not this product's departure.
+   */
+  resolveSelectedDepartureDate(
+    db: AnyDrizzleDb,
+    input: {
+      productId: string
+      departureSlotId?: string | null
+      departureDate?: string | null
+    },
+  ): Promise<string | null>
   buildSnapshotInput(
     db: AnyDrizzleDb,
     productId: Parameters<CatalogBookingSnapshotExecutionContext["buildSnapshotInput"]>[0],
