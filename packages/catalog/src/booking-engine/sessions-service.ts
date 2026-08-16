@@ -838,7 +838,7 @@ export function createBookingSessionModule(
       }
       return {
         kind: "session_created",
-        session: serializeSession(existing, await sessionRequirements(existing, at), access),
+        session: await serializeSession(existing, await sessionRequirements(existing, at), access),
       }
     }
     let statePayload: Record<string, unknown>
@@ -885,12 +885,12 @@ export function createBookingSessionModule(
       }
       return {
         kind: "session_created",
-        session: serializeSession(created, await sessionRequirements(created, at), access),
+        session: await serializeSession(created, await sessionRequirements(created, at), access),
       }
     }
     return {
       kind: "session_created",
-      session: serializeSession(session, await sessionRequirements(session, at), access),
+      session: await serializeSession(session, await sessionRequirements(session, at), access),
     }
   }
 
@@ -952,7 +952,7 @@ export function createBookingSessionModule(
         })
         return {
           kind: "session_resumed",
-          session: serializeSessionView(
+          session: await serializeSessionView(
             session,
             access,
             await sessionRequirements(session, at, tx),
@@ -1010,7 +1010,7 @@ export function createBookingSessionModule(
         await appendSessionAudit(repository, session, "adopt", access, at)
         const outcome: BookingSessionOutcomeV1 = {
           kind: "session_adopted",
-          session: serializeSessionView(
+          session: await serializeSessionView(
             session,
             access,
             await sessionRequirements(session, at, tx),
@@ -1070,7 +1070,7 @@ export function createBookingSessionModule(
         })
         const outcome: BookingSessionOutcomeV1 = {
           kind: "session_renewed",
-          session: serializeSession(session, undefined, access),
+          session: await serializeSession(session, undefined, access),
         }
         await repository.completeOperation({ id: claim.id, outcome })
         return outcome
@@ -1124,7 +1124,11 @@ export function createBookingSessionModule(
         await appendSessionAudit(repository, session, "update", access, at)
         const outcome: BookingSessionOutcomeV1 = {
           kind: "session_updated",
-          session: serializeSession(session, await sessionRequirements(session, at, tx), access),
+          session: await serializeSession(
+            session,
+            await sessionRequirements(session, at, tx),
+            access,
+          ),
         }
         await repository.completeOperation({ id: claim.id, outcome })
         return outcome
@@ -1190,7 +1194,7 @@ export function createBookingSessionModule(
           kind: "quote_created",
           // The compose call already derived requirements for this target;
           // publish those rather than re-deriving them for the record.
-          session: serializeSession(session, requirements, access),
+          session: await serializeSession(session, requirements, access),
           quote: serializeQuote(quote),
         }
         await repository.completeOperation({ id: claim.id, outcome })
@@ -1298,7 +1302,7 @@ export function createBookingSessionModule(
         })
         const outcome: BookingSessionOutcomeV1 = {
           kind: "hold_created",
-          session: serializeSession(session, undefined, access),
+          session: await serializeSession(session, undefined, access),
           hold: serializeHold(hold, access),
         }
         await repository.completeOperation({ id: claim.id, outcome })
@@ -1341,6 +1345,15 @@ export function createBookingSessionModule(
         const revisionRejected = rejectRevision(input.expectedRevision, session)
         if (revisionRejected) return completeAndReturn(repository, claim.id, revisionRejected)
 
+        // Abandon tears down exactly what a settlement needs — the Hold, the
+        // Quote, the `active` state — so it is refused for the same reason
+        // quoting and re-selecting are. The one path that used to be missing
+        // this guard was also the one a "give up and start over" button calls.
+        const abandoningWhilePaying = await rejectWhilePaymentInFlight(session)
+        if (abandoningWhilePaying) {
+          return completeAndReturn(repository, claim.id, abandoningWhilePaying)
+        }
+
         session.state = "abandoned"
         session.revision += 1
         session.updatedAt = at
@@ -1358,7 +1371,7 @@ export function createBookingSessionModule(
         await appendSessionAudit(repository, session, "abandon", access, at)
         const outcome: BookingSessionOutcomeV1 = {
           kind: "session_abandoned",
-          session: serializeSession(session, undefined, access),
+          session: await serializeSession(session, undefined, access),
         }
         await repository.completeOperation({ id: claim.id, outcome })
         return outcome
@@ -1946,8 +1959,12 @@ export function createBookingSessionModule(
         await repository.withSessionTransaction(candidate.id, async (tx) => {
           const session = await repository.getSession(candidate.id)
           if (session?.state !== "active" || session.expiresAt > at) return
-          await expireSession(repository, options.ports, session, access, at, tx)
-          expired += 1
+          // Not `expired += 1` unconditionally: a Session holding settled money
+          // is skipped, and a sweep that counted it would report work it did
+          // not do — and would keep reporting it on every pass.
+          if (await expireSession(repository, options.ports, session, access, at, tx)) {
+            expired += 1
+          }
         })
       }
       return { expired }
@@ -2039,7 +2056,13 @@ async function consumeCommittedSources(input: {
         currentSession?.state === "consumed" ? "consumed" : "expired",
       )
     }
-    if (!persistedSourcedCommit && currentSession.expiresAt <= currentAt) {
+    // Not for a settlement, for the same reason the revision is not: the
+    // Session's expiry is a shopping clock, and a payment that is already
+    // captured is not shopping. Refusing here answered `session_expired` to
+    // every retry of a Commit whose money had landed, which is the state
+    // voyant#4733 was reported from — money captured, no Booking, and no call
+    // that could produce one.
+    if (!persistedSourcedCommit && !settling && currentSession.expiresAt <= currentAt) {
       throw new CommitSessionStateError("expired")
     }
     const currentQuote = settling
@@ -2230,7 +2253,9 @@ async function consumeCompositeCommittedSources(input: {
         currentSession?.state === "consumed" ? "consumed" : "expired",
       )
     }
-    if (!continuing && currentSession.expiresAt <= currentAt) {
+    // Exempt for a settlement, as on the single-Booking path above: the
+    // shopping clock says nothing about money a processor already has.
+    if (!continuing && !settling && currentSession.expiresAt <= currentAt) {
       throw new CommitSessionStateError("expired")
     }
     const currentQuote = settling
@@ -2441,6 +2466,35 @@ async function expireSessionInSessionTransaction(
   })
 }
 
+/**
+ * Retire a lapsed Session — **unless its money is with a processor.**
+ *
+ * A Booking Session's expiry is a shopping clock: it exists to give a seat
+ * back when nobody is coming for it. Once a payment is settled nobody is
+ * shopping, and the clock is measuring the wrong thing. Expiring anyway
+ * releases the Hold, expires the Quote and moves the Session out of `active`,
+ * which is every input the settlement Commit needs — so the settlement that
+ * arrives next answers `session_expired`, and so does every retry after it.
+ * The money stays captured and there is no sequence of calls that produces a
+ * booking (voyant#4733).
+ *
+ * The window this closes was minutes wide, not hours: the payment session's
+ * own `expiresAt` is the earliest of the Session, Quote and Hold, so a
+ * settlement that failed once for any reason — a validation refusal, a
+ * transient error, a slow processor callback — usually had less than the
+ * Session's remaining TTL to succeed on retry.
+ *
+ * One guard rather than one per call site, because every path that expires a
+ * Session has the same reason not to: the commit preflight, the sweep, and the
+ * lapsed-Session preamble on quote/update/hold all reach here. `hasInFlight`
+ * is the same predicate that already freezes those operations, and its
+ * handoff arm lapses on the Session's own clock, so only **settled** money
+ * ever holds a Session open past its expiry — a checkout page the shopper
+ * abandoned does not.
+ *
+ * Returns whether the Session was actually retired, so a sweep counts what it
+ * did rather than what it looked at.
+ */
 async function expireSession(
   repository: BookingSessionRepository,
   ports: BookingSessionModulePorts,
@@ -2448,7 +2502,8 @@ async function expireSession(
   access: BookingSessionAccessContext,
   now: Date,
   tx: unknown,
-): Promise<void> {
+): Promise<boolean> {
+  if (await ports.payments?.hasInFlight?.({ bookingSessionId: session.id })) return false
   await releaseLiveHolds(repository, ports, session, access, now, tx)
   await ports.payments?.expirePending({ tx, bookingSessionId: session.id, at: now })
   for (const quote of await repository.listActiveQuotes(session.id)) {
@@ -2460,6 +2515,7 @@ async function expireSession(
   session.updatedAt = now
   await repository.saveSession(session)
   await appendSessionAudit(repository, session, "expire", access, now)
+  return true
 }
 
 async function persistCommitFailureState(
@@ -2607,6 +2663,7 @@ function invalidSelectionOutcome(error: unknown): BookingSessionOutcomeV1 | null
       kind: "invalid_selection",
       reason: error.reason,
       ...(error.path ? { path: error.path } : {}),
+      ...(error.maxLength ? { maxLength: error.maxLength } : {}),
     },
   }
 }
@@ -2763,11 +2820,11 @@ function resolveSessionScope(scope: BookingSessionScopeV1 | undefined): BookingS
   }
 }
 
-function serializeSession(
+async function serializeSession(
   session: BookingSessionInternalRecord,
   requirements?: BookingRequirementsV1,
   access?: BookingSessionAccessContext,
-): BookingSessionRecordV1 {
+): Promise<BookingSessionRecordV1> {
   const redactComposite = session.target.kind === "trip_snapshot" && access?.actorKind !== "staff"
   return {
     id: session.id,
@@ -2777,19 +2834,21 @@ function serializeSession(
     state: session.state,
     revision: session.revision,
     scope: session.scope,
-    ...(requirements ? { requirements } : {}),
+    ...(requirements
+      ? { requirements, requirementsFingerprint: await stableFingerprint(requirements) }
+      : {}),
     expiresAt: session.expiresAt.toISOString(),
     createdAt: session.createdAt.toISOString(),
     updatedAt: session.updatedAt.toISOString(),
   }
 }
 
-function serializeSessionView(
+async function serializeSessionView(
   session: BookingSessionInternalRecord,
   access: BookingSessionAccessContext,
   requirements?: BookingRequirementsV1,
-): BookingSessionViewV1 {
-  const record = serializeSession(session, requirements, access)
+): Promise<BookingSessionViewV1> {
+  const record = await serializeSession(session, requirements, access)
   if (access.actorKind === "staff") {
     return { ...record, redaction: "selection_omitted" }
   }
