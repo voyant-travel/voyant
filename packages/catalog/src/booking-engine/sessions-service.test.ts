@@ -540,6 +540,48 @@ describe("Booking Session v1 owned tracer", () => {
     ).toMatchObject({ actorKind: "system", metadata: { previousHoldId: hold.id } })
   })
 
+  it("re-takes the capacity for an aggregate target too, not only a bare Product", async () => {
+    // An aggregate target is not in `holdRequired` — plenty of Trips carry no
+    // owned capacity at all — but one that does is refused `hold_failure:
+    // missing` by the composite handler when no Hold reaches it. Keying the
+    // retake off `holdRequired` alone skipped it for exactly those Bookings,
+    // and the refusal is now permanent, so the captured payment would have
+    // dead-lettered on the first attempt instead of recovering.
+    const payment = createPaymentHarness()
+    const committedWith: Array<string | undefined> = []
+    const harness = createHarness({}, payment.ports, async (input) => {
+      committedWith.push(input.hold?.id)
+      if (!input.hold) {
+        return { kind: "hold_failure", nextAction: "request_new_hold", reason: "missing" }
+      }
+      const bookings = [
+        { componentId: "trcp_owned", bookingId: "book_owned", allocationIds: ["ball_owned"] },
+      ]
+      await input.consumeSources({}, bookings)
+      return { kind: "committed", bookings }
+    })
+    const { session, quote, hold } = await createCompositeQuoteAndHold(harness)
+    payment.established = { quoteId: quote.id, holdId: hold.id }
+
+    // Released by a re-quote, which reads back as `null` rather than
+    // `"expired"` — the shape the first cut of this missed.
+    await harness.module.quoteSession(
+      session.id,
+      { expectedRevision: session.revision, idempotencyKey: "requote_composite" },
+      ANONYMOUS_ACCESS,
+    )
+    expect(harness.repository.holds.get(hold.id)?.state).toBe("released")
+
+    const settled = await harness.module.commitPaidSession({
+      bookingSessionId: session.id,
+      paymentSessionId: "payment_session_1",
+    })
+
+    expect(settled.bookingId).toBe("book_owned")
+    const reestablished = [...harness.repository.holds.values()].find((row) => row.id !== hold.id)
+    expect(committedWith).toEqual([reestablished?.id])
+  })
+
   it("does not report a seat as gone when the shopper's own newer Hold is on it", async () => {
     // The same client that re-quotes mid-checkout may re-hold too, leaving a
     // live Hold bound to a Quote the money was never collected against. It is

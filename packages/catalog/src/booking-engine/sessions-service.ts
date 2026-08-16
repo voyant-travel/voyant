@@ -1498,6 +1498,18 @@ export function createBookingSessionModule(
           : null
         const holdRequired =
           session.target.kind === "product" || session.target.kind === "owned_entity"
+        // A Hold this Commit was meant to have and no longer does. Two ways to
+        // be meant to have one: the target always needs it, or the request
+        // named a Hold that no live loader would accept.
+        //
+        // The second half is not redundant. An aggregate target is not in
+        // `holdRequired` — plenty of Trips carry no owned capacity — but one
+        // that does carry it is refused `hold_failure: missing` by the
+        // composite handler, and a `released` Hold reads back as `null` rather
+        // than `"expired"`. Keying only off `holdRequired` therefore skipped
+        // the retake for exactly the composite Bookings that needed it.
+        const settlementHoldLost =
+          hold === "expired" || (!hold && (input.holdId !== undefined || holdRequired))
         // A settlement whose Hold is gone asks inventory for the capacity again
         // rather than refusing on the strength of a missing token.
         //
@@ -1513,7 +1525,7 @@ export function createBookingSessionModule(
         // Not on a durable continuation: there the supplier is holding the
         // inventory and the Session's Hold is not what the Commit rests on, so
         // taking local capacity would reserve a second seat for one booking.
-        if (settling && !durableContinuation && (hold === "expired" || (!hold && holdRequired))) {
+        if (settling && !durableContinuation && settlementHoldLost) {
           const reheld = await reestablishSettlementHold({
             repository,
             ports: options.ports,
