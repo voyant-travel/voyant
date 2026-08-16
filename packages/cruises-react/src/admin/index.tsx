@@ -5,6 +5,7 @@ import {
   defineAdminExtension,
   type NavItem,
   type SelectedAdminExtensionFactoryContext,
+  withAdminRouteMessagesProvider,
 } from "@voyant-travel/admin"
 import { Ship } from "lucide-react"
 
@@ -101,8 +102,15 @@ export function createCruisesAdminExtension(
 export function createSelectedCruisesAdminExtension(
   { navMessages }: SelectedAdminExtensionFactoryContext = { navMessages: {} },
 ): AdminExtension {
-  return createCruisesAdminExtension({
-    labels: { ships: navMessages.catalogShips ?? "Ships" },
-    icon: Ship,
-  })
+  // Without the provider the pages fall back to `useCruisesUiMessagesOrDefault`'s
+  // hard-coded English, so a Romanian operator would get a localized nav label
+  // and an English page behind it — the ro copy would ship and never render.
+  return withAdminRouteMessagesProvider(
+    createCruisesAdminExtension({
+      labels: { ships: navMessages.catalogShips ?? "Ships" },
+      icon: Ship,
+    }),
+    () =>
+      import("../i18n/index.js").then((module) => ({ default: module.CruisesUiMessagesProvider })),
+  )
 }

@@ -68,6 +68,7 @@ export type CruisesUiMessages = {
     searchLabel: string
     resultCount: string
     resultCountOne: string
+    resultCountTruncated: string
     empty: string
     emptyFiltered: string
     loadError: string

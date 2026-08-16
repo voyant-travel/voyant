@@ -11,11 +11,14 @@ import { ShipDetailPage } from "./ship-detail-page.js"
 import { ShipsIndexPage } from "./ships-index-page.js"
 
 /**
- * How many ships one page of the browse list asks for. The list route caps
- * `limit` at 200; a fleet is small enough that one page is the whole thing
- * for every operator we have, so paging controls would be dead chrome.
+ * How many ships one page of the browse list asks for.
+ *
+ * `shipListQuerySchema` caps `limit` at 100 — the cruises route has its own
+ * bound, narrower than the shared `paginationSchema`. Asking for more does not
+ * degrade to the cap: query validation rejects the request outright, so the
+ * whole surface renders its error state.
  */
-const SHIPS_PAGE_SIZE = 200
+const SHIPS_PAGE_SIZE = 100
 
 export interface ShipsIndexHostProps {
   /** Current query from the route's URL state. */
@@ -41,6 +44,7 @@ export function ShipsIndexHost({ query = "", onQueryChange, onOpenShip }: ShipsI
     <ShipsIndexPage
       ships={shipsQuery.data?.data ?? []}
       total={shipsQuery.data?.total ?? 0}
+      pageSize={SHIPS_PAGE_SIZE}
       isLoading={shipsQuery.isLoading}
       isError={shipsQuery.isError}
       query={query}
