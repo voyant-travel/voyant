@@ -290,6 +290,34 @@ is read as no tier in front of the origin, and a database-backed response cache
 with no declared edge tier is reported at startup rather than left for a route
 author to discover from a header that did not behave as written.
 
+### 13. The staff surface states a policy too — revalidation, not reuse
+
+Rules 11 and 12 are about what caches *in front of* the origin. The staff
+surface has none, by design: `/v1/admin/*` is cookie-bearing and personalized,
+so no shared cache may store it. That is not a reason to say nothing.
+
+An admin read with no `Cache-Control` at all is not merely uncached at the
+edge — it is unusable by the *browser*, so every repeat navigation and every
+reload re-downloads a body the client already holds. `adminResponseRevalidation`
+(`@voyant-travel/hono`) stamps safe JSON reads of that surface with an `ETag`
+and `Cache-Control: private, no-cache`, and answers a matching `If-None-Match`
+with a bodyless 304.
+
+`no-cache` is the operative word, and it is not `no-store`: the browser keeps
+the payload and *asks* before reusing it. A repeat read therefore costs one
+round trip and an empty 304 instead of a full transfer, with no window in which
+a staff member is shown a record they have already changed. Skipping the round
+trip as well means `private, max-age=N`, which is a per-route judgement about
+how stale that particular read may be — the dashboard aggregates declare
+`private, max-age=30` for exactly that reason. A route that sets its own
+`Cache-Control` is never restamped, so that opt-in stays with the route.
+
+Rule:
+
+Every admin GET states its cache policy. The default is revalidation; a
+freshness window is a route's decision to make explicitly, and never a shared
+cache's.
+
 ## Practical Checklist
 
 When adding caching in Voyant:
