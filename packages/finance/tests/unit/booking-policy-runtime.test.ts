@@ -40,7 +40,28 @@ function makeContainer(readers: Record<string, unknown>) {
 describe("resolveBookingPaymentPolicyCascade", () => {
   it("is absent when no booking-schedule extension is composed", async () => {
     expect(await resolveBookingPaymentPolicyCascade(undefined, {})).toBeNull()
-    expect(await resolveBookingPaymentPolicyCascade({ has: () => false } as never, {})).toBeNull()
+    expect(
+      await resolveBookingPaymentPolicyCascade(
+        { has: () => false, resolve: () => undefined } as never,
+        {},
+      ),
+    ).toBeNull()
+  })
+
+  it("survives a container slot holding something that is not a container", async () => {
+    // `c.var.container` is whatever the host put there. A test harness leaves a
+    // plain object in that slot, and calling `.has()` on it threw — every
+    // default-plan request 500'd on a deployment without a real container.
+    expect(await resolveBookingPaymentPolicyCascade({} as never, {})).toBeNull()
+    expect(await resolveBookingPaymentPolicyCascade({ has: "nope" } as never, {})).toBeNull()
+  })
+
+  it("ignores a registration that cannot answer the whole cascade", async () => {
+    const partial = makeContainer({
+      resolveOperatorDefaultPaymentPolicy: async () => noDepositPolicy,
+    })
+
+    expect(await resolveBookingPaymentPolicyCascade(partial, {})).toBeNull()
   })
 
   it("hands back the deployment's injected readers", async () => {

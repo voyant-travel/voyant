@@ -32,14 +32,36 @@ export async function resolveBookingPaymentPolicyCascade(
   container: ModuleContainer | undefined,
   bindings: unknown,
 ): Promise<BookingPaymentPolicyCascadeReaders | null> {
-  if (!container?.has(BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY)) return null
+  // `c.var.container` is whatever the host put there. A test harness or a
+  // partially-composed app can leave a plain object in that slot, so the shape
+  // is checked rather than assumed — a payment plan must not 500 because the
+  // deployment declined to register a container.
+  if (typeof container?.has !== "function" || typeof container.resolve !== "function") return null
 
   try {
+    if (!container.has(BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY)) return null
     const runtime = container.resolve<BookingScheduleSubscriberRuntime>(
       BOOKING_SCHEDULE_SUBSCRIBER_RUNTIME_KEY,
     )
-    return await runtime.resolveRoutesOptions(bindings)
+    const readers = await runtime?.resolveRoutesOptions?.(bindings)
+    return isCascadeReaders(readers) ? readers : null
   } catch {
     return null
   }
+}
+
+/**
+ * A registration only counts when it can answer the whole cascade. Half a
+ * cascade would resolve a policy from whichever layers happened to be present,
+ * which is a quieter version of the bug this replaced.
+ */
+function isCascadeReaders(value: unknown): value is BookingPaymentPolicyCascadeReaders {
+  if (!value || typeof value !== "object") return false
+  const readers = value as Partial<BookingPaymentPolicyCascadeReaders>
+  return (
+    typeof readers.resolveOperatorDefaultPaymentPolicy === "function" &&
+    typeof readers.resolveSupplierPolicy === "function" &&
+    typeof readers.resolveCategoryPolicy === "function" &&
+    typeof readers.resolveListingPolicy === "function"
+  )
 }
