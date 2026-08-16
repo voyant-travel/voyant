@@ -9,7 +9,6 @@ import { travelCreditsService } from "./service-travel-credits.js"
 
 export const BOOKING_AMENDMENT_FINANCE_POLICY_VERSION = "booking-amendment-finance-v1"
 
-
 export function createBookingAmendmentFinanceRuntime(
   options: { resolveBookingTaxSettings?: ResolveBookingTaxSettings } = {},
 ): Pick<BookingsFinanceRuntime, "quoteBookingAmendment" | "recordBookingAmendment"> {
