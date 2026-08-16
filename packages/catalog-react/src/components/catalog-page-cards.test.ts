@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest"
 
 import { catalogUiEn } from "../i18n/en.js"
-import { makeProductCard } from "./catalog-page-cards.js"
+import { makeCruiseCard, makeProductCard } from "./catalog-page-cards.js"
 
 const messages = catalogUiEn.catalogPage
 const card = makeProductCard((id) => String(id), messages, "en-GB")
@@ -26,15 +26,34 @@ describe("product card departure note", () => {
   it("renders an instant in the departure's declared zone, not UTC", () => {
     // 21:00Z on the 25th is already the 26th in Bucharest.
     const note = card.footerNote?.({
-      nextDepartureDate: "2026-09-25T21:00:00Z",
+      nextDepartureAt: "2026-09-25T21:00:00Z",
       departureTimezone: "Europe/Bucharest",
     })
     expect(note).toContain("26")
   })
 
   it("falls back to UTC for an instant when the document declares no zone", () => {
-    const note = card.footerNote?.({ nextDepartureDate: "2026-09-25T21:00:00Z" })
+    const note = card.footerNote?.({ nextDepartureAt: "2026-09-25T21:00:00Z" })
     expect(note).toContain("25")
+  })
+
+  it("prefers the instant over the calendar date when the document carries both", () => {
+    // A real product document carries both frames. The instant is the one with
+    // a time of day, so it wins.
+    const note = card.footerNote?.({
+      nextDepartureAt: "2026-09-25T21:00:00Z",
+      nextDepartureDate: "2026-09-26",
+      departureTimezone: "Europe/Bucharest",
+    })
+    expect(note).toMatch(/00:00|\d{2}:\d{2}/)
+  })
+
+  it("never reads a time out of the bare-date field, whatever it contains", () => {
+    // `…Date` is bare in every document by convention (#4116). Treating an
+    // instant-shaped value there as an instant is what let the hour and the
+    // tooltip pass their tests while doing nothing in production.
+    const note = card.footerNote?.({ nextDepartureDate: "2026-09-25T21:00:00Z" })
+    expect(note).not.toMatch(/\d{2}:\d{2}/)
   })
 
   it("still renders when the document carries an unusable zone", () => {
@@ -56,7 +75,7 @@ describe("product card departure note", () => {
 
   it("shows the time of day for an instant, which is what distinguishes it", () => {
     const note = card.footerNote?.({
-      nextDepartureDate: "2026-09-25T09:30:00Z",
+      nextDepartureAt: "2026-09-25T09:30:00Z",
       departureTimezone: "UTC",
     })
     expect(note).toMatch(/09:30/)
@@ -118,7 +137,7 @@ describe("product card departure tooltip", () => {
   it("gives both frames for an instant in a zone other than the reader's", () => {
     const away = viewerZone === "Pacific/Auckland" ? "America/Denver" : "Pacific/Auckland"
     const tooltip = card.footerNoteTooltip?.({
-      nextDepartureDate: "2026-09-25T09:30:00Z",
+      nextDepartureAt: "2026-09-25T09:30:00Z",
       departureTimezone: away,
     })
     const lines = tooltip?.split("\n") ?? []
@@ -139,9 +158,31 @@ describe("product card departure tooltip", () => {
   it("offers nothing when the reader is already in the departure's zone", () => {
     expect(
       card.footerNoteTooltip?.({
-        nextDepartureDate: "2026-09-25T09:30:00Z",
+        nextDepartureAt: "2026-09-25T09:30:00Z",
         departureTimezone: viewerZone,
       }),
     ).toBeNull()
+  })
+})
+
+/**
+ * Cruises project `earliestDepartureCached` as a `date` column — a bare
+ * calendar day with no clock reading. A sailing date has no "their time vs
+ * your time" to disambiguate, so the card must not offer one.
+ */
+describe("cruise card departures", () => {
+  const cruise = makeCruiseCard((id) => String(id), messages, "en-GB")
+
+  it("declares no tooltip, because a sailing date carries no time", () => {
+    expect(cruise.footerNoteTooltip).toBeUndefined()
+  })
+
+  it("renders the sailing date without inventing a time of day", () => {
+    const note = cruise.footerNote?.({
+      earliestDepartureCached: "2027-03-14",
+      departureCount: 4,
+    })
+    expect(note).not.toMatch(/\d{2}:\d{2}/)
+    expect(note).toContain("4 departures")
   })
 })

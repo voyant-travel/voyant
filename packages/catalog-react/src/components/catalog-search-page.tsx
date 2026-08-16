@@ -105,6 +105,14 @@ export interface CatalogSearchTab {
    */
   filterFields?: CatalogFilterField[]
   /**
+   * Facet fields the surface pins for everyone. They are already absent from
+   * `filterFields`, but they are still present in `filters` — the surface has
+   * to send them with the search — so selection accounting has to be told to
+   * ignore them. Otherwise a pristine family page reports "Clear all" for a
+   * choice the reader never made and could not undo.
+   */
+  hiddenFilterFields?: string[]
+  /**
    * Optional empty-state ReactNode — shown when the tab has no hits for
    * the current query. Defaults to a simple "no results" message.
    */

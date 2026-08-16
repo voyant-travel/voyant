@@ -302,6 +302,9 @@ export function CatalogPage({
     ...tab,
     onOpenDetail: detailOpenerFor(tab.vertical),
     filterFields: tab.filterFields?.filter((field) => !hidden.has(field.field)),
+    // Dropped from the rail above, but still sent with the search — the panel
+    // needs the list so it does not count them as the reader's selections.
+    hiddenFilterFields,
   }))
   const visibleTabs = vertical
     ? tabsWithDetail.filter((tab) => tab.id === vertical || tab.vertical === vertical)

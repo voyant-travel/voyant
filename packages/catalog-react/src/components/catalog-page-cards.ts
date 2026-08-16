@@ -18,8 +18,13 @@ export function makeProductCard(
     priceCurrencyField: ["priceFromCurrency", "sellCurrency"],
     subtitle: (fields) => productSubtitle(fields, locale),
     meta: (fields) => durationMeta(fields, messages),
-    footerNote: (fields) => departureNote(fields, messages, locale),
-    footerNoteTooltip: (fields) => departureNoteTooltip(fields, messages, locale),
+    footerNote: (fields) =>
+      departureNote(fields, messages, locale, {
+        instantField: "nextDepartureAt",
+        dateField: "nextDepartureDate",
+      }),
+    footerNoteTooltip: (fields) =>
+      departureNoteTooltip(fields, messages, locale, { instantField: "nextDepartureAt" }),
     // Transport + board basis lead the chips, then categories/themes.
     chips: (fields) =>
       [
@@ -98,8 +103,6 @@ export function makeCruiseCard(
         countField: "departureCount",
         withYear: true,
       }),
-    footerNoteTooltip: (fields) =>
-      departureNoteTooltip(fields, messages, locale, { dateField: "earliestDepartureCached" }),
     chips: (fields) =>
       [...asStringArray(fields.themes), ...asStringArray(fields.regions)].slice(0, 3),
     badges: (fields) => supplierBadge(fields, "lineSupplierId", formatSupplier),
@@ -211,13 +214,50 @@ function scheduleCountLabel(
   return count === 1 ? one[term] : many[term].replace("{count}", String(count))
 }
 
+/**
+ * Which document field carries the next departure, in which frame.
+ *
+ * Catalog documents name the frame in the field's suffix (#4116) and never mix
+ * them: `…At` is an ISO instant, `…Date` is a bare `YYYY-MM-DD` in
+ * `departureTimezone`. A card must therefore ask for the instant by name — it
+ * cannot sniff the frame off one field, because the `…Date` field is bare in
+ * every document and would report "no time of day" for a timed product that
+ * has one.
+ *
+ * Cruises project only a bare `earliestDepartureCached` (a `date` column), so
+ * they pass no `instantField` and correctly get no time and no tooltip.
+ */
+interface DepartureFields {
+  /** Field carrying an ISO instant, when the vertical projects one. */
+  instantField?: string
+  /** Field carrying a bare local calendar date. */
+  dateField?: string
+  countField?: string
+  withYear?: boolean
+}
+
+/** The next departure as an instant, or null when the document has only a date. */
+function departureInstant(
+  fields: Record<string, unknown>,
+  opts: DepartureFields,
+): { iso: string; date: Date } | null {
+  if (!opts.instantField) return null
+  const raw = asString(fields[opts.instantField])
+  // A bare date sitting in an `…At` field is a malformed document, not an
+  // instant to invent midnight for.
+  if (!raw || isBareCalendarDate(raw)) return null
+  const date = new Date(raw)
+  return Number.isNaN(date.getTime()) ? null : { iso: raw, date }
+}
+
 function departureNote(
   fields: Record<string, unknown>,
   messages: CatalogPageMessages,
   locale: string,
-  opts: { dateField?: string; countField?: string; withYear?: boolean } = {},
+  opts: DepartureFields = {},
 ): string | null {
-  const next = asString(fields[opts.dateField ?? "nextDepartureDate"])
+  const instant = departureInstant(fields, opts)
+  const next = instant?.iso ?? asString(fields[opts.dateField ?? "nextDepartureDate"])
   const count = asNumber(fields[opts.countField ?? "availableDeparturesCount"])
   // The frame the document declares its local dates in; only consulted when
   // the resolved field is an instant rather than a bare calendar date.
@@ -227,7 +267,7 @@ function departureNote(
     parts.push(
       messages.card.nextDeparture.replace(
         "{date}",
-        formatShortDate(next, locale, opts.withYear, timeZone),
+        formatShortDate(next, locale, opts.withYear, timeZone, instant != null),
       ),
     )
   if (count != null && count > 0) {
@@ -248,14 +288,13 @@ function departureNoteTooltip(
   fields: Record<string, unknown>,
   messages: CatalogPageMessages,
   locale: string,
-  opts: { dateField?: string } = {},
+  opts: DepartureFields = {},
 ): string | null {
-  const next = asString(fields[opts.dateField ?? "nextDepartureDate"])
-  if (!next || isBareCalendarDate(next)) return null
-  const date = new Date(next)
-  if (Number.isNaN(date.getTime())) return null
+  const instant = departureInstant(fields, opts)
+  if (!instant) return null
+  const { date } = instant
   const venueZone = asString(fields.departureTimezone)
-  const viewerZone = resolveViewerTimeZone()
+  const viewerZone = resolveViewerTimeZone(locale)
   // Nothing to compare against: the document declares no zone, so the card
   // already showed the only reading there is.
   if (!venueZone) return null
@@ -274,9 +313,19 @@ function isBareCalendarDate(iso: string): boolean {
   return /^\d{4}-\d{2}-\d{2}$/.test(iso)
 }
 
-function resolveViewerTimeZone(): string {
+/**
+ * The reader's own zone, as the runtime reports it.
+ *
+ * `resolvedOptions().timeZone` is a property of the environment, not of the
+ * locale, so the locale here does not change the answer — it is passed because
+ * a bare `Intl.DateTimeFormat()` inherits whatever ambient locale the process
+ * happens to have, and this repo does not allow that anywhere (see
+ * `check-ui-hardcoded-strings`). Binding it explicitly keeps the one rule with
+ * no exceptions to argue about.
+ */
+function resolveViewerTimeZone(locale: string): string {
   try {
-    return Intl.DateTimeFormat().resolvedOptions().timeZone || "UTC"
+    return new Intl.DateTimeFormat(locale).resolvedOptions().timeZone || "UTC"
   } catch {
     return "UTC"
   }
@@ -323,22 +372,27 @@ function supplierBadge(
  * An instant also carries a time of day, and for a timed product that time is
  * the distinguishing fact — a 09:00 and an 18:00 sailing are different
  * departures. It is shown; a bare date has no clock reading to show.
+ *
+ * Which frame this is comes from **which field the value was read out of**, not
+ * from the shape of the string. Sniffing would mean a malformed document — an
+ * instant sitting in a `…Date` field — silently gets a time of day the frame
+ * does not promise, in a zone nobody declared.
  */
 function formatShortDate(
   iso: string,
   locale: string,
   withYear = false,
   timeZone?: string | null,
+  isInstant = false,
 ): string {
   const date = new Date(iso)
   if (Number.isNaN(date.getTime())) return iso
-  const isBareDate = isBareCalendarDate(iso)
-  const resolvedZone = isBareDate ? "UTC" : (timeZone ?? "UTC")
+  const resolvedZone = isInstant ? (timeZone ?? "UTC") : "UTC"
   const options: Intl.DateTimeFormatOptions = {
     day: "numeric",
     month: "short",
     ...(withYear ? { year: "numeric" } : {}),
-    ...(isBareDate ? {} : { hour: "2-digit", minute: "2-digit" }),
+    ...(isInstant ? { hour: "2-digit", minute: "2-digit" } : {}),
   }
   try {
     return new Intl.DateTimeFormat(locale, { ...options, timeZone: resolvedZone }).format(date)
