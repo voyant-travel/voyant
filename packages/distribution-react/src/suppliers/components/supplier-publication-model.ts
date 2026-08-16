@@ -12,11 +12,18 @@
 /** A publication decision as the distribution service records it. */
 export type PublicationDecision = "include" | "exclude"
 
+/**
+ * A channel's lifecycle status, as `channelRecordSchema` records it. Modelled
+ * on the real enum rather than a boolean: only `active` publishes, and the
+ * three non-publishing values are not interchangeable to an operator reading
+ * the page.
+ */
+export type ChannelStatus = "active" | "inactive" | "pending" | "archived"
+
 export interface ChannelSummary {
   id: string
   name: string
-  /** An inactive channel publishes nothing, whatever its rules say. */
-  active?: boolean
+  status: ChannelStatus
 }
 
 export interface SupplierPublicationRule {
@@ -71,10 +78,10 @@ function resolveState(
   channel: ChannelSummary,
   rule: SupplierPublicationRule | null,
 ): SupplierChannelState {
-  // An inactive channel publishes nothing at all, so reporting a supplier as
-  // "included" there would be a lie the resolver never told — it answers
-  // `channel_inactive` before it ever looks at a rule.
-  if (channel.active === false) return "channel_inactive"
+  // A channel that is not active publishes nothing at all, so reporting a
+  // supplier as "included" there would be a lie the resolver never told — it
+  // answers `channel_inactive` before it ever looks at a rule.
+  if (channel.status !== "active") return "channel_inactive"
   if (!rule) return "undecided"
   return rule.decision === "include" ? "included" : "excluded"
 }

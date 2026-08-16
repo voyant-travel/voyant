@@ -2,7 +2,13 @@
 
 import { Badge } from "@voyant-travel/ui/components/badge"
 import { Button } from "@voyant-travel/ui/components/button"
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@voyant-travel/ui/components/card"
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@voyant-travel/ui/components/card"
 
 import { useChannels } from "../../hooks/use-channels.js"
 import { usePublicationMutation, useSupplierPublications } from "../../hooks/use-publications.js"
@@ -120,13 +126,7 @@ function ChannelRow({
               {row.state === "included" ? messages.hide : messages.publish}
             </Button>
             {isDecided(row) && (
-              <Button
-                type="button"
-                size="sm"
-                variant="ghost"
-                disabled={disabled}
-                onClick={onClear}
-              >
+              <Button type="button" size="sm" variant="ghost" disabled={disabled} onClick={onClear}>
                 {messages.clear}
               </Button>
             )}

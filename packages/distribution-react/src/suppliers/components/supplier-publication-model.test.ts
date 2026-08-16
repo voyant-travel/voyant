@@ -8,9 +8,9 @@ import {
   supplierChannelRows,
 } from "./supplier-publication-model.js"
 
-const website: ChannelSummary = { id: "chan_web", name: "Website", active: true }
-const agents: ChannelSummary = { id: "chan_agents", name: "Agents", active: true }
-const retired: ChannelSummary = { id: "chan_old", name: "Retired", active: false }
+const website: ChannelSummary = { id: "chan_web", name: "Website", status: "active" }
+const agents: ChannelSummary = { id: "chan_agents", name: "Agents", status: "active" }
+const retired: ChannelSummary = { id: "chan_old", name: "Retired", status: "archived" }
 
 const rule = (over: Partial<SupplierPublicationRule> = {}): SupplierPublicationRule => ({
   id: "rule_1",
@@ -52,7 +52,23 @@ describe("supplier publication per channel", () => {
     expect(row?.state).toBe("undecided")
   })
 
-  it("reports an inactive channel as inactive whatever the rule says", () => {
+  it.each([
+    "inactive",
+    "pending",
+    "archived",
+  ] as const)("reports a %s channel as inactive whatever the rule says", (status) => {
+    // Only `active` publishes. Modelling this as a boolean read of a field
+    // that does not exist on `channelRecordSchema` left every real channel
+    // undefined, so this state never fired against live data.
+    const [row] = supplierChannelRows(
+      [{ id: "chan_x", name: "X", status }],
+      [rule({ channelId: "chan_x", decision: "include" })],
+      "sup_1",
+    )
+    expect(row?.state).toBe("channel_inactive")
+  })
+
+  it("reports an archived channel as inactive whatever the rule says", () => {
     // The resolver answers `channel_inactive` before it looks at a rule, so
     // showing "included" here would be a state the backend never reports.
     const [row] = supplierChannelRows(
