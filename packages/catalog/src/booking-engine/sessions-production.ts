@@ -22,7 +22,10 @@ import {
   type BookingSelectionBillingFieldKey,
   type BookingSelectionTravelerFieldKey,
 } from "@voyant-travel/catalog-contracts/booking-engine/selection-contracts"
-import { bookingSessionAudienceForActorV1 } from "@voyant-travel/catalog-contracts/booking-engine/session-contracts"
+import {
+  type BookingSessionScopeV1,
+  bookingSessionAudienceForActorV1,
+} from "@voyant-travel/catalog-contracts/booking-engine/session-contracts"
 import type { AnalyticsPort } from "@voyant-travel/core/analytics"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import {
@@ -39,6 +42,11 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { catalogSourcedEntriesTable } from "../schema-sourced-entries.js"
 import { captureSnapshot } from "../services/snapshot-service.js"
 import type { PricingBasis } from "../snapshot/schema.js"
+import {
+  type AncillaryOfferResolver,
+  ancillaryQuoteRequestFromSelection,
+  enrichRequirementsWithAncillaries,
+} from "./ancillary-enrichment.js"
 import { bookingAllocationsRef, bookingsRef } from "./bookings-ref.js"
 import type { BookingRequirementsV1 } from "./contracts.js"
 import { type PricingBreakdownV1, pricingBreakdownV1 } from "./contracts.js"
@@ -100,6 +108,15 @@ export interface ProductionBookingSessionModuleDeps {
   resolvePromotionEvaluator?(
     db: PostgresJsDatabase,
   ): PromotionEvaluator | undefined | Promise<PromotionEvaluator | undefined>
+  /**
+   * Fans out across whatever the deployment has connected for live third-party
+   * offers. Absent means nothing is connected, and the ancillary step does not
+   * exist — no empty table, no unavailability notice, nothing rendered at all.
+   *
+   * Injected rather than imported so catalog does not depend on commerce; the
+   * deployment supplies it, the same way it supplies the promotion evaluator.
+   */
+  resolveAncillaryOffers?: AncillaryOfferResolver
 }
 
 export function createProductionBookingSessionModule(
@@ -113,6 +130,28 @@ export function createProductionBookingSessionModule(
       })
     : undefined
   const leaf = createProductionCompositeLeafRuntime(deps)
+  /**
+   * Folds live third-party offers into whatever descriptor a vertical produced.
+   *
+   * One place rather than one per handler: the fan-out is the same question for
+   * every vertical, and asking each of them to remember to ask it is how the
+   * step ends up existing on some targets and not others.
+   */
+  const withAncillaries = async (
+    session: { id: string; statePayload: unknown; scope: BookingSessionScopeV1 },
+    requirements: BookingRequirementsV1,
+  ): Promise<BookingRequirementsV1> =>
+    enrichRequirementsWithAncillaries({
+      requirements,
+      request: ancillaryQuoteRequestFromSelection({
+        bookingSessionId: session.id,
+        selection: session.statePayload,
+        currency: session.scope.currency,
+        now: new Date(),
+        locale: session.scope.locale,
+      }),
+      resolve: deps.resolveAncillaryOffers,
+    })
   return createBookingSessionModule({
     ...(deps.analytics ? { analytics: deps.analytics } : {}),
     ports: {
@@ -137,7 +176,12 @@ export function createProductionBookingSessionModule(
             }
           )
         }
-        return leaf.composeRequirements(input)
+        const composed = await leaf.composeRequirements(input)
+        if (composed.status !== "available") return composed
+        return {
+          ...composed,
+          requirements: await withAncillaries(session, composed.requirements),
+        }
       },
       composeQuote: async (input) => {
         const { session } = input
@@ -153,7 +197,9 @@ export function createProductionBookingSessionModule(
             }
           )
         }
-        return leaf.composeQuote(input)
+        const quoted = await leaf.composeQuote(input)
+        if (!quoted.requirements) return quoted
+        return { ...quoted, requirements: await withAncillaries(session, quoted.requirements) }
       },
       placeCapacityHold: async (input) => {
         const { session } = input

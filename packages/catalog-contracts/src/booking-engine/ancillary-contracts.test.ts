@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { requirementsFingerprintInput } from "./requirements-contracts.js"
 import {
   type AncillaryOfferV1,
   ancillaryOfferGroupV1,
@@ -145,5 +146,49 @@ describe("selection", () => {
       ],
     })
     expect(parsed.acceptedDisclosures[0]?.versionId).toBe("2026-08")
+  })
+})
+
+describe("requirements fingerprint", () => {
+  const descriptor = {
+    showsAncillaries: true,
+    showsAddons: false,
+    paymentIntents: ["card"],
+    ancillaries: {
+      groups: [{ kind: "insurance", label: "Travel insurance", offers: [offer()], diagnostics: [] }],
+    },
+  }
+
+  it("does not depend on what the live offers currently cost", () => {
+    const repriced = {
+      ...descriptor,
+      ancillaries: {
+        groups: [
+          {
+            kind: "insurance",
+            label: "Travel insurance",
+            offers: [
+              offer({
+                price: { amountMinor: 9999, currency: "EUR" },
+                validUntil: "2026-12-31T00:00:00Z",
+              }),
+            ],
+            diagnostics: [],
+          },
+        ],
+      },
+    }
+    expect(requirementsFingerprintInput(repriced)).toEqual(requirementsFingerprintInput(descriptor))
+  })
+
+  it("still depends on whether the step exists at all", () => {
+    expect(requirementsFingerprintInput({ ...descriptor, showsAncillaries: false })).not.toEqual(
+      requirementsFingerprintInput(descriptor),
+    )
+  })
+
+  it("leaves a descriptor with no ancillaries untouched", () => {
+    const plain = { showsAncillaries: false, paymentIntents: ["card"] }
+    expect(requirementsFingerprintInput(plain)).toBe(plain)
   })
 })

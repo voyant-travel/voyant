@@ -408,3 +408,33 @@ export const bookingRequirementsV1 = z.object({
   paymentIntents: z.array(bookingCheckoutIntentV1),
 })
 export type BookingRequirementsV1 = z.infer<typeof bookingRequirementsV1>
+
+/**
+ * The requirements a fingerprint is taken over — everything except the live
+ * ancillary offers.
+ *
+ * The descriptor is fingerprinted at Quote and re-derived at Commit, and a
+ * difference supersedes the quote. That is right for everything the descriptor
+ * normally carries, because those things describe what a booking *needs* and
+ * only change when the operator changes something.
+ *
+ * Ancillary offers do not behave like that. They are priced live by a third
+ * party, they carry a `validUntil` that moves on every call, and two identical
+ * fan-outs a second apart legitimately differ. Including them would supersede
+ * every quote the moment a traveller reached the payment step, which is not a
+ * price change anyone made — it is the clock.
+ *
+ * `showsAncillaries` stays in the fingerprint: whether the step exists at all
+ * is a stable fact about the deployment, and it changing genuinely is a
+ * different booking. What the offers cost is re-confirmed at selection time
+ * against the offer's own window instead.
+ *
+ * Mirrors `priceFingerprintInput` in `./pricing-contracts.js`.
+ */
+export function requirementsFingerprintInput<T>(requirements: T): T {
+  if (!requirements || typeof requirements !== "object") return requirements
+  const descriptor = requirements as Record<string, unknown>
+  if (descriptor.ancillaries === undefined) return requirements
+  const { ancillaries: _ancillaries, ...rest } = descriptor
+  return rest as T
+}
