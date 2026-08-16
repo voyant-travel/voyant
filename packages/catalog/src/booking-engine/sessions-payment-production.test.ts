@@ -566,6 +566,28 @@ describe("production Booking Session quoted payment plan", () => {
     })
   })
 
+  /**
+   * The gate counts whole UTC days, so a Quote taken at 23:55 and committed at
+   * 00:02 measures one day less to departure. On a departure sitting exactly
+   * on `minDaysBeforeDepartureForDeposit` that flips the plan: the shopper is
+   * shown a deposit and charged the full total. Payment policy is outside the
+   * price fingerprint, so nothing rejects that Commit.
+   *
+   * Both sides therefore measure from the Quote's own instant, which is what
+   * the published plan was derived from.
+   */
+  it("charges against the instant the Quote was stamped with, not Commit's clock", async () => {
+    await prepare({
+      locale: "en-GB",
+      departureDate: "2026-09-20",
+      quotedAt: new Date("2026-08-15T23:55:00Z"),
+    })
+
+    expect(computePaymentSchedule.mock.calls.at(-1)?.[0]).toMatchObject({
+      today: new Date("2026-08-15T23:55:00Z"),
+    })
+  })
+
   // Same measurement as Commit, which voyant#4740 established has to be the
   // departure the shopper selected rather than the product row.
   it("measures from the departure the shopper selected", async () => {
@@ -694,6 +716,8 @@ async function prepare(input: {
   settlementPaymentSessionId?: string
   mandate?: { enabled: boolean; revision: string } | null
   contractAcceptedAt?: string
+  /** The instant the Quote was stamped with; what the plan must measure from. */
+  quotedAt?: Date
 }) {
   resolveCalls.length = 0
   if (input.refreshedCheckout !== undefined) {
@@ -765,6 +789,7 @@ async function prepare(input: {
     quote: {
       id: "bqot_01k",
       pricing: { total: 10_000, currency: "EUR" },
+      quotedAt: input.quotedAt ?? new Date("2026-08-05T00:00:00Z"),
       expiresAt: new Date("2026-08-06T00:00:00Z"),
     },
     commit: {

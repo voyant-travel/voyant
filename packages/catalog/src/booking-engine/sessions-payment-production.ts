@@ -99,7 +99,23 @@ export function createProductionBookingSessionPaymentPorts(
       // same Commit transaction, by `establishBankTransfer` below.
       if (commit.checkoutIntent === "bank_transfer") return { kind: "not_required" }
 
-      const plan = await resolvePlan(deps, session, quote.pricing, now)
+      // Anchored to the Quote's own instant, not Commit's.
+      //
+      // The deposit gate counts whole UTC days to departure, so a Quote taken
+      // at 23:55 and committed at 00:02 measures one day less — and a
+      // departure sitting exactly on `minDaysBeforeDepartureForDeposit`
+      // advertises a deposit and then charges the full total. Payment policy
+      // is outside the price fingerprint, so nothing rejects that Commit.
+      //
+      // `quotedAt` is what `describePlan` published from, and a Quote lives
+      // for minutes, so this is never a stale anchor — it is the instant the
+      // shopper was quoted at. It also stops the settlement re-check below
+      // from spuriously failing on an amount that moved under it.
+      //
+      // This does not close the whole gap: an operator editing the policy
+      // mid-session still changes the cascade, and only a fingerprinted or
+      // persisted plan can reject that. See the PR discussion.
+      const plan = await resolvePlan(deps, session, quote.pricing, quote.quotedAt)
       if (!plan) throw new Error("booking_session_payment_product_not_found")
       const { context, resolved, departureDate, entries } = plan
       const dueNow = entries[0]
@@ -369,7 +385,12 @@ async function resolvePlan(
     statePayload: Record<string, unknown>
   },
   pricing: { total: number; currency: string },
-  now: Date,
+  /**
+   * The instant the plan is measured from. Both callers pass the Quote's own
+   * `quotedAt`, so the plan published on a Quote and the plan charged against
+   * it are the same function of the same inputs.
+   */
+  asOf: Date,
 ) {
   const productId = session.target.productId
   if (session.target.kind !== "product" || !productId) return null
@@ -400,7 +421,7 @@ async function resolvePlan(
       totalCents: pricing.total,
       currency: pricing.currency,
       departureDate,
-      today: now,
+      today: asOf,
     },
     resolved.policy,
   )

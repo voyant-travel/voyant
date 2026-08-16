@@ -9,7 +9,6 @@ import type {
   AbandonBookingSessionV1,
   AdoptBookingSessionV1,
   BookingHoldRecordV1,
-  BookingPaymentPlanV1,
   BookingQuoteRecordV1,
   BookingSessionActorKindV1,
   BookingSessionCapabilityActionV1,
@@ -37,6 +36,7 @@ import { withBookingSessionAnalytics } from "./analytics.js"
 import type {
   BookingCheckoutIntentV1,
   BookingLifecycleCommitOutcomeV1,
+  BookingPaymentPlanV1,
   BookingRequirementsV1,
   BookingSessionBankTransferV1,
   PricingBreakdownV1,
