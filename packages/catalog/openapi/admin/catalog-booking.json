@@ -7883,6 +7883,10 @@
                         "type": "integer",
                         "minimum": 0
                       },
+                      "payInFullCents": {
+                        "type": ["integer", "null"],
+                        "minimum": 0
+                      },
                       "entries": {
                         "type": "array",
                         "items": {
@@ -7910,7 +7914,14 @@
                         "minItems": 1
                       }
                     },
-                    "required": ["policySource", "currency", "totalCents", "dueNowCents", "entries"]
+                    "required": [
+                      "policySource",
+                      "currency",
+                      "totalCents",
+                      "dueNowCents",
+                      "payInFullCents",
+                      "entries"
+                    ]
                   },
                   "quotedAt": {
                     "type": "string",
@@ -14722,6 +14733,9 @@
                   "checkoutIntent": {
                     "type": "string",
                     "enum": ["hold", "card", "bank_transfer", "ticket_on_credit", "inquiry"]
+                  },
+                  "payInFull": {
+                    "type": "boolean"
                   },
                   "payment": {
                     "type": "object",

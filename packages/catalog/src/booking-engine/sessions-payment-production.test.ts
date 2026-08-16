@@ -529,10 +529,36 @@ describe("production Booking Session quoted payment plan", () => {
       currency: "EUR",
       totalCents: 37_800,
       dueNowCents: 18_900,
+      payInFullCents: 37_800,
       entries: [
         { scheduleType: "deposit", amountCents: 18_900, currency: "EUR", dueDate: "2026-08-16" },
         { scheduleType: "balance", amountCents: 18_900, currency: "EUR", dueDate: "2026-09-06" },
       ],
+    })
+  })
+
+  // Two real options, both named, so a storefront renders "Pay deposit €189.00"
+  // and "Pay in full €378.00" rather than asking the shopper to infer the
+  // second from the first (voyant#4742).
+  it("advertises what settling everything now would cost", async () => {
+    computePaymentSchedule.mockReturnValueOnce(DEPOSIT_AND_BALANCE)
+
+    await expect(describePlan({ totalCents: 37_800 })).resolves.toMatchObject({
+      dueNowCents: 18_900,
+      payInFullCents: 37_800,
+    })
+  })
+
+  // Nothing to choose between: a plan that already collects the total now would
+  // otherwise advertise two identical buttons.
+  it("offers no such choice when the plan already collects the whole total", async () => {
+    computePaymentSchedule.mockReturnValueOnce([
+      { amountCents: 37_800, currency: "EUR", scheduleType: "full", dueDate: "2026-08-16" },
+    ])
+
+    await expect(describePlan({ totalCents: 37_800 })).resolves.toMatchObject({
+      dueNowCents: 37_800,
+      payInFullCents: null,
     })
   })
 
@@ -614,6 +640,201 @@ describe("production Booking Session quoted payment plan", () => {
     ).resolves.toBeNull()
   })
 })
+
+/**
+ * A deposit is an option the operator extends, not an obligation to place on
+ * the buyer. A shopper who wants the booking settled now should be able to say
+ * so: it is less work for the operator and it removes a balance to chase.
+ * Until voyant#4742 there was nowhere to say it — `prepare` took the policy's
+ * first row and Commit carried no field for anything else.
+ */
+describe("production Booking Session pay-in-full choice", () => {
+  const DEPOSIT_AND_BALANCE = [
+    { amountCents: 18_900, currency: "EUR", scheduleType: "deposit", dueDate: "2026-08-05" },
+    { amountCents: 18_900, currency: "EUR", scheduleType: "balance", dueDate: "2026-09-06" },
+  ]
+
+  beforeEach(() => {
+    computePaymentSchedule.mockClear()
+    createOrReuseBookingSessionPayment.mockClear()
+    getPaymentSessionById.mockReset()
+    getPaymentSessionById.mockResolvedValue(null)
+  })
+
+  it("collects the deposit the policy asks for when the shopper says nothing", async () => {
+    computePaymentSchedule.mockReturnValueOnce(DEPOSIT_AND_BALANCE)
+
+    await expect(
+      prepare({ locale: "en-GB", departureDate: "2026-09-20", totalCents: 37_800 }),
+    ).resolves.toMatchObject({ paymentSession: { amountCents: 18_900 } })
+  })
+
+  it("collects the whole Quote when the shopper asks to settle it now", async () => {
+    computePaymentSchedule.mockReturnValueOnce(DEPOSIT_AND_BALANCE)
+
+    await expect(
+      prepare({
+        locale: "en-GB",
+        departureDate: "2026-09-20",
+        totalCents: 37_800,
+        payInFull: true,
+      }),
+    ).resolves.toMatchObject({ paymentSession: { amountCents: 37_800 } })
+  })
+
+  // Settlement re-derives the plan to re-check what it is settling, and the
+  // policy alone would answer "deposit". `paymentScheduleType` cannot carry the
+  // choice: a policy that never offered a deposit also reads `full`.
+  it("records the choice on the payment, not just the schedule type it produced", async () => {
+    computePaymentSchedule.mockReturnValueOnce(DEPOSIT_AND_BALANCE)
+
+    await prepare({
+      locale: "en-GB",
+      departureDate: "2026-09-20",
+      totalCents: 37_800,
+      payInFull: true,
+    })
+
+    expect(paymentInput().metadata).toMatchObject({ paymentScheduleType: "full", payInFull: true })
+  })
+
+  it("says nothing about a choice the shopper did not make", async () => {
+    computePaymentSchedule.mockReturnValueOnce(DEPOSIT_AND_BALANCE)
+
+    await prepare({ locale: "en-GB", departureDate: "2026-09-20", totalCents: 37_800 })
+
+    expect(paymentInput().metadata).not.toHaveProperty("payInFull")
+  })
+
+  // Nothing to collapse: the policy already asks for everything. Asking to pay
+  // in full is honoured by changing nothing rather than by rejecting it.
+  it("leaves a policy that already collects the total exactly as it was", async () => {
+    computePaymentSchedule.mockReturnValueOnce([
+      { amountCents: 37_800, currency: "EUR", scheduleType: "full", dueDate: "2026-08-05" },
+    ])
+
+    await expect(
+      prepare({
+        locale: "en-GB",
+        departureDate: null,
+        totalCents: 37_800,
+        payInFull: true,
+      }),
+    ).resolves.toMatchObject({ paymentSession: { amountCents: 37_800 } })
+  })
+
+  /**
+   * The constraint the issue asked to be encoded rather than trusted: the flag
+   * may only ever *increase* what is collected. Today `resolveDepositAmountCents`
+   * clamps a deposit to the total, so this is unreachable through finance — but
+   * the flag arrives from a browser and what it moves is money, which is the
+   * wrong pair of facts to leave resting on a clamp in another package.
+   */
+  it("refuses a request that would collect less than the policy asks for", async () => {
+    computePaymentSchedule.mockReturnValueOnce([
+      { amountCents: 50_000, currency: "EUR", scheduleType: "deposit", dueDate: "2026-08-05" },
+      { amountCents: 5_000, currency: "EUR", scheduleType: "balance", dueDate: "2026-09-06" },
+    ])
+
+    await expect(
+      prepare({
+        locale: "en-GB",
+        departureDate: "2026-09-20",
+        totalCents: 37_800,
+        payInFull: true,
+      }),
+    ).rejects.toThrow("booking_session_pay_in_full_collects_less_than_policy")
+  })
+
+  it("settles a pay-in-full payment against the total it actually collected", async () => {
+    computePaymentSchedule.mockReturnValueOnce(DEPOSIT_AND_BALANCE)
+    getPaymentSessionById.mockResolvedValue({
+      id: "pmts_paid",
+      targetType: "booking_session",
+      targetId: "bses_01k",
+      status: "paid",
+      amountCents: 37_800,
+      currency: "EUR",
+    })
+
+    await expect(
+      prepare({
+        locale: "en-GB",
+        departureDate: "2026-09-20",
+        totalCents: 37_800,
+        payInFull: true,
+        settlementPaymentSessionId: "pmts_paid",
+      }),
+    ).resolves.toEqual({ kind: "established", paymentSessionId: "pmts_paid" })
+  })
+
+  // The other half of the same guard: settling still checks the amount, and a
+  // deposit-sized payment is not evidence for a full one.
+  it("refuses to settle a payment that does not match the choice it is settling", async () => {
+    computePaymentSchedule.mockReturnValueOnce(DEPOSIT_AND_BALANCE)
+    getPaymentSessionById.mockResolvedValue({
+      id: "pmts_paid",
+      targetType: "booking_session",
+      targetId: "bses_01k",
+      status: "paid",
+      amountCents: 18_900,
+      currency: "EUR",
+    })
+
+    await expect(
+      prepare({
+        locale: "en-GB",
+        departureDate: "2026-09-20",
+        totalCents: 37_800,
+        payInFull: true,
+        settlementPaymentSessionId: "pmts_paid",
+      }),
+    ).rejects.toThrow("booking_session_settlement_payment_not_established")
+  })
+
+  it("reports the choice back to settlement from the payment that recorded it", async () => {
+    getPaymentSessionById.mockResolvedValue({
+      id: "pmts_paid",
+      metadata: { quoteId: "bqot_01k", holdId: "bhld_01k", payInFull: true },
+    })
+
+    await expect(describeEstablished("pmts_paid")).resolves.toEqual({
+      quoteId: "bqot_01k",
+      holdId: "bhld_01k",
+      payInFull: true,
+    })
+  })
+
+  it("reports no choice for a payment established before the field existed", async () => {
+    getPaymentSessionById.mockResolvedValue({
+      id: "pmts_paid",
+      metadata: { quoteId: "bqot_01k" },
+    })
+
+    await expect(describeEstablished("pmts_paid")).resolves.toMatchObject({ payInFull: false })
+  })
+})
+
+/** What `prepare` asked finance to collect. */
+function paymentInput() {
+  const call = createOrReuseBookingSessionPayment.mock.calls.at(-1)
+  if (!call) throw new Error("no payment was created")
+  return call[1] as { amountCents: number; currency: string; metadata: Record<string, unknown> }
+}
+
+/** Ask the production ports what a paid payment was established against. */
+function describeEstablished(paymentSessionId: string) {
+  const payments = createProductionBookingSessionPaymentPorts({
+    db: {} as never,
+    inventory: {
+      loadProductPaymentPolicyContext: vi.fn(),
+      resolveSelectedDepartureDate: vi.fn(),
+    } as never,
+    distribution: { loadSupplierPaymentPolicy: vi.fn() } as never,
+    settings: { resolveOperatorDefaultPaymentPolicy: vi.fn() } as never,
+  })
+  return payments.describeEstablished?.({ paymentSessionId })
+}
 
 /** Build the production ports and ask them to describe a plan. */
 async function describePlan(input: {
@@ -718,6 +939,10 @@ async function prepare(input: {
   contractAcceptedAt?: string
   /** The instant the Quote was stamped with; what the plan must measure from. */
   quotedAt?: Date
+  /** The shopper's own choice to settle the whole Quote now (voyant#4742). */
+  payInFull?: boolean
+  /** The Quote total, which is what pay-in-full collects. */
+  totalCents?: number
 }) {
   resolveCalls.length = 0
   if (input.refreshedCheckout !== undefined) {
@@ -788,12 +1013,13 @@ async function prepare(input: {
     },
     quote: {
       id: "bqot_01k",
-      pricing: { total: 10_000, currency: "EUR" },
+      pricing: { total: input.totalCents ?? 10_000, currency: "EUR" },
       quotedAt: input.quotedAt ?? new Date("2026-08-05T00:00:00Z"),
       expiresAt: new Date("2026-08-06T00:00:00Z"),
     },
     commit: {
       idempotencyKey: "commit-1",
+      ...(input.payInFull ? { payInFull: true } : {}),
       ...(input.acceptedCheckoutHandoffs
         ? { payment: { acceptedCheckoutHandoffs: input.acceptedCheckoutHandoffs } }
         : {}),

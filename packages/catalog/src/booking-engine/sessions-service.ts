@@ -533,10 +533,15 @@ export interface BookingSessionPaymentPorts {
    * The payment records what it collected for. Optional because a host may not
    * keep it — settlement falls back to the single active Quote, which is
    * correct whenever the shopper has stopped quoting.
+   *
+   * `payInFull` is the same fact about the amount: settlement re-derives the
+   * plan to re-check what it is settling, and a shopper who chose to settle
+   * everything now (voyant#4742) is holding a payment the policy alone would
+   * not reconstruct. Absent means no such choice was made.
    */
   describeEstablished?(input: {
     paymentSessionId: string
-  }): Promise<{ quoteId: string | null; holdId: string | null } | null>
+  }): Promise<{ quoteId: string | null; holdId: string | null; payInFull?: boolean } | null>
   /**
    * Whether this Session's money is with a processor and the outcome is not
    * known yet.
@@ -2048,6 +2053,14 @@ export function createBookingSessionModule(
           requirementsFingerprint: quote.requirementsFingerprint,
           ...(holdId ? { holdId } : {}),
           idempotencyKey: `payment-settlement:${paymentSessionId}`,
+          // Re-assert the shopper's own choice, not just the Quote it was made
+          // against. `prepare` re-derives the plan to re-check the amount it is
+          // settling, and that derivation reads the policy — which asks for the
+          // deposit. A shopper who chose to settle everything now (voyant#4742)
+          // would otherwise be refused
+          // `booking_session_settlement_payment_not_established` against the
+          // very payment they made.
+          ...(established?.payInFull ? { payInFull: true } : {}),
         },
         access,
       )
@@ -2832,6 +2845,12 @@ async function commitRequestFingerprint(input: CommitBookingSessionV1): Promise<
     // resolved meaning so omitted and explicit card replay, while a different
     // shopper choice conflicts before any payment or booking side effect.
     checkoutIntent: input.checkoutIntent ?? "card",
+    // The same kind of fact as the intent above, and for the same reason: it
+    // is a shopper choice that changes the amount collected. Two Commits under
+    // one key that ask for different money are not a replay of each other, and
+    // without this the second silently returns the first one's outcome
+    // (voyant#4742).
+    payInFull: input.payInFull === true,
   })
 }
 

@@ -3,6 +3,7 @@ import {
   bookingLifecycleConformanceScenariosV1,
 } from "@voyant-travel/catalog-contracts/booking-engine/lifecycle-conformance"
 import type { PricingBreakdownV1 } from "@voyant-travel/catalog-contracts/booking-engine/pricing-contracts"
+import type { CommitBookingSessionV1 } from "@voyant-travel/catalog-contracts/booking-engine/session-contracts"
 import { isPermanentSubscriberError } from "@voyant-travel/core"
 import { describe, expect, it, vi } from "vitest"
 
@@ -420,6 +421,44 @@ describe("Booking Session v1 owned tracer", () => {
         bookingId: settled.bookingId,
       }),
     ])
+  })
+
+  /**
+   * Settlement re-derives the collection plan to re-check the amount it is
+   * settling, and that derivation reads the payment policy — which asks for the
+   * deposit. A shopper who chose to settle everything now (voyant#4742) holds a
+   * payment the policy alone cannot reconstruct, so the choice has to travel
+   * with the Quote and Hold the payment records, or every pay-in-full checkout
+   * is refused against the very payment that paid for it.
+   */
+  it("re-asserts the shopper's pay-in-full choice when settling their payment", async () => {
+    const payment = createPaymentHarness()
+    const harness = createHarness({}, payment.ports)
+    const { session, quote, hold } = await createQuoteAndHold(harness)
+    payment.established = { quoteId: quote.id, holdId: hold.id, payInFull: true }
+
+    await harness.module.commitPaidSession({
+      bookingSessionId: session.id,
+      paymentSessionId: "payment_session_1",
+    })
+
+    expect(payment.prepared.at(-1)).toMatchObject({ payInFull: true })
+  })
+
+  // The flag is the shopper's, never settlement's own idea: a payment that
+  // recorded no such choice settles against the policy exactly as before.
+  it("asserts nothing about pay-in-full for a payment that recorded no choice", async () => {
+    const payment = createPaymentHarness()
+    const harness = createHarness({}, payment.ports)
+    const { session, quote, hold } = await createQuoteAndHold(harness)
+    payment.established = { quoteId: quote.id, holdId: hold.id }
+
+    await harness.module.commitPaidSession({
+      bookingSessionId: session.id,
+      paymentSessionId: "payment_session_1",
+    })
+
+    expect(payment.prepared.at(-1)?.payInFull).toBeUndefined()
   })
 
   it("gives a final settlement refusal back as permanent, and stops holding the seat", async () => {
@@ -2734,16 +2773,21 @@ function createPaymentHarness() {
      * falling back to the Session's single active Quote. The object form is
      * what production writes.
      */
-    established: false as boolean | { quoteId: string | null; holdId: string | null },
+    established: false as
+      | boolean
+      | { quoteId: string | null; holdId: string | null; payInFull?: boolean },
     inFlight: false,
     prepareCalls: 0,
+    /** Every Commit the ports were asked to prepare, in order. */
+    prepared: [] as CommitBookingSessionV1[],
     transfers,
     expirations,
     ports: undefined as unknown as BookingSessionPaymentPorts,
   }
   harness.ports = {
-    async prepare() {
+    async prepare({ commit }) {
       harness.prepareCalls += 1
+      harness.prepared.push(commit)
       if (harness.established) {
         return { kind: "established", paymentSessionId: "payment_session_1" }
       }
@@ -2928,6 +2972,7 @@ describe("Booking Session v1 quoted payment plan", () => {
     currency: "EUR",
     totalCents: 10_000,
     dueNowCents: 5_000,
+    payInFullCents: 10_000,
     entries: [
       {
         scheduleType: "deposit" as const,
