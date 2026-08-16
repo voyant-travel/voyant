@@ -63,7 +63,9 @@ export function FlightDatePicker({
   const windowTo = endOfMonth(addMonths(month, 1))
   // Paging back past `earliest` inverts the window. There is nothing to quote
   // behind today, so stay quiet rather than ask for a range that can't exist.
-  const quotable = Boolean(origin && destination) && windowFrom <= windowTo
+  // A disabled picker never quotes either — the return leg of a one-way trip
+  // would otherwise spend a supplier call on a date nobody can pick.
+  const quotable = Boolean(origin && destination) && !disabled && windowFrom <= windowTo
 
   const calendar = useFareCalendar(
     {
@@ -180,12 +182,25 @@ function indexByDate(days: FareCalendarDay[] | undefined): Map<string, FareCalen
   return new Map((days ?? []).map((day) => [day.date, day]))
 }
 
+/**
+ * Above this, an exact fare stops fitting in a calendar cell — a long-haul
+ * business quote is five or six digits — so it switches to compact notation.
+ * Below it the exact figure is both readable and more useful.
+ */
+const COMPACT_FARE_THRESHOLD = 1000
+
 function formatFare(
   price: { amount: string; currency: string },
   i18n: ReturnType<typeof useFlightsUiI18nOrDefault>,
 ): string {
   const amount = Number(price.amount)
   if (!Number.isFinite(amount)) return `${price.amount} ${price.currency}`
+  if (amount >= COMPACT_FARE_THRESHOLD) {
+    return i18n.formatCurrency(amount, price.currency, {
+      notation: "compact",
+      maximumFractionDigits: 1,
+    })
+  }
   return i18n.formatCurrency(amount, price.currency, { maximumFractionDigits: 0 })
 }
 

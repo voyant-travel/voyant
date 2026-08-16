@@ -50,12 +50,14 @@ function renderPicker({
   destination = "JFK",
   onChange = vi.fn(),
   minDate,
+  disabled,
 }: {
   fetcher: (url: string, init?: RequestInit) => Promise<Response>
   origin?: string | null
   destination?: string | null
   onChange?: (next: string | null) => void
   minDate?: string | null
+  disabled?: boolean
 }) {
   const queryClient = new QueryClient({
     defaultOptions: { queries: { retry: false }, mutations: { retry: false } },
@@ -71,6 +73,7 @@ function renderPicker({
           passengers={{ adults: 1 }}
           cabin="economy"
           minDate={minDate}
+          disabled={disabled}
           placeholder="Depart"
         />
       </VoyantFlightsProvider>
@@ -175,9 +178,34 @@ describe("FlightDatePicker", () => {
     expect(onChange).toHaveBeenCalledWith("2026-08-25")
   })
 
+  // A long-haul business quote is five digits and will not fit in a day cell.
+  it("compacts a fare too long to fit in a cell", async () => {
+    renderPicker({
+      fetcher: fetcherFor([
+        priced("2026-08-17", "89.00"),
+        priced("2026-08-18", "12450.00"),
+        priced("2026-08-19", "260.00"),
+      ]),
+    })
+    openPicker()
+
+    expect(await screen.findByText("€12.5K")).toBeInstanceOf(HTMLElement)
+    // ...while an ordinary fare stays exact.
+    expect(screen.getByText("€89")).toBeInstanceOf(HTMLElement)
+  })
+
   it("stays dormant until the route is known", () => {
     const fetcher = fetcherFor(AUGUST_DAYS)
     renderPicker({ fetcher, destination: null })
+
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  // The return leg of a one-way trip: no date there is selectable, so quoting
+  // one spends a supplier call on nothing.
+  it("stays dormant while disabled", () => {
+    const fetcher = fetcherFor(AUGUST_DAYS)
+    renderPicker({ fetcher, disabled: true })
 
     expect(fetcher).not.toHaveBeenCalled()
   })
