@@ -278,6 +278,11 @@ export const customerVerificationVoyantModule = defineModule({
   ],
   meta: {
     ownership: "package",
+    agentTools: {
+      posture: "not-applicable",
+      rationale:
+        "The verification Tools live in @voyant-travel/public-api, not here. They act on the authenticated customer's OWN email or phone, which means resolving \"my\" through the customer portal's profile -- a composition of auth and customer records. Declaring them here would make identity depend on the layer above it (voyant#4627). This module owns the challenges themselves and exposes them as anonymous public routes.",
+    },
   },
 })
 
