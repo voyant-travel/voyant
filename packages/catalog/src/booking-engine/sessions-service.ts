@@ -5,6 +5,7 @@ import type {
   OfferPreviewRequestV1,
 } from "@voyant-travel/catalog-contracts/booking-engine/preview-contracts"
 import { priceFingerprintInput } from "@voyant-travel/catalog-contracts/booking-engine/pricing-contracts"
+import { requirementsFingerprintInput } from "@voyant-travel/catalog-contracts/booking-engine/requirements-contracts"
 import type {
   AbandonBookingSessionV1,
   AdoptBookingSessionV1,
@@ -32,6 +33,7 @@ import { PermanentSubscriberError } from "@voyant-travel/core"
 import type { AnalyticsPort } from "@voyant-travel/core/analytics"
 import { createSafeAnalytics } from "@voyant-travel/core/analytics"
 import { newId } from "@voyant-travel/db/lib/typeid"
+import type { PaymentPolicy } from "@voyant-travel/finance"
 import { withBookingSessionAnalytics } from "./analytics.js"
 import type {
   BookingCheckoutIntentV1,
@@ -442,6 +444,53 @@ export interface BookingSessionCompositeHandler {
       db: unknown
     },
   ): Promise<CommitCompositeBookingResult>
+  /**
+   * What the composite target contributes to the payment cascade, and the two
+   * facts the collection schedule is anchored on.
+   *
+   * A composite is one commercial object: one total, one departure, one plan.
+   * Resolving the policy per component would quote a shopper several deposits
+   * with different due dates for a single itinerary, which is not a schedule.
+   *
+   * Optional, and `null` is a real answer: it says this handler has no payment
+   * context for the Trip, and the Session collects nothing. Before voyant#4745
+   * that was not a decision anyone made — every non-product target was refused
+   * a plan before the handler was consulted.
+   */
+  describePaymentContext?(input: {
+    db: unknown
+    tripSnapshotId: string
+    tripEnvelopeId: string
+    locale: string
+  }): Promise<BookingSessionTargetPaymentContext | null>
+}
+
+/**
+ * The payment-policy cascade layers a Session's target contributes, plus what
+ * anchors the schedule built from them.
+ *
+ * One shape for every target kind, so the cascade resolution and the schedule
+ * computation happen once regardless of what is being sold. `null` on a layer
+ * means "inherit from the next-broader one", exactly as
+ * `resolveEffectivePaymentPolicy` reads it.
+ */
+export interface BookingSessionTargetPaymentContext {
+  /** The listing's own override — a rate plan, a cabin category, a product. */
+  listingPolicy: PaymentPolicy | null
+  categoryPolicy: PaymentPolicy | null
+  supplierPolicy: PaymentPolicy | null
+  /**
+   * When the shopper travels. The deposit gate is a distance-to-departure
+   * test and the balance falls due relative to it, so a target that cannot
+   * state this collects the full total rather than guessing at a deposit.
+   */
+  departureDate: string | null
+  /**
+   * What the shopper is paying for, in the Session's locale. The only
+   * product-shaped field a hosted checkout page can render; absent, finance
+   * falls back to the payment session's own notes.
+   */
+  name: string | null
 }
 
 export interface BookingSessionPaymentPorts {
@@ -526,7 +575,15 @@ export interface BookingSessionPaymentPorts {
     quote: BookingQuoteInternalRecord
     commit: CommitBookingSessionV1
     access: BookingSessionAccessContext
+    /** The Booking a single collection plan is written against. */
     bookingId: string
+    /**
+     * Every Booking this Commit confirmed, `bookingId` first. A composite
+     * target commits one Booking per component while the plan resolved for the
+     * Session covers the whole trip, so the implementation has to be told that
+     * `bookingId` is not the whole debt rather than inferring it.
+     */
+    bookingIds: readonly string[]
     now: Date
   }): Promise<void>
   /**
@@ -1243,7 +1300,7 @@ export function createBookingSessionModule(
           requirements,
           pricing,
           priceFingerprint: await priceFingerprint(pricing),
-          requirementsFingerprint: await stableFingerprint(requirements),
+          requirementsFingerprint: await requirementsFingerprint(requirements),
           quotedAt: at,
           expiresAt: new Date(at.getTime() + quoteTtlMs),
         }
@@ -1699,7 +1756,7 @@ export function createBookingSessionModule(
         // Requirements are checked exactly the way the price is: re-derive,
         // compare against what the client rendered, and refuse rather than
         // book something collected against a descriptor that has moved.
-        const freshRequirementsFingerprint = await stableFingerprint(freshQuote.requirements)
+        const freshRequirementsFingerprint = await requirementsFingerprint(freshQuote.requirements)
         if (
           freshRequirementsFingerprint !== quote.requirementsFingerprint ||
           freshRequirementsFingerprint !== input.requirementsFingerprint
@@ -2314,7 +2371,7 @@ async function consumeCommittedSources(input: {
       if (
         currentQuoteResult.status === "unavailable" ||
         (await priceFingerprint(currentQuoteResult.pricing)) !== currentQuote.priceFingerprint ||
-        (await stableFingerprint(currentQuoteResult.requirements)) !==
+        (await requirementsFingerprint(currentQuoteResult.requirements)) !==
           currentQuote.requirementsFingerprint
       ) {
         currentQuote.state = "superseded"
@@ -2333,6 +2390,7 @@ async function consumeCommittedSources(input: {
       commit: input.input,
       access: input.access,
       bookingId: input.bookingId,
+      bookingIds: [input.bookingId],
       now: currentAt,
     })
     const bankTransfer =
@@ -2500,6 +2558,7 @@ async function consumeCompositeCommittedSources(input: {
       commit: input.input,
       access: input.access,
       bookingId: primary.bookingId,
+      bookingIds: input.bookings.map((booking) => booking.bookingId),
       now: currentAt,
     })
     const bankTransfer =
@@ -3373,6 +3432,21 @@ async function stableFingerprint(value: unknown): Promise<string> {
  */
 async function priceFingerprint(pricing: unknown): Promise<string> {
   return stableFingerprint(priceFingerprintInput(pricing))
+}
+
+/**
+ * The fingerprint that decides whether a Quote's descriptor still stands.
+ *
+ * Same reasoning as `priceFingerprint`: written once at quote time, compared
+ * twice at commit, so it is one function rather than three call sites hashing
+ * the descriptor directly.
+ *
+ * See `requirementsFingerprintInput` for what it deliberately does not depend
+ * on — live third-party offers move on their own and would otherwise supersede
+ * every quote that sat on the payment step for a moment.
+ */
+async function requirementsFingerprint(requirements: unknown): Promise<string> {
+  return stableFingerprint(requirementsFingerprintInput(requirements))
 }
 
 async function sha256Hex(value: string): Promise<string> {

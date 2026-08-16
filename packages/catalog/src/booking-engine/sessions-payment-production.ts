@@ -2,8 +2,13 @@ import type {
   BookingPaymentCheckoutV1,
   BookingSessionBankTransferV1,
 } from "@voyant-travel/catalog-contracts/booking-engine/lifecycle-conformance"
+import type { BookingSessionTargetV1 } from "@voyant-travel/catalog-contracts/booking-engine/session-contracts"
 import { identifiedUserId } from "@voyant-travel/core"
-import type { PaymentAdapter, PaymentAdapterRuntimeContext } from "@voyant-travel/finance"
+import type {
+  PaymentAdapter,
+  PaymentAdapterRuntimeContext,
+  PaymentPolicy,
+} from "@voyant-travel/finance"
 import {
   computePaymentSchedule,
   createOrReuseBookingSessionPayment,
@@ -20,15 +25,21 @@ import {
   transferBookingSessionPaymentToBooking,
 } from "@voyant-travel/finance"
 import type { FinanceOperatorSettingsRuntime } from "@voyant-travel/finance/runtime-port"
-import { eq } from "drizzle-orm"
+import { and, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type {
   CatalogDistributionRuntimeExtension,
+  CatalogEntityPaymentPolicyReaders,
   CatalogInventoryRuntimeExtension,
 } from "../runtime-contracts.js"
+import { catalogSourcedEntriesTable } from "../schema-sourced-entries.js"
 import { bookingsRef } from "./bookings-ref.js"
-import type { BookingSessionPaymentPorts } from "./sessions-service.js"
+import type {
+  BookingSessionCompositeHandler,
+  BookingSessionPaymentPorts,
+  BookingSessionTargetPaymentContext,
+} from "./sessions-service.js"
 
 export interface ProductionBookingSessionPaymentDeps {
   db: PostgresJsDatabase
@@ -42,6 +53,30 @@ export interface ProductionBookingSessionPaymentDeps {
     // that wires no invoicing settings keeps the historical proforma-first
     // behaviour rather than failing to construct.
     Partial<Pick<FinanceOperatorSettingsRuntime, "resolveInvoicingMode">>
+  /**
+   * The entity-keyed cascade layers — the same three the storefront's
+   * policy-preview route walks, keyed by the listing a Session targets rather
+   * than by a Booking that does not exist yet.
+   *
+   * Injected rather than imported, for the reason
+   * `payment-policy-cascade.ts` gives: resolving an accommodation rate plan or
+   * a cruise cabin → sailing → cruise layer reads tables this package must not
+   * depend on.
+   *
+   * Absent means those layers are simply silent and a non-product target
+   * resolves on the operator default alone — the cascade's own tail, which is
+   * still a policy. It is not a reason to collect nothing.
+   */
+  entityPolicy?: CatalogEntityPaymentPolicyReaders
+  /**
+   * The composite handler that owns Trip Snapshot targets, so a Trip can state
+   * its own policy context. Resolved lazily because the handler is registered
+   * by the trips module after the session module is constructed.
+   */
+  resolveCompositeHandler?: () =>
+    | BookingSessionCompositeHandler
+    | undefined
+    | Promise<BookingSessionCompositeHandler | undefined>
   resolvePaymentAdapter?: () => PaymentAdapter | null | Promise<PaymentAdapter | null>
   paymentAdapterContext?: PaymentAdapterRuntimeContext
   financeRuntime?: Parameters<typeof createOrReuseBookingSessionPayment>[2]
@@ -115,7 +150,6 @@ export function createProductionBookingSessionPaymentPorts(
 ): BookingSessionPaymentPorts {
   return {
     async prepare({ session, quote, hold, commit, access, now }) {
-      if (session.target.kind !== "product") return { kind: "not_required" }
       // An admitted staff workflow can establish its collection plan directly
       // on the atomic Booking command (including already-recorded offline
       // payments). That explicit schedule is the guarantee decision; do not
@@ -149,7 +183,14 @@ export function createProductionBookingSessionPaymentPorts(
       // mid-session still changes the cascade, and only a fingerprinted or
       // persisted plan can reject that. See the PR discussion.
       const plan = await resolvePlan(deps, session, quote.pricing, quote.quotedAt)
-      if (!plan) throw new Error("booking_session_payment_product_not_found")
+      // A vertical that states it has no policy context for this target
+      // collects nothing. That is the one honest `not_required` for a target
+      // kind — it is the vertical's answer, not this port's enum check
+      // (voyant#4745).
+      if (plan.kind === "declined") return { kind: "not_required" }
+      if (plan.kind === "target_gone") {
+        throw new Error("booking_session_payment_target_not_found")
+      }
       const { context, resolved, departureDate, entries } = plan
       const dueNow = entries[0]
       if (!dueNow || dueNow.amountCents <= 0) return { kind: "not_required" }
@@ -280,10 +321,10 @@ export function createProductionBookingSessionPaymentPorts(
     },
     async describePlan({ session, pricing, now }) {
       const plan = await resolvePlan(deps, session, pricing, now)
-      // A target with no product, or a product that has since gone: the Quote
-      // simply carries no plan. Commit throws on the same condition because it
-      // is about to take money; a projection has nothing to protect.
-      if (!plan) return null
+      // A listing that has since gone, or a vertical with no policy context:
+      // the Quote simply carries no plan. Commit throws on the first because
+      // it is about to take money; a projection has nothing to protect.
+      if (plan.kind !== "plan") return null
       const [dueNow] = plan.entries
       if (!dueNow) return null
       return {
@@ -320,11 +361,12 @@ export function createProductionBookingSessionPaymentPorts(
     async expirePending({ tx, bookingSessionId, at }) {
       await expirePendingBookingSessionPayments(tx as PostgresJsDatabase, bookingSessionId, at)
     },
-    async establishPaymentSchedule({ tx, session, quote, bookingId }) {
+    async establishPaymentSchedule({ tx, session, quote, bookingId, bookingIds }) {
       await establishBookingPaymentSchedule(deps, tx as PostgresJsDatabase, {
         session,
         quotedAt: quote.quotedAt,
         bookingId,
+        bookingIds,
       })
     },
     async establishBankTransfer(input) {
@@ -373,9 +415,14 @@ async function readCommittedBooking(db: PostgresJsDatabase, bookingId: string) {
  * - **any schedule row already exists** — an admitted staff Commit states its
  *   own plan on the Booking command, and a replayed Commit finds the plan it
  *   wrote last time. Neither wants a second one.
- * - **no plan for the target** — a sourced or composite target has no product
- *   policy cascade to read. The `booking.confirmed` subscriber remains the
- *   safety net for those.
+ * - **the Commit confirmed more than one Booking** — a composite target
+ *   commits one Booking per component, and this writes one Booking's schedule.
+ *   Since voyant#4745 a Trip resolves a policy, so the plan on offer here is
+ *   the *whole trip's*; persisting it against the primary component would
+ *   record the entire debt on one of several Bookings. The `booking.confirmed`
+ *   subscriber remains the safety net, per-Booking, which is the right shape.
+ * - **the target states no plan** — `target_gone` and `declined` both mean
+ *   there is nothing to write. A Commit does not fail over a projection.
  * - **nothing owed** — a zero-total Booking has no schedule to state.
  */
 async function establishBookingPaymentSchedule(
@@ -385,8 +432,11 @@ async function establishBookingPaymentSchedule(
     session: Parameters<typeof resolvePlan>[1]
     quotedAt: Date
     bookingId: string
+    bookingIds: readonly string[]
   },
 ): Promise<void> {
+  if (input.bookingIds.length > 1) return
+
   const existing = await financeService.listBookingPaymentSchedules(db, input.bookingId)
   if (existing.length > 0) return
 
@@ -399,7 +449,7 @@ async function establishBookingPaymentSchedule(
     { total: booking.sellAmountCents, currency: booking.sellCurrency },
     input.quotedAt,
   )
-  if (!plan || plan.entries.length === 0) return
+  if (plan.kind !== "plan" || plan.entries.length === 0) return
 
   // Finance's own write, so a Booking scheduled here is indistinguishable
   // downstream from one scheduled by the subscriber: the rows, the
@@ -436,11 +486,15 @@ async function establishBookingPaymentSchedule(
  * "collect by bank transfer" action performs, so the resulting document,
  * numbering, and settlement path are the ones the operator already knows.
  *
- * `ensureDefaultPaymentPlan` is off on purpose. Finance's fallback plan is a
- * fixed 30% / 30-days-before-departure default; inventing that here would
- * invoice terms no operator configured. When the schedule could not be
- * established the collection falls back to the Booking total, which is the
- * honest statement of what is owed.
+ * `ensureDefaultPaymentPlan` is off on purpose, though no longer for the reason
+ * it was when this was written: voyant#4744 stopped finance's fallback plan
+ * inventing a 30% / 30-day deposit, so materializing one here would now resolve
+ * the operator's real policy rather than a made-up one. It stays off because
+ * `establishPaymentSchedule` has already written the plan the shopper was
+ * quoted, anchored to the Quote's own instant — a second derivation, however
+ * correct in isolation, is the split this whole path exists to close
+ * (voyant#4741). When no schedule could be established the collection falls
+ * back to the Booking total, which is the honest statement of what is owed.
  *
  * Null — no document, no instructions on the Commit outcome — in two cases:
  *
@@ -581,7 +635,36 @@ function customerReference(session: {
 }
 
 /**
- * The collection plan for a product Session, and everything that went into it.
+ * The Session shape both plan derivations read. Structural rather than the
+ * full internal record so `describePlan`'s stateless Offer Preview caller can
+ * pass what it has.
+ */
+type PlanSession = {
+  target: BookingSessionTargetV1
+  scope: { locale: string }
+  statePayload: Record<string, unknown>
+}
+
+/**
+ * What a Session's target contributed, or why it contributed nothing.
+ *
+ * `target_gone` and `declined` are different facts and the callers treat them
+ * differently. The listing having disappeared under a live Session is a
+ * failure; a vertical stating it has no payment context yet is an answer.
+ */
+type ResolvedPlan =
+  | {
+      kind: "plan"
+      context: BookingSessionTargetPaymentContext
+      resolved: ReturnType<typeof resolveEffectivePaymentPolicy>
+      departureDate: string | null
+      entries: ReturnType<typeof computePaymentSchedule>
+    }
+  | { kind: "target_gone" }
+  | { kind: "declined" }
+
+/**
+ * The collection plan for a Session, and everything that went into it.
  *
  * One derivation, two readers: `prepare` charges `entries[0]` at Commit and
  * `describePlan` publishes the whole thing on the Quote. Quoting a plan that a
@@ -594,16 +677,14 @@ function customerReference(session: {
  * were one call until voyant#4740, which is how every deposit gate came to be
  * measured from `products.startDate`.
  *
- * Null when the product is gone. Callers differ on what that means: Commit
- * throws, a Quote projection publishes nothing.
+ * The cascade and the schedule are computed once here, for every target kind.
+ * Which layers a target contributes is the only thing that differs, and that is
+ * {@link resolveTargetPaymentContext}'s job — up to voyant#4745 the difference
+ * was instead "product, or nothing at all".
  */
 async function resolvePlan(
   deps: ProductionBookingSessionPaymentDeps,
-  session: {
-    target: { kind: string; productId?: string }
-    scope: { locale: string }
-    statePayload: Record<string, unknown>
-  },
+  session: PlanSession,
   pricing: { total: number; currency: string },
   /**
    * The instant the plan is measured from. Both callers pass the Quote's own
@@ -611,9 +692,83 @@ async function resolvePlan(
    * it are the same function of the same inputs.
    */
   asOf: Date,
-) {
-  const productId = session.target.productId
-  if (session.target.kind !== "product" || !productId) return null
+): Promise<ResolvedPlan> {
+  const resolution = await resolveTargetPaymentContext(deps, session)
+  if (resolution.kind !== "resolved") return resolution
+  const { context } = resolution
+  const operatorDefault = await deps.settings.resolveOperatorDefaultPaymentPolicy(deps.db)
+  const resolved = resolveEffectivePaymentPolicy({
+    listingPolicy: context.listingPolicy,
+    categoryPolicy: context.categoryPolicy,
+    supplierPolicy: context.supplierPolicy,
+    operatorDefault: operatorDefault ?? noDepositPolicy,
+  })
+  const entries = computePaymentSchedule(
+    {
+      totalCents: pricing.total,
+      currency: pricing.currency,
+      departureDate: context.departureDate,
+      today: asOf,
+    },
+    resolved.policy,
+  )
+  return { kind: "plan", context, resolved, departureDate: context.departureDate, entries }
+}
+
+/**
+ * Which cascade layers the Session's target contributes, and the two facts the
+ * schedule is anchored on — when the shopper travels, and what they are paying
+ * for.
+ *
+ * Dispatches on the target kind because that is what decides *where the layers
+ * are read from*, not whether they are read at all. `bookingSessionTargetV1`
+ * admits four kinds and only one of them had an answer here, so an
+ * accommodation, a cruise cabin or a composite trip committed with no payment
+ * session and no card ever presented (voyant#4745).
+ */
+async function resolveTargetPaymentContext(
+  deps: ProductionBookingSessionPaymentDeps,
+  session: PlanSession,
+): Promise<
+  | { kind: "resolved"; context: BookingSessionTargetPaymentContext }
+  | { kind: "target_gone" }
+  | {
+      kind: "declined"
+    }
+> {
+  const target = session.target
+  switch (target.kind) {
+    case "product":
+      return resolveProductPaymentContext(deps, session, target.productId)
+    case "owned_entity":
+      // An owned product reached through the generic arm is still a product,
+      // and its own reader answers with the category layer and a localized
+      // name that the generic entity cascade has no way to produce.
+      return target.entityModule === "products"
+        ? resolveProductPaymentContext(deps, session, target.entityId)
+        : resolveEntityPaymentContext(deps, session, {
+            entityModule: target.entityModule,
+            entityId: target.entityId,
+          })
+    case "catalog_item":
+      return resolveSourcedPaymentContext(deps, session, target.catalogItemId)
+    case "trip_snapshot":
+      return resolveTripPaymentContext(deps, session, target)
+  }
+}
+
+/**
+ * The product cascade: the listing's own policy, its first category's, and its
+ * supplier's — plus the departure the *selection* buys, which is a different
+ * question from what the listing advertises (voyant#4740).
+ */
+async function resolveProductPaymentContext(
+  deps: ProductionBookingSessionPaymentDeps,
+  session: PlanSession,
+  productId: string,
+): Promise<
+  { kind: "resolved"; context: BookingSessionTargetPaymentContext } | { kind: "target_gone" }
+> {
   const [context, departureDate] = await Promise.all([
     deps.inventory.loadProductPaymentPolicyContext(deps.db, productId, {
       locale: session.scope.locale,
@@ -623,29 +778,159 @@ async function resolvePlan(
       departureSlotId: selectedDepartureSlotId(session.statePayload),
     }),
   ])
-  if (!context) return null
-  const [supplierPolicy, operatorDefault] = await Promise.all([
-    context.supplierId
-      ? deps.distribution.loadSupplierPaymentPolicy(deps.db, context.supplierId)
-      : Promise.resolve(null),
-    deps.settings.resolveOperatorDefaultPaymentPolicy(deps.db),
-  ])
-  const resolved = resolveEffectivePaymentPolicy({
-    listingPolicy: context.listingPolicy,
-    categoryPolicy: context.categoryPolicy,
-    supplierPolicy,
-    operatorDefault: operatorDefault ?? noDepositPolicy,
-  })
-  const entries = computePaymentSchedule(
-    {
-      totalCents: pricing.total,
-      currency: pricing.currency,
+  if (!context) return { kind: "target_gone" }
+  const supplierPolicy = context.supplierId
+    ? await deps.distribution.loadSupplierPaymentPolicy(deps.db, context.supplierId)
+    : null
+  return {
+    kind: "resolved",
+    context: {
+      listingPolicy: context.listingPolicy,
+      categoryPolicy: context.categoryPolicy,
+      supplierPolicy,
       departureDate,
-      today: asOf,
+      name: context.name,
     },
-    resolved.policy,
-  )
-  return { context, resolved, departureDate, entries }
+  }
+}
+
+/**
+ * The cascade for an owned vertical's listing, keyed the way the storefront's
+ * own policy preview keys it: the entity, plus the journey selections that
+ * decide which layer of it applies — a rate plan for a stay, a cabin category
+ * and sailing for a cruise. `PaymentPolicyEntityContext` exists for exactly
+ * this and the readers already walk it.
+ *
+ * The departure is deliberately **not** taken from the Session's selection.
+ * `configure.departureDate` is client-supplied, and the deposit gate is a
+ * distance-to-departure test, so honouring it would let a shopper name a date
+ * far enough out to buy a deposit on a stay that starts next week. Without a
+ * date `computePaymentSchedule` collects the full total, which is the
+ * fail-closed answer: an over-collection is refundable and is quoted to the
+ * shopper before they accept, an under-collection is money that never arrives.
+ * A vertical that wants its deposit honoured supplies the date through
+ * `describeEntity`.
+ */
+async function resolveEntityPaymentContext(
+  deps: ProductionBookingSessionPaymentDeps,
+  session: PlanSession,
+  entity: { entityModule: string; entityId: string },
+): Promise<{ kind: "resolved"; context: BookingSessionTargetPaymentContext }> {
+  const readers = deps.entityPolicy
+  const context = { ...entity, ...journeySelections(session.statePayload) }
+  const [listingPolicy, categoryPolicy, supplierPolicy, described] = await Promise.all([
+    readers?.resolveListingPolicyForEntity(deps.db, context) ?? nullPolicy(),
+    readers?.resolveCategoryPolicyForEntity(deps.db, context) ?? nullPolicy(),
+    readers?.resolveSupplierPolicyForEntity(deps.db, context) ?? nullPolicy(),
+    readers?.describeEntity?.(deps.db, context, { locale: session.scope.locale }) ?? null,
+  ])
+  return {
+    kind: "resolved",
+    context: {
+      listingPolicy,
+      categoryPolicy,
+      supplierPolicy,
+      departureDate: described?.departureDate ?? null,
+      name: described?.name ?? null,
+    },
+  }
+}
+
+/**
+ * A sourced target resolved to the entity behind it, then through the same
+ * entity cascade.
+ *
+ * The row is read here rather than through a reader because
+ * `catalog_sourced_entries` is this package's own table. Its `projection` is
+ * the local copy of what the adapter returned, which is where the name on the
+ * shopper's checkout page comes from — a sourced entry has no `products` row
+ * to read one off.
+ *
+ * An entry that has been withdrawn under a live Session is left to the Commit
+ * arm, which owns the question and answers it as `entity_not_bookable`. Failing
+ * here instead would replace that rejection with an unhandled error for the same
+ * fact, and there is no money at stake in a target nothing can commit.
+ */
+async function resolveSourcedPaymentContext(
+  deps: ProductionBookingSessionPaymentDeps,
+  session: PlanSession,
+  catalogItemId: string,
+): Promise<
+  { kind: "resolved"; context: BookingSessionTargetPaymentContext } | { kind: "declined" }
+> {
+  const [row] = await deps.db
+    .select({
+      entityModule: catalogSourcedEntriesTable.entity_module,
+      entityId: catalogSourcedEntriesTable.entity_id,
+      projection: catalogSourcedEntriesTable.projection,
+    })
+    .from(catalogSourcedEntriesTable)
+    .where(
+      and(
+        eq(catalogSourcedEntriesTable.entity_id, catalogItemId),
+        eq(catalogSourcedEntriesTable.status, "active"),
+      ),
+    )
+    .limit(1)
+  if (!row) return { kind: "declined" }
+  const resolution = await resolveEntityPaymentContext(deps, session, {
+    entityModule: row.entityModule,
+    entityId: row.entityId,
+  })
+  const name =
+    resolution.context.name ?? stringValue(row.projection.name) ?? stringValue(row.projection.title)
+  return { kind: "resolved", context: { ...resolution.context, name } }
+}
+
+/**
+ * A composite itinerary states its own context, through the handler that owns
+ * it. One Trip is one total and one departure, so the policy resolves from the
+ * Trip rather than per component — several deposits with different due dates
+ * for one itinerary is not a schedule.
+ *
+ * A handler that does not describe one has decided the Trip collects nothing,
+ * which is what `declined` says.
+ */
+async function resolveTripPaymentContext(
+  deps: ProductionBookingSessionPaymentDeps,
+  session: PlanSession,
+  target: { tripSnapshotId: string; tripEnvelopeId: string },
+): Promise<
+  { kind: "resolved"; context: BookingSessionTargetPaymentContext } | { kind: "declined" }
+> {
+  const handler = await deps.resolveCompositeHandler?.()
+  const context = await handler?.describePaymentContext?.({
+    db: deps.db,
+    tripSnapshotId: target.tripSnapshotId,
+    tripEnvelopeId: target.tripEnvelopeId,
+    locale: session.scope.locale,
+  })
+  return context ? { kind: "resolved", context } : { kind: "declined" }
+}
+
+/** The cascade keys a journey selection carries, for the readers that walk them. */
+function journeySelections(payload: Record<string, unknown>): {
+  sailingId?: string
+  cabinCategoryId?: string
+  ratePlanId?: string
+} {
+  const configure = record(payload.configure)
+  const sailingId = stringValue(configure?.sailingId)
+  const cabinCategoryId = stringValue(configure?.cabinCategoryId)
+  // A stay names its rate plan per room; the cascade takes one, and the first
+  // selected room is the one the storefront preview would have sent.
+  const rooms = record(payload.accommodation)?.rooms
+  const firstRoom = Array.isArray(rooms) ? record(rooms[0]) : undefined
+  const ratePlanId = stringValue(configure?.ratePlanId) ?? stringValue(firstRoom?.ratePlanId)
+  return {
+    ...(sailingId ? { sailingId } : {}),
+    ...(cabinCategoryId ? { cabinCategoryId } : {}),
+    ...(ratePlanId ? { ratePlanId } : {}),
+  }
+}
+
+async function nullPolicy(): Promise<PaymentPolicy | null> {
+  return null
 }
 
 /**

@@ -1,5 +1,121 @@
 # @voyant-travel/bookings-react
 
+## 0.304.0
+
+### Patch Changes
+
+- 57804ad: Say why **Create booking** is disabled, at the button
+
+  Manual booking create folded seven independent conditions into one
+  `submitBlocked` boolean and rendered a greyed-out button with no `title`, no
+  `aria-describedby` and no adjacent text, so an operator saw a dead button and
+  had to guess which of the seven was wrong.
+
+  The one message that did exist made it worse. "Select at least one option."
+  sits with the **Options** section near the top of the form, while the disabled
+  button is at the bottom past travellers, billing and the **Generate proforma** /
+  **Generate invoice and contract** checkboxes — which are also, to an operator,
+  options. A managed operator read it as those checkboxes, could not clear it
+  whatever they ticked, and opened a support ticket.
+
+  `submitBlocked` is now derived from `resolveManualBookingSubmitBlocker`, which
+  returns _which_ condition applies — `sourced`, `product`, `timing`, `units`,
+  `settling`, `pricing` or `promotion` — in the same order `handleSubmit` checks
+  them, so the reason shown at the button is the reason a submit would have
+  raised. `submitBlocked` remains `blocker !== null`, leaving the #4588
+  error-clearing effect unchanged.
+
+  The reason renders in the action row beside **Create booking**, prefixed with
+  the button's own name, and the button carries `aria-describedby` pointing at it.
+  It is suppressed when it would repeat, word for word, an alert the same footer
+  already renders.
+
+  The units copy no longer collides with the document checkboxes: the anchored
+  message is "Set a quantity for at least one product option." and the
+  button-level one names the section — "Set a quantity in the Options section,
+  above. Those are the product's options, not the documents to generate." Both
+  locales updated.
+
+- Updated dependencies [1cde1a8]
+- Updated dependencies [72c2616]
+  - @voyant-travel/catalog-react@0.302.0
+  - @voyant-travel/finance@0.260.0
+  - @voyant-travel/finance-react@0.304.0
+  - @voyant-travel/inventory-react@0.186.0
+  - @voyant-travel/distribution-react@0.294.0
+  - @voyant-travel/identity-react@0.304.0
+  - @voyant-travel/legal-react@0.304.0
+  - @voyant-travel/operations-react@0.185.0
+  - @voyant-travel/commerce-react@0.186.0
+  - @voyant-travel/public-api-react@0.306.0
+  - @voyant-travel/relationships-react@0.304.0
+
+## 0.303.0
+
+### Minor Changes
+
+- c5b12ba: Add travel insurance as a sellable ancillary.
+
+  `@voyant-travel/insurance-contracts` is the provider-neutral vocabulary — quote
+  requests expressed as ages and dates, quotes carrying eligibility as structured
+  reasons rather than exceptions, applications with their own insured persons and
+  bounded validity window, issued policies, and the five-method provider port an
+  insurer adapter binds. The `insurance` module owns persistence for applications
+  and policies, encrypts insured persons' identity data at rest, and fans out
+  across every connected insurer.
+
+  Checkout gains a provider-neutral ancillary seam: `commerce.ancillary-offer-source`
+  is many-valued, always returns a list, and degrades a slow or failing provider to
+  a diagnostic instead of blocking a purchase. Commerce learns nothing about
+  insurance — an operator with a direct supplier contract binds their own source.
+
+  A premium is a pass-through line: excluded from operator markup and commission,
+  carrying its own tax treatment rather than inheriting the booking's, and
+  reconciled against the issued policy so the booking total cannot drift from the
+  document the traveller receives.
+
+  The legal module gains acceptance targets for an insurer's product information
+  document, its terms pinned to the version in force at the time of sale, and a
+  demands-and-needs statement, with the artifact archived rather than re-fetched
+  from a URL that will later serve something else.
+
+### Patch Changes
+
+- Updated dependencies [c5b12ba]
+  - @voyant-travel/catalog-contracts@0.137.0
+  - @voyant-travel/catalog@0.260.0
+  - @voyant-travel/bookings@0.249.0
+  - @voyant-travel/catalog-react@0.301.0
+  - @voyant-travel/inventory-react@0.185.0
+  - @voyant-travel/products-contracts@0.111.9
+  - @voyant-travel/public-api-react@0.305.0
+  - @voyant-travel/accommodations@0.215.0
+  - @voyant-travel/commerce-react@0.185.0
+  - @voyant-travel/distribution-react@0.293.0
+  - @voyant-travel/finance-react@0.303.0
+  - @voyant-travel/identity-react@0.303.0
+  - @voyant-travel/legal-react@0.303.0
+  - @voyant-travel/operations-react@0.184.0
+  - @voyant-travel/relationships-react@0.303.0
+
+## 0.302.0
+
+### Patch Changes
+
+- Updated dependencies [18212cc]
+  - @voyant-travel/cruises@0.240.0
+  - @voyant-travel/i18n@0.127.0
+  - @voyant-travel/catalog-react@0.300.0
+  - @voyant-travel/commerce-react@0.184.0
+  - @voyant-travel/distribution-react@0.292.0
+  - @voyant-travel/finance-react@0.302.0
+  - @voyant-travel/identity-react@0.302.0
+  - @voyant-travel/inventory-react@0.184.0
+  - @voyant-travel/legal-react@0.302.0
+  - @voyant-travel/operations-react@0.183.0
+  - @voyant-travel/public-api-react@0.304.0
+  - @voyant-travel/relationships-react@0.302.0
+
 ## 0.301.0
 
 ### Patch Changes

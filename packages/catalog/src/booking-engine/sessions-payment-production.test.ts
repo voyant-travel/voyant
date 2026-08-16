@@ -1121,3 +1121,23 @@ function bookingReaderDb(booking: Record<string, unknown> | null) {
     }),
   }
 }
+
+/**
+ * Since voyant#4745 a Trip Snapshot resolves a policy of its own, so the plan
+ * on offer at a composite Commit is the *whole trip's*. Writing it against the
+ * primary component would record the entire debt on one of several Bookings.
+ */
+describe("production Booking Session composite commit", () => {
+  beforeEach(() => {
+    persistResolvedBookingPaymentSchedule.mockClear()
+    listBookingPaymentSchedules.mockResolvedValue([])
+  })
+
+  it("writes no schedule when the Commit confirmed more than one Booking", async () => {
+    const payments = commitPorts()
+
+    await payments.establishPaymentSchedule?.(commitInput(37_800, ["book_4743", "book_4744"]))
+
+    expect(persistResolvedBookingPaymentSchedule).not.toHaveBeenCalled()
+  })
+})

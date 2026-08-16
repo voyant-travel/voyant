@@ -1,5 +1,51 @@
 # @voyant-travel/trips
 
+## 0.237.5
+
+### Patch Changes
+
+- c1f2ed2: Prepare a Session payment for every target kind, not only products. The Session
+  payment port returned `not_required` for `owned_entity`, `catalog_item` and
+  `trip_snapshot` before it read anything, so an accommodation, a cruise cabin, a
+  sourced entry or a composite trip committed with no payment session, no deposit
+  and no card ever presented. The port now resolves the policy cascade per target
+  kind: an owned entity and a sourced entry through the entity-keyed cascade
+  commerce already composes, an owned product through the product reader that
+  carries its category layer and localized name, and a Trip through the composite
+  handler that owns it. A vertical with no payment context still collects nothing,
+  but that is now its own answer rather than a consequence of the target enum.
+- Updated dependencies [c1f2ed2]
+  - @voyant-travel/catalog@0.260.2
+  - @voyant-travel/commerce@0.55.2
+
+## 0.237.4
+
+### Patch Changes
+
+- Updated dependencies [72c2616]
+  - @voyant-travel/finance@0.260.0
+  - @voyant-travel/catalog@0.260.1
+  - @voyant-travel/commerce@0.55.1
+  - @voyant-travel/flights@0.240.2
+  - @voyant-travel/inventory@0.42.22
+  - @voyant-travel/operator-settings@0.18.13
+  - @voyant-travel/public-api@0.263.1
+
+## 0.237.3
+
+### Patch Changes
+
+- Updated dependencies [c5b12ba]
+  - @voyant-travel/catalog-contracts@0.137.0
+  - @voyant-travel/catalog@0.260.0
+  - @voyant-travel/commerce@0.55.0
+  - @voyant-travel/bookings@0.249.0
+  - @voyant-travel/flights@0.240.1
+  - @voyant-travel/public-api@0.263.0
+  - @voyant-travel/inventory@0.42.21
+  - @voyant-travel/operator-settings@0.18.12
+  - @voyant-travel/finance@0.259.2
+
 ## 0.237.2
 
 ### Patch Changes

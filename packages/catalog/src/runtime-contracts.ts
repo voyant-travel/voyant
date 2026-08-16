@@ -15,9 +15,10 @@ export {
 } from "./booking-session-settlement-runtime-port.js"
 
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import type { PaymentPolicy } from "@voyant-travel/finance"
+import type { PaymentPolicy, PaymentPolicyEntityContext } from "@voyant-travel/finance"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type {
+  AncillaryOfferResolver,
   BookingSessionCompositeHandler,
   OwnedBookingHandlerRegistry,
   PromotionEvaluator,
@@ -118,6 +119,68 @@ export interface CatalogCommerceRuntimeExtension {
    * absent means quotes price undiscounted.
    */
   createPromotionEvaluator?(db: AnyDrizzleDb): PromotionEvaluator
+  /**
+   * The entity-keyed payment-policy cascade, for Session targets that are not
+   * a single product.
+   *
+   * Supplied here because commerce is where the vertical readers are already
+   * composed — the same object its accepted-policy resolution walks. Optional
+   * because a deployment may run the catalog without it; absent means an
+   * accommodation, a cruise cabin or a sourced entry resolves on the operator
+   * default alone, which is a policy, not a reason to collect nothing
+   * (voyant#4745).
+   */
+  entityPaymentPolicy?: CatalogEntityPaymentPolicyReaders
+  /**
+   * Fans out across whatever ancillary sources the deployment has bound, so
+   * the Booking Session descriptor can carry live third-party offers.
+   *
+   * Injected through this extension rather than resolved in catalog, because
+   * `commerce.ancillary-offer-source` is commerce's port and catalog does not
+   * depend on commerce. Optional for the same reason
+   * `createPromotionEvaluator` is: absent means nothing is bound, and the
+   * ancillary step then does not exist at all.
+   */
+  resolveAncillaryOffers?: AncillaryOfferResolver
+}
+
+/**
+ * The three cascade layers keyed by a listing rather than by a booking that
+ * does not exist yet, plus what the listing is called and when its travel
+ * starts.
+ *
+ * The readers are the storefront policy-preview readers verbatim —
+ * `PaymentPolicyEntityContext` in, per-layer override or `null` out — so a
+ * Session's checkout and the price preview the shopper saw resolve the same
+ * policy from the same rows.
+ */
+export interface CatalogEntityPaymentPolicyReaders {
+  resolveListingPolicyForEntity(
+    db: AnyDrizzleDb,
+    context: PaymentPolicyEntityContext,
+  ): Promise<PaymentPolicy | null>
+  resolveCategoryPolicyForEntity(
+    db: AnyDrizzleDb,
+    context: PaymentPolicyEntityContext,
+  ): Promise<PaymentPolicy | null>
+  resolveSupplierPolicyForEntity(
+    db: AnyDrizzleDb,
+    context: PaymentPolicyEntityContext,
+  ): Promise<PaymentPolicy | null>
+  /**
+   * When the shopper travels and what the listing is called, in the Session's
+   * locale.
+   *
+   * Separate from the policy layers because it is a different question — the
+   * layers describe the terms, this describes the thing being sold. Optional:
+   * a vertical that cannot state a travel date has the shopper pay in full
+   * rather than have a client-supplied date decide whether a deposit applies.
+   */
+  describeEntity?(
+    db: AnyDrizzleDb,
+    context: PaymentPolicyEntityContext,
+    options: { locale: string },
+  ): Promise<{ name: string | null; departureDate: string | null } | null>
 }
 
 export interface CatalogLegalRuntimeExtension {
