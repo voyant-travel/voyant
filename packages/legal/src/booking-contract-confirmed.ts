@@ -22,6 +22,11 @@ import {
   resolveBookingContractLanguage,
 } from "./booking-contract-review.js"
 import {
+  type BookingContractSettlement,
+  bookingContractPreviewSettlement,
+  resolveBookingContractSettlement,
+} from "./booking-contract-settlement.js"
+import {
   bookingContractAcceptanceContentDigest,
   isBookingContractAcceptanceContentDigest,
 } from "./contract-acceptance.js"
@@ -59,6 +64,14 @@ export type BookingContractConfirmationResult =
       status: "skipped"
       reason:
         | "booking_not_found"
+        /**
+         * The operator said not to produce documents for this booking
+         * (voyant#4688). Generation used to be a consequence of confirmation
+         * with nothing able to decline it, so an operator's explicit
+         * instruction had no effect — the decision is now persisted on the
+         * booking and read here, where the generation actually happens.
+         */
+        | "documents_suppressed"
         | "template_not_found"
         | "template_version_missing"
         | "series_not_found"
@@ -200,7 +213,18 @@ export async function generateBookingContractOnConfirmation(
     if (prepared.status === "already_generated") {
       await promotePaidAcceptedBookingContract(input.db, prepared.contractId, input.eventBus)
     }
-    if (prepared.status === "skipped" && prepared.reason !== "booking_not_found") {
+    // `documents_suppressed` joins `booking_not_found` in not being recorded as
+    // unfulfilled. The entry these write is a `failed` one, and nothing failed
+    // — an operator said not to produce documents for this booking. The
+    // voyant#4634 reason for recording the others is that silence there is
+    // indistinguishable from a deployment where generation never works; here it
+    // is not, because `bookings.documents_suppressed` is set on the booking and
+    // says exactly why nothing was generated.
+    if (
+      prepared.status === "skipped" &&
+      prepared.reason !== "booking_not_found" &&
+      prepared.reason !== "documents_suppressed"
+    ) {
       await recordUnfulfilledBookingContract(input.db, {
         event: input.event,
         reason: prepared.reason,
@@ -243,7 +267,7 @@ export async function generateBookingContractOnConfirmation(
 export type UnfulfilledBookingContractReason =
   | Exclude<
       Extract<BookingContractConfirmationResult, { status: "skipped" }>["reason"],
-      "booking_not_found"
+      "booking_not_found" | "documents_suppressed"
     >
   | "document_renderer_unavailable"
 
@@ -372,6 +396,12 @@ async function prepareBookingContractTarget(
 > {
   const booking = await bookingsService.getBookingById(db, bookingId)
   if (!booking) return { status: "skipped", reason: "booking_not_found" }
+  // Checked before anything is looked up or written, so a suppressed booking
+  // leaves no half-prepared contract behind. Read from the row rather than the
+  // event for the reason voyant#4634 gave for notification suppression: the
+  // decision lives on the booking, and every path that must honour it re-reads
+  // it there.
+  if (booking.documentsSuppressed) return { status: "skipped", reason: "documents_suppressed" }
 
   const existingContracts = await db
     .select()
@@ -440,7 +470,15 @@ async function prepareBookingContractTarget(
   // had deliberately fallen back to, which on a single-language deployment is
   // the only template there is (voyant#4650).
   const language = selected.template.language
-  const variables = bookingContractVariables(booking, items, travelers)
+  // Settlement is read after the template is chosen because the payment
+  // method label is written in the contract's language, and the contract's
+  // language is the template's — not the shopper's preference.
+  const settlement = await resolveBookingContractSettlement(db, bookingId, {
+    currency: booking.sellCurrency,
+    totalAmountCents: booking.sellAmountCents,
+    language,
+  })
+  const variables = bookingContractVariables(booking, items, travelers, settlement)
   const missingPrerequisites = bookingContractPrerequisites({
     templateApplicable:
       reusable?.templateVersionId === selected.version.id ||
@@ -491,6 +529,23 @@ async function prepareBookingContractTarget(
     body: selected.version.body,
     variables: bookingContractAcceptanceVariables(variables),
   })
+  // Settlement moves between the two too, and stripping identity does not
+  // undo it: a card booking is paid by the time `booking.confirmed` lands, so
+  // a template that binds the payment clause renders "paid in full" here and
+  // rendered "nothing paid yet" for the shopper. Offer that reading as a
+  // third candidate so the acceptance stays recoverable on exactly the
+  // bookings the storefront settles up front.
+  const acceptancePreviewRenderedBody = contractsService.renderPreview({
+    body: selected.version.body,
+    variables: bookingContractAcceptanceVariables(
+      bookingContractVariables(
+        booking,
+        items,
+        travelers,
+        bookingContractPreviewSettlement(settlement, booking.sellAmountCents),
+      ),
+    ),
+  })
   const priorMetadata = record(reusable?.metadata)
   const pendingAcceptance = await bookingContractAcceptanceMetadata({
     internalNotes: booking.internalNotes,
@@ -498,7 +553,7 @@ async function prepareBookingContractTarget(
     templateVersionId: selected.version.id,
     templateSlug: selected.template.slug,
     renderedBody,
-    additionalRenderedBodies: [acceptanceRenderedBody],
+    additionalRenderedBodies: [acceptanceRenderedBody, acceptancePreviewRenderedBody],
   })
   const acceptance = priorMetadata.acceptance ?? pendingAcceptance ?? undefined
   const paymentConfirmation =
@@ -751,6 +806,7 @@ export function bookingContractVariables(
   booking: BookingContractReviewInput["booking"],
   items: BookingContractReviewInput["items"],
   travelers: Awaited<ReturnType<typeof bookingsService.listTravelers>>,
+  settlement: BookingContractSettlement,
   now = new Date(),
 ): Record<string, unknown> {
   const primaryProduct = items[0]
@@ -807,6 +863,18 @@ export function bookingContractVariables(
       currency: booking.sellCurrency,
       sellAmountCents: booking.sellAmountCents,
       totalAmountCents: booking.sellAmountCents,
+      // Settlement. `balanceDueCents` / `amountDueCents` are payment-aware and
+      // reach 0 once the booking is settled; `balanceAmountCents` is the gross
+      // scheduled balance installment and never moves. A payment clause that
+      // binds the wrong one bills a customer who has already paid.
+      paidAmountCents: settlement.paidAmountCents,
+      amountDueCents: settlement.amountDueCents,
+      balanceDueCents: settlement.amountDueCents,
+      isPaidInFull: settlement.isPaidInFull,
+      depositAmountCents: settlement.depositAmountCents,
+      depositDueDate: settlement.depositDueDate,
+      balanceAmountCents: settlement.balanceAmountCents,
+      balanceDueDate: settlement.balanceDueDate,
       items: normalizedItems,
     },
     customer: {
@@ -835,6 +903,14 @@ export function bookingContractVariables(
     payment: {
       amountCents: booking.sellAmountCents,
       currency: booking.sellCurrency,
+      isPaidInFull: settlement.isPaidInFull,
+      paidAmountCents: settlement.paidAmountCents,
+      balanceDueCents: settlement.amountDueCents,
+      method: settlement.latestCompleted?.methodLabel ?? "",
+      capturedAt: settlement.latestCompleted?.date ?? "",
+      createdAt: settlement.latestCompleted?.date ?? "",
+      latestCompleted: settlement.latestCompleted,
+      schedule: settlement.schedule,
     },
     product: {
       title: primaryProduct?.productNameSnapshot ?? primaryProduct?.title ?? null,

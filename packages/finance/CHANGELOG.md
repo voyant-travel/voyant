@@ -1,5 +1,84 @@
 # @voyant-travel/finance
 
+## 0.255.1
+
+### Patch Changes
+
+- c7bccba: Record a Booking Document that carries the issuer's identity.
+
+  Every `POST /v1/admin/bookings/{id}/documents` request carrying the `issued*`
+  group answered 500, so `contract` and `invoice` — the types whose validation
+  _requires_ that group — could not be created at all: without the fields the
+  request was refused 400, with them it crashed.
+
+  The insert was never the problem. The replay lookup that runs before it
+  interpolated the issue date straight into a `sql` fragment, and an interpolated
+  value goes to the driver unencoded — unlike `eq(column, value)`, which encodes
+  it through the column first. postgres-js cannot bind a `Date`, so the query
+  threw before it was ever sent, which is why writing the same values to the same
+  columns by hand always worked. The lookup now binds through the column, so it
+  and the insert agree by construction.
+
+  The same interpolation sat in `buildCreatedAtCondition` in all three
+  action-ledger drift checkers, where it crashed
+  `check_booking_action_ledger_drift`, `check_finance_action_ledger_drift` and
+  `check_product_action_ledger_drift` for any caller that narrowed by
+  `createdAtFrom`. Each is bound as an encoded timestamp now, and each package's
+  unit test pins the parameter's type rather than just the SQL it builds.
+
+- Updated dependencies [c7bccba]
+  - @voyant-travel/bookings@0.245.1
+
+## 0.255.0
+
+### Minor Changes
+
+- 1f36964: Render the auto-generated booking contract's payment clause from settlement.
+
+  The post-confirm variable bag carried the booking's list price and nothing
+  about what had been paid, so a template branching on `booking.isPaidInFull`
+  took the `else` arm on every contract and printed the missing-value
+  placeholder for each amount — telling a customer who had paid in full that
+  they owed "-" by "-".
+
+  Finance gains `getBookingSettlement`, the one answer for what a booking has
+  paid and still owes: completed payments against non-void invoices, the
+  invoice balance, and the installments that still stand (cancelled, waived and
+  expired rows excluded). Legal reads it through that service and emits
+  `booking.paidAmountCents`, `amountDueCents`, `balanceDueCents`,
+  `isPaidInFull`, the deposit/balance installments, and `payment.method` /
+  `latestCompleted` / `schedule`, so the auto-generated contract and the agent
+  path now render the same clause.
+
+  A credit note is a negative receivable, so `getBookingSettlement` nets it out
+  of the balance rather than summing it as debt, and never presents a
+  credit-note refund as the customer's latest payment.
+
+  The acceptance-evidence digest is matched against a third candidate rendered
+  with preview-time settlement — nothing paid, the whole price outstanding —
+  because the shopper accepted the terms before paying, and a card booking is
+  settled by the time `booking.confirmed` lands.
+
+## 0.254.0
+
+### Minor Changes
+
+- 798b05b: Make recording a booking's payment separable from issuing a fiscal document for it.
+
+  Creating a booking with a recorded payment issued an invoice and mirrored it to the operator's accounting provider, and confirming one generated a contract. Both were consequences of the create rather than calls anyone made, so an operator's explicit "do not issue a proforma, invoice or contract" had nowhere to land, and back-filling a booking for an already-invoiced sale filed a second real fiscal document for it.
+
+  - `suppressDocuments` on booking create records the booking without producing documents for it. The invoice is still written, as an unissued draft carrying the payments, so the booking records what was paid. Persisted as `bookings.documents_suppressed` and re-read by contract generation, which runs off an event after the create commits.
+  - `documentGeneration.externalInvoice` (and `externalDocument` on `POST /invoices/from-booking`) records the sale against a fiscal document the operator already issued in their provider: the platform's invoice is issued so balances and contracts stay right, the mirror is suppressed, and the invoice's external reference names the operator's document.
+  - Issuing from a booking that already carries a live external fiscal document now refuses with `duplicate_external_document` (HTTP 409) instead of sending a duplicate; `acknowledgeExistingExternalDocument: true` overrides it.
+  - `POST /invoices/{id}/external-refs/{refId}/supersede` records that a provider document was cancelled outside the platform, keeping the superseded identity, and optionally repoints the reference at its replacement.
+
+### Patch Changes
+
+- Updated dependencies [798b05b]
+  - @voyant-travel/bookings-contracts@0.118.0
+  - @voyant-travel/finance-contracts@0.114.0
+  - @voyant-travel/bookings@0.245.0
+
 ## 0.253.0
 
 ### Minor Changes

@@ -1,5 +1,26 @@
 # @voyant-travel/mice-react
 
+## 0.159.0
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/i18n@0.125.0
+  - @voyant-travel/relationships-react@0.291.0
+
+## 0.158.0
+
+### Patch Changes
+
+- @voyant-travel/relationships-react@0.290.0
+
+## 0.157.0
+
+### Patch Changes
+
+- @voyant-travel/mice@0.104.0
+- @voyant-travel/relationships-react@0.289.0
+
 ## 0.156.0
 
 ### Patch Changes

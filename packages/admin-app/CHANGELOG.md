@@ -1,5 +1,32 @@
 # @voyant-travel/admin-app
 
+## 0.184.0
+
+### Patch Changes
+
+- @voyant-travel/inventory-react@0.173.0
+- @voyant-travel/commerce-react@0.173.0
+- @voyant-travel/distribution-react@0.281.0
+- @voyant-travel/finance-react@0.291.0
+
+## 0.183.0
+
+### Patch Changes
+
+- @voyant-travel/finance-react@0.290.0
+- @voyant-travel/inventory-react@0.172.0
+- @voyant-travel/distribution-react@0.280.0
+- @voyant-travel/commerce-react@0.172.0
+
+## 0.182.0
+
+### Patch Changes
+
+- @voyant-travel/finance-react@0.289.0
+- @voyant-travel/inventory-react@0.171.0
+- @voyant-travel/distribution-react@0.279.0
+- @voyant-travel/commerce-react@0.171.0
+
 ## 0.181.0
 
 ### Patch Changes
