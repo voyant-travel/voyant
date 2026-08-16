@@ -18,6 +18,7 @@ export type OperatorAdminNavMessages = {
   catalogTransportation: string
   catalogTransportationTagline: string
   catalogCruises: string
+  catalogShips: string
   catalogCharters: string
   catalogAccommodations: string
   catalogOrders: string
@@ -89,6 +90,7 @@ export const operatorAdminNavMessages = {
       catalogTransportation: "Transportation",
       catalogTransportationTagline: "Products in the Transportation family.",
       catalogCruises: "Cruises",
+      catalogShips: "Ships",
       catalogCharters: "Charters",
       catalogAccommodations: "Accommodations",
       catalogOrders: "Orders",
@@ -159,6 +161,7 @@ export const operatorAdminNavMessages = {
       catalogTransportation: "Transport",
       catalogTransportationTagline: "Produse din familia Transport.",
       catalogCruises: "Croaziere",
+      catalogShips: "Nave",
       catalogCharters: "Chartere",
       catalogAccommodations: "Cazari",
       catalogOrders: "Comenzi",
