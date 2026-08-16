@@ -8,6 +8,15 @@ import {
   requireCustomerIdentityContext,
 } from "@voyant-travel/hono"
 import {
+  buildCustomerVerificationSenders,
+  type CustomerVerificationRoutesOptions,
+  enforceVerificationStartLimits,
+} from "@voyant-travel/identity/verification/public-routes"
+import {
+  CustomerVerificationError,
+  createCustomerVerificationService,
+} from "@voyant-travel/identity/verification/service"
+import {
   defineToolContextContribution,
   requireService,
   ToolError,
@@ -15,7 +24,6 @@ import {
 } from "@voyant-travel/tools"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
-
 import { buildPublicCustomerPortalRouteRuntime } from "./customer-portal/route-runtime.js"
 import type { PublicCustomerPortalRouteOptions } from "./customer-portal/routes-public.js"
 import { publicCustomerPortalService } from "./customer-portal/service-public.js"
@@ -25,19 +33,10 @@ import {
   publicApiPaymentLinkRuntimePort,
 } from "./runtime-port.js"
 import type {
+  CustomerVerificationToolServices,
   PublicApiCustomerPortalToolServices,
   PublicApiPaymentLinkToolServices,
-  CustomerVerificationToolServices,
 } from "./tools.js"
-import {
-  buildCustomerVerificationSenders,
-  enforceVerificationStartLimits,
-  type CustomerVerificationRoutesOptions,
-} from "@voyant-travel/identity/verification/public-routes"
-import {
-  createCustomerVerificationService,
-  CustomerVerificationError,
-} from "@voyant-travel/identity/verification/service"
 
 export * from "./tools.js"
 

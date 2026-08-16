@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from "vitest"
 import {
-  createCustomerVerificationSendersFromProviders,
   type CustomerVerificationNotificationProvider,
+  createCustomerVerificationSendersFromProviders,
 } from "../../../src/verification/service.js"
 
 function fakeProvider(name: string, channels: string[]): CustomerVerificationNotificationProvider {

@@ -4,12 +4,12 @@ import {
   type FinanceNotificationsRuntime,
   financeNotificationsRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
+import type { CustomerVerificationRoutesOptions } from "@voyant-travel/identity/verification"
 import {
   type ProposalsNotificationsRuntime,
   proposalsNotificationsRuntimePort,
 } from "@voyant-travel/proposals/runtime-port"
 import { customerVerificationRuntimePort } from "@voyant-travel/public-api"
-import type { CustomerVerificationRoutesOptions } from "@voyant-travel/identity/verification"
 import { relationshipsPersonNotificationsRuntimePort } from "@voyant-travel/relationships/runtime-port"
 import { toCustomerVerificationNotificationProviders } from "./customer-verification-runtime.js"
 import {

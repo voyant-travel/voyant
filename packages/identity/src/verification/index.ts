@@ -5,10 +5,10 @@ import type { ApiModule } from "@voyant-travel/hono/module"
 import { customerVerificationRuntimePort } from "../runtime-port.js"
 import {
   buildCustomerVerificationSenderBundle,
-  createCustomerVerificationPublicRoutes,
-  PUBLIC_API_VERIFICATION_SENDERS_CONTAINER_KEY,
   type CustomerVerificationChannelCoverage,
   type CustomerVerificationRoutesOptions,
+  createCustomerVerificationPublicRoutes,
+  PUBLIC_API_VERIFICATION_SENDERS_CONTAINER_KEY,
 } from "./routes-public.js"
 import { customerVerificationModule } from "./schema.js"
 
@@ -58,9 +58,9 @@ export type {
   CustomerVerificationSmsSendInput,
 } from "./service.js"
 export {
+  CustomerVerificationError,
   createCustomerVerificationSendersFromProviders,
   createCustomerVerificationService,
-  CustomerVerificationError,
 } from "./service.js"
 export type {
   ConfirmEmailVerificationChallengeInput,

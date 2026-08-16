@@ -1,3 +1,4 @@
+import { customerVerificationChallengeRecordWireSchema } from "@voyant-travel/identity/verification/validation"
 import {
   admitHandlerActionPolicy,
   defineTool,
@@ -8,8 +9,6 @@ import {
   ToolError,
 } from "@voyant-travel/tools"
 import { z } from "zod"
-
-import { customerVerificationChallengeRecordWireSchema } from "@voyant-travel/identity/verification/validation"
 
 import {
   bootstrapCustomerPortalResultSchema,

@@ -3,9 +3,9 @@ import { afterEach, describe, expect, it, vi } from "vitest"
 
 import {
   buildCustomerVerificationSenderBundle,
+  CustomerVerificationError,
   createCustomerVerificationApiModule,
   createCustomerVerificationSendersFromProviders,
-  CustomerVerificationError,
   resolveCustomerVerificationChannelCoverage,
 } from "../../../src/verification/index.js"
 

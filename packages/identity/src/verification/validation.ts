@@ -124,9 +124,7 @@ export type ConfirmSmsVerificationChallengeInput = z.infer<
 export type CustomerVerificationChallengeRecord = z.infer<
   typeof customerVerificationChallengeRecordSchema
 >
-export type CustomerVerificationStartResult = z.infer<
-  typeof customerVerificationStartResultSchema
->
+export type CustomerVerificationStartResult = z.infer<typeof customerVerificationStartResultSchema>
 export type CustomerVerificationConfirmResult = z.infer<
   typeof customerVerificationConfirmResultSchema
 >

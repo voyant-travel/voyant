@@ -578,6 +578,13 @@ export const publicApiCustomerVerificationVoyantModule = defineModule({
     ["start-my-sms-verification", "start_my_sms_verification", "startMySmsVerificationTool"],
     ["confirm-my-sms-verification", "confirm_my_sms_verification", "confirmMySmsVerificationTool"],
   ].map(([id, name, exportName]) => ({
+    id: `@voyant-travel/public-api#tool.${id}`,
+    name: name!,
+    runtime: { entry: "@voyant-travel/public-api/tools", export: exportName! },
+    requiredScopes: ["public-api:write"],
+    context: ["customerVerification"],
+    risk: "high" as const,
+  })),
   actions: [
     {
       id: "@voyant-travel/public-api#action.start-my-verification",

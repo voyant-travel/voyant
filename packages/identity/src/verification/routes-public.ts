@@ -4,13 +4,13 @@ import { clientIpKey, enforceRateLimit, openApiValidationHook } from "@voyant-tr
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
 import {
-  createCustomerVerificationSendersFromProviders,
-  createCustomerVerificationService,
   CustomerVerificationError,
   type CustomerVerificationNotificationProvider,
   type CustomerVerificationProviderOptions,
   type CustomerVerificationSenders,
   type CustomerVerificationServiceOptions,
+  createCustomerVerificationSendersFromProviders,
+  createCustomerVerificationService,
 } from "./service.js"
 import {
   confirmEmailVerificationChallengeSchema,
