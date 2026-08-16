@@ -27,10 +27,7 @@
  * to stay intact for an operator to act on.
  */
 
-import type {
-  BookingPassThroughItem,
-  listBookingPassThroughItems as listBookingPassThroughItemsFn,
-} from "@voyant-travel/bookings"
+import type { listBookingPassThroughItems as listBookingPassThroughItemsFn } from "@voyant-travel/bookings"
 import {
   type AncillarySelectionV1,
   ancillarySelectionKey,
