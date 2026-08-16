@@ -1,5 +1,42 @@
 # @voyant-travel/cruises
 
+## 0.239.8
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/catalog@0.257.0
+
+## 0.239.7
+
+### Patch Changes
+
+- Updated dependencies [1f36964]
+  - @voyant-travel/finance@0.255.0
+  - @voyant-travel/catalog@0.256.7
+
+## 0.239.6
+
+### Patch Changes
+
+- Updated dependencies [798b05b]
+- Updated dependencies [05c2202]
+  - @voyant-travel/finance@0.254.0
+  - @voyant-travel/catalog@0.256.6
+
+## 0.239.5
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+- Updated dependencies [c2aedcb]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/finance@0.253.0
+  - @voyant-travel/action-ledger@0.115.19
+  - @voyant-travel/catalog@0.256.5
+  - @voyant-travel/db@0.122.2
+  - @voyant-travel/hono@0.143.1
+
 ## 0.239.4
 
 ### Patch Changes

@@ -18,6 +18,7 @@ import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { openApiValidationHook, parseJsonBody } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { MiddlewareHandler } from "hono"
+import { describeDuplicateExternalDocument } from "./invoice-external-document.js"
 import {
   errorResponseSchema,
   invoiceListItemSchema,
@@ -92,7 +93,9 @@ const issueInvoiceFromBookingRoute = createRoute({
     body: {
       required: true,
       description:
-        "Create + issue an invoice or proforma from a booking (and optionally a payment schedule). `invoiceType` selects invoice vs proforma; `bookingPaymentScheduleId`, when present, must belong to the booking.",
+        "Create + issue an invoice or proforma from a booking (and optionally a payment schedule). `invoiceType` selects invoice vs proforma; `bookingPaymentScheduleId`, when present, must belong to the booking. " +
+        "Pass `externalDocument` when the operator already issued a fiscal document for this sale in their accounting provider — the invoice is recorded against that document and no second one is requested. " +
+        "If the booking already carries a live external document the request is refused with `duplicate_external_document`; `acknowledgeExistingExternalDocument: true` overrides it.",
       content: { "application/json": { schema: invoiceFromBookingSchema } },
     },
   },
@@ -111,10 +114,21 @@ const issueInvoiceFromBookingRoute = createRoute({
     },
     409: {
       description:
-        "Invoice number allocation failed, the invoice number already exists, or the booking failed issuance validation",
+        "Invoice number allocation failed, the invoice number already exists, the booking failed issuance validation, or the booking already has a live fiscal document in an accounting provider (`duplicate_external_document`)",
       content: { "application/json": { schema: errorResponseSchema } },
     },
   },
+})
+
+/**
+ * A conversion refusal names the document it collided with, so the operator can
+ * open it rather than be told only that something already exists.
+ */
+const conversionConflictSchema = errorResponseSchema.extend({
+  code: z.string().optional(),
+  invoiceNumber: z.string().optional(),
+  existingInvoiceId: z.string().nullable().optional(),
+  existingInvoiceNumber: z.string().nullable().optional(),
 })
 
 const convertProformaToInvoiceRoute = createRoute({
@@ -141,7 +155,7 @@ const convertProformaToInvoiceRoute = createRoute({
     409: {
       description:
         "The invoice is not a proforma, has already been converted, or a duplicate fiscal invoice already exists",
-      content: { "application/json": { schema: errorResponseSchema } },
+      content: { "application/json": { schema: conversionConflictSchema } },
     },
   },
 })
@@ -253,6 +267,23 @@ financeInvoiceIssueRoutes
     if (outcome.status === "booking_changed" || outcome.status === "approval_snapshot_changed") {
       return c.json({ error: "Booking changed after review" }, 409)
     }
+    if (outcome.status === "duplicate_external_document") {
+      return c.json(
+        {
+          error: describeDuplicateExternalDocument(outcome.existing),
+          code: "duplicate_external_document",
+          details: {
+            invoiceId: outcome.existing.invoiceId,
+            invoiceNumber: outcome.existing.invoiceNumber,
+            provider: outcome.existing.provider,
+            externalNumber: outcome.existing.externalNumber,
+            externalId: outcome.existing.externalId,
+            externalUrl: outcome.existing.externalUrl,
+          },
+        },
+        409,
+      )
+    }
     return c.json({ data: outcome.invoice }, 201)
   })
   .openapi(convertProformaToInvoiceRoute, async (c) => {
@@ -275,7 +306,14 @@ financeInvoiceIssueRoutes
       })
     } catch (error) {
       if (error instanceof InvoiceNumberConflictError) {
-        return c.json({ error: "Invoice number already exists" }, 409)
+        return c.json(
+          {
+            error: "Invoice number already exists",
+            code: error.code,
+            invoiceNumber: error.invoiceNumber,
+          },
+          409,
+        )
       }
       throw error
     }
@@ -284,13 +322,33 @@ financeInvoiceIssueRoutes
       return c.json({ error: "Invoice not found" }, 404)
     }
     if (result.status === "not_proforma") {
-      return c.json({ error: "Only proforma invoices can be converted" }, 409)
+      return c.json({ error: "Only proforma invoices can be converted", code: result.status }, 409)
     }
+    // Every conflict below names the document the caller collided with. The
+    // service already resolves that pointer and this route used to drop it,
+    // leaving the operator a sentence and no way to reach the invoice that
+    // caused the refusal.
     if (result.status === "already_converted") {
-      return c.json({ error: "This proforma has already been converted" }, 409)
+      return c.json(
+        {
+          error: "This proforma has already been converted",
+          code: "proforma_already_converted",
+          existingInvoiceId: result.invoice?.id ?? null,
+          existingInvoiceNumber: result.invoice?.invoiceNumber ?? null,
+        },
+        409,
+      )
     }
     if (result.status === "duplicate_fiscal_invoice") {
-      return c.json({ error: "A fiscal invoice already exists for this booking amount" }, 409)
+      return c.json(
+        {
+          error: "A fiscal invoice already exists for this booking amount",
+          code: result.status,
+          existingInvoiceId: result.invoice.id,
+          existingInvoiceNumber: result.invoice.invoiceNumber,
+        },
+        409,
+      )
     }
 
     return c.json({ data: result.invoice }, 201)

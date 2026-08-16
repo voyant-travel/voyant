@@ -1,5 +1,50 @@
 # @voyant-travel/action-ledger-react
 
+## 0.180.0
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/i18n@0.125.0
+  - @voyant-travel/bookings-react@0.291.0
+  - @voyant-travel/inventory-react@0.173.0
+  - @voyant-travel/relationships-react@0.291.0
+
+## 0.179.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.290.0
+- @voyant-travel/inventory-react@0.172.0
+- @voyant-travel/relationships-react@0.290.0
+
+## 0.178.0
+
+### Patch Changes
+
+- @voyant-travel/bookings-react@0.289.0
+- @voyant-travel/inventory-react@0.171.0
+- @voyant-travel/relationships-react@0.289.0
+
+## 0.177.0
+
+### Patch Changes
+
+- Updated dependencies [e99380d]
+  - @voyant-travel/i18n@0.124.0
+  - @voyant-travel/inventory-react@0.170.0
+  - @voyant-travel/bookings-react@0.288.0
+  - @voyant-travel/relationships-react@0.288.0
+
+## 0.176.0
+
+### Patch Changes
+
+- @voyant-travel/react@0.106.2
+- @voyant-travel/bookings-react@0.287.0
+- @voyant-travel/inventory-react@0.169.0
+- @voyant-travel/relationships-react@0.287.0
+
 ## 0.175.0
 
 ### Patch Changes

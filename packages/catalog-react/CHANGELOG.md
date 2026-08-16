@@ -1,5 +1,62 @@
 # @voyant-travel/catalog-react
 
+## 0.289.0
+
+### Minor Changes
+
+- 70752e1: Retire the Boat Tours catalog surface — a subtype is not a browse scope.
+
+  Every other Catalog entry is a Product family (`tour`, `activity`, `attraction`, `event`, `transportation`) or a vertical with its own index. Boat Tours was neither: it locked `familyCode = tour` plus `subtypeCode = boat-tour`, making it a strict subset of Tours that showed the same products a second time.
+
+  Subtypes are free-form per deployment (`products.productSubtypeCode` accepts any kebab-case code), so promoting one of them to a nav surface hardcoded one operator's vocabulary and left every other subtype — `day-tour`, `wine-tour` — without an equivalent. Families are a closed, seeded set, so a family view means the same thing on every deployment.
+
+  `subtypeCode` remains a facet on the product filter rail, so a Boat Tour is found by filtering Tours the same way any other subtype is. `ScheduledScope` no longer accepts `"boat-tours"`, and `/catalog/boat-tours` (index and detail) is no longer routed.
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/i18n@0.125.0
+  - @voyant-travel/inventory-react@0.173.0
+  - @voyant-travel/commerce-react@0.173.0
+  - @voyant-travel/distribution-react@0.281.0
+
+## 0.288.0
+
+### Patch Changes
+
+- @voyant-travel/inventory-react@0.172.0
+- @voyant-travel/distribution-react@0.280.0
+- @voyant-travel/commerce-react@0.172.0
+
+## 0.287.0
+
+### Patch Changes
+
+- Updated dependencies [05c2202]
+  - @voyant-travel/catalog-contracts@0.134.1
+  - @voyant-travel/inventory-react@0.171.0
+  - @voyant-travel/distribution-react@0.279.0
+  - @voyant-travel/commerce-react@0.171.0
+
+## 0.286.0
+
+### Patch Changes
+
+- Updated dependencies [e99380d]
+  - @voyant-travel/i18n@0.124.0
+  - @voyant-travel/inventory-react@0.170.0
+  - @voyant-travel/commerce-react@0.170.0
+  - @voyant-travel/distribution-react@0.278.0
+
+## 0.285.0
+
+### Patch Changes
+
+- @voyant-travel/react@0.106.2
+- @voyant-travel/inventory-react@0.169.0
+- @voyant-travel/distribution-react@0.277.0
+- @voyant-travel/commerce-react@0.169.0
+
 ## 0.284.0
 
 ### Patch Changes

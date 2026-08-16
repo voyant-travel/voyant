@@ -1,5 +1,97 @@
 # @voyant-travel/legal
 
+## 0.253.1
+
+### Patch Changes
+
+- Updated dependencies [70752e1]
+  - @voyant-travel/catalog@0.257.0
+  - @voyant-travel/commerce@0.51.10
+  - @voyant-travel/distribution@0.228.9
+
+## 0.253.0
+
+### Minor Changes
+
+- 1f36964: Render the auto-generated booking contract's payment clause from settlement.
+
+  The post-confirm variable bag carried the booking's list price and nothing
+  about what had been paid, so a template branching on `booking.isPaidInFull`
+  took the `else` arm on every contract and printed the missing-value
+  placeholder for each amount — telling a customer who had paid in full that
+  they owed "-" by "-".
+
+  Finance gains `getBookingSettlement`, the one answer for what a booking has
+  paid and still owes: completed payments against non-void invoices, the
+  invoice balance, and the installments that still stand (cancelled, waived and
+  expired rows excluded). Legal reads it through that service and emits
+  `booking.paidAmountCents`, `amountDueCents`, `balanceDueCents`,
+  `isPaidInFull`, the deposit/balance installments, and `payment.method` /
+  `latestCompleted` / `schedule`, so the auto-generated contract and the agent
+  path now render the same clause.
+
+  A credit note is a negative receivable, so `getBookingSettlement` nets it out
+  of the balance rather than summing it as debt, and never presents a
+  credit-note refund as the customer's latest payment.
+
+  The acceptance-evidence digest is matched against a third candidate rendered
+  with preview-time settlement — nothing paid, the whole price outstanding —
+  because the shopper accepted the terms before paying, and a card booking is
+  settled by the time `booking.confirmed` lands.
+
+### Patch Changes
+
+- Updated dependencies [1f36964]
+  - @voyant-travel/finance@0.255.0
+  - @voyant-travel/catalog@0.256.7
+  - @voyant-travel/commerce@0.51.9
+  - @voyant-travel/distribution@0.228.8
+  - @voyant-travel/relationships@0.134.9
+
+## 0.252.0
+
+### Minor Changes
+
+- 798b05b: Make recording a booking's payment separable from issuing a fiscal document for it.
+
+  Creating a booking with a recorded payment issued an invoice and mirrored it to the operator's accounting provider, and confirming one generated a contract. Both were consequences of the create rather than calls anyone made, so an operator's explicit "do not issue a proforma, invoice or contract" had nowhere to land, and back-filling a booking for an already-invoiced sale filed a second real fiscal document for it.
+
+  - `suppressDocuments` on booking create records the booking without producing documents for it. The invoice is still written, as an unissued draft carrying the payments, so the booking records what was paid. Persisted as `bookings.documents_suppressed` and re-read by contract generation, which runs off an event after the create commits.
+  - `documentGeneration.externalInvoice` (and `externalDocument` on `POST /invoices/from-booking`) records the sale against a fiscal document the operator already issued in their provider: the platform's invoice is issued so balances and contracts stay right, the mirror is suppressed, and the invoice's external reference names the operator's document.
+  - Issuing from a booking that already carries a live external fiscal document now refuses with `duplicate_external_document` (HTTP 409) instead of sending a duplicate; `acknowledgeExistingExternalDocument: true` overrides it.
+  - `POST /invoices/{id}/external-refs/{refId}/supersede` records that a provider document was cancelled outside the platform, keeping the superseded identity, and optionally repoints the reference at its replacement.
+
+### Patch Changes
+
+- Updated dependencies [798b05b]
+- Updated dependencies [05c2202]
+  - @voyant-travel/bookings-contracts@0.118.0
+  - @voyant-travel/bookings@0.245.0
+  - @voyant-travel/finance@0.254.0
+  - @voyant-travel/catalog@0.256.6
+  - @voyant-travel/commerce@0.51.8
+  - @voyant-travel/distribution@0.228.7
+  - @voyant-travel/relationships@0.134.8
+
+## 0.251.8
+
+### Patch Changes
+
+- Updated dependencies [020de35]
+- Updated dependencies [c2aedcb]
+  - @voyant-travel/core@0.142.0
+  - @voyant-travel/finance@0.253.0
+  - @voyant-travel/action-ledger@0.115.19
+  - @voyant-travel/bookings@0.244.1
+  - @voyant-travel/catalog@0.256.5
+  - @voyant-travel/commerce@0.51.7
+  - @voyant-travel/db@0.122.2
+  - @voyant-travel/distribution@0.228.6
+  - @voyant-travel/hono@0.143.1
+  - @voyant-travel/public-document-delivery@0.5.1
+  - @voyant-travel/relationships@0.134.7
+  - @voyant-travel/storage@0.115.7
+
 ## 0.251.7
 
 ### Patch Changes

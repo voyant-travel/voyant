@@ -1,5 +1,27 @@
 # @voyant-travel/i18n
 
+## 0.125.0
+
+### Minor Changes
+
+- 70752e1: Retire the Boat Tours catalog surface — a subtype is not a browse scope.
+
+  Every other Catalog entry is a Product family (`tour`, `activity`, `attraction`, `event`, `transportation`) or a vertical with its own index. Boat Tours was neither: it locked `familyCode = tour` plus `subtypeCode = boat-tour`, making it a strict subset of Tours that showed the same products a second time.
+
+  Subtypes are free-form per deployment (`products.productSubtypeCode` accepts any kebab-case code), so promoting one of them to a nav surface hardcoded one operator's vocabulary and left every other subtype — `day-tour`, `wine-tour` — without an equivalent. Families are a closed, seeded set, so a family view means the same thing on every deployment.
+
+  `subtypeCode` remains a facet on the product filter rail, so a Boat Tour is found by filtering Tours the same way any other subtype is. `ScheduledScope` no longer accepts `"boat-tours"`, and `/catalog/boat-tours` (index and detail) is no longer routed.
+
+## 0.124.0
+
+### Minor Changes
+
+- e99380d: Group the departure traveler roster by reservation, and stop asking departures that allocate nothing about rooms and seats.
+
+  The roster was a flat table that repeated the booking number on every row, so who travelled together had to be reconstructed by matching strings by eye. Each reservation is now its own group carrying what belongs to the party — who booked it, its status, whether it is paid, and how many of its sold seats have names yet — with the traveler rows underneath.
+
+  The departure summary now reports whether a departure allocates positions at all (`allocation.planned`, derived from the resources laid out on it and the resource templates its option declares, alongside a new `allocation.templated` count). A day excursion has neither, so its Seated / Not seated counters, its Seat / room column and its allocation manager no longer render, and `allocation_resources_missing` and `travelers_unassigned` are no longer raised against a rooming plan that was never going to exist. Departures whose catalog does declare resources are unaffected.
+
 ## 0.123.1
 
 ### Patch Changes
