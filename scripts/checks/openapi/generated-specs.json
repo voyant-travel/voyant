@@ -9,6 +9,13 @@
   ],
   "generators": [
     {
+      "command": "pnpm --filter @voyant-travel/action-ledger generate:openapi",
+      "files": [
+        "packages/action-ledger/openapi/admin/action-ledger.json",
+        "packages/action-ledger/openapi/admin/action-ledger-health.json"
+      ]
+    },
+    {
       "command": "pnpm --filter @voyant-travel/apps generate:openapi",
       "files": ["packages/apps/openapi/admin/apps.json"]
     },
@@ -17,6 +24,13 @@
       "files": [
         "packages/catalog/openapi/admin/catalog-booking.json",
         "packages/catalog/openapi/public-api/catalog-booking.json"
+      ]
+    },
+    {
+      "command": "pnpm --filter @voyant-travel/charters generate:openapi",
+      "files": [
+        "packages/charters/openapi/admin/charters.json",
+        "packages/charters/openapi/public-api/charters.json"
       ]
     },
     {
