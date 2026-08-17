@@ -73,7 +73,11 @@ export function NotificationDeliveriesHost() {
           <SelectContent>
             <SelectItem value="all">{common.allStatuses}</SelectItem>
             <SelectItem value="pending">{common.statusPending}</SelectItem>
-            <SelectItem value="sent">{common.statusSent}</SelectItem>
+            <SelectItem value="accepted">{common.statusAccepted}</SelectItem>
+            <SelectItem value="delivered">{common.statusDelivered}</SelectItem>
+            <SelectItem value="bounced">{common.statusBounced}</SelectItem>
+            <SelectItem value="complained">{common.statusComplained}</SelectItem>
+            <SelectItem value="suppressed">{common.statusSuppressed}</SelectItem>
             <SelectItem value="failed">{common.statusFailed}</SelectItem>
             <SelectItem value="cancelled">{common.statusCancelled}</SelectItem>
           </SelectContent>
@@ -125,7 +129,7 @@ export function NotificationDeliveriesHost() {
                   <td className="px-4 py-3">
                     <Badge
                       variant={
-                        delivery.status === "sent"
+                        delivery.status === "delivered"
                           ? "default"
                           : delivery.status === "failed"
                             ? "destructive"

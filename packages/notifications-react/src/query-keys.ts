@@ -23,9 +23,18 @@ export interface NotificationReminderRulesListFilters {
 }
 
 export interface NotificationDeliveriesListFilters {
-  channel?: "email" | "sms" | undefined
+  channel?: string | undefined
   provider?: string | undefined
-  status?: "pending" | "sent" | "failed" | "cancelled" | undefined
+  status?:
+    | "pending"
+    | "accepted"
+    | "delivered"
+    | "failed"
+    | "bounced"
+    | "complained"
+    | "suppressed"
+    | "cancelled"
+    | undefined
   templateSlug?: string | undefined
   targetType?:
     | "booking"
@@ -101,6 +110,7 @@ export const notificationsQueryKeys = {
   remindersPreview: (filters: RemindersPreviewFilters) =>
     [...notificationsQueryKeys.all, "preview", filters] as const,
   notificationSettings: () => [...notificationsQueryKeys.all, "settings"] as const,
+  channelAccounts: () => [...notificationsQueryKeys.all, "channel-accounts"] as const,
   staffAlerts: () => [...notificationsQueryKeys.all, "staff-alerts"] as const,
   staffAlertPreferences: () => [...notificationsQueryKeys.all, "staff-alert-preferences"] as const,
 }

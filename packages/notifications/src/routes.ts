@@ -20,9 +20,16 @@ import type { EventBus, ModuleContainer } from "@voyant-travel/core"
 import { openApiValidationHook, parseOptionalJsonBody } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { notificationDeliverySchema } from "./response-schemas.js"
+import { notificationChannelAccountSchema, notificationDeliverySchema } from "./response-schemas.js"
+import type { NotificationChannelAccount } from "./schema.js"
 import { createNotificationService, notificationsService } from "./service.js"
 import type { BookingDocumentAttachmentResolver } from "./service-booking-documents.js"
+import {
+  getChannelAccount,
+  listChannelAccounts,
+  updateChannelAccountLifecycle,
+  validateChannelAccount,
+} from "./service-channel-accounts.js"
 import {
   STAFF_ALERT_RUNTIME_KEY,
   type StaffAlertRuntime,
@@ -75,6 +82,7 @@ import {
   staffAlertPreferenceSchema,
   staffAlertSettingSchema,
   staffAlertTestResultSchema,
+  updateChannelAccountLifecycleSchema,
   updateNotificationReminderRuleSchema,
   updateNotificationReminderRuleStageSchema,
   updateNotificationReminderStageChannelSchema,
@@ -179,6 +187,13 @@ const errorResponseSchema = z.object({ error: z.string() })
 const idSchema = z.string()
 const isoTimestamp = z.string()
 const jsonMetadata = z.record(z.string(), z.unknown())
+
+function toChannelAccountResponse({
+  adapterRef: _adapterRef,
+  ...account
+}: NotificationChannelAccount) {
+  return account
+}
 
 const invalidRequestResponse = {
   description: "invalid_request: request body failed validation",
@@ -533,7 +548,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
         )
         if (!row) return c.json({ error: "Notification delivery not found" }, 404)
         return c.json({ data: row }, 201)
-      } catch (error) {
+      } catch {
         const message = error instanceof Error ? error.message : "Notification resend failed"
         return c.json({ error: message }, 400)
       }
@@ -943,6 +958,66 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
+  const listChannelAccountsRoute = createRoute({
+    method: "get",
+    path: "/channel-accounts",
+    responses: {
+      200: {
+        description: "Credential-free Channel Account identities and health",
+        content: {
+          "application/json": { schema: dataEnvelope(z.array(notificationChannelAccountSchema)) },
+        },
+      },
+    },
+  })
+
+  const getChannelAccountRoute = createRoute({
+    method: "get",
+    path: "/channel-accounts/{id}",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "A credential-free Channel Account",
+        content: { "application/json": { schema: dataEnvelope(notificationChannelAccountSchema) } },
+      },
+      404: notFoundResponse("Channel Account not found"),
+    },
+  })
+
+  const validateChannelAccountRoute = createRoute({
+    method: "post",
+    path: "/channel-accounts/{id}/validate",
+    request: { params: idParamSchema },
+    responses: {
+      200: {
+        description: "Channel Account health refreshed through its runtime adapter",
+        content: { "application/json": { schema: dataEnvelope(notificationChannelAccountSchema) } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Channel Account not found"),
+    },
+  })
+
+  const updateChannelAccountLifecycleRoute = createRoute({
+    method: "patch",
+    path: "/channel-accounts/{id}/lifecycle",
+    request: {
+      params: idParamSchema,
+      body: {
+        required: true,
+        content: { "application/json": { schema: updateChannelAccountLifecycleSchema } },
+      },
+    },
+    responses: {
+      200: {
+        description: "Channel Account lifecycle updated",
+        content: { "application/json": { schema: dataEnvelope(notificationChannelAccountSchema) } },
+      },
+      400: invalidRequestResponse,
+      404: notFoundResponse("Channel Account not found"),
+    },
+  })
+
   const updateSettingsRoute = createRoute({
     method: "patch",
     path: "/notification-settings",
@@ -1017,6 +1092,45 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
   })
 
   const settingsAndRunsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .openapi(listChannelAccountsRoute, async (c) => {
+      const rows = await listChannelAccounts(c.get("db"))
+      return c.json({ data: rows.map(toChannelAccountResponse) }, 200)
+    })
+    .openapi(getChannelAccountRoute, async (c) => {
+      const row = await getChannelAccount(c.get("db"), c.req.valid("param").id)
+      return row
+        ? c.json({ data: toChannelAccountResponse(row) }, 200)
+        : c.json({ error: "Channel Account not found" }, 404)
+    })
+    .openapi(validateChannelAccountRoute, async (c) => {
+      try {
+        const runtime = getRuntime(c.env, options, (key) => c.var.container.resolve(key))
+        const row = await validateChannelAccount(
+          c.get("db"),
+          runtime.providers,
+          c.req.valid("param").id,
+        )
+        return row
+          ? c.json({ data: toChannelAccountResponse(row) }, 200)
+          : c.json({ error: "Channel Account not found" }, 404)
+      } catch {
+        return c.json({ error: "Channel Account validation failed" }, 400)
+      }
+    })
+    .openapi(updateChannelAccountLifecycleRoute, async (c) => {
+      try {
+        const row = await updateChannelAccountLifecycle(
+          c.get("db"),
+          c.req.valid("param").id,
+          c.req.valid("json").lifecycle,
+        )
+        return row
+          ? c.json({ data: toChannelAccountResponse(row) }, 200)
+          : c.json({ error: "Channel Account not found" }, 404)
+      } catch {
+        return c.json({ error: "Invalid Channel Account lifecycle transition" }, 400)
+      }
+    })
     .openapi(getSettingsRoute, async (c) => {
       const row = await notificationsService.getNotificationSettings(c.get("db"))
       return c.json({ data: row }, 200)

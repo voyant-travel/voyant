@@ -3,6 +3,11 @@ import { customerVerificationRuntimePort } from "@voyant-travel/identity/runtime
 import { proposalsNotificationsRuntimePort } from "@voyant-travel/proposals/runtime-port"
 import { describe, expect, it } from "vitest"
 import { durableNotificationProviderPort } from "../../src/durable-provider-port.js"
+import {
+  NOTIFICATION_SEND_COMPLETED_EVENT,
+  NOTIFICATION_SEND_DEAD_LETTERED_EVENT,
+  NOTIFICATION_SEND_REQUESTED_EVENT,
+} from "../../src/service-durable-send.js"
 import { staffAlertSubscriberRuntimeDescriptors } from "../../src/staff-alert-subscriber.js"
 import { notificationsReminderSubscriberRuntimeDescriptors } from "../../src/subscriber-runtime.js"
 import {
@@ -95,6 +100,7 @@ describe("notifications deployment manifest", () => {
       ],
     })
     expect(notificationsVoyantModule.links?.map((link) => link.id)).toEqual([
+      "@voyant-travel/notifications#linkable.notification-channel-account",
       "@voyant-travel/notifications#linkable.notification-template",
       "@voyant-travel/notifications#linkable.notification-delivery",
       "@voyant-travel/notifications#linkable.notification-reminder-rule",
@@ -104,6 +110,7 @@ describe("notifications deployment manifest", () => {
       "@voyant-travel/notifications#linkable.notification-settings",
     ])
     expect(notificationsVoyantModule.links?.map((link) => link.export)).toEqual([
+      "notificationChannelAccountLinkable",
       "notificationTemplateLinkable",
       "notificationDeliveryLinkable",
       "notificationReminderRuleLinkable",
@@ -144,6 +151,14 @@ describe("notifications deployment manifest", () => {
         payloadSchema,
       ]),
     )
+
+    for (const emittedEvent of [
+      NOTIFICATION_SEND_REQUESTED_EVENT,
+      NOTIFICATION_SEND_COMPLETED_EVENT,
+      NOTIFICATION_SEND_DEAD_LETTERED_EVENT,
+    ]) {
+      expect(events.has(emittedEvent), `missing manifest event ${emittedEvent}`).toBe(true)
+    }
 
     expect(events.get("booking.documents.sent")).toMatchObject({
       required: ["bookingId", "recipient", "deliveryId", "provider", "documentKeys"],

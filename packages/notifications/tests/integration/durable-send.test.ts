@@ -262,7 +262,7 @@ describe.skipIf(!DB_AVAILABLE)("durable notification sends", () => {
     expect(replay).toMatchObject({
       id: pending.id,
       providerMessageId: expect.any(String),
-      status: "sent",
+      status: "accepted",
     })
     expect(
       (
@@ -271,7 +271,7 @@ describe.skipIf(!DB_AVAILABLE)("durable notification sends", () => {
           .from(notificationDeliveries)
           .where(eq(notificationDeliveries.id, pending.id))
       )[0],
-    ).toMatchObject({ status: "sent", providerMessageId: expect.any(String) })
+    ).toMatchObject({ status: "accepted", providerMessageId: expect.any(String) })
     const events = await db.select().from(eventOutboxTable)
     expect(events.filter(({ name }) => name === NOTIFICATION_SEND_REQUESTED_EVENT)).toHaveLength(1)
     expect(events.filter(({ name }) => name === NOTIFICATION_SEND_COMPLETED_EVENT)).toHaveLength(1)

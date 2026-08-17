@@ -69,7 +69,7 @@ export function NotificationDeliveryDetailDialog({
                   <div className="mt-2">
                     <Badge
                       variant={
-                        delivery.status === "sent"
+                        delivery.status === "delivered"
                           ? "default"
                           : delivery.status === "failed"
                             ? "destructive"

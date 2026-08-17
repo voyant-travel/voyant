@@ -19,6 +19,45 @@ type UnsafeClient = {
 }
 
 describe.skipIf(!DB_AVAILABLE)("notification idempotency migration upgrade", () => {
+  it("migrates legacy sent delivery truth to accepted", async () => {
+    const schemaName = `notification_channel_upgrade_${randomUUID().replaceAll("-", "")}`
+    const db = createDbClient(process.env.TEST_DATABASE_URL as string, {
+      adapter: "node",
+      nodeMaxConnections: 1,
+      timeouts: { statementMs: false, queryMs: false, connectMs: false },
+    }) as PostgresJsDatabase & { $client: UnsafeClient }
+    const client = db.$client
+    try {
+      await client.unsafe(`CREATE SCHEMA "${schemaName}"`)
+      await client.unsafe(`SET search_path TO "${schemaName}", public`)
+      await client.unsafe(`
+        CREATE TYPE notification_channel AS ENUM ('email', 'sms');
+        CREATE TYPE notification_delivery_status AS ENUM ('pending', 'sent', 'failed', 'cancelled');
+        CREATE TABLE notification_deliveries (
+          id text PRIMARY KEY NOT NULL,
+          channel notification_channel NOT NULL,
+          status notification_delivery_status NOT NULL DEFAULT 'pending',
+          created_at timestamp with time zone DEFAULT now() NOT NULL
+        );
+        INSERT INTO notification_deliveries (id, channel, status)
+        VALUES ('legacy_delivery_accepted', 'email', 'sent');
+      `)
+      const migration = await readFile(
+        new URL("../../migrations/0005_channel_accounts.sql", import.meta.url),
+        "utf8",
+      )
+      await client.unsafe(migration.replaceAll('"public".', `"${schemaName}".`))
+      const rows = await client.unsafe<Array<{ status: string; channel_type: string }>>(`
+        SELECT status::text AS status, pg_typeof(channel)::text AS channel_type
+        FROM notification_deliveries
+      `)
+      expect(rows).toEqual([{ status: "accepted", channel_type: "text" }])
+    } finally {
+      await client.unsafe(`DROP SCHEMA IF EXISTS "${schemaName}" CASCADE`)
+      await client.end({ timeout: 0 })
+    }
+  })
+
   it("tombstones legacy claims before dropping the old ledger", async () => {
     const schemaName = `notification_upgrade_${randomUUID().replaceAll("-", "")}`
     const db = createDbClient(process.env.TEST_DATABASE_URL as string, {

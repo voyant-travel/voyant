@@ -3,7 +3,62 @@ import { z } from "zod"
 
 export const notificationChannelSchema = z.enum(["email", "sms"])
 export const notificationTemplateStatusSchema = z.enum(["draft", "active", "archived"])
-export const notificationDeliveryStatusSchema = z.enum(["pending", "sent", "failed", "cancelled"])
+export const notificationDeliveryStatusSchema = z.enum([
+  "pending",
+  "accepted",
+  "delivered",
+  "failed",
+  "bounced",
+  "complained",
+  "suppressed",
+  "cancelled",
+])
+export const channelAccountLifecycleSchema = z.enum(["pending", "active", "disabled", "archived"])
+export const channelAccountHealthSchema = z.enum(["unknown", "healthy", "degraded", "unavailable"])
+export const updateChannelAccountLifecycleSchema = z.object({
+  lifecycle: channelAccountLifecycleSchema,
+})
+
+export const qualifiedNotificationTargetRefSchema = z.object({
+  type: z
+    .string()
+    .regex(
+      /^(?:@[a-z0-9][a-z0-9._-]*\/[a-z0-9][a-z0-9._-]*|[a-z0-9][a-z0-9._-]*)#[a-z0-9][a-z0-9._-]*$/i,
+    ),
+  id: z.string().min(1).max(500),
+})
+
+export const renderedServiceMessageAttachmentSchema = z.object({
+  privateHandle: z.string().min(1).max(1000),
+  filename: z.string().min(1).max(500),
+  contentType: z.string().max(255).optional(),
+  disposition: z.enum(["attachment", "inline"]).optional(),
+  contentId: z.string().max(255).optional(),
+})
+
+export const renderedServiceMessageSchema = z
+  .object({
+    channelAccountId: z.string().min(1),
+    to: z.string().min(1).max(1000),
+    target: qualifiedNotificationTargetRefSchema,
+    purpose: z.string().min(1).max(255),
+    idempotencyKey: z.string().min(1).max(255),
+    subject: z.string().max(2000).optional(),
+    text: z.string().optional(),
+    sanitizedHtml: z.string().optional(),
+    attachments: z.array(renderedServiceMessageAttachmentSchema).max(50).optional(),
+    thread: z
+      .object({
+        threadId: z.string().min(1).max(500).optional(),
+        replyToDeliveryId: z.string().min(1).max(500).optional(),
+      })
+      .optional(),
+    organizationId: z.string().optional(),
+    metadata: z.record(z.string(), z.unknown()).optional(),
+  })
+  .refine((value) => Boolean(value.text || value.sanitizedHtml), {
+    message: "text or sanitizedHtml is required",
+  })
 export const notificationTargetTypeSchema = z.enum([
   "booking",
   "booking_payment_schedule",

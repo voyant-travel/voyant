@@ -25,8 +25,36 @@ export const notificationTemplateStatusEnum = pgEnum("notification_template_stat
 
 export const notificationDeliveryStatusEnum = pgEnum("notification_delivery_status", [
   "pending",
-  "sent",
+  "accepted",
+  "delivered",
   "failed",
+  "bounced",
+  "complained",
+  "suppressed",
+  "cancelled",
+])
+
+export const channelAccountLifecycleEnum = pgEnum("channel_account_lifecycle", [
+  "pending",
+  "active",
+  "disabled",
+  "archived",
+])
+
+export const channelAccountHealthEnum = pgEnum("channel_account_health", [
+  "unknown",
+  "healthy",
+  "degraded",
+  "unavailable",
+])
+
+export const notificationDeliveryEventStatusEnum = pgEnum("notification_delivery_event_status", [
+  "accepted",
+  "delivered",
+  "failed",
+  "bounced",
+  "complained",
+  "suppressed",
   "cancelled",
 ])
 
@@ -120,22 +148,60 @@ export const notificationTemplates = pgTable(
 export type NotificationTemplate = typeof notificationTemplates.$inferSelect
 export type NewNotificationTemplate = typeof notificationTemplates.$inferInsert
 
+/** A reusable, provider-neutral identity. Adapter credentials remain in runtime configuration. */
+export const notificationChannelAccounts = pgTable(
+  "notification_channel_accounts",
+  {
+    id: typeId("notification_channel_accounts"),
+    channel: text("channel").notNull(),
+    normalizedAddress: text("normalized_address").notNull(),
+    displayName: text("display_name").notNull(),
+    displayAddress: text("display_address").notNull(),
+    lifecycle: channelAccountLifecycleEnum("lifecycle").notNull().default("pending"),
+    health: channelAccountHealthEnum("health").notNull().default("unknown"),
+    inboundCapable: boolean("inbound_capable").notNull().default(false),
+    outboundCapable: boolean("outbound_capable").notNull().default(false),
+    allowedPurposes: jsonb("allowed_purposes").$type<string[]>().notNull().default([]),
+    adapterRef: text("adapter_ref").notNull(),
+    lastValidatedAt: timestamp("last_validated_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("uidx_notification_channel_accounts_channel_address").on(
+      table.channel,
+      table.normalizedAddress,
+    ),
+    uniqueIndex("uidx_notification_channel_accounts_adapter_ref").on(table.adapterRef),
+    index("idx_notification_channel_accounts_lifecycle_health").on(table.lifecycle, table.health),
+  ],
+)
+
+export type NotificationChannelAccount = typeof notificationChannelAccounts.$inferSelect
+export type NewNotificationChannelAccount = typeof notificationChannelAccounts.$inferInsert
+
 export const notificationDeliveries = pgTable(
   "notification_deliveries",
   {
     id: typeId("notification_deliveries"),
+    channelAccountId: typeIdRef("channel_account_id").references(
+      () => notificationChannelAccounts.id,
+      { onDelete: "restrict" },
+    ),
     templateId: typeIdRef("template_id").references(() => notificationTemplates.id, {
       onDelete: "set null",
     }),
     templateSlug: text("template_slug"),
     targetType: notificationTargetTypeEnum("target_type").notNull().default("other"),
     targetId: text("target_id"),
+    qualifiedTargetType: text("qualified_target_type"),
+    purpose: text("purpose"),
     personId: text("person_id"),
     organizationId: text("organization_id"),
     bookingId: text("booking_id"),
     invoiceId: text("invoice_id"),
     paymentSessionId: text("payment_session_id"),
-    channel: notificationChannelEnum("channel").notNull(),
+    channel: text("channel").notNull(),
     provider: text("provider").notNull(),
     providerMessageId: text("provider_message_id"),
     status: notificationDeliveryStatusEnum("status").notNull().default("pending"),
@@ -148,6 +214,8 @@ export const notificationDeliveries = pgTable(
     metadata: jsonb("metadata").$type<Record<string, unknown>>(),
     errorMessage: text("error_message"),
     scheduledFor: timestamp("scheduled_for", { withTimezone: true }),
+    acceptedAt: timestamp("accepted_at", { withTimezone: true }),
+    deliveredAt: timestamp("delivered_at", { withTimezone: true }),
     sentAt: timestamp("sent_at", { withTimezone: true }),
     failedAt: timestamp("failed_at", { withTimezone: true }),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
@@ -155,6 +223,10 @@ export const notificationDeliveries = pgTable(
   },
   (table) => [
     index("idx_notification_deliveries_created").on(table.createdAt),
+    index("idx_notification_deliveries_channel_account_created").on(
+      table.channelAccountId,
+      table.createdAt,
+    ),
     index("idx_notification_deliveries_template_created").on(table.templateId, table.createdAt),
     index("idx_notification_deliveries_target_created").on(
       table.targetType,
@@ -178,6 +250,36 @@ export const notificationDeliveries = pgTable(
 
 export type NotificationDelivery = typeof notificationDeliveries.$inferSelect
 export type NewNotificationDelivery = typeof notificationDeliveries.$inferInsert
+
+/** Immutable, normalized adapter event ledger. Duplicate adapter events are harmless. */
+export const notificationDeliveryEvents = pgTable(
+  "notification_delivery_events",
+  {
+    id: typeId("notification_delivery_events"),
+    deliveryId: typeIdRef("delivery_id")
+      .notNull()
+      .references(() => notificationDeliveries.id, { onDelete: "cascade" }),
+    adapterRef: text("adapter_ref").notNull(),
+    adapterEventId: text("adapter_event_id").notNull(),
+    status: notificationDeliveryEventStatusEnum("status").notNull(),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    details: jsonb("details").$type<Record<string, unknown>>(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("uidx_notification_delivery_events_adapter_event").on(
+      table.adapterRef,
+      table.adapterEventId,
+    ),
+    index("idx_notification_delivery_events_delivery_occurred").on(
+      table.deliveryId,
+      table.occurredAt,
+    ),
+  ],
+)
+
+export type NotificationDeliveryEvent = typeof notificationDeliveryEvents.$inferSelect
+export type NewNotificationDeliveryEvent = typeof notificationDeliveryEvents.$inferInsert
 
 /**
  * Package-owned durable state for every notification enqueue.
@@ -525,12 +627,35 @@ export const notificationTemplatesRelations = relations(notificationTemplates, (
   reminderRules: many(notificationReminderRules),
 }))
 
-export const notificationDeliveriesRelations = relations(notificationDeliveries, ({ one }) => ({
-  template: one(notificationTemplates, {
-    fields: [notificationDeliveries.templateId],
-    references: [notificationTemplates.id],
+export const notificationChannelAccountsRelations = relations(
+  notificationChannelAccounts,
+  ({ many }) => ({ deliveries: many(notificationDeliveries) }),
+)
+
+export const notificationDeliveriesRelations = relations(
+  notificationDeliveries,
+  ({ one, many }) => ({
+    template: one(notificationTemplates, {
+      fields: [notificationDeliveries.templateId],
+      references: [notificationTemplates.id],
+    }),
+    channelAccount: one(notificationChannelAccounts, {
+      fields: [notificationDeliveries.channelAccountId],
+      references: [notificationChannelAccounts.id],
+    }),
+    events: many(notificationDeliveryEvents),
   }),
-}))
+)
+
+export const notificationDeliveryEventsRelations = relations(
+  notificationDeliveryEvents,
+  ({ one }) => ({
+    delivery: one(notificationDeliveries, {
+      fields: [notificationDeliveryEvents.deliveryId],
+      references: [notificationDeliveries.id],
+    }),
+  }),
+)
 
 export const notificationReminderRulesRelations = relations(
   notificationReminderRules,
@@ -594,6 +719,13 @@ export const notificationDeliveryLinkable: LinkableDefinition = {
   idPrefix: "ntdl",
 }
 
+export const notificationChannelAccountLinkable: LinkableDefinition = {
+  module: "notifications",
+  entity: "notificationChannelAccount",
+  table: "notification_channel_accounts",
+  idPrefix: "ncha",
+}
+
 export const notificationReminderRuleLinkable: LinkableDefinition = {
   module: "notifications",
   entity: "notificationReminderRule",
@@ -644,6 +776,7 @@ export const staffAlertPreferenceLinkable: LinkableDefinition = {
 }
 
 export const notificationsLinkable = {
+  notificationChannelAccount: notificationChannelAccountLinkable,
   notificationTemplate: notificationTemplateLinkable,
   notificationDelivery: notificationDeliveryLinkable,
   notificationReminderRule: notificationReminderRuleLinkable,

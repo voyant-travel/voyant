@@ -10,6 +10,8 @@ export const typeIdSchemas = {
   communicationLog: typeIdSchema("communication_log"),
   notificationTemplate: typeIdSchema("notification_templates"),
   notificationDelivery: typeIdSchema("notification_deliveries"),
+  notificationChannelAccount: typeIdSchema("notification_channel_accounts"),
+  notificationDeliveryEvent: typeIdSchema("notification_delivery_events"),
   personNote: typeIdSchema("person_notes"),
   organizationNote: typeIdSchema("organization_notes"),
   segment: typeIdSchema("segments"),

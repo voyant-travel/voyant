@@ -52,8 +52,17 @@ function normalizeReminderRun(row: {
   ruleTemplateId: string | null
   ruleTemplateSlug: string | null
   deliveryId: string | null
-  deliveryStatus: "pending" | "sent" | "failed" | "cancelled" | null
-  deliveryChannel: "email" | "sms" | null
+  deliveryStatus:
+    | "pending"
+    | "accepted"
+    | "delivered"
+    | "failed"
+    | "bounced"
+    | "complained"
+    | "suppressed"
+    | "cancelled"
+    | null
+  deliveryChannel: string | null
   deliveryProvider: string | null
   toAddress: string | null
   deliverySubject: string | null

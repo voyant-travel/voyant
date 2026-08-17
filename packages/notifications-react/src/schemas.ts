@@ -38,16 +38,19 @@ export type NotificationTemplateRecord = z.infer<typeof notificationTemplateReco
 
 export const notificationDeliveryRecordSchema = z.object({
   id: z.string(),
+  channelAccountId: z.string().nullable(),
   templateId: z.string().nullable(),
   templateSlug: z.string().nullable(),
   targetType: notificationTargetTypeSchema,
   targetId: z.string().nullable(),
+  qualifiedTargetType: z.string().nullable(),
+  purpose: z.string().nullable(),
   personId: z.string().nullable(),
   organizationId: z.string().nullable(),
   bookingId: z.string().nullable(),
   invoiceId: z.string().nullable(),
   paymentSessionId: z.string().nullable(),
-  channel: notificationChannelSchema,
+  channel: z.string(),
   provider: z.string(),
   providerMessageId: z.string().nullable(),
   status: notificationDeliveryStatusSchema,
@@ -60,6 +63,8 @@ export const notificationDeliveryRecordSchema = z.object({
   metadata: z.record(z.string(), z.unknown()).nullable(),
   errorMessage: z.string().nullable(),
   scheduledFor: z.string().nullable(),
+  acceptedAt: z.string().nullable(),
+  deliveredAt: z.string().nullable(),
   sentAt: z.string().nullable(),
   failedAt: z.string().nullable(),
   createdAt: z.string(),
@@ -67,6 +72,29 @@ export const notificationDeliveryRecordSchema = z.object({
 })
 
 export type NotificationDeliveryRecord = z.infer<typeof notificationDeliveryRecordSchema>
+
+export const notificationChannelAccountRecordSchema = z.object({
+  id: z.string(),
+  channel: z.string(),
+  normalizedAddress: z.string(),
+  displayName: z.string(),
+  displayAddress: z.string(),
+  lifecycle: z.enum(["pending", "active", "disabled", "archived"]),
+  health: z.enum(["unknown", "healthy", "degraded", "unavailable"]),
+  inboundCapable: z.boolean(),
+  outboundCapable: z.boolean(),
+  allowedPurposes: z.array(z.string()),
+  lastValidatedAt: z.string().nullable(),
+  createdAt: z.string(),
+  updatedAt: z.string(),
+})
+
+export type NotificationChannelAccountRecord = z.infer<
+  typeof notificationChannelAccountRecordSchema
+>
+export const notificationChannelAccountsResponse = singleEnvelope(
+  z.array(notificationChannelAccountRecordSchema),
+)
 
 export const notificationReminderRuleRecordSchema = z.object({
   id: z.string(),

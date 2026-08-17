@@ -12,6 +12,7 @@ import type {
 } from "./hooks/index.js"
 import { notificationsQueryKeys, type RemindersPreviewFilters } from "./query-keys.js"
 import {
+  notificationChannelAccountsResponse,
   notificationDeliveryListResponse,
   notificationDeliverySingleResponse,
   notificationReminderRuleListResponse,
@@ -213,6 +214,20 @@ export function getNotificationSettingsQueryOptions(client: FetchWithValidationO
       const { data } = await fetchWithValidation(
         `/v1/admin/notifications/notification-settings`,
         notificationSettingsResponse,
+        client,
+      )
+      return data
+    },
+  })
+}
+
+export function getNotificationChannelAccountsQueryOptions(client: FetchWithValidationOptions) {
+  return queryOptions({
+    queryKey: notificationsQueryKeys.channelAccounts(),
+    queryFn: async () => {
+      const { data } = await fetchWithValidation(
+        "/v1/admin/notifications/channel-accounts",
+        notificationChannelAccountsResponse,
         client,
       )
       return data

@@ -80,7 +80,7 @@ describe.skipIf(!DB_AVAILABLE)("Notification payment context routes", () => {
           .from(notificationDeliveries)
           .where(eq(notificationDeliveries.id, data.id))
       )[0]?.status,
-    ).toBe("sent")
+    ).toBe("accepted")
   })
 
   it("sends an invoice notification and includes linked payment session context", async () => {

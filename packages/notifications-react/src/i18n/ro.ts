@@ -105,6 +105,14 @@ export const notificationsUiRo: NotificationsUiMessages = {
   settings: {
     heading: "Setări notificări",
     description: "Valori implicite pentru orele de liniște și limitele de reamintiri.",
+    channelAccounts: {
+      heading: "Conturi de canal",
+      description: "Identități de serviciu reutilizabile, capabilități și stare curentă.",
+      empty: "Nu este configurat niciun cont de canal.",
+      inbound: "Intrare",
+      outbound: "Ieșire",
+      purposes: "Scopuri",
+    },
     sections: {
       quietHours: "Ore de liniște",
       quietHoursDesc: "Când se pot trimite reamintiri, în fusul orar al destinatarului.",
@@ -173,6 +181,11 @@ export const notificationsUiRo: NotificationsUiMessages = {
       statusArchived: "Arhivat",
       statusPending: "În așteptare",
       statusSent: "Trimis",
+      statusAccepted: "Acceptat",
+      statusDelivered: "Livrat",
+      statusBounced: "Respins",
+      statusComplained: "Reclamat",
+      statusSuppressed: "Suprimat",
       statusFailed: "Eșuat",
       statusCancelled: "Anulat",
       statusQueued: "În coadă",

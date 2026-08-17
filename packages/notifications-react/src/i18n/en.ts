@@ -104,6 +104,14 @@ export const notificationsUiEn: NotificationsUiMessages = {
   settings: {
     heading: "Notification settings",
     description: "Defaults for quiet hours and reminder limits.",
+    channelAccounts: {
+      heading: "Channel Accounts",
+      description: "Reusable service identities, capabilities, and current health.",
+      empty: "No Channel Accounts are configured.",
+      inbound: "Inbound",
+      outbound: "Outbound",
+      purposes: "Purposes",
+    },
     sections: {
       quietHours: "Quiet hours",
       quietHoursDesc: "When reminders are eligible to send, in the recipient's timezone.",
@@ -172,6 +180,11 @@ export const notificationsUiEn: NotificationsUiMessages = {
       statusArchived: "Archived",
       statusPending: "Pending",
       statusSent: "Sent",
+      statusAccepted: "Accepted",
+      statusDelivered: "Delivered",
+      statusBounced: "Bounced",
+      statusComplained: "Complaint",
+      statusSuppressed: "Suppressed",
       statusFailed: "Failed",
       statusCancelled: "Cancelled",
       statusQueued: "Queued",

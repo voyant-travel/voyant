@@ -102,6 +102,14 @@ export type NotificationsUiMessages = {
   settings: {
     heading: string
     description: string
+    channelAccounts: {
+      heading: string
+      description: string
+      empty: string
+      inbound: string
+      outbound: string
+      purposes: string
+    }
     sections: {
       quietHours: string
       quietHoursDesc: string
@@ -169,6 +177,11 @@ export type NotificationsUiMessages = {
       statusArchived: string
       statusPending: string
       statusSent: string
+      statusAccepted: string
+      statusDelivered: string
+      statusBounced: string
+      statusComplained: string
+      statusSuppressed: string
       statusFailed: string
       statusCancelled: string
       statusQueued: string
