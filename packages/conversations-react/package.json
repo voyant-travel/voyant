@@ -5,7 +5,10 @@
   "license": "Apache-2.0",
   "type": "module",
   "sideEffects": false,
-  "exports": { ".": "./src/index.ts", "./admin": "./src/admin/index.tsx" },
+  "exports": {
+    ".": "./src/index.ts",
+    "./admin": "./src/admin/index.tsx"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
     "typecheck": "tsc -p tsconfig.typecheck.json",
@@ -17,7 +20,9 @@
     "@voyant-travel/react": "workspace:^",
     "react": "^19.0.0"
   },
-  "dependencies": { "lucide-react": "^1.23.0" },
+  "dependencies": {
+    "lucide-react": "^1.23.0"
+  },
   "devDependencies": {
     "@types/react": "^19.2.17",
     "@voyant-travel/admin": "workspace:^",
@@ -27,15 +32,30 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "files": ["dist"],
+  "files": [
+    "dist"
+  ],
   "publishConfig": {
     "access": "public",
     "exports": {
-      ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "default": "./dist/index.js" },
-      "./admin": { "types": "./dist/admin/index.d.ts", "import": "./dist/admin/index.js", "default": "./dist/admin/index.js" }
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./admin": {
+        "types": "./dist/admin/index.d.ts",
+        "import": "./dist/admin/index.js",
+        "default": "./dist/admin/index.js"
+      }
     },
-    "main": "./dist/index.js", "types": "./dist/index.d.ts"
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
   },
-  "repository": { "type": "git", "url": "https://github.com/voyant-travel/voyant.git", "directory": "packages/conversations-react" },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/conversations-react"
+  },
   "private": true
 }

@@ -38,16 +38,45 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "files": ["dist", "openapi", "migrations/*.sql", "migrations/meta/*.json"],
+  "files": [
+    "dist",
+    "openapi",
+    "migrations/*.sql",
+    "migrations/meta/*.json"
+  ],
   "publishConfig": {
     "access": "public",
     "exports": {
-      ".": { "types": "./dist/index.d.ts", "import": "./dist/index.js", "default": "./dist/index.js" },
-      "./schema": { "types": "./dist/schema.d.ts", "import": "./dist/schema.js", "default": "./dist/schema.js" },
-      "./runtime-port": { "types": "./dist/runtime-port.d.ts", "import": "./dist/runtime-port.js", "default": "./dist/runtime-port.js" },
-      "./runtime-contributor": { "types": "./dist/runtime-contributor.d.ts", "import": "./dist/runtime-contributor.js", "default": "./dist/runtime-contributor.js" },
-      "./ingress-job": { "types": "./dist/ingress-job.d.ts", "import": "./dist/ingress-job.js", "default": "./dist/ingress-job.js" },
-      "./voyant": { "types": "./dist/voyant.d.ts", "import": "./dist/voyant.js", "default": "./dist/voyant.js" },
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./schema": {
+        "types": "./dist/schema.d.ts",
+        "import": "./dist/schema.js",
+        "default": "./dist/schema.js"
+      },
+      "./runtime-port": {
+        "types": "./dist/runtime-port.d.ts",
+        "import": "./dist/runtime-port.js",
+        "default": "./dist/runtime-port.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      },
+      "./ingress-job": {
+        "types": "./dist/ingress-job.d.ts",
+        "import": "./dist/ingress-job.js",
+        "default": "./dist/ingress-job.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
+      },
       "./openapi/admin": "./openapi/admin/conversations.json"
     },
     "main": "./dist/index.js",
@@ -62,14 +91,25 @@
     "schemaVersion": "voyant.package.v1",
     "kind": "module",
     "manifest": "./voyant",
-    "runtime": { "entry": "./runtime-contributor", "export": "createConversationsRuntimePortContribution" },
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createConversationsRuntimePortContribution"
+    },
     "compatibleWith": {
       "framework": ">=0.26.0",
-      "targets": ["node"],
-      "modes": ["local", "managed-cloud", "self-hosted"]
+      "targets": [
+        "node"
+      ],
+      "modes": [
+        "local",
+        "managed-cloud",
+        "self-hosted"
+      ]
     },
     "schema": "./schema",
-    "requiresSchemas": ["@voyant-travel/db"]
+    "requiresSchemas": [
+      "@voyant-travel/db"
+    ]
   },
   "private": true
 }
