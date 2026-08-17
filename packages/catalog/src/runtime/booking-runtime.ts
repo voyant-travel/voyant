@@ -36,25 +36,31 @@ export function createBookingSessionServiceRuntimes<ContextValue>(
 ): Pick<ProductionBookingSessionModuleDeps, "relationships" | "financeRuntime"> {
   return {
     // Runtime ports may still be promises when Catalog contributes its ports,
-    // so keep Relationships lazy until a Session actually needs it.
-    relationships: {
-      async loadPersonTravelSnapshot(...args) {
-        const runtime = await requireRelationshipsRuntime(options)
-        return runtime.loadPersonTravelSnapshot(...args)
-      },
-      async upsertPersonFromContact(...args) {
-        const runtime = await requireRelationshipsRuntime(options)
-        return runtime.upsertPersonFromContact(...args)
-      },
-      async getPersonById(...args) {
-        const runtime = await requireRelationshipsRuntime(options)
-        return runtime.getPersonById(...args)
-      },
-      async getOrganizationById(...args) {
-        const runtime = await requireRelationshipsRuntime(options)
-        return runtime.getOrganizationById(...args)
-      },
-    },
+    // so keep Relationships lazy until a Session actually needs it. Preserve
+    // the absent dependency when the optional port is not installed: the
+    // production module uses that absence to return a typed incomplete_draft.
+    ...(options.resolveBookingsRelationshipsRuntime
+      ? {
+          relationships: {
+            async loadPersonTravelSnapshot(...args) {
+              const runtime = await requireRelationshipsRuntime(options)
+              return runtime.loadPersonTravelSnapshot(...args)
+            },
+            async upsertPersonFromContact(...args) {
+              const runtime = await requireRelationshipsRuntime(options)
+              return runtime.upsertPersonFromContact(...args)
+            },
+            async getPersonById(...args) {
+              const runtime = await requireRelationshipsRuntime(options)
+              return runtime.getPersonById(...args)
+            },
+            async getOrganizationById(...args) {
+              const runtime = await requireRelationshipsRuntime(options)
+              return runtime.getOrganizationById(...args)
+            },
+          },
+        }
+      : {}),
     financeRuntime: options.resolveFinanceServiceRuntime?.(context) ?? {},
   }
 }

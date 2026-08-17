@@ -136,4 +136,66 @@ describe("managed Booking Session settlement composition", () => {
       }),
     )
   })
+
+  it("preserves an absent optional Relationships runtime", async () => {
+    const db = { source: "managed" }
+    productionModuleFactory.mockImplementation((deps: ProductionBookingSessionModuleDeps) => ({
+      async commitPaidSession(): Promise<{ bookingId: string }> {
+        expect(deps.relationships).toBeUndefined()
+        expect(deps.financeRuntime).toEqual({})
+        return { bookingId: "book_without_relationships" }
+      },
+    }))
+
+    const extensions: Record<string, unknown> = {
+      [catalogAccommodationsRuntimeExtensionPort.id]: {
+        fieldPolicy: [],
+        propertyFieldPolicy: [],
+        registerOwnedAvailabilitySearchHandler: vi.fn(),
+      },
+      [catalogChartersRuntimeExtensionPort.id]: { fieldPolicy: [] },
+      [catalogCommerceRuntimeExtensionPort.id]: {
+        loadSliceInputs: vi.fn(async () => ({ markets: [], locales: [] })),
+      },
+      [catalogCruisesRuntimeExtensionPort.id]: {
+        fieldPolicy: [],
+        shipFieldPolicy: [],
+      },
+      [catalogDistributionRuntimeExtensionPort.id]: {
+        hasEffectiveSourcePublication: vi.fn(async () => true),
+      },
+      [catalogInventoryRuntimeExtensionPort.id]: {
+        productFieldPolicy: [],
+        extrasFieldPolicy: [],
+        getProductContent: vi.fn(),
+        getOwnedProductById: vi.fn(),
+        loadProductReservationPolicy: vi.fn(),
+      },
+      [catalogLegalRuntimeExtensionPort.id]: {},
+      [catalogOperationsRuntimeExtensionPort.id]: { listAvailabilitySlots: vi.fn() },
+      [financeOperatorSettingsRuntimePort.id]: {},
+    }
+    const contribution = createCatalogRuntimePortContribution({
+      primitives: {
+        env: () => ({}),
+        database: { resolve: () => db },
+      } as never,
+      hasRuntimePort: () => false,
+      getRuntimePort: (port) => extensions[port.id] as never,
+    })
+    const settlement = contribution[catalogBookingSessionSettlementRuntimePort.id] as {
+      commitPaidSession(input: {
+        bookingSessionId: string
+        paymentSessionId: string
+      }): Promise<{ bookingId: string }>
+    }
+
+    await expect(
+      settlement.commitPaidSession({
+        bookingSessionId: "bses_without_relationships",
+        paymentSessionId: "pays_without_relationships",
+      }),
+    ).resolves.toEqual({ bookingId: "book_without_relationships" })
+    expect(productionModuleFactory).toHaveBeenCalledOnce()
+  })
 })
