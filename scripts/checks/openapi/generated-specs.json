@@ -13,10 +13,46 @@
       "files": ["packages/apps/openapi/admin/apps.json"]
     },
     {
+      "command": "pnpm --filter @voyant-travel/bookings generate:openapi",
+      "files": [
+        "packages/bookings/openapi/admin/bookings.json",
+        "packages/bookings/openapi/admin/booking-extras.json",
+        "packages/bookings/openapi/admin/booking-requirements.json",
+        "packages/bookings/openapi/public-api/booking-requirements.json"
+      ]
+    },
+    {
       "command": "pnpm --filter @voyant-travel/catalog generate:openapi",
       "files": [
         "packages/catalog/openapi/admin/catalog-booking.json",
         "packages/catalog/openapi/public-api/catalog-booking.json"
+      ]
+    },
+    {
+      "command": "pnpm --filter @voyant-travel/commerce generate:openapi",
+      "files": [
+        "packages/commerce/openapi/admin/markets.json",
+        "packages/commerce/openapi/admin/pricing.json",
+        "packages/commerce/openapi/admin/sellability.json",
+        "packages/commerce/openapi/admin/promotions.json",
+        "packages/commerce/openapi/public-api/markets.json",
+        "packages/commerce/openapi/public-api/pricing.json"
+      ]
+    },
+    {
+      "command": "pnpm --filter @voyant-travel/cruises generate:openapi",
+      "files": [
+        "packages/cruises/openapi/admin/cruises.json",
+        "packages/cruises/openapi/public-api/cruises.json"
+      ]
+    },
+    {
+      "command": "pnpm --filter @voyant-travel/distribution generate:openapi",
+      "files": [
+        "packages/distribution/openapi/admin/distribution.json",
+        "packages/distribution/openapi/admin/suppliers.json",
+        "packages/distribution/openapi/admin/external-refs.json",
+        "packages/distribution/openapi/admin/distribution-channel-push.json"
       ]
     },
     {
