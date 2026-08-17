@@ -16,14 +16,14 @@ import { resolve } from "node:path"
 
 import { stampModuleMetadata } from "@voyant-travel/hono/openapi"
 
-import { cruisePublicRoutes } from "../src/routes-public.js"
+import { createBookingTaxPreviewRoutes } from "../src/booking-tax.js"
 
-const PREFIX = "/v1/public/cruises"
-const MODULE = "cruises"
-const artifactPath = resolve(import.meta.dirname, "..", "openapi/public-api/cruises.json")
+const PREFIX = "/v1/admin/bookings"
+const MODULE = "finance"
+const artifactPath = resolve(import.meta.dirname, "..", "openapi/admin/booking-tax-preview.json")
 const artifact = JSON.parse(readFileSync(artifactPath, "utf8"))
 
-const live = cruisePublicRoutes.getOpenAPI31Document({
+const live = createBookingTaxPreviewRoutes().getOpenAPI31Document({
   openapi: artifact.openapi,
   info: artifact.info,
 })

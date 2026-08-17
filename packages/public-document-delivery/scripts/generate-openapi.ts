@@ -58,6 +58,15 @@ const stamped = prefixed
 // them, exactly as the finance generator does. Which of them a document carries
 // varies: some have the full set of stamps, some one key, some none, and some
 // have curated summaries where others have nothing.
+// Precedence: what the ROUTE declared, then what the document already said,
+// then what `stampModuleMetadata` derived.
+//
+// The derived values are placeholders — a summary of "GET /v1/admin/apps" where
+// a human wrote "List app registrations" — so they must not beat curated prose.
+// But copying the committed value unconditionally is worse: a route that changes
+// its own `operationId`, `summary`, `tags` or `x-voyant-api-id` would have the
+// change silently reverted, and `verify:openapi-drift` would then reproduce the
+// stale contract forever. So the route wins whenever it actually said something.
 const CARRIED = ["operationId", "summary", "tags"]
 const OPERATION_METHODS = ["get", "post", "put", "patch", "delete", "head", "options"]
 const paths: Record<string, unknown> = {}
@@ -69,8 +78,11 @@ for (const [path, item] of Object.entries(stamped.paths ?? {})) {
       | Record<string, unknown>
       | undefined
     if (!operation) continue
+    const routeDeclared = declared.get(`${method} ${path}`) ?? {}
     for (const [key, value] of Object.entries(previous?.[method] ?? {})) {
-      if (key.startsWith("x-voyant-") || CARRIED.includes(key)) operation[key] = value
+      if (!(key.startsWith("x-voyant-") || CARRIED.includes(key))) continue
+      if (routeDeclared[key] !== undefined) continue
+      operation[key] = value
     }
   }
   paths[path] = item
