@@ -34,6 +34,41 @@ const financeContractsPaymentValidationExports = [
 
 const checks: ExportCheck[] = [
   {
+    packageName: "@voyant-travel/channel-adapter-contracts",
+    entry: "packages/channel-adapter-contracts/dist/index.js",
+    requiredExports: [
+      "CHANNEL_ADAPTER_PROTOCOL_VERSION",
+      "channelAdapterDescriptorSchema",
+      "inboundEnvelopeSchema",
+      "outboundMessageSchema",
+      "validateChannelAdapter",
+      "negotiateChannelAdapter",
+    ],
+  },
+  {
+    packageName: "@voyant-travel/channel-adapter-contracts/conformance",
+    entry: "packages/channel-adapter-contracts/dist/conformance.js",
+    requiredExports: [
+      "AdapterPayloadDriftError",
+      "AdapterReplayLedger",
+      "runChannelAdapterConformance",
+    ],
+  },
+  {
+    packageName: "@voyant-travel/channel-adapter-contracts/v1",
+    entry: "packages/channel-adapter-contracts/dist/v1.js",
+    requiredExports: [
+      "CHANNEL_ADAPTER_PROTOCOL_VERSION",
+      "channelAdapterDescriptorSchema",
+      "validateChannelAdapter",
+    ],
+  },
+  {
+    packageName: "@voyant-travel/channel-adapter-contracts/testing",
+    entry: "packages/channel-adapter-contracts/dist/testing.js",
+    requiredExports: ["FixtureChannelAdapter", "createFixtureChannelAdapterControl"],
+  },
+  {
     packageName: "@voyant-travel/storage",
     entry: "packages/storage/dist/index.js",
     requiredExports: [
