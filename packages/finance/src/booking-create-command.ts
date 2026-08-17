@@ -311,19 +311,75 @@ export function bookingCreateCommandError(
         "INVALID_INPUT",
         { outcome },
       )
+    // voyant#4805: the third sibling of the two cases above had no case at all,
+    // so a pricing refusal fell through to `default:` and became "The booking
+    // command failed validation." with its `issues[]` discarded — a sentence
+    // that repeats what the caller already knew and withholds the only part
+    // that identifies the rule. Observed blocking a production operator from
+    // creating a booking by any route, storefront or admin, with the pricing
+    // diagnostic unrecoverable even from the server logs.
+    case "invalid_pricing":
+      return new ToolError(
+        `The pricing is invalid: ${formatBookingCreateIssues(outcome.issues)}`,
+        "INVALID_INPUT",
+        { outcome },
+      )
     case "monthly_booking_limit_reached":
       return new ToolError(outcome.message, "INVALID_INPUT", { outcome })
+    // These six shared one sentence — "The booking command conflicts with
+    // current state." — which is the same tautology in a different costume: it
+    // names no record, no balance and no next step, and each of them carries
+    // exactly the field that would.
     case "duplicate_booking":
+      return new ToolError(
+        `This customer already holds booking ${outcome.existingBooking.bookingNumber} (${outcome.existingBooking.status}) on the same Slot. Open that booking instead of creating another, or set allowDuplicate if a second booking on the same Slot is intended.`,
+        "INVALID_INPUT",
+        { outcome },
+      )
     case "travel_credit_inactive":
+      return new ToolError(
+        "A travel credit referenced by this booking is not active. Reactivate it, or remove it from the request and settle the balance another way.",
+        "INVALID_INPUT",
+        { outcome },
+      )
     case "travel_credit_not_started":
+      return new ToolError(
+        "A travel credit referenced by this booking cannot be spent yet — its validity period has not started. Remove it from the request, or retry once it is valid.",
+        "INVALID_INPUT",
+        { outcome },
+      )
     case "travel_credit_expired":
+      return new ToolError(
+        "A travel credit referenced by this booking has expired and can no longer be spent. Remove it from the request and settle the balance another way.",
+        "INVALID_INPUT",
+        { outcome },
+      )
     case "travel_credit_insufficient_balance":
+      return new ToolError(
+        "A travel credit referenced by this booking does not have enough balance to cover the amount requested from it. Lower the redeemed amount to the remaining balance, or remove the credit.",
+        "INVALID_INPUT",
+        { outcome },
+      )
     case "booking_already_in_group":
-      return new ToolError("The booking command conflicts with current state.", "INVALID_INPUT", {
-        outcome,
-      })
-    default:
-      return new ToolError("The booking command failed validation.", "INVALID_INPUT", { outcome })
+      return new ToolError(
+        `This booking is already a member of group ${outcome.currentGroupId}. Remove it from that group before assigning another, or omit the group from the request.`,
+        "INVALID_INPUT",
+        { outcome },
+      )
+    default: {
+      // Exhaustive: every `BookingCreateOutcome` refusal above is named, so
+      // adding a status to the union fails the build here instead of silently
+      // degrading to a generic message — which is how `invalid_pricing` stayed
+      // undiagnosable. The runtime arm still names the status it could not map,
+      // because a published copy of this package may be paired with a newer
+      // `service-booking-create` that returns one this build has never seen.
+      const unmapped: never = outcome
+      return new ToolError(
+        `The booking command failed with an unrecognized outcome: ${(unmapped as { status?: string }).status ?? "unknown"}.`,
+        "INVALID_INPUT",
+        { outcome },
+      )
+    }
   }
 }
 
