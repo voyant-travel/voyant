@@ -548,7 +548,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
         )
         if (!row) return c.json({ error: "Notification delivery not found" }, 404)
         return c.json({ data: row }, 201)
-      } catch {
+      } catch (error) {
         const message = error instanceof Error ? error.message : "Notification resend failed"
         return c.json({ error: message }, 400)
       }

@@ -3,7 +3,7 @@ import type {
   PersonNotificationDeliveryQuery,
   RelationshipsPersonNotificationsRuntime,
 } from "@voyant-travel/relationships/runtime-port"
-import { and, desc, eq, gte, isNotNull, lte } from "drizzle-orm"
+import { and, desc, eq, gte, inArray, isNotNull, lte } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { notificationDeliveries } from "./schema.js"
@@ -27,6 +27,7 @@ export function createPersonCommunicationsRuntime(): RelationshipsPersonNotifica
       const conditions = [
         eq(notificationDeliveries.personId, personId),
         eq(notificationDeliveries.status, "delivered"),
+        inArray(notificationDeliveries.channel, ["email", "sms"]),
         isNotNull(notificationDeliveries.deliveredAt),
       ]
       if (query.dateFrom) {
@@ -53,7 +54,7 @@ export function createPersonCommunicationsRuntime(): RelationshipsPersonNotifica
 
       return rows.map((row) => ({
         id: row.id,
-        channel: row.channel,
+        channel: row.channel === "sms" ? "sms" : "email",
         subject: row.subject ?? null,
         body: row.textBody ?? null,
         sentAt: row.sentAt?.toISOString() ?? null,

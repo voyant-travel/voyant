@@ -29,7 +29,15 @@ export interface ProposalNotificationInput {
 
 export interface ProposalNotificationDelivery {
   id: string
-  status: "pending" | "sent" | "failed" | "cancelled"
+  status:
+    | "pending"
+    | "accepted"
+    | "delivered"
+    | "failed"
+    | "bounced"
+    | "complained"
+    | "suppressed"
+    | "cancelled"
   channel: "email" | "sms"
   provider: string
   providerMessageId: string | null
