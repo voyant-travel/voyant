@@ -1,0 +1,1041 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Conversations Admin API",
+    "version": "0.1.0",
+    "description": "Provider-neutral operator Inbox routes."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/v1/admin/conversations": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["open", "closed", "snoozed"]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Inbox conversations",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "channel": {
+                            "type": "string"
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["open", "closed", "snoozed"]
+                          },
+                          "subject": {
+                            "type": ["string", "null"]
+                          },
+                          "suggestedSubject": {
+                            "type": ["string", "null"]
+                          },
+                          "replyAlias": {
+                            "type": "string"
+                          },
+                          "customerAddress": {
+                            "type": "string"
+                          },
+                          "personRef": {
+                            "type": ["string", "null"]
+                          },
+                          "contactPointRef": {
+                            "type": ["string", "null"]
+                          },
+                          "unreadCount": {
+                            "type": "integer"
+                          },
+                          "snoozedUntil": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "lastPartAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "channel",
+                          "status",
+                          "subject",
+                          "suggestedSubject",
+                          "replyAlias",
+                          "customerAddress",
+                          "personRef",
+                          "contactPointRef",
+                          "unreadCount",
+                          "snoozedUntil",
+                          "lastPartAt",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "personRef": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "contactPointRef": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "channelAccountId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "fromAddress": {
+                    "type": "string",
+                    "format": "email"
+                  },
+                  "subject": {
+                    "type": ["string", "null"]
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": [
+                  "personRef",
+                  "contactPointRef",
+                  "channelAccountId",
+                  "fromAddress",
+                  "subject",
+                  "text",
+                  "idempotencyKey"
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Started conversation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "conversation": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "channel": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": ["open", "closed", "snoozed"]
+                            },
+                            "subject": {
+                              "type": ["string", "null"]
+                            },
+                            "suggestedSubject": {
+                              "type": ["string", "null"]
+                            },
+                            "replyAlias": {
+                              "type": "string"
+                            },
+                            "customerAddress": {
+                              "type": "string"
+                            },
+                            "personRef": {
+                              "type": ["string", "null"]
+                            },
+                            "contactPointRef": {
+                              "type": ["string", "null"]
+                            },
+                            "unreadCount": {
+                              "type": "integer"
+                            },
+                            "snoozedUntil": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "lastPartAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "channel",
+                            "status",
+                            "subject",
+                            "suggestedSubject",
+                            "replyAlias",
+                            "customerAddress",
+                            "personRef",
+                            "contactPointRef",
+                            "unreadCount",
+                            "snoozedUntil",
+                            "lastPartAt",
+                            "createdAt",
+                            "updatedAt"
+                          ]
+                        },
+                        "parts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "conversationId": {
+                                "type": "string"
+                              },
+                              "direction": {
+                                "type": "string",
+                                "enum": ["inbound", "outbound"]
+                              },
+                              "senderAddress": {
+                                "type": "string"
+                              },
+                              "recipientAddresses": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "subject": {
+                                "type": ["string", "null"]
+                              },
+                              "textBody": {
+                                "type": ["string", "null"]
+                              },
+                              "htmlBody": {
+                                "type": ["string", "null"]
+                              },
+                              "attachments": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "additionalProperties": {}
+                                }
+                              },
+                              "externalMessageId": {
+                                "type": ["string", "null"]
+                              },
+                              "messageId": {
+                                "type": ["string", "null"]
+                              },
+                              "inReplyTo": {
+                                "type": ["string", "null"]
+                              },
+                              "references": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "deliveryStatus": {
+                                "type": "string",
+                                "enum": [
+                                  "received",
+                                  "pending",
+                                  "accepted",
+                                  "delivered",
+                                  "failed",
+                                  "bounced",
+                                  "complained",
+                                  "suppressed",
+                                  "cancelled"
+                                ]
+                              },
+                              "occurredAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "conversationId",
+                              "direction",
+                              "senderAddress",
+                              "recipientAddresses",
+                              "subject",
+                              "textBody",
+                              "htmlBody",
+                              "attachments",
+                              "externalMessageId",
+                              "messageId",
+                              "inReplyTo",
+                              "references",
+                              "deliveryStatus",
+                              "occurredAt",
+                              "createdAt"
+                            ]
+                          }
+                        }
+                      },
+                      "required": ["conversation", "parts"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Person contact point not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Required runtime, admission, or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conversation thread",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "conversation": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "channel": {
+                              "type": "string"
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": ["open", "closed", "snoozed"]
+                            },
+                            "subject": {
+                              "type": ["string", "null"]
+                            },
+                            "suggestedSubject": {
+                              "type": ["string", "null"]
+                            },
+                            "replyAlias": {
+                              "type": "string"
+                            },
+                            "customerAddress": {
+                              "type": "string"
+                            },
+                            "personRef": {
+                              "type": ["string", "null"]
+                            },
+                            "contactPointRef": {
+                              "type": ["string", "null"]
+                            },
+                            "unreadCount": {
+                              "type": "integer"
+                            },
+                            "snoozedUntil": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "lastPartAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "channel",
+                            "status",
+                            "subject",
+                            "suggestedSubject",
+                            "replyAlias",
+                            "customerAddress",
+                            "personRef",
+                            "contactPointRef",
+                            "unreadCount",
+                            "snoozedUntil",
+                            "lastPartAt",
+                            "createdAt",
+                            "updatedAt"
+                          ]
+                        },
+                        "parts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "conversationId": {
+                                "type": "string"
+                              },
+                              "direction": {
+                                "type": "string",
+                                "enum": ["inbound", "outbound"]
+                              },
+                              "senderAddress": {
+                                "type": "string"
+                              },
+                              "recipientAddresses": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "subject": {
+                                "type": ["string", "null"]
+                              },
+                              "textBody": {
+                                "type": ["string", "null"]
+                              },
+                              "htmlBody": {
+                                "type": ["string", "null"]
+                              },
+                              "attachments": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "additionalProperties": {}
+                                }
+                              },
+                              "externalMessageId": {
+                                "type": ["string", "null"]
+                              },
+                              "messageId": {
+                                "type": ["string", "null"]
+                              },
+                              "inReplyTo": {
+                                "type": ["string", "null"]
+                              },
+                              "references": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "deliveryStatus": {
+                                "type": "string",
+                                "enum": [
+                                  "received",
+                                  "pending",
+                                  "accepted",
+                                  "delivered",
+                                  "failed",
+                                  "bounced",
+                                  "complained",
+                                  "suppressed",
+                                  "cancelled"
+                                ]
+                              },
+                              "occurredAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "conversationId",
+                              "direction",
+                              "senderAddress",
+                              "recipientAddresses",
+                              "subject",
+                              "textBody",
+                              "htmlBody",
+                              "attachments",
+                              "externalMessageId",
+                              "messageId",
+                              "inReplyTo",
+                              "references",
+                              "deliveryStatus",
+                              "occurredAt",
+                              "createdAt"
+                            ]
+                          }
+                        }
+                      },
+                      "required": ["conversation", "parts"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "status": {
+                    "type": "string",
+                    "enum": ["open", "closed", "snoozed"]
+                  },
+                  "snoozedUntil": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  }
+                },
+                "required": ["status"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated conversation state",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "channel": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["open", "closed", "snoozed"]
+                        },
+                        "subject": {
+                          "type": ["string", "null"]
+                        },
+                        "suggestedSubject": {
+                          "type": ["string", "null"]
+                        },
+                        "replyAlias": {
+                          "type": "string"
+                        },
+                        "customerAddress": {
+                          "type": "string"
+                        },
+                        "personRef": {
+                          "type": ["string", "null"]
+                        },
+                        "contactPointRef": {
+                          "type": ["string", "null"]
+                        },
+                        "unreadCount": {
+                          "type": "integer"
+                        },
+                        "snoozedUntil": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "lastPartAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "channel",
+                        "status",
+                        "subject",
+                        "suggestedSubject",
+                        "replyAlias",
+                        "customerAddress",
+                        "personRef",
+                        "contactPointRef",
+                        "unreadCount",
+                        "snoozedUntil",
+                        "lastPartAt",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/{id}/replies": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "channelAccountId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "text": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "html": {
+                    "type": ["string", "null"]
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["channelAccountId", "text", "idempotencyKey"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Atomically admitted reply",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "conversationId": {
+                          "type": "string"
+                        },
+                        "direction": {
+                          "type": "string",
+                          "enum": ["inbound", "outbound"]
+                        },
+                        "senderAddress": {
+                          "type": "string"
+                        },
+                        "recipientAddresses": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "subject": {
+                          "type": ["string", "null"]
+                        },
+                        "textBody": {
+                          "type": ["string", "null"]
+                        },
+                        "htmlBody": {
+                          "type": ["string", "null"]
+                        },
+                        "attachments": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "additionalProperties": {}
+                          }
+                        },
+                        "externalMessageId": {
+                          "type": ["string", "null"]
+                        },
+                        "messageId": {
+                          "type": ["string", "null"]
+                        },
+                        "inReplyTo": {
+                          "type": ["string", "null"]
+                        },
+                        "references": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "deliveryStatus": {
+                          "type": "string",
+                          "enum": [
+                            "received",
+                            "pending",
+                            "accepted",
+                            "delivered",
+                            "failed",
+                            "bounced",
+                            "complained",
+                            "suppressed",
+                            "cancelled"
+                          ]
+                        },
+                        "occurredAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "conversationId",
+                        "direction",
+                        "senderAddress",
+                        "recipientAddresses",
+                        "subject",
+                        "textBody",
+                        "htmlBody",
+                        "attachments",
+                        "externalMessageId",
+                        "messageId",
+                        "inReplyTo",
+                        "references",
+                        "deliveryStatus",
+                        "occurredAt",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Delivery admission or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/{id}/read": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Acknowledged Inbox conversation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "channel": {
+                          "type": "string"
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["open", "closed", "snoozed"]
+                        },
+                        "subject": {
+                          "type": ["string", "null"]
+                        },
+                        "suggestedSubject": {
+                          "type": ["string", "null"]
+                        },
+                        "replyAlias": {
+                          "type": "string"
+                        },
+                        "customerAddress": {
+                          "type": "string"
+                        },
+                        "personRef": {
+                          "type": ["string", "null"]
+                        },
+                        "contactPointRef": {
+                          "type": ["string", "null"]
+                        },
+                        "unreadCount": {
+                          "type": "integer"
+                        },
+                        "snoozedUntil": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "lastPartAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "channel",
+                        "status",
+                        "subject",
+                        "suggestedSubject",
+                        "replyAlias",
+                        "customerAddress",
+                        "personRef",
+                        "contactPointRef",
+                        "unreadCount",
+                        "snoozedUntil",
+                        "lastPartAt",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
