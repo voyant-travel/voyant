@@ -63,7 +63,25 @@ describe("createAdminApiClient", () => {
     expect(seen?.get("x-api-key")).toBe(SECRET)
   })
 
-  it("does not let a caller override the credential header", async () => {
+  it("does not let a PER-CALL header replace the credential", async () => {
+    // The bypass the constructor check alone did not close: openapi-fetch merges
+    // per-call headers after the client defaults, so this replaced the validated
+    // secret with whatever the call site passed.
+    let seen: Headers | undefined
+    const client = createAdminApiClient<{ "/v1/admin/ping": { get: never } }>({
+      ...options,
+      secretKey: SECRET,
+      fetch: async (request: Request) => {
+        seen = request.headers
+        return new Response("{}", { status: 200, headers: { "content-type": "application/json" } })
+      },
+    })
+    // biome-ignore lint/suspicious/noExplicitAny: the probe path is not a real operation
+    await (client as any).GET("/v1/admin/ping", { headers: { "x-api-key": PUBLISHABLE } })
+    expect(seen?.get("x-api-key")).toBe(SECRET)
+  })
+
+  it("does not let a constructor header override the credential", async () => {
     let seen: Headers | undefined
     const client = createAdminApiClient<{ "/v1/admin/ping": { get: never } }>({
       ...options,

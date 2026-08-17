@@ -67,8 +67,24 @@ export function createAdminApiClient<Paths extends Record<string, unknown>>(
     )
   }
 
-  return createClient<Paths>({
+  const client = createClient<Paths>({
     ...rest,
     headers: { ...headers, [PUBLIC_API_KEY_HEADER]: secretKey },
   })
+
+  // Setting the header on the client is not enough. openapi-fetch merges
+  // per-call headers AFTER the client defaults, so
+  // `client.GET(path, { headers: { "x-api-key": somethingElse } })` replaced the
+  // validated secret — the constructor check could be walked straight past, and
+  // the original tests missed it because they only ever set headers on the
+  // constructor. Middleware runs after that merge, so the credential this client
+  // was built with is the credential it sends.
+  client.use({
+    onRequest({ request }) {
+      request.headers.set(PUBLIC_API_KEY_HEADER, secretKey)
+      return request
+    },
+  })
+
+  return client
 }
