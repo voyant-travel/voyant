@@ -35,6 +35,7 @@ describe("selected-graph Action Ledger admin composition", () => {
       "relationships",
       "@voyant-travel/webhook-delivery",
       "distribution",
+      "conversations",
       "finance",
       "flights",
       "legal",

@@ -2,6 +2,7 @@ import {
   bookingActionProjectionRuntimePort,
   bookingActionSourceRuntimePort,
 } from "@voyant-travel/bookings/runtime-port"
+import { conversationsRenderedMessageAdmissionPort } from "@voyant-travel/conversations/runtime-port"
 import {
   defineExtension,
   defineModule,
@@ -10,7 +11,6 @@ import {
 } from "@voyant-travel/core/project"
 import { financeNotificationsRuntimePort } from "@voyant-travel/finance/runtime-port"
 import { customerVerificationRuntimePort } from "@voyant-travel/identity/runtime-port"
-import { conversationsRenderedMessageAdmissionPort } from "@voyant-travel/conversations/runtime-port"
 import { proposalsNotificationsRuntimePort } from "@voyant-travel/proposals/runtime-port"
 import { relationshipsPersonNotificationsRuntimePort } from "@voyant-travel/relationships/runtime-port"
 import { durableNotificationProviderPort } from "./durable-provider-port.js"

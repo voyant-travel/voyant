@@ -1,3 +1,4 @@
+import { conversationsRenderedMessageAdmissionPort } from "@voyant-travel/conversations/runtime-port"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { VoyantPort } from "@voyant-travel/core/project"
 import {
@@ -5,15 +6,14 @@ import {
   financeNotificationsRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
 import { customerVerificationRuntimePort } from "@voyant-travel/identity/runtime-port"
-import { conversationsRenderedMessageAdmissionPort } from "@voyant-travel/conversations/runtime-port"
 import type { CustomerVerificationRoutesOptions } from "@voyant-travel/identity/verification"
 import {
   type ProposalsNotificationsRuntime,
   proposalsNotificationsRuntimePort,
 } from "@voyant-travel/proposals/runtime-port"
 import { relationshipsPersonNotificationsRuntimePort } from "@voyant-travel/relationships/runtime-port"
-import { toCustomerVerificationNotificationProviders } from "./customer-verification-runtime.js"
 import { createConversationsRenderedMessageAdmission } from "./conversations-runtime.js"
+import { toCustomerVerificationNotificationProviders } from "./customer-verification-runtime.js"
 import {
   type DurableNotificationProviderRuntime,
   durableNotificationProviderPort,
