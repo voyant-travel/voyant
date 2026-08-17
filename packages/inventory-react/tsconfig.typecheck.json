@@ -1119,9 +1119,13 @@
         "../finance/dist/order-payment-sessions.d.ts"
       ],
       "@voyant-travel/finance/payment-link": ["../finance/dist/payment-link.d.ts"],
+      "@voyant-travel/finance/payment-link-routes": ["../finance/dist/payment-link-routes.d.ts"],
       "@voyant-travel/finance/payment-policy": ["../finance/dist/payment-policy.d.ts"],
       "@voyant-travel/finance/payment-policy-cascade": [
         "../finance/dist/payment-policy-cascade.d.ts"
+      ],
+      "@voyant-travel/finance/payment-reconciliation-job": [
+        "../finance/dist/payment-reconciliation-job.d.ts"
       ],
       "@voyant-travel/finance/proforma-conversion-subscriber": [
         "../finance/dist/proforma-conversion-runtime.d.ts"
@@ -1867,6 +1871,12 @@
       "@voyant-travel/public-api-client/errors": ["../public-api-client/dist/errors.d.ts"],
       "@voyant-travel/public-api-client/operations": ["../public-api-client/dist/operations.d.ts"],
       "@voyant-travel/public-api-client/schemas": ["../public-api-client/dist/schemas.d.ts"],
+      "@voyant-travel/public-api-contracts": ["../public-api-contracts/dist/index.d.ts"],
+      "@voyant-travel/public-api-contracts/bookings": [
+        "../public-api-contracts/dist/bookings.d.ts"
+      ],
+      "@voyant-travel/public-api-contracts/common": ["../public-api-contracts/dist/common.d.ts"],
+      "@voyant-travel/public-api-contracts/profile": ["../public-api-contracts/dist/profile.d.ts"],
       "@voyant-travel/public-api-react": ["../public-api-react/dist/index.d.ts"],
       "@voyant-travel/public-api-react/client": ["../public-api-react/dist/client.d.ts"],
       "@voyant-travel/public-api-react/customer-portal": [
@@ -1914,10 +1924,6 @@
       ],
       "@voyant-travel/public-api/customer-portal/routes": [
         "../public-api/dist/customer-portal/routes.d.ts"
-      ],
-      "@voyant-travel/public-api/payment-link": ["../public-api/dist/payment-link/routes.d.ts"],
-      "@voyant-travel/public-api/payment-reconciliation-job": [
-        "../public-api/dist/payment-reconciliation-job.d.ts"
       ],
       "@voyant-travel/public-api/presentation-money/voyant-data-fx": [
         "../public-api/dist/presentation-money/voyant-data-fx.d.ts"
