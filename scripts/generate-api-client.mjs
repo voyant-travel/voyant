@@ -26,6 +26,7 @@ import { fileURLToPath } from "node:url"
 import { promisify } from "node:util"
 
 import { keyKindForPath, readApiBundles } from "./lib/openapi-key-kind.mjs"
+import { trackedFilesIn } from "./lib/tracked-files.mjs"
 
 const execFileAsync = promisify(execFile)
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
@@ -85,33 +86,72 @@ export type SecretPaths = paths
 `
 }
 
+/**
+ * The documents a client is generated from: one named outright, or every
+ * document on a surface.
+ *
+ * Read from the TRACKED listing rather than the filesystem, so a git worktree
+ * parked in the repository root cannot contribute another checkout's documents
+ * to this one's client — the false green that `trackedFilesIn` exists to
+ * prevent.
+ */
+function resolveDocuments(client) {
+  if (client.document) return [client.document]
+  const tracked = trackedFilesIn(root) ?? []
+  const pattern = new RegExp(`^packages/[^/]+/openapi/${client.surface}/[^/]+\\.json$`)
+  return tracked.filter((file) => pattern.test(file)).sort()
+}
+
+/** `packages/finance/openapi/admin/finance.json` -> `finance`. */
+const moduleNameOf = (document) => path.basename(document, ".json")
+
+async function generateModule(document, outDir, client, bundles) {
+  const documentPath = path.join(root, document)
+  const name = client.document ? "paths" : moduleNameOf(document)
+
+  await execFileAsync(
+    "npx",
+    ["openapi-typescript", documentPath, "-o", path.join(outDir, `${name}.ts`)],
+    { cwd: root, maxBuffer: 256 * 1024 * 1024 },
+  )
+
+  if (!client.keyKinds) return { routes: 0, total: 0 }
+
+  const parsed = JSON.parse(readFileSync(documentPath, "utf8"))
+  const routes = publishablePaths(bundles, parsed)
+  writeFileSync(path.join(outDir, "key-kind.ts"), keyKindModule(routes))
+  return { routes: routes.length, total: Object.keys(parsed.paths ?? {}).length }
+}
+
 async function generate(client, bundles) {
-  const documentPath = path.join(root, client.document)
   const outDir = path.join(root, client.outDir)
   mkdirSync(outDir, { recursive: true })
 
-  const pathsFile = path.join(outDir, "paths.ts")
-  await execFileAsync("npx", ["openapi-typescript", documentPath, "-o", pathsFile], {
-    cwd: root,
-    maxBuffer: 256 * 1024 * 1024,
-  })
-
-  if (client.keyKinds) {
-    const document = JSON.parse(readFileSync(documentPath, "utf8"))
-    const routes = publishablePaths(bundles, document)
-    writeFileSync(path.join(outDir, "key-kind.ts"), keyKindModule(routes))
-    return { routes: routes.length, total: Object.keys(document.paths ?? {}).length }
+  const documents = resolveDocuments(client)
+  if (documents.length === 0) {
+    throw new Error(
+      `generate:api-client: ${client.outDir} matched no tracked documents. A client that ` +
+        `silently generates nothing looks identical to one that is up to date.`,
+    )
   }
-  return { routes: 0, total: 0 }
+
+  let routes = 0
+  let total = 0
+  for (const document of documents) {
+    const result = await generateModule(document, outDir, client, bundles)
+    routes += result.routes
+    total += result.total
+  }
+  return { documents: documents.length, routes, total }
 }
 
 const { clients } = JSON.parse(readFileSync(path.join(root, "scripts/api-clients.json"), "utf8"))
 const bundles = readApiBundles(requireGraph())
 
 for (const client of clients) {
-  const { routes, total } = await generate(client, bundles)
-  const summary = client.keyKinds ? ` (${routes}/${total} paths publishable)` : ""
-  console.log(`generate:api-client: ${client.outDir}${summary}`)
+  const { documents, routes, total } = await generate(client, bundles)
+  const summary = client.keyKinds ? `, ${routes}/${total} paths publishable` : ""
+  console.log(`generate:api-client: ${client.outDir} (${documents} document(s)${summary})`)
 }
 
 // biome owns the formatting of everything tracked, and the generated modules are
