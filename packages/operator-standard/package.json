@@ -40,6 +40,8 @@
     "@voyant-travel/charters": "workspace:*",
     "@voyant-travel/commerce": "workspace:*",
     "@voyant-travel/commerce-react": "workspace:*",
+    "@voyant-travel/conversations": "workspace:*",
+    "@voyant-travel/conversations-react": "workspace:*",
     "@voyant-travel/core": "workspace:*",
     "@voyant-travel/cruises": "workspace:*",
     "@voyant-travel/cruises-react": "workspace:*",

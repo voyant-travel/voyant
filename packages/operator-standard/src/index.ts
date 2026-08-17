@@ -211,6 +211,7 @@ export const STANDARD_OPERATOR_DISTRIBUTION_POLICY: {
     { resolve: "@voyant-travel/legal" },
     { resolve: "@voyant-travel/public-document-delivery" },
     { resolve: "@voyant-travel/notifications" },
+    { resolve: "@voyant-travel/conversations" },
     { resolve: "@voyant-travel/storage" },
     { resolve: "@voyant-travel/media" },
     { resolve: "@voyant-travel/public-api" },

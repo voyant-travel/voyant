@@ -17,6 +17,16 @@
     "allow": {}
   },
   "packages": {
+    "@voyant-travel/conversations": {
+      "requiresSchemas": ["@voyant-travel/db"],
+      "portIds": [
+        "conversations.database",
+        "conversations.ingress-source",
+        "conversations.rendered-message-admission",
+        "conversations.person-directory"
+      ],
+      "runtimeExport": "createConversationsRuntimePortContribution"
+    },
     "@voyant-travel/flights": {
       "requiresSchemas": ["@voyant-travel/finance"],
       "requiredCapabilities": ["finance.payment-sessions"],

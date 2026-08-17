@@ -41,6 +41,11 @@ export const PREFIXES = {
   // --- VOYANT MODULES ---
   communication_log: "clog",
   customer_signals: "csig",
+  conversations: "conv",
+  conversation_participants: "cvpt",
+  conversation_parts: "cvpa",
+  conversation_events: "cvev",
+  conversation_ingress_operations: "cvio",
   notification_templates: "ntpl",
   notification_deliveries: "ntdl",
   notification_channel_accounts: "ncha",

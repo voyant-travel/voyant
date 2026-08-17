@@ -361,6 +361,12 @@ importers:
       '@voyant-travel/connect-sdk':
         specifier: 0.9.1
         version: 0.9.1
+      '@voyant-travel/conversations':
+        specifier: workspace:^
+        version: link:../../packages/conversations
+      '@voyant-travel/conversations-react':
+        specifier: workspace:^
+        version: link:../../packages/conversations-react
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../../packages/core
@@ -2153,6 +2159,93 @@ importers:
       zod:
         specifier: 'catalog:'
         version: 4.4.3
+
+  packages/conversations:
+    dependencies:
+      '@hono/zod-openapi':
+        specifier: 'catalog:'
+        version: 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/conversations-contracts':
+        specifier: workspace:^
+        version: link:../conversations-contracts
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
+      '@voyant-travel/db':
+        specifier: workspace:^
+        version: link:../db
+      '@voyant-travel/hono':
+        specifier: workspace:^
+        version: link:../hono
+      drizzle-orm:
+        specifier: 'catalog:'
+        version: 0.45.2(@cloudflare/workers-types@4.20260702.1)(@electric-sql/pglite@0.5.4)(@neondatabase/serverless@1.1.0)(@opentelemetry/api@1.9.0)(@types/pg@8.20.0)(@upstash/redis@1.38.0)(kysely@0.29.2)(pg@8.22.0)(postgres@3.4.9)
+      hono:
+        specifier: 4.12.25
+        version: 4.12.25
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@voyant-travel/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      drizzle-kit:
+        specifier: ^0.31.10
+        version: 0.31.10
+      tsx:
+        specifier: 'catalog:'
+        version: 4.22.4
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
+
+  packages/conversations-contracts:
+    dependencies:
+      zod:
+        specifier: 'catalog:'
+        version: 4.4.3
+    devDependencies:
+      '@voyant-travel/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
+
+  packages/conversations-react:
+    dependencies:
+      lucide-react:
+        specifier: ^1.23.0
+        version: 1.23.0(react@19.2.7)
+    devDependencies:
+      '@types/react':
+        specifier: ^19.2.17
+        version: 19.2.17
+      '@voyant-travel/admin':
+        specifier: workspace:^
+        version: link:../admin
+      '@voyant-travel/react':
+        specifier: workspace:^
+        version: link:../react
+      '@voyant-travel/voyant-typescript-config':
+        specifier: workspace:^
+        version: link:../typescript-config
+      react:
+        specifier: ^19.2.7
+        version: 19.2.7
+      typescript:
+        specifier: 'catalog:'
+        version: 6.0.3
+      vitest:
+        specifier: 'catalog:'
+        version: 4.1.9(@opentelemetry/api@1.9.0)(@types/node@25.5.2)(jsdom@29.1.1(@noble/hashes@2.2.0))(msw@2.12.14(@types/node@25.5.2)(typescript@6.0.3))(vite@8.1.3(@types/node@25.5.2)(esbuild@0.28.1)(jiti@2.7.0)(sass@1.77.4)(terser@5.16.9)(tsx@4.22.4)(yaml@2.8.3))
 
   packages/core:
     dependencies:
@@ -4188,6 +4281,12 @@ importers:
       '@voyant-travel/bookings':
         specifier: workspace:^
         version: link:../bookings
+      '@voyant-travel/conversations':
+        specifier: workspace:^
+        version: link:../conversations
+      '@voyant-travel/conversations-contracts':
+        specifier: workspace:^
+        version: link:../conversations-contracts
       '@voyant-travel/core':
         specifier: workspace:^
         version: link:../core
@@ -4677,6 +4776,12 @@ importers:
       '@voyant-travel/connect-sdk':
         specifier: 0.9.1
         version: 0.9.1
+      '@voyant-travel/conversations':
+        specifier: workspace:*
+        version: link:../conversations
+      '@voyant-travel/conversations-react':
+        specifier: workspace:*
+        version: link:../conversations-react
       '@voyant-travel/core':
         specifier: workspace:*
         version: link:../core

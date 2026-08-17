@@ -9,6 +9,10 @@
   ],
   "generators": [
     {
+      "command": "pnpm --filter @voyant-travel/conversations openapi:generate",
+      "files": ["packages/conversations/openapi/admin/conversations.json"]
+    },
+    {
       "command": "pnpm --filter @voyant-travel/catalog generate:openapi",
       "files": [
         "packages/catalog/openapi/admin/catalog-booking.json",
