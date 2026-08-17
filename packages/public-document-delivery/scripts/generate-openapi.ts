@@ -47,6 +47,19 @@ const prefixed = {
 // `@voyant-travel/hono`, and adding a dependency to satisfy a generator would be
 // the tail wagging the dog. The document carries its own `x-voyant-*` stamps,
 // which are preserved below, and composition derives the rest.
+// Metadata the route declared itself. Nothing derives placeholders here, but the
+// same precedence applies: a route that states its own operationId, summary,
+// tags or graph stamp must not have it overwritten by the committed document.
+const declared = new Map<string, Record<string, unknown>>()
+for (const [path, item] of Object.entries(prefixed.paths ?? {})) {
+  if (!item || typeof item !== "object") continue
+  for (const [method, operation] of Object.entries(item as Record<string, unknown>)) {
+    if (operation && typeof operation === "object") {
+      declared.set(`${method} ${path}`, { ...(operation as Record<string, unknown>) })
+    }
+  }
+}
+
 const stamped = prefixed
 
 // Schemas come from the routes; prose does not. `stampModuleMetadata` derives a
