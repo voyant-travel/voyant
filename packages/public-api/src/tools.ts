@@ -31,7 +31,6 @@ const VERSION = "v1"
 const READ_SCOPES = ["public-api:read"] as const
 const WRITE_SCOPES = ["public-api:write"] as const
 const CUSTOMER_AUDIENCE = { source: "grant", allowed: ["customer"] } as const
-const _STAFF_AUDIENCE = { source: "grant", allowed: ["staff"] } as const
 const idSchema = z.string().trim().min(1)
 const bookingInputSchema = z.object({ bookingId: idSchema })
 const updateCompanionInputSchema = z
