@@ -98,7 +98,7 @@ export function readScripts(packageJsonPath) {
   return JSON.parse(readFileSync(packageJsonPath, "utf8")).scripts ?? {}
 }
 
-const escape = (value) => value.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")
+const escapeForRegExp = (value) => value.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")
 
 /**
  * Whether `body` runs `scriptName` for `packageName` — `pnpm --filter <pkg>
@@ -108,8 +108,8 @@ const escape = (value) => value.replaceAll(/[.*+?^${}()|[\]\\]/g, "\\$&")
  * `&&` cannot be read as one filtered invocation.
  */
 function runsPackageScript(body, packageName, scriptName) {
-  const script = escape(scriptName)
-  const pkg = escape(packageName)
+  const script = escapeForRegExp(scriptName)
+  const pkg = escapeForRegExp(packageName)
   const boundary = "(?![\\w:-])"
   if (new RegExp(`\\bpnpm (?:-r|--recursive)\\b[^&|;]*?\\b${script}${boundary}`).test(body)) {
     return true
