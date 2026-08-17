@@ -334,7 +334,7 @@ test("a restricted package or an unresolved protocol fails on the first attempt"
   // finding under five attempts and report a timeout instead.
   assert.equal(isRegistryPropagationFailure("npm error code E403 Forbidden"), false)
   assert.equal(
-    isRegistryPropagationFailure("npm error Unsupported URL Type \"workspace:\": workspace:^"),
+    isRegistryPropagationFailure('npm error Unsupported URL Type "workspace:": workspace:^'),
     false,
   )
   assert.equal(isRegistryPropagationFailure("npm error code ERESOLVE unable to resolve"), false)
