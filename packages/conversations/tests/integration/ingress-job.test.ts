@@ -15,6 +15,7 @@ const envelope: InboundEmailEnvelopeV1 = {
   text: "Question",
   html: null,
   attachments: [],
+  classification: "message",
   threading: { messageId: "<message-1@example.test>", inReplyTo: null, references: [] },
   occurredAt: "2026-08-17T10:00:00.000Z",
 }

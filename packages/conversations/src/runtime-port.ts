@@ -5,6 +5,7 @@ import type {
 } from "@voyant-travel/conversations-contracts"
 import { definePort } from "@voyant-travel/core/project"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
+import type { ConversationsAttachmentRuntime } from "./attachment-runtime.js"
 
 export interface ConversationsDatabaseRuntime {
   resolveDb(bindings?: unknown): AnyDrizzleDb
@@ -84,6 +85,27 @@ export const conversationsPersonDirectoryPort = definePort<ConversationsPersonDi
       throw new Error(
         "conversations.person-directory provider must implement read-only resolution methods.",
       )
+    }
+  },
+})
+
+export const conversationsAttachmentRuntimePort = definePort<ConversationsAttachmentRuntime>({
+  id: "conversations.attachments",
+  test(provider) {
+    if (
+      !provider ||
+      typeof provider !== "object" ||
+      typeof provider.download !== "function" ||
+      typeof provider.delete !== "function" ||
+      typeof provider.scan !== "function" ||
+      typeof provider.resolveForSend !== "function"
+    ) {
+      throw new Error(
+        "conversations.attachments provider must implement scan(), download(), delete(), and resolveForSend().",
+      )
+    }
+    if (provider.createUploadTicket && typeof provider.finalizeUpload !== "function") {
+      throw new Error("conversations.attachments upload capability requires finalizeUpload().")
     }
   },
 })

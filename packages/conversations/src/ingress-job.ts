@@ -3,6 +3,7 @@ import type { VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/proje
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   conversationIngressSourcePort,
+  conversationsAttachmentRuntimePort,
   conversationsDatabaseRuntimePort,
   conversationsPersonDirectoryPort,
 } from "./runtime-port.js"
@@ -19,6 +20,7 @@ export async function processConversationIngress(input: {
   db: PostgresJsDatabase
   sources: readonly import("@voyant-travel/conversations-contracts").ConversationIngressSource[]
   personDirectory?: import("./runtime-port.js").ConversationsPersonDirectory
+  attachmentRuntime?: import("./attachment-runtime.js").ConversationsAttachmentRuntime
   limit?: number
   /** Test seam for the commit boundary; production always uses `ingestEnvelope`. */
   ingest?: typeof ingestEnvelope
@@ -31,6 +33,7 @@ export async function processConversationIngress(input: {
       summary.fetched += 1
       const result = await (input.ingest ?? ingestEnvelope)(input.db, envelope, {
         personDirectory: input.personDirectory,
+        attachmentRuntime: input.attachmentRuntime,
       })
       if (result.duplicate) summary.duplicates += 1
       else summary.committed += 1
@@ -50,9 +53,13 @@ export async function runConversationIngressJob(
   const personDirectory = context.hasPort(conversationsPersonDirectoryPort)
     ? await context.getPort(conversationsPersonDirectoryPort)
     : undefined
+  const attachmentRuntime = context.hasPort(conversationsAttachmentRuntimePort)
+    ? await context.getPort(conversationsAttachmentRuntimePort)
+    : undefined
   await processConversationIngress({
     db: database.resolveDb() as PostgresJsDatabase,
     sources,
     personDirectory,
+    attachmentRuntime,
   })
 }

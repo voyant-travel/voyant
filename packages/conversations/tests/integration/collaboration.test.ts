@@ -227,6 +227,7 @@ describe.skipIf(!DB_AVAILABLE)("Inbox collaboration persistence", () => {
       subject: "Re: Help",
       text: "Following up",
       html: null,
+      classification: "message",
       attachments: [],
       threading: { messageId: "message-3", inReplyTo: null, references: [] },
       occurredAt: "2026-08-18T10:05:00.000Z",

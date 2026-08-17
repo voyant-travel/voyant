@@ -8,6 +8,18 @@ import { newId } from "@voyant-travel/db/lib/typeid"
 import { insertOutboxEvents } from "@voyant-travel/db/outbox"
 import { and, asc, desc, eq, gt, inArray, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { ConversationsAttachmentRuntime } from "./attachment-runtime.js"
+import {
+  ConversationAttachmentUnavailableError,
+  linkAttachmentsToPart,
+  listPartAttachments,
+  requireSendableAttachments,
+} from "./attachment-service.js"
+import {
+  assertDetectedAttachmentMetadata,
+  normalizeAttachmentMetadata,
+  sanitizeConversationHtml,
+} from "./content-security.js"
 import type {
   ConversationRenderedServiceMessage,
   ConversationsPersonDirectory,
@@ -19,7 +31,9 @@ import {
   type ConversationEvent,
   type ConversationInbox,
   type ConversationNote,
+  type ConversationAttachment,
   type ConversationPart,
+  conversationAttachments,
   conversationEvents,
   conversationInboxes,
   conversationInboxMemberships,
@@ -49,6 +63,7 @@ export interface ConversationDetail {
   parts: ConversationPart[]
   notes: ConversationNote[]
   timeline: ConversationTimelineItem[]
+  attachments: ConversationAttachment[]
 }
 
 export type ConversationTimelineItem =
@@ -151,6 +166,10 @@ export async function getConversation(
     .from(conversationParts)
     .where(eq(conversationParts.conversationId, id))
     .orderBy(conversationParts.sequence)
+  const attachments = await listPartAttachments(
+    db,
+    parts.map(({ id }) => id),
+  )
   const notes = await db
     .select()
     .from(conversationNotes)
@@ -189,6 +208,7 @@ export async function getConversation(
     parts,
     notes,
     timeline,
+    attachments,
   }
 }
 
@@ -220,7 +240,7 @@ async function withUnreadCount(
   return { ...conversation, unreadCount: count?.value ?? 0 }
 }
 
-async function assertInboxMembership(
+export async function assertConversationInboxMembership(
   db: PostgresJsDatabase,
   conversationId: string,
   userId: string,
@@ -326,7 +346,10 @@ async function defaultInboxId(db: PostgresJsDatabase): Promise<string> {
 export async function ingestEnvelope(
   db: PostgresJsDatabase,
   envelope: InboundEmailEnvelopeV1,
-  options: { personDirectory?: ConversationsPersonDirectory } = {},
+  options: {
+    personDirectory?: ConversationsPersonDirectory
+    attachmentRuntime?: ConversationsAttachmentRuntime
+  } = {},
 ): Promise<{ conversationId: string; partId: string; duplicate: boolean }> {
   const fingerprint = canonicalEnvelopePayload(envelope)
   const result = await db.transaction(async (tx) => {
@@ -396,6 +419,7 @@ export async function ingestEnvelope(
     if (options.personDirectory)
       resolution = await options.personDirectory.resolveEmail(tx, senderAddress)
 
+    const isCustomerMessage = envelope.classification === "message"
     if (!conversationId) {
       conversationId = newId("conversations")
       const receivingAddress = envelope.to[0]?.address
@@ -411,6 +435,7 @@ export async function ingestEnvelope(
         personRef: person?.personRef ?? null,
         contactPointRef: person?.contactPointRef ?? null,
         nextPartSequence: 2,
+        status: isCustomerMessage ? "open" : "closed",
         lastPartAt: occurredAt,
       })
       await tx.insert(conversationParticipants).values({
@@ -420,7 +445,7 @@ export async function ingestEnvelope(
         personRef: person?.personRef ?? null,
         contactPointRef: person?.contactPointRef ?? null,
       })
-    } else {
+    } else if (isCustomerMessage) {
       await tx
         .update(conversations)
         .set({
@@ -434,6 +459,7 @@ export async function ingestEnvelope(
     }
 
     const partId = newId("conversation_parts")
+    const sanitizedHtml = sanitizeConversationHtml(envelope.html)
     const messageId = envelope.threading.messageId
       ? canonicalMessageId(envelope.threading.messageId)
       : null
@@ -448,8 +474,13 @@ export async function ingestEnvelope(
       ),
       subject: envelope.subject,
       textBody: envelope.text,
-      htmlBody: envelope.html,
-      attachments: envelope.attachments,
+      htmlBody: sanitizedHtml,
+      contentStatus:
+        envelope.classification === "message" && envelope.attachments.length === 0
+          ? "safe"
+          : "quarantined",
+      classification: envelope.classification,
+      replyable: isCustomerMessage,
       externalSourceId: envelope.sourceId,
       externalMessageId: envelope.externalMessageId,
       messageId,
@@ -461,6 +492,83 @@ export async function ingestEnvelope(
       deliveryStatus: "received",
       occurredAt,
     })
+    let attachmentsSafe = true
+    for (const attachment of envelope.attachments) {
+      if (!options.attachmentRuntime?.importInbound) {
+        throw new ConversationAttachmentUnavailableError(
+          "Inbound attachment import is not configured",
+        )
+      }
+      const declared = normalizeAttachmentMetadata({
+        filename: attachment.filename,
+        contentType: attachment.contentType,
+        sizeBytes: attachment.size,
+      })
+      const imported = await options.attachmentRuntime.importInbound({
+        sourceId: envelope.sourceId,
+        externalId: attachment.externalId,
+        privateHandle: attachment.privateHandle,
+        ...declared,
+      })
+      if (!imported.privateHandle.trim()) {
+        throw new ConversationAttachmentUnavailableError("Inbound attachment import failed")
+      }
+      const scan = await options.attachmentRuntime.scan({
+        privateHandle: imported.privateHandle,
+        filename: imported.filename,
+        declaredContentType: imported.contentType,
+        declaredSizeBytes: imported.sizeBytes,
+      })
+      let verified = declared
+      let scanStatus: "clean" | "blocked" | "failed" = scan.status
+      try {
+        verified = assertDetectedAttachmentMetadata({
+          filename: imported.filename,
+          declaredContentType: imported.contentType,
+          declaredSizeBytes: imported.sizeBytes,
+          detectedContentType: scan.detectedContentType,
+          detectedSizeBytes: scan.detectedSizeBytes,
+        })
+        if (
+          verified.filename !== declared.filename ||
+          verified.contentType !== declared.contentType ||
+          verified.sizeBytes !== declared.sizeBytes
+        ) {
+          scanStatus = "blocked"
+        }
+      } catch {
+        scanStatus = "blocked"
+      }
+      if (scanStatus !== "clean") attachmentsSafe = false
+      await tx
+        .insert(conversationAttachments)
+        .values({
+          id: newId("conversation_attachments"),
+          conversationId,
+          partId,
+          sourceId: envelope.sourceId,
+          externalId: attachment.externalId,
+          privateHandle: imported.privateHandle,
+          ...verified,
+          inlineContentId: attachment.inlineContentId ?? null,
+          disposition: attachment.inlineContentId ? "inline" : "attachment",
+          scanStatus,
+          availability: scanStatus === "clean" ? "active" : "quarantined",
+        })
+        .onConflictDoNothing({
+          target: [conversationAttachments.sourceId, conversationAttachments.externalId],
+        })
+    }
+    if (
+      envelope.classification === "message" &&
+      envelope.attachments.length > 0 &&
+      attachmentsSafe
+    ) {
+      await tx
+        .update(conversationParts)
+        .set({ contentStatus: "safe" })
+        .where(eq(conversationParts.id, partId))
+    }
     await tx
       .update(conversationIngressOperations)
       .set({
@@ -478,8 +586,12 @@ export async function ingestEnvelope(
       conversationId,
       inboxId: current?.inboxId ?? (await defaultInboxId(tx as PostgresJsDatabase)),
       revision: current?.revision ?? 1,
-      type: "part.received",
-      payload: { partId, sourceId: envelope.sourceId },
+      type: isCustomerMessage ? "part.received" : "part.quarantined",
+      payload: {
+        partId,
+        sourceId: envelope.sourceId,
+        ...(isCustomerMessage ? {} : { classification: envelope.classification }),
+      },
       occurredAt,
     })
     return { kind: "result" as const, value: { conversationId, partId, duplicate: false } }
@@ -566,13 +678,18 @@ export async function replyToConversation(
     channelAccountId: string
     text: string | null
     html?: string | null
+    attachmentIds?: readonly string[]
     idempotencyKey: string
     runtimeBindings?: unknown
   },
 ): Promise<ConversationPart> {
   return db.transaction(async (transaction) => {
     const tx = transaction as PostgresJsDatabase
-    const conversation = await assertInboxMembership(tx, input.conversationId, input.actor.userId)
+    const conversation = await assertConversationInboxMembership(
+      tx,
+      input.conversationId,
+      input.actor.userId,
+    )
     return admitReplyWithinTransaction(tx, admission, conversation, input)
   })
 }
@@ -588,6 +705,8 @@ export async function startConversation(
     fromAddress: string
     subject: string | null
     text: string
+    html?: string | null
+    attachmentIds?: readonly string[]
     idempotencyKey: string
     inboxId: string
     actor: ConversationActor
@@ -617,6 +736,8 @@ export async function startConversation(
     customerAddress,
     subject: input.subject,
     text: input.text,
+    html: sanitizeConversationHtml(input.html),
+    attachmentIds: input.attachmentIds ?? [],
   })
   const conversationId = await db.transaction(async (transaction) => {
     const tx = transaction as PostgresJsDatabase
@@ -664,6 +785,8 @@ export async function startConversation(
       conversationId: id,
       channelAccountId: input.channelAccountId,
       text: input.text,
+      html: input.html,
+      attachmentIds: input.attachmentIds,
       idempotencyKey: input.idempotencyKey,
       runtimeBindings: input.runtimeBindings,
       actor: input.actor,
@@ -684,6 +807,7 @@ async function admitReplyWithinTransaction(
     channelAccountId: string
     text: string | null
     html?: string | null
+    attachmentIds?: readonly string[]
     idempotencyKey: string
     runtimeBindings?: unknown
     actor: ConversationActor
@@ -695,6 +819,9 @@ async function admitReplyWithinTransaction(
     .where(eq(conversationParts.conversationId, conversation.id))
     .orderBy(desc(conversationParts.occurredAt))
     .limit(1)
+  if (lastPart && !lastPart.replyable) {
+    throw new ConversationConflictError("The latest inbound item is not replyable")
+  }
   const [lastOutbound] = await tx
     .select()
     .from(conversationParts)
@@ -707,6 +834,12 @@ async function admitReplyWithinTransaction(
     .orderBy(desc(conversationParts.occurredAt))
     .limit(1)
   const references = lastPart?.messageId ? [...lastPart.references, lastPart.messageId] : []
+  const sanitizedHtml = sanitizeConversationHtml(input.html)
+  const attachments = await requireSendableAttachments(
+    tx,
+    conversation.id,
+    input.attachmentIds ?? [],
+  )
   const message = {
     channelAccountId: input.channelAccountId,
     target: { type: "@voyant-travel/conversations#part" as const, id: "" },
@@ -715,7 +848,19 @@ async function admitReplyWithinTransaction(
     to: conversation.customerAddress,
     ...(conversation.subject ? { subject: conversation.subject } : {}),
     ...(input.text ? { text: input.text } : {}),
-    ...(input.html ? { sanitizedHtml: input.html } : {}),
+    ...(sanitizedHtml ? { sanitizedHtml } : {}),
+    ...(attachments.length > 0
+      ? {
+          attachments: attachments.map((attachment) => ({
+            privateHandle: attachment.privateHandle,
+            filename: attachment.filename,
+            contentType: attachment.contentType,
+            disposition:
+              attachment.disposition === "inline" ? ("inline" as const) : ("attachment" as const),
+            ...(attachment.inlineContentId ? { contentId: attachment.inlineContentId } : {}),
+          })),
+        }
+      : {}),
     thread: {
       threadId: conversation.id,
       ...(lastOutbound?.notificationDeliveryId
@@ -743,7 +888,7 @@ async function admitReplyWithinTransaction(
       recipientAddresses: [conversation.customerAddress],
       subject: conversation.subject,
       textBody: input.text,
-      htmlBody: input.html ?? null,
+      htmlBody: sanitizedHtml,
       payloadFingerprint: fingerprint,
       idempotencyKey: input.idempotencyKey,
       deliveryStatus: "pending",
@@ -765,6 +910,11 @@ async function admitReplyWithinTransaction(
     }
     return existing
   }
+  await linkAttachmentsToPart(
+    tx,
+    attachments.map(({ id }) => id),
+    partId,
+  )
   let admitted: Awaited<
     ReturnType<ConversationsRenderedMessageAdmission["admitRenderedServiceMessage"]>
   >
@@ -822,7 +972,7 @@ export async function updateConversationState(
 ): Promise<Conversation> {
   return db.transaction(async (transaction) => {
     const tx = transaction as PostgresJsDatabase
-    const current = await assertInboxMembership(tx, id, input.actor.userId)
+    const current = await assertConversationInboxMembership(tx, id, input.actor.userId)
     const targetInboxId = input.inboxId ?? current.inboxId
     if (!targetInboxId) throw new ConversationInvalidStateError("Conversation has no Inbox")
     if (targetInboxId !== current.inboxId) {
@@ -908,7 +1058,7 @@ export async function markConversationRead(
   actor: ConversationActor,
   throughSequence?: number,
 ): Promise<ConversationView> {
-  const conversation = await assertInboxMembership(db, id, actor.userId)
+  const conversation = await assertConversationInboxMembership(db, id, actor.userId)
   const maximum = Math.max(0, conversation.nextPartSequence - 1)
   const sequence = Math.min(throughSequence ?? maximum, maximum)
   await db
@@ -930,7 +1080,11 @@ export async function addConversationNote(
 ): Promise<ConversationNote> {
   return db.transaction(async (transaction) => {
     const tx = transaction as PostgresJsDatabase
-    const conversation = await assertInboxMembership(tx, input.conversationId, input.actor.userId)
+    const conversation = await assertConversationInboxMembership(
+      tx,
+      input.conversationId,
+      input.actor.userId,
+    )
     const [updated] = await tx
       .update(conversations)
       .set({ revision: sql`${conversations.revision} + 1`, updatedAt: new Date() })

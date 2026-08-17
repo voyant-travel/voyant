@@ -1,6 +1,17 @@
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import type { ConversationsAttachmentRuntime } from "./attachment-runtime.js"
+import {
+  ConversationAttachmentConflictError,
+  ConversationAttachmentNotFoundError,
+  ConversationAttachmentUnavailableError,
+  createAttachmentUploadTicket,
+  downloadConversationAttachment,
+  finalizeAttachmentUpload,
+  requestAttachmentRedaction,
+} from "./attachment-service.js"
+import { ConversationAttachmentPolicyError } from "./content-security.js"
 import type {
   ConversationsPersonDirectory,
   ConversationsRenderedMessageAdmission,
@@ -9,6 +20,7 @@ import type {
 import type { Conversation, ConversationNote, ConversationPart } from "./schema.js"
 import {
   addConversationNote,
+  assertConversationInboxMembership,
   ConversationAccessDeniedError,
   type ConversationActor,
   ConversationConflictError,
@@ -40,6 +52,7 @@ export interface ConversationsRoutesOptions {
   admission?: ConversationsRenderedMessageAdmission
   personDirectory?: ConversationsPersonDirectory
   staffDirectory: ConversationsStaffDirectory
+  attachments?: ConversationsAttachmentRuntime
 }
 
 const timestamp = z.string().datetime()
@@ -74,7 +87,29 @@ const partSchema = z.object({
   subject: z.string().nullable(),
   textBody: z.string().nullable(),
   htmlBody: z.string().nullable(),
-  attachments: z.array(z.record(z.string(), z.unknown())),
+  contentStatus: z.enum(["safe", "quarantined", "redacted"]),
+  legacyAttachmentCount: z.number().int().nonnegative(),
+  classification: z.enum([
+    "message",
+    "automatic_reply",
+    "delivery_status",
+    "complaint",
+    "suspicious",
+  ]),
+  replyable: z.boolean(),
+  attachments: z.array(
+    z.object({
+      id: z.string(),
+      filename: z.string(),
+      contentType: z.string(),
+      sizeBytes: z.number().int().nonnegative(),
+      disposition: z.enum(["attachment", "inline"]),
+      inlineContentId: z.string().nullable(),
+      scanStatus: z.enum(["pending", "clean", "blocked", "failed"]),
+      availability: z.enum(["active", "quarantined", "redaction_pending", "redacted"]),
+      createdAt: timestamp,
+    }),
+  ),
   externalMessageId: z.string().nullable(),
   messageId: z.string().nullable(),
   inReplyTo: z.string().nullable(),
@@ -183,8 +218,9 @@ const detailRoute = createRoute({
 })
 const replyInput = z.object({
   channelAccountId: z.string().min(1),
-  text: z.string().trim().min(1),
+  text: z.string().trim().min(1).nullable(),
   html: z.string().nullable().optional(),
+  attachmentIds: z.array(z.string().min(1)).max(10).default([]),
   idempotencyKey: z.string().min(1),
 })
 const replyRoute = createRoute({
@@ -309,6 +345,80 @@ const assignableRoute = createRoute({
     ...standardErrors,
   },
 })
+const attachmentMetadataInput = z.object({
+  filename: z.string().min(1).max(255),
+  contentType: z.string().min(1),
+  sizeBytes: z.number().int().nonnegative(),
+})
+const attachmentSchema = partSchema.shape.attachments.element
+const ticketRoute = createRoute({
+  method: "post",
+  path: "/v1/admin/conversations/{id}/attachments/tickets",
+  request: {
+    params: z.object({ id: z.string() }),
+    body: body(attachmentMetadataInput),
+  },
+  responses: {
+    ...standardErrors,
+    201: json(
+      data(
+        z.object({
+          token: z.string(),
+          method: z.enum(["PUT", "POST"]),
+          url: z.string().url(),
+          headers: z.record(z.string(), z.string()).optional(),
+          expiresAt: timestamp,
+        }),
+      ),
+      "Short-lived private upload ticket",
+    ),
+    404: json(errorSchema, "Conversation not found"),
+    409: json(errorSchema, "Private attachment upload unavailable"),
+    422: json(errorSchema, "Attachment rejected by policy"),
+  },
+})
+const finalizeRoute = createRoute({
+  method: "post",
+  path: "/v1/admin/conversations/{id}/attachments/finalize",
+  request: {
+    params: z.object({ id: z.string() }),
+    body: body(attachmentMetadataInput.extend({ token: z.string().min(1) })),
+  },
+  responses: {
+    ...standardErrors,
+    201: json(data(attachmentSchema), "Attachment finalized and scanned"),
+    404: json(errorSchema, "Conversation not found"),
+    409: json(errorSchema, "Upload unavailable or drifted"),
+    422: json(errorSchema, "Attachment rejected by policy"),
+  },
+})
+const downloadRoute = createRoute({
+  method: "get",
+  path: "/v1/admin/conversations/{id}/attachments/{attachmentId}/download",
+  request: { params: z.object({ id: z.string(), attachmentId: z.string() }) },
+  responses: {
+    ...standardErrors,
+    200: {
+      description: "Private attachment stream",
+      content: {
+        "application/octet-stream": { schema: z.string().openapi({ format: "binary" }) },
+      },
+    },
+    302: { description: "Short-lived private download redirect" },
+    404: json(errorSchema, "Clean attachment not found"),
+    409: json(errorSchema, "Private attachment runtime unavailable"),
+  },
+})
+const redactRoute = createRoute({
+  method: "post",
+  path: "/v1/admin/conversations/{id}/attachments/{attachmentId}/redact",
+  request: { params: z.object({ id: z.string(), attachmentId: z.string() }) },
+  responses: {
+    ...standardErrors,
+    200: json(data(attachmentSchema), "Attachment queued for redaction"),
+    404: json(errorSchema, "Attachment not found"),
+  },
+})
 
 // biome-ignore lint/suspicious/noExplicitAny: Date rows serialize to the declared wire shape.
 const response = (value: unknown): any => value
@@ -331,7 +441,21 @@ function toPartDto(row: ConversationPart) {
     notificationDeliveryId: _deliveryId,
     ...dto
   } = row
-  return dto
+  return { ...dto, attachments: [] }
+}
+
+function toAttachmentDto(row: import("./schema.js").ConversationAttachment) {
+  return {
+    id: row.id,
+    filename: row.filename,
+    contentType: row.contentType,
+    sizeBytes: row.sizeBytes,
+    disposition: row.disposition === "inline" ? "inline" : "attachment",
+    inlineContentId: row.inlineContentId,
+    scanStatus: row.scanStatus,
+    availability: row.availability,
+    createdAt: row.createdAt,
+  }
 }
 
 function toNoteDto(row: ConversationNote) {
@@ -342,10 +466,25 @@ function toDetailDto(detail: Awaited<ReturnType<typeof getConversation>>) {
   if (!detail) return null
   return {
     conversation: toConversationDto(detail.conversation),
-    parts: detail.parts.map(toPartDto),
+    parts: detail.parts.map((part) => ({
+      ...toPartDto(part),
+      attachments: detail.attachments
+        .filter(({ partId }) => partId === part.id)
+        .map(toAttachmentDto),
+    })),
     notes: detail.notes.map(toNoteDto),
     timeline: detail.timeline.map((item) =>
-      item.kind === "part" ? { ...item, part: toPartDto(item.part) } : item,
+      item.kind === "part"
+        ? {
+            ...item,
+            part: {
+              ...toPartDto(item.part),
+              attachments: detail.attachments
+                .filter(({ partId }) => partId === item.part.id)
+                .map(toAttachmentDto),
+            },
+          }
+        : item,
     ),
   }
 }
@@ -356,6 +495,14 @@ function serviceError(error: unknown): { status: 400 | 403 | 404 | 409; error: s
   if (error instanceof ConversationInvalidStateError) return { status: 400, error: error.code }
   if (error instanceof ConversationConflictError || error instanceof ConversationIngressDriftError)
     return { status: 409, error: error.code }
+  if (error instanceof ConversationAttachmentNotFoundError)
+    return { status: 404, error: error.code }
+  if (
+    error instanceof ConversationAttachmentConflictError ||
+    error instanceof ConversationAttachmentUnavailableError
+  ) {
+    return { status: 409, error: error.code }
+  }
   return null
 }
 
@@ -534,6 +681,110 @@ export function createConversationsRoutes(options: ConversationsRoutesOptions) {
     )
     if (result.error) return c.json({ error: result.error.error }, result.error.status)
     return c.json(response({ data: result.value }), 200)
+  })
+  register(ticketRoute, async (c: RouteContext) => {
+    const actor = await actorFor(c)
+    if (!actor) return c.json({ error: "active_staff_required" }, 401)
+    const db = options.resolveDb(c.env)
+    const access = await handle(() =>
+      assertConversationInboxMembership(db, c.req.valid("param").id, actor.userId),
+    )
+    if (access.error) return c.json({ error: access.error.error }, access.error.status)
+    try {
+      const ticket = await createAttachmentUploadTicket(
+        db,
+        options.attachments,
+        { conversationId: c.req.valid("param").id, ...c.req.valid("json") },
+      )
+      return c.json(response({ data: ticket }), 201)
+    } catch (error) {
+      if (error instanceof ConversationAttachmentPolicyError)
+        return c.json({ error: error.code }, 422)
+      const mapped = serviceError(error)
+      if (!mapped) throw error
+      return c.json({ error: mapped.error }, mapped.status)
+    }
+  })
+  register(finalizeRoute, async (c: RouteContext) => {
+    const actor = await actorFor(c)
+    if (!actor) return c.json({ error: "active_staff_required" }, 401)
+    const db = options.resolveDb(c.env)
+    const access = await handle(() =>
+      assertConversationInboxMembership(db, c.req.valid("param").id, actor.userId),
+    )
+    if (access.error) return c.json({ error: access.error.error }, access.error.status)
+    try {
+      const attachment = await finalizeAttachmentUpload(
+        db,
+        options.attachments,
+        { conversationId: c.req.valid("param").id, ...c.req.valid("json") },
+      )
+      return c.json(response({ data: toAttachmentDto(attachment) }), 201)
+    } catch (error) {
+      if (error instanceof ConversationAttachmentPolicyError)
+        return c.json({ error: error.code }, 422)
+      const mapped = serviceError(error)
+      if (!mapped) throw error
+      return c.json({ error: mapped.error }, mapped.status)
+    }
+  })
+  register(downloadRoute, async (c: RouteContext) => {
+    const actor = await actorFor(c)
+    if (!actor) return c.json({ error: "active_staff_required" }, 401)
+    const db = options.resolveDb(c.env)
+    const access = await handle(() =>
+      assertConversationInboxMembership(db, c.req.valid("param").id, actor.userId),
+    )
+    if (access.error) return c.json({ error: access.error.error }, access.error.status)
+    try {
+      const result = await downloadConversationAttachment(
+        db,
+        options.attachments,
+        {
+          conversationId: c.req.valid("param").id,
+          attachmentId: c.req.valid("param").attachmentId,
+        },
+      )
+      if (result.download.kind === "redirect") {
+        c.header("cache-control", "private, no-store")
+        return c.redirect(result.download.url, 302)
+      }
+      const headers = new Headers(result.download.response.headers)
+      headers.set("cache-control", "private, no-store")
+      headers.set("content-type", result.attachment.contentType)
+      headers.set("x-content-type-options", "nosniff")
+      headers.set(
+        "content-disposition",
+        `attachment; filename*=UTF-8''${encodeURIComponent(result.attachment.filename)}`,
+      )
+      return new Response(result.download.response.body, {
+        status: result.download.response.status,
+        headers,
+      })
+    } catch (error) {
+      const mapped = serviceError(error)
+      if (!mapped) throw error
+      return c.json({ error: mapped.error }, mapped.status)
+    }
+  })
+  register(redactRoute, async (c: RouteContext) => {
+    const actor = await actorFor(c)
+    if (!actor) return c.json({ error: "active_staff_required" }, 401)
+    const db = options.resolveDb(c.env)
+    const access = await handle(() =>
+      assertConversationInboxMembership(db, c.req.valid("param").id, actor.userId),
+    )
+    if (access.error) return c.json({ error: access.error.error }, access.error.status)
+    try {
+      const attachment = await requestAttachmentRedaction(db, {
+        conversationId: c.req.valid("param").id,
+        attachmentId: c.req.valid("param").attachmentId,
+      })
+      return c.json(response({ data: toAttachmentDto(attachment) }), 200)
+    } catch (error) {
+      if (!(error instanceof ConversationAttachmentNotFoundError)) throw error
+      return c.json({ error: error.code }, 404)
+    }
   })
   return app
 }

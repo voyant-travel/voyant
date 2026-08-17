@@ -190,3 +190,7 @@ export interface NotificationProvider {
   /** Optional runtime-only Channel Account provisioning/validation capability. */
   readonly channelAccounts?: ChannelAccountAdapterCapability
 }
+
+export type NotificationPrivateAttachmentResolver = ConversationPrivateAttachmentDeliveryResolver
+
+import type { ConversationPrivateAttachmentDeliveryResolver } from "@voyant-travel/conversations-contracts"

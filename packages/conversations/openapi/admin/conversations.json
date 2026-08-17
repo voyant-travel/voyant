@@ -425,11 +425,81 @@
                               "htmlBody": {
                                 "type": ["string", "null"]
                               },
+                              "contentStatus": {
+                                "type": "string",
+                                "enum": ["safe", "quarantined", "redacted"]
+                              },
+                              "legacyAttachmentCount": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "classification": {
+                                "type": "string",
+                                "enum": [
+                                  "message",
+                                  "automatic_reply",
+                                  "delivery_status",
+                                  "complaint",
+                                  "suspicious"
+                                ]
+                              },
+                              "replyable": {
+                                "type": "boolean"
+                              },
                               "attachments": {
                                 "type": "array",
                                 "items": {
                                   "type": "object",
-                                  "additionalProperties": {}
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "filename": {
+                                      "type": "string"
+                                    },
+                                    "contentType": {
+                                      "type": "string"
+                                    },
+                                    "sizeBytes": {
+                                      "type": "integer",
+                                      "minimum": 0
+                                    },
+                                    "disposition": {
+                                      "type": "string",
+                                      "enum": ["attachment", "inline"]
+                                    },
+                                    "inlineContentId": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "scanStatus": {
+                                      "type": "string",
+                                      "enum": ["pending", "clean", "blocked", "failed"]
+                                    },
+                                    "availability": {
+                                      "type": "string",
+                                      "enum": [
+                                        "active",
+                                        "quarantined",
+                                        "redaction_pending",
+                                        "redacted"
+                                      ]
+                                    },
+                                    "createdAt": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "filename",
+                                    "contentType",
+                                    "sizeBytes",
+                                    "disposition",
+                                    "inlineContentId",
+                                    "scanStatus",
+                                    "availability",
+                                    "createdAt"
+                                  ]
                                 }
                               },
                               "externalMessageId": {
@@ -480,6 +550,10 @@
                               "subject",
                               "textBody",
                               "htmlBody",
+                              "contentStatus",
+                              "legacyAttachmentCount",
+                              "classification",
+                              "replyable",
                               "attachments",
                               "externalMessageId",
                               "messageId",
@@ -575,11 +649,81 @@
                                       "htmlBody": {
                                         "type": ["string", "null"]
                                       },
+                                      "contentStatus": {
+                                        "type": "string",
+                                        "enum": ["safe", "quarantined", "redacted"]
+                                      },
+                                      "legacyAttachmentCount": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                      },
+                                      "classification": {
+                                        "type": "string",
+                                        "enum": [
+                                          "message",
+                                          "automatic_reply",
+                                          "delivery_status",
+                                          "complaint",
+                                          "suspicious"
+                                        ]
+                                      },
+                                      "replyable": {
+                                        "type": "boolean"
+                                      },
                                       "attachments": {
                                         "type": "array",
                                         "items": {
                                           "type": "object",
-                                          "additionalProperties": {}
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "filename": {
+                                              "type": "string"
+                                            },
+                                            "contentType": {
+                                              "type": "string"
+                                            },
+                                            "sizeBytes": {
+                                              "type": "integer",
+                                              "minimum": 0
+                                            },
+                                            "disposition": {
+                                              "type": "string",
+                                              "enum": ["attachment", "inline"]
+                                            },
+                                            "inlineContentId": {
+                                              "type": ["string", "null"]
+                                            },
+                                            "scanStatus": {
+                                              "type": "string",
+                                              "enum": ["pending", "clean", "blocked", "failed"]
+                                            },
+                                            "availability": {
+                                              "type": "string",
+                                              "enum": [
+                                                "active",
+                                                "quarantined",
+                                                "redaction_pending",
+                                                "redacted"
+                                              ]
+                                            },
+                                            "createdAt": {
+                                              "type": "string",
+                                              "format": "date-time"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "filename",
+                                            "contentType",
+                                            "sizeBytes",
+                                            "disposition",
+                                            "inlineContentId",
+                                            "scanStatus",
+                                            "availability",
+                                            "createdAt"
+                                          ]
                                         }
                                       },
                                       "externalMessageId": {
@@ -630,6 +774,10 @@
                                       "subject",
                                       "textBody",
                                       "htmlBody",
+                                      "contentStatus",
+                                      "legacyAttachmentCount",
+                                      "classification",
+                                      "replyable",
                                       "attachments",
                                       "externalMessageId",
                                       "messageId",
@@ -989,11 +1137,81 @@
                               "htmlBody": {
                                 "type": ["string", "null"]
                               },
+                              "contentStatus": {
+                                "type": "string",
+                                "enum": ["safe", "quarantined", "redacted"]
+                              },
+                              "legacyAttachmentCount": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "classification": {
+                                "type": "string",
+                                "enum": [
+                                  "message",
+                                  "automatic_reply",
+                                  "delivery_status",
+                                  "complaint",
+                                  "suspicious"
+                                ]
+                              },
+                              "replyable": {
+                                "type": "boolean"
+                              },
                               "attachments": {
                                 "type": "array",
                                 "items": {
                                   "type": "object",
-                                  "additionalProperties": {}
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "filename": {
+                                      "type": "string"
+                                    },
+                                    "contentType": {
+                                      "type": "string"
+                                    },
+                                    "sizeBytes": {
+                                      "type": "integer",
+                                      "minimum": 0
+                                    },
+                                    "disposition": {
+                                      "type": "string",
+                                      "enum": ["attachment", "inline"]
+                                    },
+                                    "inlineContentId": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "scanStatus": {
+                                      "type": "string",
+                                      "enum": ["pending", "clean", "blocked", "failed"]
+                                    },
+                                    "availability": {
+                                      "type": "string",
+                                      "enum": [
+                                        "active",
+                                        "quarantined",
+                                        "redaction_pending",
+                                        "redacted"
+                                      ]
+                                    },
+                                    "createdAt": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "filename",
+                                    "contentType",
+                                    "sizeBytes",
+                                    "disposition",
+                                    "inlineContentId",
+                                    "scanStatus",
+                                    "availability",
+                                    "createdAt"
+                                  ]
                                 }
                               },
                               "externalMessageId": {
@@ -1044,6 +1262,10 @@
                               "subject",
                               "textBody",
                               "htmlBody",
+                              "contentStatus",
+                              "legacyAttachmentCount",
+                              "classification",
+                              "replyable",
                               "attachments",
                               "externalMessageId",
                               "messageId",
@@ -1139,11 +1361,81 @@
                                       "htmlBody": {
                                         "type": ["string", "null"]
                                       },
+                                      "contentStatus": {
+                                        "type": "string",
+                                        "enum": ["safe", "quarantined", "redacted"]
+                                      },
+                                      "legacyAttachmentCount": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                      },
+                                      "classification": {
+                                        "type": "string",
+                                        "enum": [
+                                          "message",
+                                          "automatic_reply",
+                                          "delivery_status",
+                                          "complaint",
+                                          "suspicious"
+                                        ]
+                                      },
+                                      "replyable": {
+                                        "type": "boolean"
+                                      },
                                       "attachments": {
                                         "type": "array",
                                         "items": {
                                           "type": "object",
-                                          "additionalProperties": {}
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "filename": {
+                                              "type": "string"
+                                            },
+                                            "contentType": {
+                                              "type": "string"
+                                            },
+                                            "sizeBytes": {
+                                              "type": "integer",
+                                              "minimum": 0
+                                            },
+                                            "disposition": {
+                                              "type": "string",
+                                              "enum": ["attachment", "inline"]
+                                            },
+                                            "inlineContentId": {
+                                              "type": ["string", "null"]
+                                            },
+                                            "scanStatus": {
+                                              "type": "string",
+                                              "enum": ["pending", "clean", "blocked", "failed"]
+                                            },
+                                            "availability": {
+                                              "type": "string",
+                                              "enum": [
+                                                "active",
+                                                "quarantined",
+                                                "redaction_pending",
+                                                "redacted"
+                                              ]
+                                            },
+                                            "createdAt": {
+                                              "type": "string",
+                                              "format": "date-time"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "filename",
+                                            "contentType",
+                                            "sizeBytes",
+                                            "disposition",
+                                            "inlineContentId",
+                                            "scanStatus",
+                                            "availability",
+                                            "createdAt"
+                                          ]
                                         }
                                       },
                                       "externalMessageId": {
@@ -1194,6 +1486,10 @@
                                       "subject",
                                       "textBody",
                                       "htmlBody",
+                                      "contentStatus",
+                                      "legacyAttachmentCount",
+                                      "classification",
+                                      "replyable",
                                       "attachments",
                                       "externalMessageId",
                                       "messageId",
@@ -1659,11 +1955,20 @@
                     "minLength": 1
                   },
                   "text": {
-                    "type": "string",
+                    "type": ["string", "null"],
                     "minLength": 1
                   },
                   "html": {
                     "type": ["string", "null"]
+                  },
+                  "attachmentIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "maxItems": 10,
+                    "default": []
                   },
                   "idempotencyKey": {
                     "type": "string",
@@ -1718,11 +2023,76 @@
                         "htmlBody": {
                           "type": ["string", "null"]
                         },
+                        "contentStatus": {
+                          "type": "string",
+                          "enum": ["safe", "quarantined", "redacted"]
+                        },
+                        "legacyAttachmentCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "classification": {
+                          "type": "string",
+                          "enum": [
+                            "message",
+                            "automatic_reply",
+                            "delivery_status",
+                            "complaint",
+                            "suspicious"
+                          ]
+                        },
+                        "replyable": {
+                          "type": "boolean"
+                        },
                         "attachments": {
                           "type": "array",
                           "items": {
                             "type": "object",
-                            "additionalProperties": {}
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "filename": {
+                                "type": "string"
+                              },
+                              "contentType": {
+                                "type": "string"
+                              },
+                              "sizeBytes": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "disposition": {
+                                "type": "string",
+                                "enum": ["attachment", "inline"]
+                              },
+                              "inlineContentId": {
+                                "type": ["string", "null"]
+                              },
+                              "scanStatus": {
+                                "type": "string",
+                                "enum": ["pending", "clean", "blocked", "failed"]
+                              },
+                              "availability": {
+                                "type": "string",
+                                "enum": ["active", "quarantined", "redaction_pending", "redacted"]
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "filename",
+                              "contentType",
+                              "sizeBytes",
+                              "disposition",
+                              "inlineContentId",
+                              "scanStatus",
+                              "availability",
+                              "createdAt"
+                            ]
                           }
                         },
                         "externalMessageId": {
@@ -1773,6 +2143,10 @@
                         "subject",
                         "textBody",
                         "htmlBody",
+                        "contentStatus",
+                        "legacyAttachmentCount",
+                        "classification",
+                        "replyable",
                         "attachments",
                         "externalMessageId",
                         "messageId",
@@ -2872,6 +3246,670 @@
           },
           "404": {
             "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/{id}/attachments/tickets": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "filename": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "contentType": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sizeBytes": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": ["filename", "contentType", "sizeBytes"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Short-lived private upload ticket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string"
+                        },
+                        "method": {
+                          "type": "string",
+                          "enum": ["PUT", "POST"]
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "headers": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": ["token", "method", "url", "expiresAt"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Private attachment upload unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Attachment rejected by policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/{id}/attachments/finalize": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "filename": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "contentType": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sizeBytes": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "token": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["filename", "contentType", "sizeBytes", "token"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Attachment finalized and scanned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "filename": {
+                          "type": "string"
+                        },
+                        "contentType": {
+                          "type": "string"
+                        },
+                        "sizeBytes": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "disposition": {
+                          "type": "string",
+                          "enum": ["attachment", "inline"]
+                        },
+                        "inlineContentId": {
+                          "type": ["string", "null"]
+                        },
+                        "scanStatus": {
+                          "type": "string",
+                          "enum": ["pending", "clean", "blocked", "failed"]
+                        },
+                        "availability": {
+                          "type": "string",
+                          "enum": ["active", "quarantined", "redaction_pending", "redacted"]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "filename",
+                        "contentType",
+                        "sizeBytes",
+                        "disposition",
+                        "inlineContentId",
+                        "scanStatus",
+                        "availability",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Upload unavailable or drifted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Attachment rejected by policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/{id}/attachments/{attachmentId}/download": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "attachmentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private attachment stream",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "302": {
+            "description": "Short-lived private download redirect"
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Clean attachment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Private attachment runtime unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/{id}/attachments/{attachmentId}/redact": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "attachmentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attachment queued for redaction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "filename": {
+                          "type": "string"
+                        },
+                        "contentType": {
+                          "type": "string"
+                        },
+                        "sizeBytes": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "disposition": {
+                          "type": "string",
+                          "enum": ["attachment", "inline"]
+                        },
+                        "inlineContentId": {
+                          "type": ["string", "null"]
+                        },
+                        "scanStatus": {
+                          "type": "string",
+                          "enum": ["pending", "clean", "blocked", "failed"]
+                        },
+                        "availability": {
+                          "type": "string",
+                          "enum": ["active", "quarantined", "redaction_pending", "redacted"]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "filename",
+                        "contentType",
+                        "sizeBytes",
+                        "disposition",
+                        "inlineContentId",
+                        "scanStatus",
+                        "availability",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attachment not found",
             "content": {
               "application/json": {
                 "schema": {
