@@ -20,6 +20,14 @@
       ]
     },
     {
+      "command": "pnpm --filter @voyant-travel/custom-fields generate:openapi",
+      "files": ["packages/custom-fields/openapi/admin/custom-fields.json"]
+    },
+    {
+      "command": "pnpm --filter @voyant-travel/event-catalog generate:openapi",
+      "files": ["packages/event-catalog/openapi/admin/event-catalog.json"]
+    },
+    {
       "command": "pnpm --filter @voyant-travel/finance generate:openapi",
       "files": [
         "packages/finance/openapi/admin/finance.json",
@@ -53,6 +61,10 @@
     {
       "command": "pnpm --filter @voyant-travel/mice generate:openapi",
       "files": ["packages/mice/openapi/admin/mice.json"]
+    },
+    {
+      "command": "pnpm --filter @voyant-travel/navigation-preferences generate:openapi",
+      "files": ["packages/navigation-preferences/openapi/admin/navigation-preferences.json"]
     },
     {
       "command": "pnpm --filter @voyant-travel/operations generate:openapi",
