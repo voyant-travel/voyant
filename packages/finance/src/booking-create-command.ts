@@ -66,7 +66,7 @@ export async function executeFinanceStaffBookingCreateCommand(
   input: FinanceBookingCreateCommandInput,
 ) {
   assertAdmittedActionPolicy(input.admitted, FINANCE_BOOKING_CREATE_HANDLER_POLICY)
-  return executeBookingCreateCommand(input)
+  return executeBookingCreateCommand("staff", input)
 }
 
 /**
@@ -82,7 +82,13 @@ export async function executeFinanceBookProductCommand(input: FinanceBookingCrea
   assertAdmittedActionPolicy(input.admitted, FINANCE_BOOK_PRODUCT_HANDLER_POLICY)
   // book_product mints its lease under its OWN action identity; the domain must
   // check against that, not against create_booking's (voyant#3992).
-  return executeBookingCreateCommand(input, undefined, undefined, FINANCE_BOOK_PRODUCT_ACTION)
+  return executeBookingCreateCommand(
+    "staff",
+    input,
+    undefined,
+    undefined,
+    FINANCE_BOOK_PRODUCT_ACTION,
+  )
 }
 
 /**
@@ -103,6 +109,7 @@ export async function executeFinanceSelfServiceBookingCreateCommand(
   // verified a contact, chosen a room and been quoted. Same defect voyant#3992
   // fixed for `book_product`; this entrypoint was missed.
   return executeBookingCreateCommand(
+    "customer",
     input,
     input.fallbackPrincipalId,
     input.consumeSources,
@@ -114,8 +121,15 @@ export async function executeFinanceSelfServiceBookingCreateCommand(
  * The shared mutation core. Deliberately not exported: an exported executor
  * that selected its expectation from caller-supplied admission metadata would
  * be exactly the confused deputy the two entrypoints above prevent.
+ *
+ * `audience` comes first and is required for the same reason. It is taken from
+ * the entrypoint — each of which already pins exactly one policy — and never
+ * derived from `input.context.actor`, which is an optional untyped string a
+ * caller supplies. Reading it from there would make an omitted field grant the
+ * staff-grade diagnostics, and silence must not be permission.
  */
 async function executeBookingCreateCommand(
+  audience: BookingCreateErrorAudience,
   input: FinanceBookingCreateCommandInput,
   fallbackPrincipalId?: string,
   consumeSources?: (tx: PostgresJsDatabase, bookingId: string) => Promise<void>,
@@ -152,7 +166,7 @@ async function executeBookingCreateCommand(
           runtime: input.runtime,
           userId: input.context.userId ?? undefined,
         })
-        if (outcome.status !== "ok") throw bookingCreateCommandError(outcome)
+        if (outcome.status !== "ok") throw bookingCreateCommandError(outcome, audience)
         const result = outcome.result
         await input.testHooks?.afterDomainCreate?.(transaction, result.booking.id)
         // Spend the draft, quote, hold, and challenge in the same transaction
@@ -249,8 +263,35 @@ async function insertBookingCreatedOutbox(
   await insertOutboxEvents(tx, events)
 }
 
+/**
+ * Who is going to read the refusal.
+ *
+ * `customer` covers the self-service entrypoint, which is reachable from
+ * `POST /v1/public/catalog/booking-sessions/:sessionId/commit` by an
+ * unauthenticated storefront caller — the session's own capability is the
+ * authority there, not a staff credential. It is the audience that may not own
+ * the records a diagnostic would name.
+ */
+export type BookingCreateErrorAudience = "staff" | "customer"
+
+/**
+ * What a `customer` refusal may say.
+ *
+ * It may describe the caller's own request and the product they are booking —
+ * that is the whole point of a typed refusal, and it is what makes the pricing
+ * failure this file exists to surface legible to a shopper. It may not describe
+ * **another party's records** or **the operator's account state**, neither of
+ * which the caller is entitled to and neither of which they can act on.
+ *
+ * Two outcomes fail that test, and both use the sentence below rather than a
+ * bespoke one, so the two are also indistinguishable from each other.
+ */
+const CUSTOMER_WITHHELD_REFUSAL =
+  "This booking could not be completed. Contact the operator to continue."
+
 export function bookingCreateCommandError(
   outcome: Exclude<Awaited<ReturnType<typeof createBookingMutation>>, { status: "ok" }>,
+  audience: BookingCreateErrorAudience,
 ) {
   switch (outcome.status) {
     // voyant#3921: these were one message — "A booking-create dependency was not
@@ -324,15 +365,40 @@ export function bookingCreateCommandError(
         "INVALID_INPUT",
         { outcome },
       )
+    // The domain's message names the operator's plan usage and renewal date
+    // ("This workspace has reached its monthly booking limit (3/5). Upgrade the
+    // plan..."). That is the operator's commercial state, it is not the
+    // shopper's to see, and there is nothing they could do with it.
     case "monthly_booking_limit_reached":
-      return new ToolError(outcome.message, "INVALID_INPUT", { outcome })
+      return new ToolError(
+        audience === "staff" ? outcome.message : CUSTOMER_WITHHELD_REFUSAL,
+        "INVALID_INPUT",
+        { outcome },
+      )
     // These six shared one sentence — "The booking command conflicts with
     // current state." — which is the same tautology in a different costume: it
     // names no record, no balance and no next step, and each of them carries
     // exactly the field that would.
+    //
+    // `duplicate_booking` is the one that cannot say so to everybody. The guard
+    // resolves its person from the contact email on the request
+    // (`upsertPersonFromContact` returns any existing CRM person matching it,
+    // with no ownership check), so on the anonymous public Commit the match may
+    // be a stranger the caller merely named. Naming their booking number and
+    // status there would hand one customer's record to another. The full
+    // outcome still reaches the server log through `meta`, which is where an
+    // operator reads it.
+    //
+    // The other five are not audience-dependent: each describes the caller's
+    // own request, or a record the request itself named. The travel-credit and
+    // group outcomes are additionally unreachable for a customer, because the
+    // self-service command carries neither a redemption nor a group — but that
+    // is a second reason, not the one they rely on.
     case "duplicate_booking":
       return new ToolError(
-        `This customer already holds booking ${outcome.existingBooking.bookingNumber} (${outcome.existingBooking.status}) on the same Slot. Open that booking instead of creating another, or set allowDuplicate if a second booking on the same Slot is intended.`,
+        audience === "staff"
+          ? `This customer already holds booking ${outcome.existingBooking.bookingNumber} (${outcome.existingBooking.status}) on the same Slot. Open that booking instead of creating another, or set allowDuplicate if a second booking on the same Slot is intended.`
+          : CUSTOMER_WITHHELD_REFUSAL,
         "INVALID_INPUT",
         { outcome },
       )
