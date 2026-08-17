@@ -8,6 +8,12 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import { notificationDeliveries } from "./schema.js"
 
+function isLegacyPersonDeliveryChannel(
+  channel: string,
+): channel is PersonNotificationDelivery["channel"] {
+  return channel === "email" || channel === "sms"
+}
+
 /**
  * Expose delivered customer messages to the CRM Communications tab.
  *
@@ -51,14 +57,20 @@ export function createPersonCommunicationsRuntime(): RelationshipsPersonNotifica
         .limit(query.limit)
         .offset(query.offset)
 
-      return rows.map((row) => ({
-        id: row.id,
-        channel: row.channel,
-        subject: row.subject ?? null,
-        body: row.textBody ?? null,
-        sentAt: row.sentAt?.toISOString() ?? null,
-        createdAt: row.createdAt.toISOString(),
-      }))
+      return rows.flatMap((row) =>
+        isLegacyPersonDeliveryChannel(row.channel)
+          ? [
+              {
+                id: row.id,
+                channel: row.channel,
+                subject: row.subject ?? null,
+                body: row.textBody ?? null,
+                sentAt: row.sentAt?.toISOString() ?? null,
+                createdAt: row.createdAt.toISOString(),
+              },
+            ]
+          : [],
+      )
     },
   }
 }

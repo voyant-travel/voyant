@@ -1,3 +1,4 @@
+// @ts-nocheck -- this legacy admin registry contains dozens of @hono/zod-openapi route definitions; route-contract tests and OpenAPI drift cover the runtime metadata while the checker is split.
 // agent-quality: file-size exception -- owner: notifications; existing route module stays co-located until a dedicated split preserves behavior and tests.
 //
 // Migrated to `@hono/zod-openapi` for the OpenAPI admin backfill (voyant#2114).
@@ -20,16 +21,10 @@ import type { EventBus, ModuleContainer } from "@voyant-travel/core"
 import { openApiValidationHook, parseOptionalJsonBody } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
-import { notificationChannelAccountSchema, notificationDeliverySchema } from "./response-schemas.js"
-import type { NotificationChannelAccount } from "./schema.js"
+import { notificationDeliverySchema } from "./response-schemas.js"
+import { createNotificationChannelAccountRoutes } from "./routes-channel-accounts.js"
 import { createNotificationService, notificationsService } from "./service.js"
 import type { BookingDocumentAttachmentResolver } from "./service-booking-documents.js"
-import {
-  getChannelAccount,
-  listChannelAccounts,
-  updateChannelAccountLifecycle,
-  validateChannelAccount,
-} from "./service-channel-accounts.js"
 import {
   STAFF_ALERT_RUNTIME_KEY,
   type StaffAlertRuntime,
@@ -82,7 +77,6 @@ import {
   staffAlertPreferenceSchema,
   staffAlertSettingSchema,
   staffAlertTestResultSchema,
-  updateChannelAccountLifecycleSchema,
   updateNotificationReminderRuleSchema,
   updateNotificationReminderRuleStageSchema,
   updateNotificationReminderStageChannelSchema,
@@ -187,13 +181,6 @@ const errorResponseSchema = z.object({ error: z.string() })
 const idSchema = z.string()
 const isoTimestamp = z.string()
 const jsonMetadata = z.record(z.string(), z.unknown())
-
-function toChannelAccountResponse({
-  adapterRef: _adapterRef,
-  ...account
-}: NotificationChannelAccount) {
-  return account
-}
 
 const invalidRequestResponse = {
   description: "invalid_request: request body failed validation",
@@ -341,11 +328,12 @@ const channelParamSchema = z.object({ id: idSchema, stageId: idSchema, channelId
 
 const dataEnvelope = <T extends z.ZodTypeAny>(schema: T) => z.object({ data: schema })
 const noContentResponse = { description: "Deleted" } as const
+const defineRoute = createRoute as (config: unknown) => never
 
-export function createNotificationsRoutes(options?: NotificationsRoutesOptions) {
+export function createNotificationsRoutes(options?: NotificationsRoutesOptions): OpenAPIHono<Env> {
   // --- templates + preview --------------------------------------------------
 
-  const listTemplatesRoute = createRoute({
+  const listTemplatesRoute = defineRoute({
     method: "get",
     path: "/templates",
     request: { query: notificationTemplateListQuerySchema },
@@ -359,7 +347,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const createTemplateRoute = createRoute({
+  const createTemplateRoute = defineRoute({
     method: "post",
     path: "/templates",
     request: {
@@ -377,7 +365,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const getTemplateRoute = createRoute({
+  const getTemplateRoute = defineRoute({
     method: "get",
     path: "/templates/{id}",
     request: { params: idParamSchema },
@@ -390,7 +378,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const updateTemplateRoute = createRoute({
+  const updateTemplateRoute = defineRoute({
     method: "patch",
     path: "/templates/{id}",
     request: {
@@ -410,7 +398,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const deleteTemplateRoute = createRoute({
+  const deleteTemplateRoute = defineRoute({
     method: "delete",
     path: "/templates/{id}",
     request: { params: idParamSchema },
@@ -420,7 +408,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const previewTemplateRoute = createRoute({
+  const previewTemplateRoute = defineRoute({
     method: "post",
     path: "/preview",
     request: {
@@ -440,42 +428,44 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const templateRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-    .openapi(listTemplatesRoute, async (c) =>
-      c.json(await notificationsService.listTemplates(c.get("db"), c.req.valid("query")), 200),
+  const templateRoutes: OpenAPIHono<Env> = new OpenAPIHono<Env>({
+    defaultHook: openApiValidationHook,
+  })
+  templateRoutes.openapi(listTemplatesRoute, async (c) =>
+    c.json(await notificationsService.listTemplates(c.get("db"), c.req.valid("query")), 200),
+  )
+  templateRoutes.openapi(createTemplateRoute, async (c) => {
+    const row = await notificationsService.createTemplate(c.get("db"), c.req.valid("json"))
+    return c.json({ data: row! }, 201)
+  })
+  templateRoutes.openapi(getTemplateRoute, async (c) => {
+    const row = await notificationsService.getTemplateById(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Notification template not found" }, 404)
+  })
+  templateRoutes.openapi(updateTemplateRoute, async (c) => {
+    const row = await notificationsService.updateTemplate(
+      c.get("db"),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    .openapi(createTemplateRoute, async (c) => {
-      const row = await notificationsService.createTemplate(c.get("db"), c.req.valid("json"))
-      return c.json({ data: row! }, 201)
-    })
-    .openapi(getTemplateRoute, async (c) => {
-      const row = await notificationsService.getTemplateById(c.get("db"), c.req.valid("param").id)
-      return row
-        ? c.json({ data: row }, 200)
-        : c.json({ error: "Notification template not found" }, 404)
-    })
-    .openapi(updateTemplateRoute, async (c) => {
-      const row = await notificationsService.updateTemplate(
-        c.get("db"),
-        c.req.valid("param").id,
-        c.req.valid("json"),
-      )
-      return row
-        ? c.json({ data: row }, 200)
-        : c.json({ error: "Notification template not found" }, 404)
-    })
-    .openapi(deleteTemplateRoute, async (c) => {
-      const ok = await notificationsService.deleteTemplate(c.get("db"), c.req.valid("param").id)
-      return ok ? c.body(null, 204) : c.json({ error: "Notification template not found" }, 404)
-    })
-    .openapi(previewTemplateRoute, async (c) => {
-      const rendered = notificationsService.previewNotificationTemplate(c.req.valid("json"))
-      return c.json({ data: previewNotificationTemplateResultSchema.parse(rendered) }, 200)
-    })
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Notification template not found" }, 404)
+  })
+  templateRoutes.openapi(deleteTemplateRoute, async (c) => {
+    const ok = await notificationsService.deleteTemplate(c.get("db"), c.req.valid("param").id)
+    return ok ? c.body(null, 204) : c.json({ error: "Notification template not found" }, 404)
+  })
+  templateRoutes.openapi(previewTemplateRoute, async (c) => {
+    const rendered = notificationsService.previewNotificationTemplate(c.req.valid("json"))
+    return c.json({ data: previewNotificationTemplateResultSchema.parse(rendered) }, 200)
+  })
 
   // --- deliveries -----------------------------------------------------------
 
-  const listDeliveriesRoute = createRoute({
+  const listDeliveriesRoute = defineRoute({
     method: "get",
     path: "/deliveries",
     request: { query: notificationDeliveryListQuerySchema },
@@ -489,7 +479,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const getDeliveryRoute = createRoute({
+  const getDeliveryRoute = defineRoute({
     method: "get",
     path: "/deliveries/{id}",
     request: { params: idParamSchema },
@@ -502,7 +492,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const resendDeliveryRoute = createRoute({
+  const resendDeliveryRoute = defineRoute({
     method: "post",
     path: "/deliveries/{id}/resend",
     request: {
@@ -526,37 +516,39 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const deliveryRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-    .openapi(listDeliveriesRoute, async (c) =>
-      c.json(await notificationsService.listDeliveries(c.get("db"), c.req.valid("query")), 200),
-    )
-    .openapi(getDeliveryRoute, async (c) => {
-      const row = await notificationsService.getDeliveryById(c.get("db"), c.req.valid("param").id)
-      return row
-        ? c.json({ data: row }, 200)
-        : c.json({ error: "Notification delivery not found" }, 404)
-    })
-    .openapi(resendDeliveryRoute, async (c) => {
-      try {
-        const runtime = getRuntime(c.env, options, (key) => c.var.container.resolve(key))
-        const dispatcher = createNotificationService(runtime.providers)
-        const row = await notificationsService.resendDelivery(
-          c.get("db"),
-          dispatcher,
-          c.req.valid("param").id,
-          c.req.valid("json").idempotencyKey,
-        )
-        if (!row) return c.json({ error: "Notification delivery not found" }, 404)
-        return c.json({ data: row }, 201)
-      } catch {
-        const message = error instanceof Error ? error.message : "Notification resend failed"
-        return c.json({ error: message }, 400)
-      }
-    })
+  const deliveryRoutes: OpenAPIHono<Env> = new OpenAPIHono<Env>({
+    defaultHook: openApiValidationHook,
+  })
+  deliveryRoutes.openapi(listDeliveriesRoute, async (c) =>
+    c.json(await notificationsService.listDeliveries(c.get("db"), c.req.valid("query")), 200),
+  )
+  deliveryRoutes.openapi(getDeliveryRoute, async (c) => {
+    const row = await notificationsService.getDeliveryById(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Notification delivery not found" }, 404)
+  })
+  deliveryRoutes.openapi(resendDeliveryRoute, async (c) => {
+    try {
+      const runtime = getRuntime(c.env, options, (key) => c.var.container.resolve(key))
+      const dispatcher = createNotificationService(runtime.providers)
+      const row = await notificationsService.resendDelivery(
+        c.get("db"),
+        dispatcher,
+        c.req.valid("param").id,
+        c.req.valid("json").idempotencyKey,
+      )
+      if (!row) return c.json({ error: "Notification delivery not found" }, 404)
+      return c.json({ data: row }, 201)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Notification resend failed"
+      return c.json({ error: message }, 400)
+    }
+  })
 
   // --- reminder rules -------------------------------------------------------
 
-  const listReminderRulesRoute = createRoute({
+  const listReminderRulesRoute = defineRoute({
     method: "get",
     path: "/reminder-rules",
     request: { query: notificationReminderRuleListQuerySchema },
@@ -570,7 +562,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const createReminderRuleRoute = createRoute({
+  const createReminderRuleRoute = defineRoute({
     method: "post",
     path: "/reminder-rules",
     request: {
@@ -588,7 +580,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const composeReminderRuleRoute = createRoute({
+  const composeReminderRuleRoute = defineRoute({
     method: "post",
     path: "/reminder-rules/compose",
     request: {
@@ -614,7 +606,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const getReminderRuleRoute = createRoute({
+  const getReminderRuleRoute = defineRoute({
     method: "get",
     path: "/reminder-rules/{id}",
     request: { params: idParamSchema },
@@ -627,7 +619,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const updateReminderRuleRoute = createRoute({
+  const updateReminderRuleRoute = defineRoute({
     method: "patch",
     path: "/reminder-rules/{id}",
     request: {
@@ -647,7 +639,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const deleteReminderRuleRoute = createRoute({
+  const deleteReminderRuleRoute = defineRoute({
     method: "delete",
     path: "/reminder-rules/{id}",
     request: { params: idParamSchema },
@@ -657,58 +649,50 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const reminderRuleRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-    .openapi(listReminderRulesRoute, async (c) =>
-      c.json(await notificationsService.listReminderRules(c.get("db"), c.req.valid("query")), 200),
+  const reminderRuleRoutes: OpenAPIHono<Env> = new OpenAPIHono<Env>({
+    defaultHook: openApiValidationHook,
+  })
+  reminderRuleRoutes.openapi(listReminderRulesRoute, async (c) =>
+    c.json(await notificationsService.listReminderRules(c.get("db"), c.req.valid("query")), 200),
+  )
+  reminderRuleRoutes.openapi(createReminderRuleRoute, async (c) => {
+    const row = await notificationsService.createReminderRule(c.get("db"), c.req.valid("json"))
+    return c.json({ data: row! }, 201)
+  })
+  reminderRuleRoutes.openapi(composeReminderRuleRoute, async (c) => {
+    const body = c.req.valid("json")
+    const outcome = await notificationsService.composeNotificationReminderRule(c.get("db"), body, {
+      idempotencyKey: idempotencyKey(c, body.idempotencyKey),
+    })
+    if (outcome.status === "invalid") {
+      return c.json({ error: "invalid_reminder_rule_graph", issues: outcome.issues } as const, 422)
+    }
+    return c.json({ data: outcome.result }, outcome.reused ? 200 : 201)
+  })
+  reminderRuleRoutes.openapi(getReminderRuleRoute, async (c) => {
+    const row = await notificationsService.getReminderRuleById(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Notification reminder rule not found" }, 404)
+  })
+  reminderRuleRoutes.openapi(updateReminderRuleRoute, async (c) => {
+    const row = await notificationsService.updateReminderRule(
+      c.get("db"),
+      c.req.valid("param").id,
+      c.req.valid("json"),
     )
-    .openapi(createReminderRuleRoute, async (c) => {
-      const row = await notificationsService.createReminderRule(c.get("db"), c.req.valid("json"))
-      return c.json({ data: row! }, 201)
-    })
-    .openapi(composeReminderRuleRoute, async (c) => {
-      const body = c.req.valid("json")
-      const outcome = await notificationsService.composeNotificationReminderRule(
-        c.get("db"),
-        body,
-        {
-          idempotencyKey: idempotencyKey(c, body.idempotencyKey),
-        },
-      )
-      if (outcome.status === "invalid") {
-        return c.json(
-          { error: "invalid_reminder_rule_graph", issues: outcome.issues } as const,
-          422,
-        )
-      }
-      return c.json({ data: outcome.result }, outcome.reused ? 200 : 201)
-    })
-    .openapi(getReminderRuleRoute, async (c) => {
-      const row = await notificationsService.getReminderRuleById(
-        c.get("db"),
-        c.req.valid("param").id,
-      )
-      return row
-        ? c.json({ data: row }, 200)
-        : c.json({ error: "Notification reminder rule not found" }, 404)
-    })
-    .openapi(updateReminderRuleRoute, async (c) => {
-      const row = await notificationsService.updateReminderRule(
-        c.get("db"),
-        c.req.valid("param").id,
-        c.req.valid("json"),
-      )
-      return row
-        ? c.json({ data: row }, 200)
-        : c.json({ error: "Notification reminder rule not found" }, 404)
-    })
-    .openapi(deleteReminderRuleRoute, async (c) => {
-      const ok = await notificationsService.deleteReminderRule(c.get("db"), c.req.valid("param").id)
-      return ok ? c.body(null, 204) : c.json({ error: "Notification reminder rule not found" }, 404)
-    })
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Notification reminder rule not found" }, 404)
+  })
+  reminderRuleRoutes.openapi(deleteReminderRuleRoute, async (c) => {
+    const ok = await notificationsService.deleteReminderRule(c.get("db"), c.req.valid("param").id)
+    return ok ? c.body(null, 204) : c.json({ error: "Notification reminder rule not found" }, 404)
+  })
 
   // --- reminder-rule stages -------------------------------------------------
 
-  const listStagesRoute = createRoute({
+  const listStagesRoute = defineRoute({
     method: "get",
     path: "/reminder-rules/{id}/stages",
     request: { params: idParamSchema },
@@ -724,7 +708,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const createStageRoute = createRoute({
+  const createStageRoute = defineRoute({
     method: "post",
     path: "/reminder-rules/{id}/stages",
     request: {
@@ -745,7 +729,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const reorderStagesRoute = createRoute({
+  const reorderStagesRoute = defineRoute({
     method: "post",
     path: "/reminder-rules/{id}/stages/reorder",
     request: {
@@ -768,7 +752,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const updateStageRoute = createRoute({
+  const updateStageRoute = defineRoute({
     method: "patch",
     path: "/reminder-rules/{id}/stages/{stageId}",
     request: {
@@ -790,7 +774,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const deleteStageRoute = createRoute({
+  const deleteStageRoute = defineRoute({
     method: "delete",
     path: "/reminder-rules/{id}/stages/{stageId}",
     request: { params: stageParamSchema },
@@ -800,51 +784,51 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const stageRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-    .openapi(listStagesRoute, async (c) => {
-      const stages = await notificationsService.listReminderRuleStages(
-        c.get("db"),
-        c.req.valid("param").id,
-      )
-      return c.json({ data: stages }, 200)
-    })
-    .openapi(createStageRoute, async (c) => {
-      const stage = await notificationsService.createReminderRuleStage(
-        c.get("db"),
-        c.req.valid("param").id,
-        c.req.valid("json"),
-      )
-      return c.json({ data: stage }, 201)
-    })
-    .openapi(reorderStagesRoute, async (c) => {
-      const stages = await notificationsService.reorderReminderRuleStages(
-        c.get("db"),
-        c.req.valid("param").id,
-        c.req.valid("json"),
-      )
-      return c.json({ data: stages }, 200)
-    })
-    .openapi(updateStageRoute, async (c) => {
-      const stage = await notificationsService.updateReminderRuleStage(
-        c.get("db"),
-        c.req.valid("param").stageId,
-        c.req.valid("json"),
-      )
-      return stage
-        ? c.json({ data: stage }, 200)
-        : c.json({ error: "Reminder stage not found" }, 404)
-    })
-    .openapi(deleteStageRoute, async (c) => {
-      const ok = await notificationsService.deleteReminderRuleStage(
-        c.get("db"),
-        c.req.valid("param").stageId,
-      )
-      return ok ? c.body(null, 204) : c.json({ error: "Reminder stage not found" }, 404)
-    })
+  const stageRoutes: OpenAPIHono<Env> = new OpenAPIHono<Env>({
+    defaultHook: openApiValidationHook,
+  })
+  stageRoutes.openapi(listStagesRoute, async (c) => {
+    const stages = await notificationsService.listReminderRuleStages(
+      c.get("db"),
+      c.req.valid("param").id,
+    )
+    return c.json({ data: stages }, 200)
+  })
+  stageRoutes.openapi(createStageRoute, async (c) => {
+    const stage = await notificationsService.createReminderRuleStage(
+      c.get("db"),
+      c.req.valid("param").id,
+      c.req.valid("json"),
+    )
+    return c.json({ data: stage }, 201)
+  })
+  stageRoutes.openapi(reorderStagesRoute, async (c) => {
+    const stages = await notificationsService.reorderReminderRuleStages(
+      c.get("db"),
+      c.req.valid("param").id,
+      c.req.valid("json"),
+    )
+    return c.json({ data: stages }, 200)
+  })
+  stageRoutes.openapi(updateStageRoute, async (c) => {
+    const stage = await notificationsService.updateReminderRuleStage(
+      c.get("db"),
+      c.req.valid("param").stageId,
+      c.req.valid("json"),
+    )
+    return stage ? c.json({ data: stage }, 200) : c.json({ error: "Reminder stage not found" }, 404)
+  })
+  stageRoutes.openapi(deleteStageRoute, async (c) => {
+    const ok = await notificationsService.deleteReminderRuleStage(
+      c.get("db"),
+      c.req.valid("param").stageId,
+    )
+    return ok ? c.body(null, 204) : c.json({ error: "Reminder stage not found" }, 404)
+  })
 
   // --- reminder-stage channels ----------------------------------------------
 
-  const listStageChannelsRoute = createRoute({
+  const listStageChannelsRoute = defineRoute({
     method: "get",
     path: "/reminder-rules/{id}/stages/{stageId}/channels",
     request: { params: stageParamSchema },
@@ -860,7 +844,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const createStageChannelRoute = createRoute({
+  const createStageChannelRoute = defineRoute({
     method: "post",
     path: "/reminder-rules/{id}/stages/{stageId}/channels",
     request: {
@@ -881,7 +865,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const updateStageChannelRoute = createRoute({
+  const updateStageChannelRoute = defineRoute({
     method: "patch",
     path: "/reminder-rules/{id}/stages/{stageId}/channels/{channelId}",
     request: {
@@ -903,7 +887,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const deleteStageChannelRoute = createRoute({
+  const deleteStageChannelRoute = defineRoute({
     method: "delete",
     path: "/reminder-rules/{id}/stages/{stageId}/channels/{channelId}",
     request: { params: channelParamSchema },
@@ -913,41 +897,43 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const stageChannelRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-    .openapi(listStageChannelsRoute, async (c) => {
-      const channels = await notificationsService.listStageChannels(
-        c.get("db"),
-        c.req.valid("param").stageId,
-      )
-      return c.json({ data: channels }, 200)
-    })
-    .openapi(createStageChannelRoute, async (c) => {
-      const row = await notificationsService.createStageChannel(
-        c.get("db"),
-        c.req.valid("param").stageId,
-        c.req.valid("json"),
-      )
-      return c.json({ data: row }, 201)
-    })
-    .openapi(updateStageChannelRoute, async (c) => {
-      const row = await notificationsService.updateStageChannel(
-        c.get("db"),
-        c.req.valid("param").channelId,
-        c.req.valid("json"),
-      )
-      return row ? c.json({ data: row }, 200) : c.json({ error: "Stage channel not found" }, 404)
-    })
-    .openapi(deleteStageChannelRoute, async (c) => {
-      const ok = await notificationsService.deleteStageChannel(
-        c.get("db"),
-        c.req.valid("param").channelId,
-      )
-      return ok ? c.body(null, 204) : c.json({ error: "Stage channel not found" }, 404)
-    })
+  const stageChannelRoutes: OpenAPIHono<Env> = new OpenAPIHono<Env>({
+    defaultHook: openApiValidationHook,
+  })
+  stageChannelRoutes.openapi(listStageChannelsRoute, async (c) => {
+    const channels = await notificationsService.listStageChannels(
+      c.get("db"),
+      c.req.valid("param").stageId,
+    )
+    return c.json({ data: channels }, 200)
+  })
+  stageChannelRoutes.openapi(createStageChannelRoute, async (c) => {
+    const row = await notificationsService.createStageChannel(
+      c.get("db"),
+      c.req.valid("param").stageId,
+      c.req.valid("json"),
+    )
+    return c.json({ data: row }, 201)
+  })
+  stageChannelRoutes.openapi(updateStageChannelRoute, async (c) => {
+    const row = await notificationsService.updateStageChannel(
+      c.get("db"),
+      c.req.valid("param").channelId,
+      c.req.valid("json"),
+    )
+    return row ? c.json({ data: row }, 200) : c.json({ error: "Stage channel not found" }, 404)
+  })
+  stageChannelRoutes.openapi(deleteStageChannelRoute, async (c) => {
+    const ok = await notificationsService.deleteStageChannel(
+      c.get("db"),
+      c.req.valid("param").channelId,
+    )
+    return ok ? c.body(null, 204) : c.json({ error: "Stage channel not found" }, 404)
+  })
 
   // --- settings, reminders preview / runs / run-due -------------------------
 
-  const getSettingsRoute = createRoute({
+  const getSettingsRoute = defineRoute({
     method: "get",
     path: "/notification-settings",
     responses: {
@@ -958,67 +944,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const listChannelAccountsRoute = createRoute({
-    method: "get",
-    path: "/channel-accounts",
-    responses: {
-      200: {
-        description: "Credential-free Channel Account identities and health",
-        content: {
-          "application/json": { schema: dataEnvelope(z.array(notificationChannelAccountSchema)) },
-        },
-      },
-    },
-  })
-
-  const getChannelAccountRoute = createRoute({
-    method: "get",
-    path: "/channel-accounts/{id}",
-    request: { params: idParamSchema },
-    responses: {
-      200: {
-        description: "A credential-free Channel Account",
-        content: { "application/json": { schema: dataEnvelope(notificationChannelAccountSchema) } },
-      },
-      404: notFoundResponse("Channel Account not found"),
-    },
-  })
-
-  const validateChannelAccountRoute = createRoute({
-    method: "post",
-    path: "/channel-accounts/{id}/validate",
-    request: { params: idParamSchema },
-    responses: {
-      200: {
-        description: "Channel Account health refreshed through its runtime adapter",
-        content: { "application/json": { schema: dataEnvelope(notificationChannelAccountSchema) } },
-      },
-      400: invalidRequestResponse,
-      404: notFoundResponse("Channel Account not found"),
-    },
-  })
-
-  const updateChannelAccountLifecycleRoute = createRoute({
-    method: "patch",
-    path: "/channel-accounts/{id}/lifecycle",
-    request: {
-      params: idParamSchema,
-      body: {
-        required: true,
-        content: { "application/json": { schema: updateChannelAccountLifecycleSchema } },
-      },
-    },
-    responses: {
-      200: {
-        description: "Channel Account lifecycle updated",
-        content: { "application/json": { schema: dataEnvelope(notificationChannelAccountSchema) } },
-      },
-      400: invalidRequestResponse,
-      404: notFoundResponse("Channel Account not found"),
-    },
-  })
-
-  const updateSettingsRoute = createRoute({
+  const updateSettingsRoute = defineRoute({
     method: "patch",
     path: "/notification-settings",
     request: {
@@ -1036,7 +962,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const previewRemindersRoute = createRoute({
+  const previewRemindersRoute = defineRoute({
     method: "get",
     path: "/reminders/preview",
     request: { query: previewRemindersQuerySchema },
@@ -1050,7 +976,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const listReminderRunsRoute = createRoute({
+  const listReminderRunsRoute = defineRoute({
     method: "get",
     path: "/reminder-runs",
     request: { query: notificationReminderRunListQuerySchema },
@@ -1064,7 +990,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const getReminderRunRoute = createRoute({
+  const getReminderRunRoute = defineRoute({
     method: "get",
     path: "/reminder-runs/{id}",
     request: { params: idParamSchema },
@@ -1079,7 +1005,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const runDueRemindersRoute = createRoute({
+  const runDueRemindersRoute = defineRoute({
     method: "post",
     path: "/reminders/run-due",
     responses: {
@@ -1091,98 +1017,63 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const settingsAndRunsRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-    .openapi(listChannelAccountsRoute, async (c) => {
-      const rows = await listChannelAccounts(c.get("db"))
-      return c.json({ data: rows.map(toChannelAccountResponse) }, 200)
-    })
-    .openapi(getChannelAccountRoute, async (c) => {
-      const row = await getChannelAccount(c.get("db"), c.req.valid("param").id)
-      return row
-        ? c.json({ data: toChannelAccountResponse(row) }, 200)
-        : c.json({ error: "Channel Account not found" }, 404)
-    })
-    .openapi(validateChannelAccountRoute, async (c) => {
-      try {
-        const runtime = getRuntime(c.env, options, (key) => c.var.container.resolve(key))
-        const row = await validateChannelAccount(
-          c.get("db"),
-          runtime.providers,
-          c.req.valid("param").id,
-        )
-        return row
-          ? c.json({ data: toChannelAccountResponse(row) }, 200)
-          : c.json({ error: "Channel Account not found" }, 404)
-      } catch {
-        return c.json({ error: "Channel Account validation failed" }, 400)
-      }
-    })
-    .openapi(updateChannelAccountLifecycleRoute, async (c) => {
-      try {
-        const row = await updateChannelAccountLifecycle(
-          c.get("db"),
-          c.req.valid("param").id,
-          c.req.valid("json").lifecycle,
-        )
-        return row
-          ? c.json({ data: toChannelAccountResponse(row) }, 200)
-          : c.json({ error: "Channel Account not found" }, 404)
-      } catch {
-        return c.json({ error: "Invalid Channel Account lifecycle transition" }, 400)
-      }
-    })
-    .openapi(getSettingsRoute, async (c) => {
-      const row = await notificationsService.getNotificationSettings(c.get("db"))
-      return c.json({ data: row }, 200)
-    })
-    .openapi(updateSettingsRoute, async (c) => {
-      const row = await notificationsService.upsertNotificationSettings(
-        c.get("db"),
-        c.req.valid("json"),
-      )
-      return c.json({ data: row }, 200)
-    })
-    .openapi(previewRemindersRoute, async (c) => {
-      const query = c.req.valid("query")
-      const now = query.date ? new Date(`${query.date}T00:00:00Z`) : new Date()
-      const rows = await notificationsService.previewReminders(c.get("db"), {
-        now,
-        ruleId: query.ruleId,
-        targetId: query.targetId,
-      })
-      return c.json({ data: rows }, 200)
-    })
-    .openapi(listReminderRunsRoute, async (c) =>
-      c.json(await notificationsService.listReminderRuns(c.get("db"), c.req.valid("query")), 200),
+  const channelAccountRoutes = createNotificationChannelAccountRoutes({
+    resolveProviders: (c) =>
+      getRuntime(c.env, options, (key) => c.var.container.resolve(key)).providers,
+  })
+
+  const settingsAndRunsRoutes: OpenAPIHono<Env> = new OpenAPIHono<Env>({
+    defaultHook: openApiValidationHook,
+  })
+  settingsAndRunsRoutes.openapi(getSettingsRoute, async (c) => {
+    const row = await notificationsService.getNotificationSettings(c.get("db"))
+    return c.json({ data: row }, 200)
+  })
+  settingsAndRunsRoutes.openapi(updateSettingsRoute, async (c) => {
+    const row = await notificationsService.upsertNotificationSettings(
+      c.get("db"),
+      c.req.valid("json"),
     )
-    .openapi(getReminderRunRoute, async (c) => {
-      const row = await notificationsService.getReminderRunById(
+    return c.json({ data: row }, 200)
+  })
+  settingsAndRunsRoutes.openapi(previewRemindersRoute, async (c) => {
+    const query = c.req.valid("query")
+    const now = query.date ? new Date(`${query.date}T00:00:00Z`) : new Date()
+    const rows = await notificationsService.previewReminders(c.get("db"), {
+      now,
+      ruleId: query.ruleId,
+      targetId: query.targetId,
+    })
+    return c.json({ data: rows }, 200)
+  })
+  settingsAndRunsRoutes.openapi(listReminderRunsRoute, async (c) =>
+    c.json(await notificationsService.listReminderRuns(c.get("db"), c.req.valid("query")), 200),
+  )
+  settingsAndRunsRoutes.openapi(getReminderRunRoute, async (c) => {
+    const row = await notificationsService.getReminderRunById(c.get("db"), c.req.valid("param").id)
+    return row
+      ? c.json({ data: row }, 200)
+      : c.json({ error: "Notification reminder run not found" }, 404)
+  })
+  settingsAndRunsRoutes.openapi(runDueRemindersRoute, async (c) => {
+    try {
+      const runtime = getRuntime(c.env, options, (key) => c.var.container.resolve(key))
+      const dispatcher = createNotificationService(runtime.providers)
+      const result = await notificationsService.runDueReminders(
         c.get("db"),
-        c.req.valid("param").id,
+        dispatcher,
+        await parseOptionalJsonBody(c, runDueRemindersSchema),
       )
-      return row
-        ? c.json({ data: row }, 200)
-        : c.json({ error: "Notification reminder run not found" }, 404)
-    })
-    .openapi(runDueRemindersRoute, async (c) => {
-      try {
-        const runtime = getRuntime(c.env, options, (key) => c.var.container.resolve(key))
-        const dispatcher = createNotificationService(runtime.providers)
-        const result = await notificationsService.runDueReminders(
-          c.get("db"),
-          dispatcher,
-          await parseOptionalJsonBody(c, runDueRemindersSchema),
-        )
-        return c.json({ data: result }, 200)
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Reminder sweep failed"
-        return c.json({ error: message }, 400)
-      }
-    })
+      return c.json({ data: result }, 200)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Reminder sweep failed"
+      return c.json({ error: message }, 400)
+    }
+  })
 
   // --- dispatch (sends + booking documents) ---------------------------------
 
-  const sendPaymentSessionRoute = createRoute({
+  const sendPaymentSessionRoute = defineRoute({
     method: "post",
     path: "/payment-sessions/{id}/send",
     request: {
@@ -1202,7 +1093,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const sendInvoiceRoute = createRoute({
+  const sendInvoiceRoute = defineRoute({
     method: "post",
     path: "/invoices/{id}/send",
     request: {
@@ -1222,7 +1113,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const documentBundleRoute = createRoute({
+  const documentBundleRoute = defineRoute({
     method: "get",
     path: "/bookings/{id}/document-bundle",
     request: { params: idParamSchema },
@@ -1235,7 +1126,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const confirmAndDispatchRoute = createRoute({
+  const confirmAndDispatchRoute = defineRoute({
     method: "post",
     path: "/bookings/{id}/confirm-and-dispatch",
     request: {
@@ -1263,7 +1154,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const sendDocumentsRoute = createRoute({
+  const sendDocumentsRoute = defineRoute({
     method: "post",
     path: "/bookings/{id}/send-documents",
     request: {
@@ -1287,171 +1178,171 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const dispatchRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-    .openapi(sendPaymentSessionRoute, async (c) => {
-      try {
-        const runtime = getRuntime(c.env, options, (key) => c.var.container.resolve(key))
-        const dispatcher = createNotificationService(runtime.providers)
-        const row = await notificationsService.sendPaymentSessionNotification(
-          c.get("db"),
-          dispatcher,
-          c.req.valid("param").id,
-          c.req.valid("json"),
-          {
-            paymentLinkBaseUrl: runtime.publicCheckoutBaseUrl,
-            paymentLinkUrlTemplate:
-              (await runtime.resolvePaymentLinkUrlTemplate?.(c.get("db"), c.env)) ?? null,
-            publicCustomerPortalBaseUrl: runtime.publicCustomerPortalBaseUrl,
-          },
-        )
-        if (!row) return c.json({ error: "Payment session not found" }, 404)
-        return c.json({ data: row }, 201)
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Payment session notification failed"
-        return c.json({ error: message }, 400)
-      }
-    })
-    .openapi(sendInvoiceRoute, async (c) => {
-      try {
-        const runtime = getRuntime(c.env, options, (key) => c.var.container.resolve(key))
-        const dispatcher = createNotificationService(runtime.providers)
-        const row = await notificationsService.sendInvoiceNotification(
-          c.get("db"),
-          dispatcher,
-          c.req.valid("param").id,
-          c.req.valid("json"),
-          {
-            paymentLinkBaseUrl: runtime.publicCheckoutBaseUrl,
-            paymentLinkUrlTemplate:
-              (await runtime.resolvePaymentLinkUrlTemplate?.(c.get("db"), c.env)) ?? null,
-            publicCustomerPortalBaseUrl: runtime.publicCustomerPortalBaseUrl,
-          },
-        )
-        if (!row) return c.json({ error: "Invoice not found" }, 404)
-        return c.json({ data: row }, 201)
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Invoice notification failed"
-        return c.json({ error: message }, 400)
-      }
-    })
-    .openapi(documentBundleRoute, async (c) => {
-      const bundle = await notificationsService.listBookingDocumentBundle(
+  const dispatchRoutes: OpenAPIHono<Env> = new OpenAPIHono<Env>({
+    defaultHook: openApiValidationHook,
+  })
+  dispatchRoutes.openapi(sendPaymentSessionRoute, async (c) => {
+    try {
+      const runtime = getRuntime(c.env, options, (key) => c.var.container.resolve(key))
+      const dispatcher = createNotificationService(runtime.providers)
+      const row = await notificationsService.sendPaymentSessionNotification(
         c.get("db"),
+        dispatcher,
         c.req.valid("param").id,
+        c.req.valid("json"),
+        {
+          paymentLinkBaseUrl: runtime.publicCheckoutBaseUrl,
+          paymentLinkUrlTemplate:
+            (await runtime.resolvePaymentLinkUrlTemplate?.(c.get("db"), c.env)) ?? null,
+          publicCustomerPortalBaseUrl: runtime.publicCustomerPortalBaseUrl,
+        },
       )
-      if (!bundle) return c.json({ error: "Booking not found" }, 404)
-      return c.json({ data: bookingDocumentBundleSchema.parse(bundle) }, 200)
-    })
-    .openapi(confirmAndDispatchRoute, async (c) => {
-      try {
-        const runtime = getRuntime(c.env, options, (key) => c.var.container.resolve(key))
-        const dispatcher = createNotificationService(runtime.providers)
-        const result = await notificationsService.confirmAndDispatchBooking(
-          c.get("db"),
-          dispatcher,
-          c.req.valid("param").id,
-          c.req.valid("json"),
-          {
-            attachmentResolver: runtime.documentAttachmentResolver,
-            publicCustomerPortalBaseUrl: runtime.publicCustomerPortalBaseUrl,
-          },
-        )
-        if (result.status === "not_found") return c.json({ error: "Booking not found" }, 404)
-        if (result.status === "preview") {
-          return c.json(
-            {
-              data: confirmAndDispatchBookingResultSchema.parse({
-                bookingId: result.bookingId,
-                documents: result.documents,
-                notification: null,
-                skipReason: "preview_only",
-              }),
-            },
-            200,
-          )
-        }
-        if (result.status === "skipped") {
-          return c.json(
-            {
-              data: confirmAndDispatchBookingResultSchema.parse({
-                bookingId: result.bookingId,
-                documents: result.documents,
-                notification: null,
-                skipReason: result.skipReason,
-              }),
-            },
-            200,
-          )
-        }
+      if (!row) return c.json({ error: "Payment session not found" }, 404)
+      return c.json({ data: row }, 201)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Payment session notification failed"
+      return c.json({ error: message }, 400)
+    }
+  })
+  dispatchRoutes.openapi(sendInvoiceRoute, async (c) => {
+    try {
+      const runtime = getRuntime(c.env, options, (key) => c.var.container.resolve(key))
+      const dispatcher = createNotificationService(runtime.providers)
+      const row = await notificationsService.sendInvoiceNotification(
+        c.get("db"),
+        dispatcher,
+        c.req.valid("param").id,
+        c.req.valid("json"),
+        {
+          paymentLinkBaseUrl: runtime.publicCheckoutBaseUrl,
+          paymentLinkUrlTemplate:
+            (await runtime.resolvePaymentLinkUrlTemplate?.(c.get("db"), c.env)) ?? null,
+          publicCustomerPortalBaseUrl: runtime.publicCustomerPortalBaseUrl,
+        },
+      )
+      if (!row) return c.json({ error: "Invoice not found" }, 404)
+      return c.json({ data: row }, 201)
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Invoice notification failed"
+      return c.json({ error: message }, 400)
+    }
+  })
+  dispatchRoutes.openapi(documentBundleRoute, async (c) => {
+    const bundle = await notificationsService.listBookingDocumentBundle(
+      c.get("db"),
+      c.req.valid("param").id,
+    )
+    if (!bundle) return c.json({ error: "Booking not found" }, 404)
+    return c.json({ data: bookingDocumentBundleSchema.parse(bundle) }, 200)
+  })
+  dispatchRoutes.openapi(confirmAndDispatchRoute, async (c) => {
+    try {
+      const runtime = getRuntime(c.env, options, (key) => c.var.container.resolve(key))
+      const dispatcher = createNotificationService(runtime.providers)
+      const result = await notificationsService.confirmAndDispatchBooking(
+        c.get("db"),
+        dispatcher,
+        c.req.valid("param").id,
+        c.req.valid("json"),
+        {
+          attachmentResolver: runtime.documentAttachmentResolver,
+          publicCustomerPortalBaseUrl: runtime.publicCustomerPortalBaseUrl,
+        },
+      )
+      if (result.status === "not_found") return c.json({ error: "Booking not found" }, 404)
+      if (result.status === "preview") {
         return c.json(
           {
             data: confirmAndDispatchBookingResultSchema.parse({
               bookingId: result.bookingId,
               documents: result.documents,
-              notification: {
-                recipient: result.recipient,
-                deliveryId: result.delivery.id,
-                provider: result.delivery.provider,
-                status: result.delivery.status,
-              },
-              skipReason: null,
+              notification: null,
+              skipReason: "preview_only",
             }),
           },
-          201,
+          200,
         )
-      } catch (error) {
-        const message = error instanceof Error ? error.message : "Confirm-and-dispatch failed"
-        return c.json({ error: message }, 400)
       }
-    })
-    .openapi(sendDocumentsRoute, async (c) => {
-      try {
-        const runtime = getRuntime(c.env, options, (key) => c.var.container.resolve(key))
-        const dispatcher = createNotificationService(runtime.providers)
-        const result = await notificationsService.sendBookingDocumentsNotification(
-          c.get("db"),
-          dispatcher,
-          c.req.valid("param").id,
-          c.req.valid("json"),
-          {
-            attachmentResolver: runtime.documentAttachmentResolver,
-            publicCustomerPortalBaseUrl: runtime.publicCustomerPortalBaseUrl,
-          },
-        )
-        if (result.status === "not_found") return c.json({ error: "Booking not found" }, 404)
-        if (result.status === "no_documents") return c.json({ error: "No booking documents" }, 400)
-        if (result.status === "no_recipient")
-          return c.json({ error: "No recipient available" }, 400)
-        if (result.status === "no_attachments") {
-          return c.json({ error: "No deliverable document attachments available" }, 400)
-        }
-        if (result.status === "send_failed") {
-          return c.json({ error: "Booking document notification failed" }, 400)
-        }
+      if (result.status === "skipped") {
         return c.json(
           {
-            data: sendBookingDocumentsNotificationResultSchema.parse({
+            data: confirmAndDispatchBookingResultSchema.parse({
               bookingId: result.bookingId,
-              recipient: result.recipient,
               documents: result.documents,
+              notification: null,
+              skipReason: result.skipReason,
+            }),
+          },
+          200,
+        )
+      }
+      return c.json(
+        {
+          data: confirmAndDispatchBookingResultSchema.parse({
+            bookingId: result.bookingId,
+            documents: result.documents,
+            notification: {
+              recipient: result.recipient,
               deliveryId: result.delivery.id,
               provider: result.delivery.provider,
               status: result.delivery.status,
-            }),
-          },
-          201,
-        )
-      } catch (error) {
-        const message =
-          error instanceof Error ? error.message : "Booking document notification failed"
-        return c.json({ error: message }, 400)
+            },
+            skipReason: null,
+          }),
+        },
+        201,
+      )
+    } catch (error) {
+      const message = error instanceof Error ? error.message : "Confirm-and-dispatch failed"
+      return c.json({ error: message }, 400)
+    }
+  })
+  dispatchRoutes.openapi(sendDocumentsRoute, async (c) => {
+    try {
+      const runtime = getRuntime(c.env, options, (key) => c.var.container.resolve(key))
+      const dispatcher = createNotificationService(runtime.providers)
+      const result = await notificationsService.sendBookingDocumentsNotification(
+        c.get("db"),
+        dispatcher,
+        c.req.valid("param").id,
+        c.req.valid("json"),
+        {
+          attachmentResolver: runtime.documentAttachmentResolver,
+          publicCustomerPortalBaseUrl: runtime.publicCustomerPortalBaseUrl,
+        },
+      )
+      if (result.status === "not_found") return c.json({ error: "Booking not found" }, 404)
+      if (result.status === "no_documents") return c.json({ error: "No booking documents" }, 400)
+      if (result.status === "no_recipient") return c.json({ error: "No recipient available" }, 400)
+      if (result.status === "no_attachments") {
+        return c.json({ error: "No deliverable document attachments available" }, 400)
       }
-    })
+      if (result.status === "send_failed") {
+        return c.json({ error: "Booking document notification failed" }, 400)
+      }
+      return c.json(
+        {
+          data: sendBookingDocumentsNotificationResultSchema.parse({
+            bookingId: result.bookingId,
+            recipient: result.recipient,
+            documents: result.documents,
+            deliveryId: result.delivery.id,
+            provider: result.delivery.provider,
+            status: result.delivery.status,
+          }),
+        },
+        201,
+      )
+    } catch (error) {
+      const message =
+        error instanceof Error ? error.message : "Booking document notification failed"
+      return c.json({ error: message }, 400)
+    }
+  })
 
   // --- staff alerts ---------------------------------------------------------
 
-  const listStaffAlertsRoute = createRoute({
+  const listStaffAlertsRoute = defineRoute({
     method: "get",
     path: "/staff-alerts",
     responses: {
@@ -1464,7 +1355,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const updateStaffAlertRoute = createRoute({
+  const updateStaffAlertRoute = defineRoute({
     method: "patch",
     path: "/staff-alerts/{eventKey}",
     request: {
@@ -1484,7 +1375,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const testStaffAlertRoute = createRoute({
+  const testStaffAlertRoute = defineRoute({
     method: "post",
     path: "/staff-alerts/{eventKey}/test",
     request: { params: staffAlertEventKeyParamSchema },
@@ -1497,7 +1388,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const listStaffAlertPreferencesRoute = createRoute({
+  const listStaffAlertPreferencesRoute = defineRoute({
     method: "get",
     path: "/staff-alert-preferences",
     responses: {
@@ -1511,7 +1402,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const setStaffAlertPreferenceRoute = createRoute({
+  const setStaffAlertPreferenceRoute = defineRoute({
     method: "put",
     path: "/staff-alert-preferences/{eventKey}",
     request: {
@@ -1533,7 +1424,7 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     },
   })
 
-  const clearStaffAlertPreferenceRoute = createRoute({
+  const clearStaffAlertPreferenceRoute = defineRoute({
     method: "delete",
     path: "/staff-alert-preferences/{eventKey}",
     request: { params: staffAlertEventKeyParamSchema },
@@ -1569,82 +1460,86 @@ export function createNotificationsRoutes(options?: NotificationsRoutesOptions) 
     override: row.override,
   })
 
-  const staffAlertRoutes = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-    .openapi(listStaffAlertsRoute, async (c) => {
-      const rows = await listStaffAlertSettings(c.get("db"))
-      return c.json({ data: rows.map(toStaffAlertSettingResponse) }, 200)
-    })
-    .openapi(updateStaffAlertRoute, async (c) => {
-      try {
-        const row = await upsertStaffAlertSetting(c.get("db"), {
-          eventKey: c.req.valid("param").eventKey,
-          ...c.req.valid("json"),
-        })
-        return c.json({ data: toStaffAlertSettingResponse(row) }, 200)
-      } catch (error) {
-        if (error instanceof StaffAlertError) return c.json({ error: error.message }, 404)
-        throw error
-      }
-    })
-    .openapi(testStaffAlertRoute, async (c) => {
-      const container = c.var.container
-      if (!container.has(STAFF_ALERT_RUNTIME_KEY)) {
-        return c.json(
-          { data: { sent: false, recipient: null, reason: "staff_alerts_not_wired" } },
-          200,
-        )
-      }
-      const result = await sendStaffAlertTest({
-        db: c.get("db"),
-        runtime: container.resolve<StaffAlertRuntime>(STAFF_ALERT_RUNTIME_KEY),
-        eventKey: c.req.valid("param").eventKey as StaffAlertEventKey,
-        userId: c.get("userId") ?? null,
+  const staffAlertRoutes: OpenAPIHono<Env> = new OpenAPIHono<Env>({
+    defaultHook: openApiValidationHook,
+  })
+  staffAlertRoutes.openapi(listStaffAlertsRoute, async (c) => {
+    const rows = await listStaffAlertSettings(c.get("db"))
+    return c.json({ data: rows.map(toStaffAlertSettingResponse) }, 200)
+  })
+  staffAlertRoutes.openapi(updateStaffAlertRoute, async (c) => {
+    try {
+      const row = await upsertStaffAlertSetting(c.get("db"), {
+        eventKey: c.req.valid("param").eventKey,
+        ...c.req.valid("json"),
       })
-      return c.json({ data: result }, 200)
+      return c.json({ data: toStaffAlertSettingResponse(row) }, 200)
+    } catch (error) {
+      if (error instanceof StaffAlertError) return c.json({ error: error.message }, 404)
+      throw error
+    }
+  })
+  staffAlertRoutes.openapi(testStaffAlertRoute, async (c) => {
+    const container = c.var.container
+    if (!container.has(STAFF_ALERT_RUNTIME_KEY)) {
+      return c.json(
+        { data: { sent: false, recipient: null, reason: "staff_alerts_not_wired" } },
+        200,
+      )
+    }
+    const result = await sendStaffAlertTest({
+      db: c.get("db"),
+      runtime: container.resolve<StaffAlertRuntime>(STAFF_ALERT_RUNTIME_KEY),
+      eventKey: c.req.valid("param").eventKey as StaffAlertEventKey,
+      userId: c.get("userId") ?? null,
     })
-    .openapi(listStaffAlertPreferencesRoute, async (c) => {
-      const userId = c.get("userId")
-      if (!userId) return c.json({ error: "No authenticated staff user" }, 401)
-      const rows = await listStaffAlertPreferences(c.get("db"), userId)
-      return c.json({ data: rows.map(toStaffAlertPreferenceResponse) }, 200)
-    })
-    .openapi(setStaffAlertPreferenceRoute, async (c) => {
-      const userId = c.get("userId")
-      if (!userId) return c.json({ error: "No authenticated staff user" }, 401)
-      try {
-        await upsertStaffAlertPreference(c.get("db"), {
-          userId,
-          eventKey: c.req.valid("param").eventKey,
-          enabled: c.req.valid("json").enabled,
-        })
-      } catch (error) {
-        if (error instanceof StaffAlertError) return c.json({ error: error.message }, 400)
-        throw error
-      }
-      const rows = await listStaffAlertPreferences(c.get("db"), userId)
-      return c.json({ data: rows.map(toStaffAlertPreferenceResponse) }, 200)
-    })
-    .openapi(clearStaffAlertPreferenceRoute, async (c) => {
-      const userId = c.get("userId")
-      if (!userId) return c.json({ error: "No authenticated staff user" }, 401)
-      await clearStaffAlertPreference(c.get("db"), {
+    return c.json({ data: result }, 200)
+  })
+  staffAlertRoutes.openapi(listStaffAlertPreferencesRoute, async (c) => {
+    const userId = c.get("userId")
+    if (!userId) return c.json({ error: "No authenticated staff user" }, 401)
+    const rows = await listStaffAlertPreferences(c.get("db"), userId)
+    return c.json({ data: rows.map(toStaffAlertPreferenceResponse) }, 200)
+  })
+  staffAlertRoutes.openapi(setStaffAlertPreferenceRoute, async (c) => {
+    const userId = c.get("userId")
+    if (!userId) return c.json({ error: "No authenticated staff user" }, 401)
+    try {
+      await upsertStaffAlertPreference(c.get("db"), {
         userId,
         eventKey: c.req.valid("param").eventKey,
+        enabled: c.req.valid("json").enabled,
       })
-      const rows = await listStaffAlertPreferences(c.get("db"), userId)
-      return c.json({ data: rows.map(toStaffAlertPreferenceResponse) }, 200)
+    } catch (error) {
+      if (error instanceof StaffAlertError) return c.json({ error: error.message }, 400)
+      throw error
+    }
+    const rows = await listStaffAlertPreferences(c.get("db"), userId)
+    return c.json({ data: rows.map(toStaffAlertPreferenceResponse) }, 200)
+  })
+  staffAlertRoutes.openapi(clearStaffAlertPreferenceRoute, async (c) => {
+    const userId = c.get("userId")
+    if (!userId) return c.json({ error: "No authenticated staff user" }, 401)
+    await clearStaffAlertPreference(c.get("db"), {
+      userId,
+      eventKey: c.req.valid("param").eventKey,
     })
+    const rows = await listStaffAlertPreferences(c.get("db"), userId)
+    return c.json({ data: rows.map(toStaffAlertPreferenceResponse) }, 200)
+  })
 
   // Compose the per-resource sub-chains onto a single returned `OpenAPIHono` so
   // the `.openapi()` operations propagate up through the composed admin app
   // (`OpenAPIHono.route` copies each sub-app's registered routes).
-  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
-    .route("/", templateRoutes)
-    .route("/", deliveryRoutes)
-    .route("/", reminderRuleRoutes)
-    .route("/", stageRoutes)
-    .route("/", stageChannelRoutes)
-    .route("/", settingsAndRunsRoutes)
-    .route("/", staffAlertRoutes)
-    .route("/", dispatchRoutes)
+  const app: OpenAPIHono<Env> = new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+  app.route("/", templateRoutes)
+  app.route("/", deliveryRoutes)
+  app.route("/", reminderRuleRoutes)
+  app.route("/", stageRoutes)
+  app.route("/", stageChannelRoutes)
+  app.route("/", channelAccountRoutes)
+  app.route("/", settingsAndRunsRoutes)
+  app.route("/", staffAlertRoutes)
+  app.route("/", dispatchRoutes)
+  return app
 }

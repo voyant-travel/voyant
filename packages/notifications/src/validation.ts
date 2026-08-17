@@ -346,7 +346,7 @@ export const notificationReminderRunRuleSummarySchema = z.object({
 export const notificationReminderRunDeliverySummarySchema = z.object({
   id: z.string(),
   status: notificationDeliveryStatusSchema,
-  channel: notificationChannelSchema,
+  channel: z.string(),
   provider: z.string(),
   toAddress: z.string(),
   subject: z.string().nullable(),

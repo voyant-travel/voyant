@@ -3,6 +3,23 @@ import type { ProposalsNotificationsRuntime } from "@voyant-travel/proposals/run
 import type { DurableNotificationProviderRuntime } from "./durable-provider-port.js"
 import { createNotificationService } from "./service.js"
 import { enqueueNotification } from "./service-durable-send.js"
+import type { NotificationDeliveryTruth } from "./types.js"
+
+function toProposalDeliveryStatus(
+  status: NotificationDeliveryTruth,
+): "pending" | "sent" | "failed" | "cancelled" {
+  if (status === "pending") return "pending"
+  if (status === "cancelled") return "cancelled"
+  if (
+    status === "failed" ||
+    status === "bounced" ||
+    status === "complained" ||
+    status === "suppressed"
+  ) {
+    return "failed"
+  }
+  return "sent"
+}
 
 /** Adapt Notifications delivery to Proposals' narrow, template-only notification contract. */
 export function createProposalsNotificationsRuntime(
@@ -34,8 +51,8 @@ export function createProposalsNotificationsRuntime(
       if (!delivery) throw new Error("Notifications returned no proposal notification delivery")
       return {
         id: delivery.id,
-        status: delivery.status,
-        channel: delivery.channel,
+        status: toProposalDeliveryStatus(delivery.status),
+        channel: input.channel,
         provider: delivery.provider,
         providerMessageId: delivery.providerMessageId,
         toAddress: delivery.toAddress,
