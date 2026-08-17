@@ -70,6 +70,7 @@
         "packages/admin-api-client/src/generated/catalog.ts",
         "packages/admin-api-client/src/generated/charters.ts",
         "packages/admin-api-client/src/generated/contract-document.ts",
+        "packages/admin-api-client/src/generated/conversations.ts",
         "packages/admin-api-client/src/generated/cruises.ts",
         "packages/admin-api-client/src/generated/custom-fields.ts",
         "packages/admin-api-client/src/generated/customer-accounts.ts",
