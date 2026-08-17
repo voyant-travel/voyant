@@ -69,6 +69,12 @@ export const notificationsVoyantModule = defineModule({
   ],
   links: [
     {
+      id: "@voyant-travel/notifications#linkable.notification-channel-account",
+      kind: "linkable",
+      source: schemaSource,
+      export: "notificationChannelAccountLinkable",
+    },
+    {
       id: "@voyant-travel/notifications#linkable.notification-template",
       kind: "linkable",
       source: schemaSource,
@@ -167,8 +173,8 @@ export const notificationsVoyantModule = defineModule({
       audit: { sourceModule: "notifications", category: "domain" },
     },
     {
-      id: "@voyant-travel/notifications#event.notification.sent",
-      eventType: "notification.sent",
+      id: "@voyant-travel/notifications#event.notification.accepted",
+      eventType: "notification.accepted",
       version: "1.0.0",
       payloadSchema: {
         type: "object",

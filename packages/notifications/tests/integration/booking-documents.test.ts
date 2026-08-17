@@ -145,7 +145,7 @@ describe.skipIf(!DB_AVAILABLE)("Booking document notification routes", () => {
       .where(eq(notificationDeliveries.bookingId, "book_docs_1"))
       .limit(1)
 
-    expect(delivery?.status).toBe("sent")
+    expect(delivery?.status).toBe("accepted")
     expect(delivery?.targetType).toBe("booking")
     expect(delivery?.metadata).toMatchObject({
       attachmentCount: 2,

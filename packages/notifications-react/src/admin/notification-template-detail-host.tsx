@@ -344,7 +344,7 @@ export function NotificationTemplateDetailHost({ id }: NotificationTemplateDetai
                           <td className="px-4 py-3">
                             <Badge
                               variant={
-                                delivery.status === "sent"
+                                delivery.status === "delivered"
                                   ? "default"
                                   : delivery.status === "failed"
                                     ? "destructive"

@@ -11,11 +11,15 @@ export const checkoutCollectionStageSchema = z.enum(["initial", "reminder", "man
 export const checkoutCollectionIntentSchema = z.enum(["deposit", "balance", "custom"])
 export const checkoutPaymentSessionTargetSchema = z.enum(["schedule", "invoice"])
 export const checkoutInvoiceDocumentTypeSchema = z.enum(["proforma", "invoice"])
-export const checkoutNotificationChannelSchema = z.enum(["email", "sms"])
+export const checkoutNotificationChannelSchema = z.string().min(1)
 export const checkoutNotificationDeliveryStatusSchema = z.enum([
   "pending",
-  "sent",
+  "accepted",
+  "delivered",
   "failed",
+  "bounced",
+  "complained",
+  "suppressed",
   "cancelled",
 ])
 export const checkoutReminderRunStatusSchema = z.enum([

@@ -1,6 +1,8 @@
 import { z } from "zod"
 
 import {
+  channelAccountHealthSchema,
+  channelAccountLifecycleSchema,
   notificationChannelSchema,
   notificationDeliveryStatusSchema,
   notificationTargetTypeSchema,
@@ -13,16 +15,19 @@ const jsonMetadata = z.record(z.string(), z.unknown())
 /** Notification-delivery wire shape shared by HTTP and Tool surfaces. */
 export const notificationDeliverySchema = z.object({
   id: z.string(),
+  channelAccountId: z.string().nullable(),
   templateId: z.string().nullable(),
   templateSlug: z.string().nullable(),
   targetType: notificationTargetTypeSchema,
   targetId: z.string().nullable(),
+  qualifiedTargetType: z.string().nullable(),
+  purpose: z.string().nullable(),
   personId: z.string().nullable(),
   organizationId: z.string().nullable(),
   bookingId: z.string().nullable(),
   invoiceId: z.string().nullable(),
   paymentSessionId: z.string().nullable(),
-  channel: notificationChannelSchema,
+  channel: z.string(),
   provider: z.string(),
   providerMessageId: z.string().nullable(),
   status: notificationDeliveryStatusSchema,
@@ -35,8 +40,27 @@ export const notificationDeliverySchema = z.object({
   metadata: jsonMetadata.nullable(),
   errorMessage: z.string().nullable(),
   scheduledFor: isoTimestamp.nullable(),
+  acceptedAt: isoTimestamp.nullable(),
+  deliveredAt: isoTimestamp.nullable(),
   sentAt: isoTimestamp.nullable(),
   failedAt: isoTimestamp.nullable(),
+  createdAt: isoTimestamp,
+  updatedAt: isoTimestamp,
+})
+
+/** Credential-free Channel Account wire shape for admin and settings surfaces. */
+export const notificationChannelAccountSchema = z.object({
+  id: z.string(),
+  channel: z.string(),
+  normalizedAddress: z.string(),
+  displayName: z.string(),
+  displayAddress: z.string(),
+  lifecycle: channelAccountLifecycleSchema,
+  health: channelAccountHealthSchema,
+  inboundCapable: z.boolean(),
+  outboundCapable: z.boolean(),
+  allowedPurposes: z.array(z.string()),
+  lastValidatedAt: isoTimestamp.nullable(),
   createdAt: isoTimestamp,
   updatedAt: isoTimestamp,
 })

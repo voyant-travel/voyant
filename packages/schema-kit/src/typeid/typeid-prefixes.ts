@@ -43,6 +43,8 @@ export const PREFIXES = {
   customer_signals: "csig",
   notification_templates: "ntpl",
   notification_deliveries: "ntdl",
+  notification_channel_accounts: "ncha",
+  notification_delivery_events: "ndev",
   notification_send_operations: "nsop",
   contract_document_operations: "lcdo",
   notification_reminder_rules: "ntrl",

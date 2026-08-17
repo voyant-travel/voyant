@@ -11,8 +11,8 @@ import { notificationDeliveries } from "./schema.js"
 /**
  * Expose delivered customer messages to the CRM Communications tab.
  *
- * Only `sent` rows: a pending send has not reached the customer and a failed
- * one never will, so neither is a communication that happened. Delivery status
+ * Only `delivered` rows: adapter acceptance does not prove that the customer
+ * received anything. Delivery status
  * lives here and stays here — CRM reads this rather than holding a copy that
  * could not follow a later bounce.
  */
@@ -26,8 +26,8 @@ export function createPersonCommunicationsRuntime(): RelationshipsPersonNotifica
       const database = db as PostgresJsDatabase
       const conditions = [
         eq(notificationDeliveries.personId, personId),
-        eq(notificationDeliveries.status, "sent"),
-        isNotNull(notificationDeliveries.sentAt),
+        eq(notificationDeliveries.status, "delivered"),
+        isNotNull(notificationDeliveries.deliveredAt),
       ]
       if (query.dateFrom) {
         conditions.push(gte(notificationDeliveries.createdAt, new Date(query.dateFrom)))
@@ -42,7 +42,7 @@ export function createPersonCommunicationsRuntime(): RelationshipsPersonNotifica
           channel: notificationDeliveries.channel,
           subject: notificationDeliveries.subject,
           textBody: notificationDeliveries.textBody,
-          sentAt: notificationDeliveries.sentAt,
+          sentAt: notificationDeliveries.deliveredAt,
           createdAt: notificationDeliveries.createdAt,
         })
         .from(notificationDeliveries)

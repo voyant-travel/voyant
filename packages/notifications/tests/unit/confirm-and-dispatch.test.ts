@@ -91,7 +91,7 @@ describe("confirmAndDispatchBookingResultSchema", () => {
         recipient: "traveler@example.com",
         deliveryId: "ntdl_abc",
         provider: "resend",
-        status: "sent",
+        status: "accepted",
       },
       skipReason: null,
     })

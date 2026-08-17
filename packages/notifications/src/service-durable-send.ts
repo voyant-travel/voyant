@@ -14,7 +14,6 @@ import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
   type NotificationSendOperation,
-  type notificationChannelEnum,
   notificationDeliveries,
   notificationReminderRuns,
   notificationSendOperations,
@@ -35,13 +34,14 @@ import type { SendTemplatedNotificationInput } from "./tools.js"
 import type {
   DurableNotificationDeliveryCapability,
   NotificationAttachment,
+  NotificationChannel,
   NotificationPayload,
   NotificationProvider,
   NotificationResult,
 } from "./types.js"
 
 export const NOTIFICATION_SEND_REQUESTED_EVENT = "notification.send-requested"
-export const NOTIFICATION_SEND_COMPLETED_EVENT = "notification.sent"
+export const NOTIFICATION_SEND_COMPLETED_EVENT = "notification.accepted"
 export const NOTIFICATION_SEND_DEAD_LETTERED_EVENT = "notification.send-dead-lettered"
 
 const DEFAULT_MAX_ATTEMPTS = 8
@@ -71,8 +71,9 @@ export interface NotificationEnqueueRequest {
    * lookup. Body and subject are pre-rendered by the caller either way.
    */
   templateLabel?: string | null
-  channel?: (typeof notificationChannelEnum.enumValues)[number]
+  channel?: NotificationChannel
   provider?: string | null
+  channelAccountId?: string | null
   to: string
   from?: string | null
   subject?: string | null
@@ -82,6 +83,8 @@ export interface NotificationEnqueueRequest {
   data?: Record<string, unknown> | null
   targetType: (typeof notificationTargetTypeEnum.enumValues)[number]
   targetId?: string | null
+  qualifiedTargetType?: string | null
+  purpose?: string | null
   bookingId?: string | null
   invoiceId?: string | null
   paymentSessionId?: string | null
@@ -393,8 +396,11 @@ export async function enqueueNotification({
     providerPayload,
     schedule: scheduledFor?.toISOString() ?? null,
     links: {
+      channelAccountId: input.channelAccountId ?? null,
       targetType: input.targetType,
       targetId: input.targetId ?? null,
+      qualifiedTargetType: input.qualifiedTargetType ?? null,
+      purpose: input.purpose ?? null,
       bookingId: input.bookingId ?? null,
       invoiceId: input.invoiceId ?? null,
       paymentSessionId: input.paymentSessionId ?? null,
@@ -445,10 +451,13 @@ export async function enqueueNotification({
     const [delivery] = await transaction
       .insert(notificationDeliveries)
       .values({
+        channelAccountId: input.channelAccountId ?? null,
         templateId: template?.id ?? null,
         templateSlug: template?.slug ?? input.templateSlug ?? input.templateLabel ?? null,
         targetType: input.targetType,
         targetId: input.targetId ?? null,
+        qualifiedTargetType: input.qualifiedTargetType ?? null,
+        purpose: input.purpose ?? null,
         personId: input.personId ?? null,
         organizationId: input.organizationId ?? null,
         bookingId: input.bookingId ?? null,
@@ -733,14 +742,28 @@ async function settleDurableNotificationSend(
     await tx
       .update(notificationDeliveries)
       .set({
-        status: "sent",
+        status: "accepted",
         providerMessageId: result.id ?? null,
+        acceptedAt: now,
         sentAt: now,
         failedAt: null,
         errorMessage: null,
         updatedAt: now,
       })
-      .where(eq(notificationDeliveries.id, operation.deliveryId))
+      .where(
+        and(
+          eq(notificationDeliveries.id, operation.deliveryId),
+          inArray(notificationDeliveries.status, ["pending", "accepted"]),
+        ),
+      )
+    // A normalized lifecycle callback can win the race with submission settlement.
+    // Preserve that later truth while still recording the adapter's message reference.
+    if (result.id) {
+      await tx
+        .update(notificationDeliveries)
+        .set({ providerMessageId: result.id, updatedAt: now })
+        .where(eq(notificationDeliveries.id, operation.deliveryId))
+    }
     await tx
       .update(notificationReminderRuns)
       .set({
@@ -1023,6 +1046,7 @@ function notificationAttachments(value: unknown): NotificationPayload["attachmen
       ...copyOptionalAttachmentString(record, "contentType"),
       ...copyOptionalAttachmentString(record, "disposition"),
       ...copyOptionalAttachmentString(record, "contentId"),
+      ...copyOptionalAttachmentString(record, "privateHandle"),
     }
   }) as NotificationPayload["attachments"]
 }

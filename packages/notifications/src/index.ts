@@ -51,14 +51,18 @@ export {
 export type { NotificationsRuntimeProvider } from "./runtime-port.js"
 export { notificationsRuntimePort } from "./runtime-port.js"
 export type {
+  NewNotificationChannelAccount,
   NewNotificationDelivery,
+  NewNotificationDeliveryEvent,
   NewNotificationReminderRule,
   NewNotificationReminderRun,
   NewNotificationSendOperation,
   NewNotificationTemplate,
   NewStaffAlertPreference,
   NewStaffAlertSettings,
+  NotificationChannelAccount,
   NotificationDelivery,
+  NotificationDeliveryEvent,
   NotificationReminderRule,
   NotificationReminderRun,
   NotificationSendOperation,
@@ -69,8 +73,10 @@ export type {
   StaffAlertSettings,
 } from "./schema.js"
 export {
+  notificationChannelAccounts,
   notificationChannelEnum,
   notificationDeliveries,
+  notificationDeliveryEvents,
   notificationDeliveryStatusEnum,
   notificationReminderRules,
   notificationReminderRunStatusEnum,
@@ -98,6 +104,15 @@ export type {
   BookingDocumentsSentEvent,
   SendBookingDocumentsRuntimeOptions,
 } from "./service-booking-documents.js"
+export {
+  admitRenderedServiceMessage,
+  getChannelAccount,
+  listChannelAccounts,
+  provisionChannelAccount,
+  reconcileNotificationDeliveryEvent,
+  updateChannelAccountLifecycle,
+  validateChannelAccount,
+} from "./service-channel-accounts.js"
 export type {
   DispatchStaffAlertInput,
   DispatchStaffAlertResult,
@@ -209,17 +224,27 @@ export {
   notificationTemplateVariableCatalog,
 } from "./template-authoring.js"
 export type {
+  ChannelAccountAdapterCapability,
+  ChannelAccountDraft,
   DurableNotificationDeliveryCapability,
   DurableNotificationDeliveryContext,
+  NormalizedNotificationDeliveryEvent,
   NotificationAttachment,
   NotificationChannel,
   NotificationPayload,
   NotificationProvider,
   NotificationResult,
+  ProvisionedChannelAccount,
+  QualifiedNotificationTargetRef,
+  RenderedServiceMessage,
+  RenderedServiceMessageAttachment,
+  ValidatedChannelAccount,
 } from "./types.js"
 export {
   bookingDocumentBundleItemSchema,
   bookingDocumentBundleSchema,
+  channelAccountHealthSchema,
+  channelAccountLifecycleSchema,
   insertNotificationReminderRuleSchema,
   insertNotificationReminderRuleStageSchema,
   insertNotificationReminderStageChannelSchema,
@@ -250,8 +275,12 @@ export {
   previewNotificationTemplateResultSchema,
   previewNotificationTemplateSchema,
   previewRemindersQuerySchema,
+  qualifiedNotificationTargetRefSchema,
+  renderedServiceMessageAttachmentSchema,
+  renderedServiceMessageSchema,
   reorderReminderRuleStagesSchema,
   runDueRemindersSchema,
+  updateChannelAccountLifecycleSchema,
   updateNotificationReminderRuleSchema,
   updateNotificationReminderRuleStageSchema,
   updateNotificationReminderStageChannelSchema,
