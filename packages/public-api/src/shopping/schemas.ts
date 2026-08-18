@@ -1,4 +1,3 @@
-import { bookingSessionOutcomeV1 } from "@voyant-travel/catalog-contracts/booking-engine/session-contracts"
 import {
   type CatalogMoney,
   catalogMoneySchema,
@@ -433,79 +432,8 @@ export const publicApiShoppingResultSchema = z.discriminatedUnion("kind", [
   publicApiCruiseSearchResultSchema,
 ])
 
-const tripOfferSelectionSchema = z
-  .object({
-    kind: z.enum(["product", "flight", "stay", "package", "cruise"]),
-    offerRef: opaqueRefSchema,
-    quantity: z.number().int().min(1).max(99).optional(),
-  })
-  .strict()
-
-export const publicApiTripSelectionCreateSchema = z
-  .object({
-    scope: publicApiRequestedScopeSchema,
-    offers: z.array(tripOfferSelectionSchema).min(1).max(100),
-  })
-  .strict()
-
-const tripSelectionMutationSchema = z.discriminatedUnion("kind", [
-  z.object({ kind: z.literal("add"), offer: tripOfferSelectionSchema }).strict(),
-  z.object({ kind: z.literal("remove"), itemRef: opaqueRefSchema }).strict(),
-  z
-    .object({ kind: z.literal("reorder"), itemRefs: z.array(opaqueRefSchema).min(1).max(100) })
-    .strict(),
-])
-
-export const publicApiTripSelectionUpdateSchema = z
-  .object({
-    selectionRef: opaqueRefSchema,
-    expectedRevision: z.number().int().min(0),
-    mutation: tripSelectionMutationSchema,
-  })
-  .strict()
-
-const tripSelectionItemSchema = z
-  .object({
-    itemRef: opaqueRefSchema,
-    kind: z.enum(["product", "flight", "stay", "package", "cruise"]),
-    quantity: z.number().int().min(1),
-  })
-  .strict()
-
-export const publicApiTripSelectionSchema = z
-  .object({
-    selectionRef: opaqueRefSchema,
-    revision: z.number().int().min(0),
-    scope: publicApiResolvedScopeSchema,
-    items: z.array(tripSelectionItemSchema).max(100),
-  })
-  .strict()
-
-export const publicApiTripBookingCreateSchema = z
-  .object({
-    selectionRef: opaqueRefSchema,
-    expectedRevision: z.number().int().min(0),
-    idempotencyKey: z.string().min(8).max(128),
-  })
-  .strict()
-
-export const publicApiTripBookingSchema = z
-  .object({
-    bookingSessionCapability: z
-      .string()
-      .regex(/^bcap_[A-Za-z0-9_-]{43,}$/)
-      .optional(),
-    outcome: bookingSessionOutcomeV1,
-  })
-  .strict()
-
 export type PublicApiRequestedScope = z.infer<typeof publicApiRequestedScopeSchema>
 export type PublicApiResolvedScope = z.infer<typeof publicApiResolvedScopeSchema>
 export type PublicApiShoppingIntent = z.infer<typeof publicApiShoppingIntentSchema>
 export type PublicApiShoppingRequest = z.infer<typeof publicApiShoppingRequestSchema>
 export type PublicApiShoppingResult = z.infer<typeof publicApiShoppingResultSchema>
-export type PublicApiTripSelectionCreate = z.infer<typeof publicApiTripSelectionCreateSchema>
-export type PublicApiTripSelectionUpdate = z.infer<typeof publicApiTripSelectionUpdateSchema>
-export type PublicApiTripSelection = z.infer<typeof publicApiTripSelectionSchema>
-export type PublicApiTripBookingCreate = z.infer<typeof publicApiTripBookingCreateSchema>
-export type PublicApiTripBooking = z.infer<typeof publicApiTripBookingSchema>

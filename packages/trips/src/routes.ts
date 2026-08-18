@@ -43,10 +43,7 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { Context } from "hono"
-import {
-  createPublicApiTripSelectionsRoutes,
-  type PublicApiTripSelectionsRoutesOptions,
-} from "./public-api-trip-selections-routes.js"
+import type { PublicApiTripSelectionsRoutesOptions } from "./public-api-trip-selections-routes.js"
 import {
   type CancelTripComponentsDeps,
   type PriceTripDeps,

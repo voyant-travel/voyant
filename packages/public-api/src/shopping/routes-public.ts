@@ -5,29 +5,15 @@ import {
   type VoyantVariables,
 } from "@voyant-travel/hono"
 import { boundedJsonBody } from "@voyant-travel/hono/middleware/body-size"
-import { isSameOriginMutation } from "@voyant-travel/hono/middleware/security-headers"
 import type { Context } from "hono"
 
 import {
   createPublicApiShoppingGateway,
   type PublicApiShoppingGateway,
   PublicApiShoppingUnavailableError,
-  PublicApiTripSelectionRevisionConflictError,
 } from "./runtime.js"
-import type {
-  PublicApiShoppingContext,
-  PublicApiShoppingRuntime,
-  PublicApiTripSelectionsRuntime,
-} from "./runtime-port.js"
-import {
-  publicApiShoppingRequestSchema,
-  publicApiShoppingResultSchema,
-  publicApiTripBookingCreateSchema,
-  publicApiTripBookingSchema,
-  publicApiTripSelectionCreateSchema,
-  publicApiTripSelectionSchema,
-  publicApiTripSelectionUpdateSchema,
-} from "./schemas.js"
+import type { PublicApiShoppingContext, PublicApiShoppingRuntime } from "./runtime-port.js"
+import { publicApiShoppingRequestSchema, publicApiShoppingResultSchema } from "./schemas.js"
 
 const MAX_SHOPPING_BODY_BYTES = 64 * 1024
 const PRIVATE_NO_STORE = "private, no-store"
@@ -45,8 +31,6 @@ const tooLargeResponseSchema = errorResponseSchema
   .extend({ code: z.literal("request_body_too_large"), maxBytes: z.number().int() })
   .strict()
 const shoppingEnvelopeSchema = z.object({ data: publicApiShoppingResultSchema }).strict()
-const tripSelectionEnvelopeSchema = z.object({ data: publicApiTripSelectionSchema }).strict()
-const tripBookingEnvelopeSchema = z.object({ data: publicApiTripBookingSchema }).strict()
 
 function jsonBody<T extends z.ZodType>(schema: T) {
   return { required: true, content: { "application/json": { schema } } }
@@ -80,101 +64,8 @@ const searchRoute = createRoute({
   },
 })
 
-const createTripSelectionRoute = createRoute({
-  method: "post",
-  path: "/trip-selections",
-  request: { body: jsonBody(publicApiTripSelectionCreateSchema) },
-  responses: {
-    201: {
-      description: "A newly created opaque Trip selection",
-      content: { "application/json": { schema: tripSelectionEnvelopeSchema } },
-    },
-    400: {
-      description: "The strict Trip-selection request was invalid",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    403: {
-      description: "The active Storefront Channel or same-origin mutation proof is missing",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    413: {
-      description: "The Trip-selection request body exceeded 64 KiB",
-      content: { "application/json": { schema: tooLargeResponseSchema } },
-    },
-    503: {
-      description: "A required shopping or Trip-selection runtime is not bound",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-  },
-})
-
-const updateTripSelectionRoute = createRoute({
-  method: "patch",
-  path: "/trip-selections",
-  request: { body: jsonBody(publicApiTripSelectionUpdateSchema) },
-  responses: {
-    200: {
-      description: "The compare-and-swap updated Trip selection",
-      content: { "application/json": { schema: tripSelectionEnvelopeSchema } },
-    },
-    400: {
-      description: "The strict Trip-selection mutation was invalid",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    403: {
-      description: "The active Storefront Channel or same-origin mutation proof is missing",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    409: {
-      description: "The Trip-selection revision changed after it was read",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    413: {
-      description: "The Trip-selection mutation body exceeded 64 KiB",
-      content: { "application/json": { schema: tooLargeResponseSchema } },
-    },
-    503: {
-      description: "No Trip-selection runtime is bound",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-  },
-})
-
-const bookTripSelectionRoute = createRoute({
-  method: "post",
-  path: "/trip-selections/book",
-  request: { body: jsonBody(publicApiTripBookingCreateSchema) },
-  responses: {
-    200: {
-      description: "A managed composite Booking Session for the exact Trip revision",
-      content: { "application/json": { schema: tripBookingEnvelopeSchema } },
-    },
-    400: {
-      description: "The Trip could not be frozen and priced",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    403: {
-      description: "The Trip capability, owner, channel, or same-origin proof is invalid",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    409: {
-      description: "The Trip revision or idempotent request conflicts",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-    413: {
-      description: "The request body exceeded 64 KiB",
-      content: { "application/json": { schema: tooLargeResponseSchema } },
-    },
-    503: {
-      description: "The managed Trip booking runtime is unavailable",
-      content: { "application/json": { schema: errorResponseSchema } },
-    },
-  },
-})
-
 export interface PublicApiShoppingPublicRoutesOptions {
   shopping?: PublicApiShoppingRuntime
-  tripSelections?: PublicApiTripSelectionsRuntime
   /** Test seam only; production defaults to the deployment's NODE_ENV. */
   production?: boolean
   now?: () => Date
@@ -272,15 +163,6 @@ async function setSafeIndexedCacheHeaders(
   c.header("Cache-Tag", `storefront-shopping-${cacheTag}`)
 }
 
-function isRevisionConflict(value: unknown): boolean {
-  return (
-    value instanceof PublicApiTripSelectionRevisionConflictError ||
-    (typeof value === "object" &&
-      value !== null &&
-      (value as { code?: unknown }).code === "trip_selection_revision_conflict")
-  )
-}
-
 function isShoppingScopeError(value: unknown): boolean {
   return (
     typeof value === "object" &&
@@ -301,109 +183,29 @@ export function createPublicApiShoppingPublicRoutes(
   })
   app.use("*", boundedJsonBody(MAX_SHOPPING_BODY_BYTES))
 
-  return app
-    .openapi(searchRoute, async (c) => {
-      const context = activeShoppingContext(c)
-      if (!context) {
-        return c.json({ error: "active_channel_required", requestId: requestId(c) }, 403)
+  return app.openapi(searchRoute, async (c) => {
+    const context = activeShoppingContext(c)
+    if (!context) {
+      return c.json({ error: "active_channel_required", requestId: requestId(c) }, 403)
+    }
+    try {
+      const result = await gateway.search(context, c.req.valid("json"))
+      await setSafeIndexedCacheHeaders(c, result, options)
+      return c.json({ data: result }, 200)
+    } catch (cause) {
+      if (isShoppingScopeError(cause)) {
+        return c.json(
+          {
+            error: "storefront_shopping_scope_unsupported",
+            requestId: requestId(c),
+          },
+          400,
+        )
       }
-      try {
-        const result = await gateway.search(context, c.req.valid("json"))
-        await setSafeIndexedCacheHeaders(c, result, options)
-        return c.json({ data: result }, 200)
-      } catch (cause) {
-        if (isShoppingScopeError(cause)) {
-          return c.json(
-            {
-              error: "storefront_shopping_scope_unsupported",
-              requestId: requestId(c),
-            },
-            400,
-          )
-        }
-        if (cause instanceof PublicApiShoppingUnavailableError) {
-          return c.json({ error: "storefront_shopping_unavailable", requestId: requestId(c) }, 503)
-        }
-        throw cause
+      if (cause instanceof PublicApiShoppingUnavailableError) {
+        return c.json({ error: "storefront_shopping_unavailable", requestId: requestId(c) }, 503)
       }
-    })
-    .openapi(createTripSelectionRoute, async (c) => {
-      const context = activeShoppingContext(c)
-      if (!context) {
-        return c.json({ error: "active_channel_required", requestId: requestId(c) }, 403)
-      }
-      if (!isSameOriginMutation(c)) {
-        return c.json({ error: "same_origin_required", requestId: requestId(c) }, 403)
-      }
-      try {
-        const result = await gateway.createTripSelection(context, c.req.valid("json"))
-        setPrivateNoStore(c)
-        return c.json({ data: result }, 201)
-      } catch (cause) {
-        if (cause instanceof PublicApiShoppingUnavailableError) {
-          return c.json({ error: "storefront_shopping_unavailable", requestId: requestId(c) }, 503)
-        }
-        throw cause
-      }
-    })
-    .openapi(updateTripSelectionRoute, async (c) => {
-      const context = activeShoppingContext(c)
-      if (!context) {
-        return c.json({ error: "active_channel_required", requestId: requestId(c) }, 403)
-      }
-      if (!isSameOriginMutation(c)) {
-        return c.json({ error: "same_origin_required", requestId: requestId(c) }, 403)
-      }
-      try {
-        const result = await gateway.updateTripSelection(context, c.req.valid("json"))
-        setPrivateNoStore(c)
-        return c.json({ data: result }, 200)
-      } catch (cause) {
-        if (cause instanceof PublicApiShoppingUnavailableError) {
-          return c.json({ error: "storefront_shopping_unavailable", requestId: requestId(c) }, 503)
-        }
-        if (isRevisionConflict(cause)) {
-          return c.json({ error: "trip_selection_revision_conflict", requestId: requestId(c) }, 409)
-        }
-        throw cause
-      }
-    })
-    .openapi(bookTripSelectionRoute, async (c) => {
-      const context = activeShoppingContext(c)
-      if (!context) {
-        return c.json({ error: "active_channel_required", requestId: requestId(c) }, 403)
-      }
-      if (!isSameOriginMutation(c)) {
-        return c.json({ error: "same_origin_required", requestId: requestId(c) }, 403)
-      }
-      try {
-        const result = await gateway.bookTripSelection(context, c.req.valid("json"))
-        setPrivateNoStore(c)
-        return c.json({ data: result }, 200)
-      } catch (cause) {
-        if (cause instanceof PublicApiShoppingUnavailableError) {
-          return c.json({ error: "storefront_shopping_unavailable", requestId: requestId(c) }, 503)
-        }
-        if (isRevisionConflict(cause)) {
-          return c.json({ error: "trip_selection_revision_conflict", requestId: requestId(c) }, 409)
-        }
-        const code = errorCode(cause)
-        if (code === "storefront_trip_selection_not_found") {
-          return c.json({ error: code, requestId: requestId(c) }, 403)
-        }
-        if (code === "storefront_trip_booking_idempotency_conflict") {
-          return c.json({ error: code, requestId: requestId(c) }, 409)
-        }
-        if (code?.startsWith("storefront_trip_booking_")) {
-          return c.json({ error: code, requestId: requestId(c) }, 400)
-        }
-        throw cause
-      }
-    })
-}
-
-function errorCode(value: unknown): string | undefined {
-  if (!value || typeof value !== "object") return undefined
-  const code = (value as { code?: unknown }).code
-  return typeof code === "string" ? code : undefined
+      throw cause
+    }
+  })
 }
