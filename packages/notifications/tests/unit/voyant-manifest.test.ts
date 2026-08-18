@@ -45,6 +45,11 @@ describe("notifications deployment manifest", () => {
           optional: true,
           conformance: expect.any(Object),
         },
+        {
+          id: "notifications.delivery-lifecycle-source",
+          optional: true,
+          cardinality: "many",
+        },
         { id: "bookings.booking-action-projection.runtime", optional: true },
         {
           id: "bookings.booking-action-source.runtime",
@@ -67,6 +72,23 @@ describe("notifications deployment manifest", () => {
       schema: [{ id: "@voyant-travel/notifications#schema" }],
       migrations: [{ id: "@voyant-travel/notifications#migrations" }],
       jobs: [
+        {
+          id: "notifications.reconcile-delivery-lifecycle",
+          schedule: { cron: "* * * * *", overlap: "skip" },
+          scheduling: {
+            required: true,
+            profiles: {
+              eager: { cron: "* * * * *", overlap: "skip" },
+              economical: { cron: "*/5 * * * *", overlap: "skip" },
+              "scale-to-zero": { cron: "*/15 * * * *", overlap: "skip" },
+            },
+          },
+          wakeup: true,
+          runtime: {
+            entry: "@voyant-travel/notifications/delivery-lifecycle-job",
+            export: "runNotificationDeliveryLifecycleJob",
+          },
+        },
         {
           id: "notifications.deliver-durable-sends",
           schedule: { cron: "* * * * *", overlap: "skip" },
