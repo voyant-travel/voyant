@@ -1,6 +1,6 @@
 import { normalizeE164 } from "@voyant-travel/conversations-contracts"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
-import { desc, eq } from "drizzle-orm"
+import { and, desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import {
@@ -63,26 +63,57 @@ export async function provisionChannelAccount(
   ) {
     throw new NotificationError("Inbound SMS requires one unambiguous receiving identity")
   }
+  const [existing] = await db
+    .select()
+    .from(notificationChannelAccounts)
+    .where(eq(notificationChannelAccounts.adapterRef, provisioned.adapterRef))
+    .limit(1)
+  if (
+    existing &&
+    (existing.channel !== draft.channel ||
+      existing.normalizedAddress !== normalizedAddress ||
+      existing.displayName !== draft.displayName ||
+      existing.displayAddress !== provisioned.displayAddress ||
+      (draft.inboundCapable !== undefined && existing.inboundCapable !== draft.inboundCapable) ||
+      (draft.outboundCapable !== undefined && existing.outboundCapable !== draft.outboundCapable) ||
+      JSON.stringify(existing.allowedPurposes) !==
+        JSON.stringify(normalizePurposes(draft.allowedPurposes)))
+  ) {
+    throw new NotificationError("Provisioned Channel Account replay payload drift")
+  }
+  if (existing?.lifecycle === "archived" || existing?.lifecycle === "disabled") {
+    throw new NotificationError("Provision replay cannot reactivate a disabled Channel Account")
+  }
+  if (existing?.lifecycle === "active") return existing
+  const [pending] = existing
+    ? [existing]
+    : await db
+        .insert(notificationChannelAccounts)
+        .values({
+          channel: draft.channel,
+          normalizedAddress,
+          displayName: draft.displayName,
+          displayAddress: provisioned.displayAddress,
+          lifecycle: "pending",
+          health: validation.health,
+          inboundCapable: validation.inboundCapable,
+          outboundCapable: validation.outboundCapable,
+          inboundIdentity: validation.inboundIdentity ?? null,
+          inboundSourceId: validation.inboundSourceId ?? null,
+          attachmentsCapable: validation.attachmentsCapable ?? false,
+          allowedPurposes: normalizePurposes(draft.allowedPurposes),
+          adapterRef: provisioned.adapterRef,
+          lastValidatedAt: new Date(),
+        })
+        .returning()
+  if (!pending) throw new NotificationError("Failed to persist the provisioned Channel Account")
+  await capability.activate?.({ channelAccountId: pending.id, adapterRef: pending.adapterRef })
   const [account] = await db
-    .insert(notificationChannelAccounts)
-    .values({
-      channel: draft.channel,
-      normalizedAddress,
-      displayName: draft.displayName,
-      displayAddress: provisioned.displayAddress,
-      lifecycle: "active",
-      health: validation.health,
-      inboundCapable: validation.inboundCapable,
-      outboundCapable: validation.outboundCapable,
-      inboundIdentity: validation.inboundIdentity ?? null,
-      inboundSourceId: validation.inboundSourceId ?? null,
-      attachmentsCapable: validation.attachmentsCapable ?? false,
-      allowedPurposes: normalizePurposes(draft.allowedPurposes),
-      adapterRef: provisioned.adapterRef,
-      lastValidatedAt: new Date(),
-    })
+    .update(notificationChannelAccounts)
+    .set({ lifecycle: "active", updatedAt: new Date() })
+    .where(eq(notificationChannelAccounts.id, pending.id))
     .returning()
-  if (!account) throw new NotificationError("Failed to persist the provisioned Channel Account")
+  if (!account) throw new NotificationError("Failed to activate the provisioned Channel Account")
   return account
 }
 
@@ -251,6 +282,29 @@ export async function reconcileNotificationDeliveryEvent(
       })
       .onConflictDoNothing()
       .returning()
+
+    if (inserted.length === 0) {
+      const [replayed] = await transaction
+        .select()
+        .from(notificationDeliveryEvents)
+        .where(
+          and(
+            eq(notificationDeliveryEvents.adapterRef, event.adapterRef),
+            eq(notificationDeliveryEvents.adapterEventId, event.adapterEventId),
+          ),
+        )
+        .limit(1)
+      const canonical = event.details?.canonicalPayload
+      if (
+        !replayed ||
+        replayed.deliveryId !== event.deliveryId ||
+        replayed.status !== event.status ||
+        replayed.occurredAt.toISOString() !== event.occurredAt.toISOString() ||
+        (canonical !== undefined && replayed.details?.canonicalPayload !== canonical)
+      ) {
+        throw new NotificationError("Delivery lifecycle replay payload drift")
+      }
+    }
 
     const [latest] = await transaction
       .select()

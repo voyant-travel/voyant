@@ -1,0 +1,5 @@
+{
+  "extends": "@voyant-travel/voyant-typescript-config/base.json",
+  "compilerOptions": { "noEmit": true },
+  "include": ["src/**/*", "tests/**/*"]
+}

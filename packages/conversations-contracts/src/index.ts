@@ -94,6 +94,15 @@ export interface ConversationIngressSource {
   list(input: { cursor?: string; limit: number }): Promise<IngressListPage>
   fetch(ref: IngressItemRef): Promise<InboundConversationEnvelopeV1>
   ack(ref: IngressItemRef): Promise<void>
+  /** Import an ephemeral source handle into the deployment's private documents store. */
+  importInboundAttachment?(input: {
+    sourceId: string
+    externalId: string
+    privateHandle: string
+    filename: string
+    contentType: string
+    sizeBytes: number
+  }): Promise<{ privateHandle: string; filename: string; contentType: string; sizeBytes: number }>
 }
 
 export interface ConversationRenderedServiceMessage {
