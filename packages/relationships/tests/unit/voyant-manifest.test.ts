@@ -34,12 +34,14 @@ describe("relationships deployment manifest", () => {
           { id: customFieldValueLifecycleRuntimePort.id },
           { id: customFieldValueOperationsRuntimePort.id },
           { id: "relationships.booking-enrichment-database" },
+          { id: "relationships.inquiry-overdue-job" },
         ],
       },
       runtimePorts: [
         { id: customFieldsRuntimePort.id },
         { id: "relationships.route-runtime" },
         { id: "relationships.booking-enrichment-database" },
+        { id: "relationships.inquiry-overdue-job" },
         { id: proposalInquiryConversionRuntimePort.id, optional: true },
         // Optional: a deployment can select CRM without Bookings, and then
         // nothing emits `booking.confirmed` for the enrichment subscriber.

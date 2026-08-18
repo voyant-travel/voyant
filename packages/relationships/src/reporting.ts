@@ -44,10 +44,16 @@ const expressions: Record<FieldId, SQL> = {
   ageDays: sql`EXTRACT(EPOCH FROM (COALESCE(${inquiries.closedAt}, ${inquiries.convertedAt}, now()) - ${inquiries.createdAt})) / 86400.0`,
 }
 
+const reportFields: ReportDatasetField[] = INQUIRY_ACTIVITY_FIELDS.map((field) => ({
+  ...field,
+  requiredScopes: [...field.requiredScopes],
+  aggregations: [...field.aggregations],
+}))
+
 const fields = new Map(
-  INQUIRY_ACTIVITY_FIELDS.map((definition) => [
+  reportFields.map((definition) => [
     definition.id,
-    { definition, expression: expressions[definition.id] },
+    { definition, expression: expressions[definition.id as FieldId] },
   ]),
 )
 
@@ -59,11 +65,7 @@ export const inquiryActivityDataset: ReportDatasetContribution = {
     description: "Inquiry operations and authoritative durable conversion facts.",
     grain: "One row per inquiry.",
     requiredScopes: [REQUIRED_SCOPE],
-    fields: INQUIRY_ACTIVITY_FIELDS.map((field) => ({
-      ...field,
-      requiredScopes: [...field.requiredScopes],
-      aggregations: [...field.aggregations],
-    })),
+    fields: reportFields,
     defaultLimit: DEFAULT_LIMIT,
     maximumLimit: MAXIMUM_LIMIT,
     defaultDateField: "createdAt",
