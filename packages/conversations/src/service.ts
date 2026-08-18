@@ -460,6 +460,10 @@ async function ingestEmailEnvelope(
         contactPointRef: person?.contactPointRef ?? null,
         nextPartSequence: 2,
         status: isCustomerMessage ? "open" : "closed",
+        waitingOn: isCustomerMessage ? "staff" : null,
+        lastInboundAt: isCustomerMessage ? occurredAt : null,
+        closedAt: isCustomerMessage ? null : occurredAt,
+        resolvedAt: isCustomerMessage ? null : occurredAt,
         lastPartAt: occurredAt,
       })
       await tx.insert(conversationParticipants).values({
@@ -475,8 +479,11 @@ async function ingestEmailEnvelope(
         .set({
           status: "open",
           snoozedUntil: null,
+          waitingOn: "staff",
+          lastInboundAt: sql`greatest(coalesce(${conversations.lastInboundAt}, ${occurredAt.toISOString()}::timestamptz), ${occurredAt.toISOString()}::timestamptz)`,
           closedAt: null,
-          lastPartAt: sql`GREATEST(${conversations.lastPartAt}, ${occurredAt.toISOString()}::timestamptz)`,
+          resolvedAt: null,
+          lastPartAt: sql`greatest(${conversations.lastPartAt}, ${occurredAt.toISOString()}::timestamptz)`,
           revision: sql`${conversations.revision} + 1`,
           updatedAt: new Date(),
         })
@@ -1101,6 +1108,9 @@ export async function startConversation(
         contactPointRef: input.contactPointRef,
         startIdempotencyKey: input.idempotencyKey,
         startPayloadFingerprint: startFingerprint,
+        waitingOn: "customer",
+        lastOutboundAt: now,
+        firstResponseAt: now,
         lastPartAt: now,
       })
       .onConflictDoNothing()
@@ -1331,6 +1341,9 @@ async function admitReplyWithinTransaction(
     .update(conversations)
     .set({
       lastPartAt: now,
+      waitingOn: "customer",
+      lastOutboundAt: now,
+      firstResponseAt: sql`coalesce(${conversations.firstResponseAt}, ${now})`,
       revision: sql`${conversations.revision} + 1`,
       updatedAt: now,
     })
@@ -1407,6 +1420,7 @@ export async function updateConversationState(
         throw new ConversationInvalidStateError("Assignee is not active staff")
       }
     }
+    const stateChangedAt = new Date()
     const snoozedUntil =
       input.status === "snoozed" && input.snoozedUntil ? new Date(input.snoozedUntil) : null
     if (input.status === "snoozed" && (!snoozedUntil || snoozedUntil <= new Date())) {
@@ -1417,14 +1431,19 @@ export async function updateConversationState(
       .set({
         ...(input.status ? { status: input.status } : {}),
         ...(input.status ? { snoozedUntil } : {}),
-        ...(input.status ? { closedAt: input.status === "closed" ? new Date() : null } : {}),
+        ...(input.status === "closed"
+          ? { closedAt: stateChangedAt, resolvedAt: stateChangedAt }
+          : {}),
+        ...(input.status === "open" && current.status === "closed"
+          ? { closedAt: null, resolvedAt: null }
+          : {}),
         ...(input.priority ? { priority: input.priority } : {}),
         ...(input.assignedToUserId !== undefined
           ? { assignedToUserId: input.assignedToUserId }
           : {}),
         ...(input.inboxId ? { inboxId: input.inboxId } : {}),
         revision: sql`${conversations.revision} + 1`,
-        updatedAt: new Date(),
+        updatedAt: stateChangedAt,
       })
       .where(and(eq(conversations.id, id), eq(conversations.revision, input.revision)))
       .returning()

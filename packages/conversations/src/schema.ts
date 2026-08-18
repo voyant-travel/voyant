@@ -20,6 +20,7 @@ export const conversationPriorityEnum = pgEnum("conversation_priority", [
   "high",
   "urgent",
 ])
+export const conversationWaitingOnEnum = pgEnum("conversation_waiting_on", ["staff", "customer"])
 export const conversationInboxMembershipRoleEnum = pgEnum("conversation_inbox_membership_role", [
   "member",
   "manager",
@@ -122,7 +123,12 @@ export const conversations = pgTable(
     startIdempotencyKey: text("start_idempotency_key"),
     startPayloadFingerprint: text("start_payload_fingerprint"),
     snoozedUntil: timestamp("snoozed_until", { withTimezone: true }),
+    waitingOn: conversationWaitingOnEnum("waiting_on"),
+    firstResponseAt: timestamp("first_response_at", { withTimezone: true }),
+    resolvedAt: timestamp("resolved_at", { withTimezone: true }),
     closedAt: timestamp("closed_at", { withTimezone: true }),
+    lastInboundAt: timestamp("last_inbound_at", { withTimezone: true }),
+    lastOutboundAt: timestamp("last_outbound_at", { withTimezone: true }),
     lastPartAt: timestamp("last_part_at", { withTimezone: true }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
@@ -137,6 +143,31 @@ export const conversations = pgTable(
     index("idx_conversations_person").on(table.personRef),
     index("idx_conversations_inbox_status").on(table.inboxId, table.status, table.lastPartAt),
     index("idx_conversations_assignee").on(table.assignedToUserId, table.lastPartAt),
+    index("idx_conversations_queue_cursor").on(
+      table.inboxId,
+      table.status,
+      table.waitingOn,
+      table.lastPartAt,
+      table.id,
+    ),
+    index("idx_conversations_assignee_cursor").on(
+      table.inboxId,
+      table.assignedToUserId,
+      table.lastPartAt,
+      table.id,
+    ),
+    index("idx_conversations_priority_cursor").on(
+      table.inboxId,
+      table.priority,
+      table.lastPartAt,
+      table.id,
+    ),
+    index("idx_conversations_channel_cursor").on(
+      table.inboxId,
+      table.channel,
+      table.lastPartAt,
+      table.id,
+    ),
   ],
 )
 
