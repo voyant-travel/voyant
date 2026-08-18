@@ -124,36 +124,39 @@ export function createTripsRuntimePortContribution(
         Promise.resolve(cardPayment),
       ]),
     )
-    .then(([catalog, checkout, flights, resolvedCardPayment]) => ({
-      ...createTripsRoutesRuntime(host.primitives, {
+    .then(([catalog, checkout, flights, resolvedCardPayment]) => {
+      // A PROVIDER, not an options object: `tripsRoutesRuntimePort` requires a
+      // function and its `test()` rejects anything else. Spreading the provider
+      // into an object literal to attach `tripSelections` silently turned it
+      // into a plain object, which the port caught.
+      const provider = createTripsRoutesRuntime(host.primitives, {
         catalog,
         checkout,
         cardPayment: resolvedCardPayment,
         flights,
-      }),
-      tripSelections: {
-        // Read at CALL time, not here. `public-api` requires the opaque-reference
-        // issuer this module provides, and this module needs `public-api`'s
-        // shopping runtime — so neither contributor can run first, and reading
-        // the port while contributors are still being assembled throws
-        // "read before its static contributor provided it".
-        //
-        // Deferring to the first request breaks the cycle without a seam: by
-        // then every contributor has run. Only `resolveScope` is needed, so
-        // that is all this closes over — see the gateway for why it takes a
-        // function rather than the whole runtime.
-        resolveScope: async (
-          context: PublicApiShoppingContext,
-          requested: PublicApiRequestedScope,
-        ) => {
-          const shopping = await host.getRuntimePort<PublicApiShoppingRuntime>(
-            publicApiShoppingRuntimePort,
-          )
-          return shopping.resolveScope(context, requested)
+      })
+      return async () => ({
+        ...(await provider()),
+        tripSelections: {
+          // Read at CALL time, not while contributions are assembled.
+          // `public-api` requires the opaque-reference issuer this module
+          // provides and this module needs `public-api`'s shopping runtime, so
+          // neither contributor can be ordered first; reading the port during
+          // assembly throws "read before its static contributor provided it"
+          // and killed the production image on boot (voyant#4627).
+          resolveScope: async (
+            context: PublicApiShoppingContext,
+            requested: PublicApiRequestedScope,
+          ) => {
+            const shopping = await host.getRuntimePort<PublicApiShoppingRuntime>(
+              publicApiShoppingRuntimePort,
+            )
+            return shopping.resolveScope(context, requested)
+          },
+          selections: tripSelectionsRuntime,
         },
-        selections: tripSelectionsRuntime,
-      },
-    }))
+      })
+    })
   const contribution: Record<string, unknown> = {
     [financePaymentLinkRuntimePort.id]: createStandardPaymentLinkRouteOptions(paymentAdapter),
     [financePaymentReconciliationJobRuntimePort.id]: {
