@@ -18,5 +18,13 @@ export const communicationsAdapterRuntime = defineAdapter({
       providePort(notificationDeliveryLifecycleSourcePort),
     ],
   },
+  meta: {
+    ownership: "package",
+    agentTools: {
+      posture: "not-applicable",
+      rationale:
+        "This adapter binds communications transport ports; agents act through Inbox and Notifications domain Tools rather than the transport directly.",
+    },
+  },
 })
 export default communicationsAdapterRuntime
