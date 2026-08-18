@@ -13,11 +13,37 @@
       "files": ["packages/conversations/openapi/admin/conversations.json"]
     },
     {
+      "command": "pnpm --filter @voyant-travel/action-ledger generate:openapi",
+      "files": [
+        "packages/action-ledger/openapi/admin/action-ledger.json",
+        "packages/action-ledger/openapi/admin/action-ledger-health.json"
+      ]
+    },
+    {
+      "command": "pnpm --filter @voyant-travel/apps generate:openapi",
+      "files": ["packages/apps/openapi/admin/apps.json"]
+    },
+    {
       "command": "pnpm --filter @voyant-travel/catalog generate:openapi",
       "files": [
         "packages/catalog/openapi/admin/catalog-booking.json",
         "packages/catalog/openapi/public-api/catalog-booking.json"
       ]
+    },
+    {
+      "command": "pnpm --filter @voyant-travel/charters generate:openapi",
+      "files": [
+        "packages/charters/openapi/admin/charters.json",
+        "packages/charters/openapi/public-api/charters.json"
+      ]
+    },
+    {
+      "command": "pnpm --filter @voyant-travel/custom-fields generate:openapi",
+      "files": ["packages/custom-fields/openapi/admin/custom-fields.json"]
+    },
+    {
+      "command": "pnpm --filter @voyant-travel/event-catalog generate:openapi",
+      "files": ["packages/event-catalog/openapi/admin/event-catalog.json"]
     },
     {
       "command": "pnpm --filter @voyant-travel/finance generate:openapi",
@@ -49,6 +75,14 @@
     {
       "command": "pnpm --filter @voyant-travel/media generate:openapi",
       "files": ["packages/media/openapi/admin/media-library.json"]
+    },
+    {
+      "command": "pnpm --filter @voyant-travel/mice generate:openapi",
+      "files": ["packages/mice/openapi/admin/mice.json"]
+    },
+    {
+      "command": "pnpm --filter @voyant-travel/navigation-preferences generate:openapi",
+      "files": ["packages/navigation-preferences/openapi/admin/navigation-preferences.json"]
     },
     {
       "command": "pnpm --filter @voyant-travel/operations generate:openapi",
@@ -124,8 +158,12 @@
       ]
     },
     {
-      "command": "pnpm --filter @voyant-travel/public-api generate:shopping-openapi",
+      "command": "pnpm --filter @voyant-travel/public-api generate:openapi",
       "files": ["packages/public-api/openapi/public-api/public-api.json"]
+    },
+    {
+      "command": "pnpm --filter @voyant-travel/relationships generate:openapi",
+      "files": ["packages/relationships/openapi/admin/relationships.json"]
     },
     {
       "command": "pnpm --filter @voyant-travel/trips generate:openapi",
