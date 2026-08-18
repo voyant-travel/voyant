@@ -3,6 +3,7 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query"
 import type { AdminRoutePageProps } from "@voyant-travel/admin"
 import { useVoyantReactContext } from "@voyant-travel/react"
+import { DateTimePicker } from "@voyant-travel/ui/components/date-time-picker"
 import { type FormEvent, useEffect } from "react"
 import { conversationsApi } from "../api.js"
 
@@ -107,14 +108,13 @@ export default function ConversationPage({ params }: AdminRoutePageProps) {
         </select>
         <label className="flex items-center gap-2 text-sm">
           Snooze until
-          <input
-            type="datetime-local"
-            onChange={(event) => {
-              if (!event.target.value) return
+          <DateTimePicker
+            onChange={(value) => {
+              if (!value) return
               update.mutate({
                 revision: conversation.revision,
                 status: "snoozed",
-                snoozedUntil: new Date(event.target.value).toISOString(),
+                snoozedUntil: new Date(value).toISOString(),
               })
             }}
           />
