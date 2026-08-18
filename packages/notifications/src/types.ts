@@ -45,6 +45,7 @@ export interface RenderedServiceMessageAttachment {
 /** Provider-neutral, already-rendered service message admitted to the durable sender. */
 export interface RenderedServiceMessage {
   channelAccountId: string
+  channel?: "email" | "sms"
   to: string
   target: QualifiedNotificationTargetRef
   purpose: string
@@ -99,6 +100,11 @@ export interface ValidatedChannelAccount {
   health: "healthy" | "degraded" | "unavailable"
   inboundCapable: boolean
   outboundCapable: boolean
+  /** Required and unambiguous before an SMS identity can receive Inbox traffic. */
+  inboundIdentity?: "unambiguous" | "ambiguous"
+  /** Opaque ingress source id bound by the adapter to this receiving identity. */
+  inboundSourceId?: string
+  attachmentsCapable?: boolean
 }
 
 /** Runtime-only authority for provisioning and validating adapter identities. */

@@ -44,13 +44,17 @@ export interface paths {
                 status: "open" | "closed" | "snoozed"
                 subject: string | null
                 suggestedSubject: string | null
-                replyAlias: string
+                replyAlias: string | null
+                channelAccountId: string | null
+                localAddress: string | null
                 customerAddress: string
                 personRef: string | null
                 contactPointRef: string | null
                 unreadCount: number
                 /** Format: date-time */
                 snoozedUntil: string | null
+                /** Format: date-time */
+                closedAt: string | null
                 /** Format: date-time */
                 lastPartAt: string
                 /** Format: date-time */
@@ -128,17 +132,31 @@ export interface paths {
       }
       requestBody: {
         content: {
-          "application/json": {
-            inboxId: string
-            personRef: string
-            contactPointRef: string
-            channelAccountId: string
-            /** Format: email */
-            fromAddress: string
-            subject: string | null
-            text: string
-            idempotencyKey: string
-          }
+          "application/json":
+            | {
+                inboxId: string
+                personRef: string
+                contactPointRef: string
+                channelAccountId: string
+                text: string
+                idempotencyKey: string
+                /** @enum {string} */
+                channel: "email"
+                /** Format: email */
+                fromAddress: string
+                subject: string | null
+              }
+            | {
+                inboxId: string
+                personRef: string
+                contactPointRef: string
+                channelAccountId: string
+                text: string
+                idempotencyKey: string
+                /** @enum {string} */
+                channel: "sms"
+                subject?: null
+              }
         }
       }
       responses: {
@@ -162,13 +180,17 @@ export interface paths {
                   status: "open" | "closed" | "snoozed"
                   subject: string | null
                   suggestedSubject: string | null
-                  replyAlias: string
+                  replyAlias: string | null
+                  channelAccountId: string | null
+                  localAddress: string | null
                   customerAddress: string
                   personRef: string | null
                   contactPointRef: string | null
                   unreadCount: number
                   /** Format: date-time */
                   snoozedUntil: string | null
+                  /** Format: date-time */
+                  closedAt: string | null
                   /** Format: date-time */
                   lastPartAt: string
                   /** Format: date-time */
@@ -218,8 +240,9 @@ export interface paths {
                   inReplyTo: string | null
                   references: string[]
                   /** @enum {string} */
+                  admissionStatus: "received" | "pending" | "admitted" | "suppressed"
+                  /** @enum {string|null} */
                   deliveryStatus:
-                    | "received"
                     | "pending"
                     | "accepted"
                     | "delivered"
@@ -228,6 +251,7 @@ export interface paths {
                     | "complained"
                     | "suppressed"
                     | "cancelled"
+                    | null
                   /** Format: date-time */
                   occurredAt: string
                   /** Format: date-time */
@@ -290,8 +314,9 @@ export interface paths {
                         inReplyTo: string | null
                         references: string[]
                         /** @enum {string} */
+                        admissionStatus: "received" | "pending" | "admitted" | "suppressed"
+                        /** @enum {string|null} */
                         deliveryStatus:
-                          | "received"
                           | "pending"
                           | "accepted"
                           | "delivered"
@@ -300,6 +325,7 @@ export interface paths {
                           | "complained"
                           | "suppressed"
                           | "cancelled"
+                          | null
                         /** Format: date-time */
                         occurredAt: string
                         /** Format: date-time */
@@ -342,6 +368,14 @@ export interface paths {
                       }
                     }
                 )[]
+                channelState: {
+                  normalizedAddress: string
+                  /** @enum {string} */
+                  health: "unknown" | "healthy" | "degraded" | "unavailable"
+                  available: boolean
+                  attachmentsCapable: boolean
+                  suppressed: boolean
+                } | null
               }
             }
           }
@@ -447,13 +481,17 @@ export interface paths {
                   status: "open" | "closed" | "snoozed"
                   subject: string | null
                   suggestedSubject: string | null
-                  replyAlias: string
+                  replyAlias: string | null
+                  channelAccountId: string | null
+                  localAddress: string | null
                   customerAddress: string
                   personRef: string | null
                   contactPointRef: string | null
                   unreadCount: number
                   /** Format: date-time */
                   snoozedUntil: string | null
+                  /** Format: date-time */
+                  closedAt: string | null
                   /** Format: date-time */
                   lastPartAt: string
                   /** Format: date-time */
@@ -503,8 +541,9 @@ export interface paths {
                   inReplyTo: string | null
                   references: string[]
                   /** @enum {string} */
+                  admissionStatus: "received" | "pending" | "admitted" | "suppressed"
+                  /** @enum {string|null} */
                   deliveryStatus:
-                    | "received"
                     | "pending"
                     | "accepted"
                     | "delivered"
@@ -513,6 +552,7 @@ export interface paths {
                     | "complained"
                     | "suppressed"
                     | "cancelled"
+                    | null
                   /** Format: date-time */
                   occurredAt: string
                   /** Format: date-time */
@@ -575,8 +615,9 @@ export interface paths {
                         inReplyTo: string | null
                         references: string[]
                         /** @enum {string} */
+                        admissionStatus: "received" | "pending" | "admitted" | "suppressed"
+                        /** @enum {string|null} */
                         deliveryStatus:
-                          | "received"
                           | "pending"
                           | "accepted"
                           | "delivered"
@@ -585,6 +626,7 @@ export interface paths {
                           | "complained"
                           | "suppressed"
                           | "cancelled"
+                          | null
                         /** Format: date-time */
                         occurredAt: string
                         /** Format: date-time */
@@ -627,6 +669,14 @@ export interface paths {
                       }
                     }
                 )[]
+                channelState: {
+                  normalizedAddress: string
+                  /** @enum {string} */
+                  health: "unknown" | "healthy" | "degraded" | "unavailable"
+                  available: boolean
+                  attachmentsCapable: boolean
+                  suppressed: boolean
+                } | null
               }
             }
           }
@@ -737,13 +787,17 @@ export interface paths {
                 status: "open" | "closed" | "snoozed"
                 subject: string | null
                 suggestedSubject: string | null
-                replyAlias: string
+                replyAlias: string | null
+                channelAccountId: string | null
+                localAddress: string | null
                 customerAddress: string
                 personRef: string | null
                 contactPointRef: string | null
                 unreadCount: number
                 /** Format: date-time */
                 snoozedUntil: string | null
+                /** Format: date-time */
+                closedAt: string | null
                 /** Format: date-time */
                 lastPartAt: string
                 /** Format: date-time */
@@ -893,8 +947,9 @@ export interface paths {
                 inReplyTo: string | null
                 references: string[]
                 /** @enum {string} */
+                admissionStatus: "received" | "pending" | "admitted" | "suppressed"
+                /** @enum {string|null} */
                 deliveryStatus:
-                  | "received"
                   | "pending"
                   | "accepted"
                   | "delivered"
@@ -903,6 +958,7 @@ export interface paths {
                   | "complained"
                   | "suppressed"
                   | "cancelled"
+                  | null
                 /** Format: date-time */
                 occurredAt: string
                 /** Format: date-time */
@@ -1019,13 +1075,17 @@ export interface paths {
                 status: "open" | "closed" | "snoozed"
                 subject: string | null
                 suggestedSubject: string | null
-                replyAlias: string
+                replyAlias: string | null
+                channelAccountId: string | null
+                localAddress: string | null
                 customerAddress: string
                 personRef: string | null
                 contactPointRef: string | null
                 unreadCount: number
                 /** Format: date-time */
                 snoozedUntil: string | null
+                /** Format: date-time */
+                closedAt: string | null
                 /** Format: date-time */
                 lastPartAt: string
                 /** Format: date-time */

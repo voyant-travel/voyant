@@ -190,6 +190,7 @@ const jsonMetadata = z.record(z.string(), z.unknown())
 
 function toChannelAccountResponse({
   adapterRef: _adapterRef,
+  inboundSourceId: _inboundSourceId,
   ...account
 }: NotificationChannelAccount) {
   return account

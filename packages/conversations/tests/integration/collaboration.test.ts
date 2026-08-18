@@ -66,7 +66,7 @@ describe.skipIf(!DB_AVAILABLE)("Inbox collaboration persistence", () => {
         senderAddress: "customer@example.test",
         recipientAddresses: ["reply@example.test"],
         payloadFingerprint: "one",
-        deliveryStatus: "received",
+        admissionStatus: "received",
         occurredAt: new Date("2026-08-18T10:00:00.000Z"),
       },
       {
@@ -76,7 +76,7 @@ describe.skipIf(!DB_AVAILABLE)("Inbox collaboration persistence", () => {
         senderAddress: "customer@example.test",
         recipientAddresses: ["reply@example.test"],
         payloadFingerprint: "two",
-        deliveryStatus: "received",
+        admissionStatus: "received",
         occurredAt: new Date("2026-08-18T10:01:00.000Z"),
       },
     ])

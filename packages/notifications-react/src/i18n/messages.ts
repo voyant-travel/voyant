@@ -108,6 +108,9 @@ export type NotificationsUiMessages = {
       empty: string
       inbound: string
       outbound: string
+      ambiguousInbound: string
+      attachments: string
+      noAttachments: string
       purposes: string
     }
     sections: {

@@ -1,6 +1,12 @@
 import { describe, expect, it } from "vitest"
 import { conversationReplyFingerprint } from "../../src/service.js"
-import { createReplyAlias, inboundThreadIds, selectExactConversation } from "../../src/threading.js"
+import {
+  createReplyAlias,
+  inboundThreadIds,
+  isSmsConversationRecentlyClosed,
+  selectExactConversation,
+  smsConversationPairKey,
+} from "../../src/threading.js"
 
 describe("exact email threading", () => {
   it("selects an exact alias or standard header identity", () => {
@@ -30,6 +36,31 @@ describe("exact email threading", () => {
     ).toEqual(["first@example.test", "second@example.test"])
     expect(createReplyAlias("conv_opaque", "Inbox@Example.Test")).toBe(
       "inbox+conv_opaque@example.test",
+    )
+  })
+})
+
+describe("SMS pair threading", () => {
+  it("separates Channel Accounts and normalized remote numbers", () => {
+    expect(smsConversationPairKey("account_1", "+12025550123")).toBe(
+      smsConversationPairKey("account_1", " +12025550123 "),
+    )
+    expect(smsConversationPairKey("account_1", "+12025550123")).not.toBe(
+      smsConversationPairKey("account_2", "+12025550123"),
+    )
+    expect(() => smsConversationPairKey("account_1", "customer@example.test")).toThrow("E.164")
+  })
+
+  it("reopens at the 30-day boundary, but not older or future closed threads", () => {
+    const inbound = new Date("2026-08-17T10:00:00.000Z")
+    expect(isSmsConversationRecentlyClosed(new Date("2026-07-18T10:00:00.000Z"), inbound)).toBe(
+      true,
+    )
+    expect(isSmsConversationRecentlyClosed(new Date("2026-07-18T09:59:59.999Z"), inbound)).toBe(
+      false,
+    )
+    expect(isSmsConversationRecentlyClosed(new Date("2026-08-17T10:00:01.000Z"), inbound)).toBe(
+      false,
     )
   })
 })

@@ -12,6 +12,8 @@ export const typeIdSchemas = {
   notificationDelivery: typeIdSchema("notification_deliveries"),
   notificationChannelAccount: typeIdSchema("notification_channel_accounts"),
   notificationDeliveryEvent: typeIdSchema("notification_delivery_events"),
+  smsTransportPolicy: typeIdSchema("sms_transport_policies"),
+  smsTransportPolicyEvent: typeIdSchema("sms_transport_policy_events"),
   personNote: typeIdSchema("person_notes"),
   organizationNote: typeIdSchema("organization_notes"),
   segment: typeIdSchema("segments"),

@@ -40,6 +40,8 @@ export function ChannelAccountsList() {
             <div className="mt-2 flex flex-wrap gap-2 text-xs text-muted-foreground">
               {account.inboundCapable && <span>{copy.inbound}</span>}
               {account.outboundCapable && <span>{copy.outbound}</span>}
+              {account.inboundIdentity === "ambiguous" && <span>{copy.ambiguousInbound}</span>}
+              <span>{account.attachmentsCapable ? copy.attachments : copy.noAttachments}</span>
               {account.allowedPurposes.length > 0 && (
                 <span>
                   {copy.purposes}: {account.allowedPurposes.join(", ")}

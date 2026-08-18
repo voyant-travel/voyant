@@ -58,6 +58,8 @@ async function cleanupNotificationsTestData(
       notification_reminder_rules,
       notification_settings,
       notification_send_operations,
+      sms_transport_policy_events,
+      sms_transport_policies,
       notification_delivery_events,
       notification_deliveries,
       notification_channel_accounts,
@@ -446,12 +448,50 @@ export function createNotificationsTestContext(options?: {
         health channel_account_health NOT NULL DEFAULT 'unknown',
         inbound_capable boolean NOT NULL DEFAULT false,
         outbound_capable boolean NOT NULL DEFAULT false,
+        inbound_identity text,
+        inbound_source_id text,
+        attachments_capable boolean NOT NULL DEFAULT false,
         allowed_purposes jsonb NOT NULL DEFAULT '[]'::jsonb,
         adapter_ref text NOT NULL UNIQUE,
         last_validated_at timestamp with time zone,
         created_at timestamp with time zone DEFAULT now() NOT NULL,
         updated_at timestamp with time zone DEFAULT now() NOT NULL,
         UNIQUE (channel, normalized_address)
+      )
+    `)
+    await db.execute(
+      sql`ALTER TABLE notification_channel_accounts ADD COLUMN IF NOT EXISTS inbound_identity text`,
+    )
+    await db.execute(
+      sql`ALTER TABLE notification_channel_accounts ADD COLUMN IF NOT EXISTS inbound_source_id text`,
+    )
+    await db.execute(
+      sql`ALTER TABLE notification_channel_accounts ADD COLUMN IF NOT EXISTS attachments_capable boolean NOT NULL DEFAULT false`,
+    )
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS sms_transport_policies (
+        id text PRIMARY KEY NOT NULL,
+        channel_account_id text NOT NULL REFERENCES notification_channel_accounts(id) ON DELETE CASCADE,
+        destination_address text NOT NULL,
+        state text NOT NULL,
+        last_event_occurred_at timestamp with time zone NOT NULL,
+        created_at timestamp with time zone DEFAULT now() NOT NULL,
+        updated_at timestamp with time zone DEFAULT now() NOT NULL,
+        UNIQUE (channel_account_id, destination_address)
+      )
+    `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS sms_transport_policy_events (
+        id text PRIMARY KEY NOT NULL,
+        channel_account_id text NOT NULL REFERENCES notification_channel_accounts(id) ON DELETE CASCADE,
+        destination_address text NOT NULL,
+        source_id text NOT NULL,
+        external_message_id text NOT NULL,
+        kind text NOT NULL,
+        adapter_handled_response boolean NOT NULL DEFAULT false,
+        occurred_at timestamp with time zone NOT NULL,
+        created_at timestamp with time zone DEFAULT now() NOT NULL,
+        UNIQUE (source_id, external_message_id)
       )
     `)
     await db.execute(sql`

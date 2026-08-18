@@ -13,6 +13,8 @@ import {
 } from "./attachment-service.js"
 import { ConversationAttachmentPolicyError } from "./content-security.js"
 import type {
+  ConversationsChannelPolicy,
+  ConversationsDeliveryTruthReader,
   ConversationsPersonDirectory,
   ConversationsRenderedMessageAdmission,
   ConversationsStaffDirectory,
@@ -53,6 +55,8 @@ export interface ConversationsRoutesOptions {
   personDirectory?: ConversationsPersonDirectory
   staffDirectory: ConversationsStaffDirectory
   attachments?: ConversationsAttachmentRuntime
+  channelPolicy?: ConversationsChannelPolicy
+  deliveryTruth?: ConversationsDeliveryTruthReader
 }
 
 const timestamp = z.string().datetime()
@@ -67,12 +71,15 @@ const conversationSchema = z.object({
   status: z.enum(["open", "closed", "snoozed"]),
   subject: z.string().nullable(),
   suggestedSubject: z.string().nullable(),
-  replyAlias: z.string(),
+  replyAlias: z.string().nullable(),
+  channelAccountId: z.string().nullable(),
+  localAddress: z.string().nullable(),
   customerAddress: z.string(),
   personRef: z.string().nullable(),
   contactPointRef: z.string().nullable(),
   unreadCount: z.number().int().nonnegative(),
   snoozedUntil: timestamp.nullable(),
+  closedAt: timestamp.nullable(),
   lastPartAt: timestamp,
   createdAt: timestamp,
   updatedAt: timestamp,
@@ -114,17 +121,19 @@ const partSchema = z.object({
   messageId: z.string().nullable(),
   inReplyTo: z.string().nullable(),
   references: z.array(z.string()),
-  deliveryStatus: z.enum([
-    "received",
-    "pending",
-    "accepted",
-    "delivered",
-    "failed",
-    "bounced",
-    "complained",
-    "suppressed",
-    "cancelled",
-  ]),
+  admissionStatus: z.enum(["received", "pending", "admitted", "suppressed"]),
+  deliveryStatus: z
+    .enum([
+      "pending",
+      "accepted",
+      "delivered",
+      "failed",
+      "bounced",
+      "complained",
+      "suppressed",
+      "cancelled",
+    ])
+    .nullable(),
   occurredAt: timestamp,
   createdAt: timestamp,
 })
@@ -163,6 +172,20 @@ const timelineItemSchema = z.discriminatedUnion("kind", [
     }),
   }),
 ])
+const smsChannelStateSchema = z.object({
+  normalizedAddress: z.string(),
+  health: z.enum(["unknown", "healthy", "degraded", "unavailable"]),
+  available: z.boolean(),
+  attachmentsCapable: z.boolean(),
+  suppressed: z.boolean(),
+})
+const conversationDetailSchema = z.object({
+  conversation: conversationSchema,
+  parts: z.array(partSchema),
+  notes: z.array(noteSchema),
+  timeline: z.array(timelineItemSchema),
+  channelState: smsChannelStateSchema.nullable(),
+})
 const errorSchema = z.object({ error: z.string() })
 const data = <T extends z.ZodTypeAny>(schema: T) => z.object({ data: schema })
 const json = <T extends z.ZodTypeAny>(schema: T, description: string) => ({
@@ -202,17 +225,7 @@ const detailRoute = createRoute({
   path: "/v1/admin/conversations/{id}",
   request: { params: z.object({ id: z.string() }) },
   responses: {
-    200: json(
-      data(
-        z.object({
-          conversation: conversationSchema,
-          parts: z.array(partSchema),
-          notes: z.array(noteSchema),
-          timeline: z.array(timelineItemSchema),
-        }),
-      ),
-      "Conversation activity",
-    ),
+    200: json(data(conversationDetailSchema), "Conversation activity"),
     ...standardErrors,
   },
 })
@@ -229,32 +242,28 @@ const replyRoute = createRoute({
   request: { params: z.object({ id: z.string() }), body: body(replyInput) },
   responses: { 201: json(data(partSchema), "Atomically admitted reply"), ...standardErrors },
 })
-const startInput = z.object({
+const startBase = z.object({
   inboxId: z.string().min(1),
   personRef: z.string().min(1),
   contactPointRef: z.string().min(1),
   channelAccountId: z.string().min(1),
-  fromAddress: z.string().email(),
-  subject: z.string().nullable(),
   text: z.string().trim().min(1),
   idempotencyKey: z.string().min(1),
 })
+const startInput = z.discriminatedUnion("channel", [
+  startBase.extend({
+    channel: z.literal("email"),
+    fromAddress: z.string().email(),
+    subject: z.string().nullable(),
+  }),
+  startBase.extend({ channel: z.literal("sms"), subject: z.null().optional() }),
+])
 const startRoute = createRoute({
   method: "post",
   path: "/v1/admin/conversations",
   request: { body: body(startInput) },
   responses: {
-    201: json(
-      data(
-        z.object({
-          conversation: conversationSchema,
-          parts: z.array(partSchema),
-          notes: z.array(noteSchema),
-          timeline: z.array(timelineItemSchema),
-        }),
-      ),
-      "Started conversation",
-    ),
+    201: json(data(conversationDetailSchema), "Started conversation"),
     ...standardErrors,
   },
 })
@@ -433,7 +442,10 @@ function toConversationDto(row: Conversation & { unreadCount?: number }) {
   return { ...dto, unreadCount: row.unreadCount ?? 0 }
 }
 
-function toPartDto(row: ConversationPart) {
+function toPartDto(
+  row: ConversationPart,
+  deliveryStatus: import("./runtime-port.js").ConversationDeliveryTruth | null = null,
+) {
   const {
     externalSourceId: _source,
     payloadFingerprint: _fingerprint,
@@ -441,7 +453,7 @@ function toPartDto(row: ConversationPart) {
     notificationDeliveryId: _deliveryId,
     ...dto
   } = row
-  return { ...dto, attachments: [] }
+  return { ...dto, attachments: [], deliveryStatus }
 }
 
 function toAttachmentDto(row: import("./schema.js").ConversationAttachment) {
@@ -462,12 +474,36 @@ function toNoteDto(row: ConversationNote) {
   return row
 }
 
-function toDetailDto(detail: Awaited<ReturnType<typeof getConversation>>) {
+async function toDetailDto(
+  detail: Awaited<ReturnType<typeof getConversation>>,
+  options: ConversationsRoutesOptions,
+  db: PostgresJsDatabase,
+) {
   if (!detail) return null
+  const deliveryIds = detail.parts.flatMap((part) =>
+    part.notificationDeliveryId ? [part.notificationDeliveryId] : [],
+  )
+  const truth = options.deliveryTruth
+    ? await options.deliveryTruth.getDeliveryTruth(db, deliveryIds)
+    : {}
+  const partDto = (part: ConversationPart) =>
+    toPartDto(
+      part,
+      part.notificationDeliveryId ? (truth[part.notificationDeliveryId] ?? null) : null,
+    )
+  const channelState =
+    detail.conversation.channel === "sms" &&
+    detail.conversation.channelAccountId &&
+    options.channelPolicy
+      ? await options.channelPolicy.getOutboundSmsState(db, {
+          channelAccountId: detail.conversation.channelAccountId,
+          destinationAddress: detail.conversation.customerAddress,
+        })
+      : null
   return {
     conversation: toConversationDto(detail.conversation),
     parts: detail.parts.map((part) => ({
-      ...toPartDto(part),
+      ...partDto(part),
       attachments: detail.attachments
         .filter(({ partId }) => partId === part.id)
         .map(toAttachmentDto),
@@ -478,7 +514,7 @@ function toDetailDto(detail: Awaited<ReturnType<typeof getConversation>>) {
         ? {
             ...item,
             part: {
-              ...toPartDto(item.part),
+              ...partDto(item.part),
               attachments: detail.attachments
                 .filter(({ partId }) => partId === item.part.id)
                 .map(toAttachmentDto),
@@ -486,6 +522,7 @@ function toDetailDto(detail: Awaited<ReturnType<typeof getConversation>>) {
           }
         : item,
     ),
+    channelState,
   }
 }
 
@@ -544,13 +581,10 @@ export function createConversationsRoutes(options: ConversationsRoutesOptions) {
   register(detailRoute, async (c: RouteContext) => {
     const actor = await actorFor(c)
     if (!actor) return c.json({ error: "active_staff_required" }, 401)
-    const detail = await getConversation(
-      options.resolveDb(c.env),
-      c.req.valid("param").id,
-      actor.userId,
-    )
+    const db = options.resolveDb(c.env)
+    const detail = await getConversation(db, c.req.valid("param").id, actor.userId)
     return detail
-      ? c.json(response({ data: toDetailDto(detail) }), 200)
+      ? c.json(response({ data: await toDetailDto(detail, options, db) }), 200)
       : c.json({ error: "conversation_not_found" }, 404)
   })
   register(replyRoute, async (c: RouteContext) => {
@@ -566,7 +600,22 @@ export function createConversationsRoutes(options: ConversationsRoutesOptions) {
       }),
     )
     if (result.error) return c.json({ error: result.error.error }, result.error.status)
-    return c.json(response({ data: toPartDto(result.value!) }), 201)
+    const part = result.value!
+    const truth =
+      options.deliveryTruth && part.notificationDeliveryId
+        ? await options.deliveryTruth.getDeliveryTruth(options.resolveDb(c.env), [
+            part.notificationDeliveryId,
+          ])
+        : {}
+    return c.json(
+      response({
+        data: toPartDto(
+          part,
+          part.notificationDeliveryId ? (truth[part.notificationDeliveryId] ?? null) : null,
+        ),
+      }),
+      201,
+    )
   })
   register(startRoute, async (c: RouteContext) => {
     const actor = await actorFor(c)
@@ -574,14 +623,21 @@ export function createConversationsRoutes(options: ConversationsRoutesOptions) {
     if (!options.admission || !options.personDirectory)
       return c.json({ error: "conversation_runtime_unavailable" }, 409)
     const result = await handle(() =>
-      startConversation(options.resolveDb(c.env), options.admission!, options.personDirectory!, {
-        ...c.req.valid("json"),
-        actor,
-        runtimeBindings: c.env,
-      }),
+      startConversation(
+        options.resolveDb(c.env),
+        options.admission!,
+        options.personDirectory!,
+        { ...c.req.valid("json"), actor, runtimeBindings: c.env },
+        options.channelPolicy,
+      ),
     )
     if (result.error) return c.json({ error: result.error.error }, result.error.status)
-    return c.json(response({ data: toDetailDto(result.value!) }), 201)
+    return c.json(
+      response({
+        data: await toDetailDto(result.value!, options, options.resolveDb(c.env)),
+      }),
+      201,
+    )
   })
   register(stateRoute, async (c: RouteContext) => {
     const actor = await actorFor(c)
@@ -691,11 +747,10 @@ export function createConversationsRoutes(options: ConversationsRoutesOptions) {
     )
     if (access.error) return c.json({ error: access.error.error }, access.error.status)
     try {
-      const ticket = await createAttachmentUploadTicket(
-        db,
-        options.attachments,
-        { conversationId: c.req.valid("param").id, ...c.req.valid("json") },
-      )
+      const ticket = await createAttachmentUploadTicket(db, options.attachments, {
+        conversationId: c.req.valid("param").id,
+        ...c.req.valid("json"),
+      })
       return c.json(response({ data: ticket }), 201)
     } catch (error) {
       if (error instanceof ConversationAttachmentPolicyError)
@@ -714,11 +769,10 @@ export function createConversationsRoutes(options: ConversationsRoutesOptions) {
     )
     if (access.error) return c.json({ error: access.error.error }, access.error.status)
     try {
-      const attachment = await finalizeAttachmentUpload(
-        db,
-        options.attachments,
-        { conversationId: c.req.valid("param").id, ...c.req.valid("json") },
-      )
+      const attachment = await finalizeAttachmentUpload(db, options.attachments, {
+        conversationId: c.req.valid("param").id,
+        ...c.req.valid("json"),
+      })
       return c.json(response({ data: toAttachmentDto(attachment) }), 201)
     } catch (error) {
       if (error instanceof ConversationAttachmentPolicyError)
@@ -737,14 +791,10 @@ export function createConversationsRoutes(options: ConversationsRoutesOptions) {
     )
     if (access.error) return c.json({ error: access.error.error }, access.error.status)
     try {
-      const result = await downloadConversationAttachment(
-        db,
-        options.attachments,
-        {
-          conversationId: c.req.valid("param").id,
-          attachmentId: c.req.valid("param").attachmentId,
-        },
-      )
+      const result = await downloadConversationAttachment(db, options.attachments, {
+        conversationId: c.req.valid("param").id,
+        attachmentId: c.req.valid("param").attachmentId,
+      })
       if (result.download.kind === "redirect") {
         c.header("cache-control", "private, no-store")
         return c.redirect(result.download.url, 302)

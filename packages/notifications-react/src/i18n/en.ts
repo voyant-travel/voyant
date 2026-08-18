@@ -110,6 +110,9 @@ export const notificationsUiEn: NotificationsUiMessages = {
       empty: "No Channel Accounts are configured.",
       inbound: "Inbound",
       outbound: "Outbound",
+      ambiguousInbound: "Inbound identity needs attention",
+      attachments: "Attachments supported",
+      noAttachments: "No attachments",
       purposes: "Purposes",
     },
     sections: {

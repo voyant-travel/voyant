@@ -1,3 +1,4 @@
+import { normalizeE164 } from "@voyant-travel/conversations-contracts"
 import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { desc, eq } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -9,6 +10,7 @@ import {
 } from "./schema.js"
 import { enqueueNotification } from "./service-durable-send.js"
 import { createNotificationService, NotificationError } from "./service-shared.js"
+import { assertSmsAdmissionAllowed } from "./service-sms-policy.js"
 import type {
   ChannelAccountDraft,
   NormalizedNotificationDeliveryEvent,
@@ -48,17 +50,33 @@ export async function provisionChannelAccount(
     allowedPurposes: normalizePurposes(draft.allowedPurposes),
   })
   const validation = await capability.validate(provisioned.adapterRef)
+  const normalizedAddress =
+    draft.channel === "sms"
+      ? normalizeE164(provisioned.normalizedAddress)
+      : provisioned.normalizedAddress
+  if (
+    draft.channel === "sms" &&
+    draft.inboundCapable &&
+    (!validation.inboundCapable ||
+      validation.inboundIdentity !== "unambiguous" ||
+      !validation.inboundSourceId)
+  ) {
+    throw new NotificationError("Inbound SMS requires one unambiguous receiving identity")
+  }
   const [account] = await db
     .insert(notificationChannelAccounts)
     .values({
       channel: draft.channel,
-      normalizedAddress: provisioned.normalizedAddress,
+      normalizedAddress,
       displayName: draft.displayName,
       displayAddress: provisioned.displayAddress,
       lifecycle: "active",
       health: validation.health,
       inboundCapable: validation.inboundCapable,
       outboundCapable: validation.outboundCapable,
+      inboundIdentity: validation.inboundIdentity ?? null,
+      inboundSourceId: validation.inboundSourceId ?? null,
+      attachmentsCapable: validation.attachmentsCapable ?? false,
       allowedPurposes: normalizePurposes(draft.allowedPurposes),
       adapterRef: provisioned.adapterRef,
       lastValidatedAt: new Date(),
@@ -86,6 +104,15 @@ export async function validateChannelAccount(
       .set({ health: "unavailable", lastValidatedAt: new Date(), updatedAt: new Date() })
       .where(eq(notificationChannelAccounts.id, id))
     throw error
+  }
+  if (
+    account.channel === "sms" &&
+    account.inboundCapable &&
+    (!validation.inboundCapable ||
+      validation.inboundIdentity !== "unambiguous" ||
+      !validation.inboundSourceId)
+  ) {
+    throw new NotificationError("Inbound SMS identity became ambiguous")
   }
   const [updated] = await db
     .update(notificationChannelAccounts)
@@ -142,9 +169,15 @@ export async function admitRenderedServiceMessage(
   if (!account.allowedPurposes.includes(message.purpose)) {
     throw new NotificationError(`Channel Account does not allow purpose "${message.purpose}"`)
   }
+  if (message.channel && message.channel !== account.channel) {
+    throw new NotificationError("Rendered message channel does not match its Channel Account")
+  }
   const adapter = resolveAccountAdapter(adapters, account.adapterRef)
   if (!adapter.channels.includes(account.channel)) {
     throw new NotificationError("Channel Account adapter does not support its channel")
+  }
+  if (account.channel === "sms") {
+    await assertSmsAdmissionAllowed(db, account.id, message.to)
   }
 
   return enqueueNotification({

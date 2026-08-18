@@ -1,9 +1,10 @@
-import { inboundEmailEnvelopeV1Schema } from "@voyant-travel/conversations-contracts"
+import { inboundConversationEnvelopeV1Schema } from "@voyant-travel/conversations-contracts"
 import type { VoyantGraphRuntimeFactoryContext } from "@voyant-travel/core/project"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   conversationIngressSourcePort,
   conversationsAttachmentRuntimePort,
+  conversationsChannelPolicyPort,
   conversationsDatabaseRuntimePort,
   conversationsPersonDirectoryPort,
 } from "./runtime-port.js"
@@ -21,6 +22,7 @@ export async function processConversationIngress(input: {
   sources: readonly import("@voyant-travel/conversations-contracts").ConversationIngressSource[]
   personDirectory?: import("./runtime-port.js").ConversationsPersonDirectory
   attachmentRuntime?: import("./attachment-runtime.js").ConversationsAttachmentRuntime
+  channelPolicy?: import("./runtime-port.js").ConversationsChannelPolicy
   limit?: number
   /** Test seam for the commit boundary; production always uses `ingestEnvelope`. */
   ingest?: typeof ingestEnvelope
@@ -29,11 +31,15 @@ export async function processConversationIngress(input: {
   for (const source of input.sources) {
     const page = await source.list({ limit: Math.min(input.limit ?? 50, 100) })
     for (const ref of page.items) {
-      const envelope = inboundEmailEnvelopeV1Schema.parse(await source.fetch(ref))
+      const envelope = inboundConversationEnvelopeV1Schema.parse(await source.fetch(ref))
+      if (envelope.sourceId !== source.id) {
+        throw new Error("Ingress envelope source does not match the source that fetched it")
+      }
       summary.fetched += 1
       const result = await (input.ingest ?? ingestEnvelope)(input.db, envelope, {
         personDirectory: input.personDirectory,
         attachmentRuntime: input.attachmentRuntime,
+        channelPolicy: input.channelPolicy,
       })
       if (result.duplicate) summary.duplicates += 1
       else summary.committed += 1
@@ -56,10 +62,14 @@ export async function runConversationIngressJob(
   const attachmentRuntime = context.hasPort(conversationsAttachmentRuntimePort)
     ? await context.getPort(conversationsAttachmentRuntimePort)
     : undefined
+  const channelPolicy = context.hasPort(conversationsChannelPolicyPort)
+    ? await context.getPort(conversationsChannelPolicyPort)
+    : undefined
   await processConversationIngress({
     db: database.resolveDb() as PostgresJsDatabase,
     sources,
     personDirectory,
     attachmentRuntime,
+    channelPolicy,
   })
 }

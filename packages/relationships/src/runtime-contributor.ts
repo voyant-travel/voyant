@@ -2,6 +2,9 @@ import {
   type BookingsRelationshipsRuntime,
   bookingsRelationshipsRuntimePort,
 } from "@voyant-travel/bookings/runtime-port"
+import type { ConversationsPersonDirectory } from "@voyant-travel/conversations/runtime-port"
+import { conversationsPersonDirectoryPort } from "@voyant-travel/conversations/runtime-port"
+import { normalizeE164, normalizeEmailAddress } from "@voyant-travel/conversations-contracts"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import {
   type CustomFieldsRuntime,
@@ -22,7 +25,8 @@ import {
   type FinanceStoredInstrumentRuntime,
   financeStoredInstrumentRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
-import { sql } from "drizzle-orm"
+import { identityContactPoints } from "@voyant-travel/identity/schema"
+import { and, eq, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { createPublicApiIntakePersistence } from "./public-api-intake-runtime.js"
 import type { RelationshipsRouteRuntimeOptions } from "./route-runtime.js"
@@ -86,6 +90,62 @@ const relationshipCustomFieldValues: CustomFieldValueLifecycleRuntime = {
           WHERE custom_fields -> ${definition.namespace} ? ${definition.key}`,
     )
   },
+}
+
+const conversationsPersonDirectory: ConversationsPersonDirectory = {
+  async resolveEmail(db, address) {
+    return resolveConversationContact(db, "email", normalizeEmailAddress(address))
+  },
+  async resolvePhone(db, address) {
+    return resolveConversationContact(db, "phone", normalizeE164(address))
+  },
+  async resolvePersonContactPoint(db, input) {
+    const kind = input.channel === "sms" ? "phone" : "email"
+    const rows = await (db as PostgresJsDatabase)
+      .select()
+      .from(identityContactPoints)
+      .where(
+        and(
+          eq(identityContactPoints.id, input.contactPointRef),
+          eq(identityContactPoints.entityType, "person"),
+          eq(identityContactPoints.entityId, input.personRef),
+          eq(identityContactPoints.kind, kind),
+        ),
+      )
+      .limit(1)
+    const point = rows[0]
+    if (!point) return null
+    return {
+      address: kind === "phone" ? normalizeE164(point.value) : normalizeEmailAddress(point.value),
+    }
+  },
+}
+
+async function resolveConversationContact(
+  db: unknown,
+  kind: "email" | "phone",
+  normalizedAddress: string,
+) {
+  const rows = await (db as PostgresJsDatabase)
+    .select()
+    .from(identityContactPoints)
+    .where(
+      and(
+        eq(identityContactPoints.entityType, "person"),
+        eq(identityContactPoints.kind, kind),
+        eq(identityContactPoints.normalizedValue, normalizedAddress),
+      ),
+    )
+    .limit(2)
+  if (rows.length === 0) return { kind: "none" as const }
+  if (rows.length > 1) return { kind: "ambiguous" as const }
+  const point = rows[0]!
+  return {
+    kind: "unique" as const,
+    personRef: point.entityId,
+    contactPointRef: point.id,
+    address: normalizedAddress,
+  }
 }
 
 const relationshipCustomFieldValueOperations: CustomFieldValueOperationsRuntime = {
@@ -217,6 +277,7 @@ export function createRelationshipsRuntimePortContribution(
     },
   }
   return {
+    [conversationsPersonDirectoryPort.id]: conversationsPersonDirectory,
     [publicApiIntakeRuntimePortReference.id]: createPublicApiIntakePersistence(),
     [customFieldValueReaderRuntimePort.id]: customFields,
     [customFieldValueLifecycleRuntimePort.id]: relationshipCustomFieldValues,

@@ -32,6 +32,7 @@ describe("relationships deployment manifest", () => {
           { id: customFieldValueLifecycleRuntimePort.id },
           { id: customFieldValueOperationsRuntimePort.id },
           { id: "relationships.booking-enrichment-database" },
+          { id: "conversations.person-directory" },
         ],
       },
       runtimePorts: [

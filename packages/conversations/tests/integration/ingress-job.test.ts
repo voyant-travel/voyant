@@ -66,4 +66,19 @@ describe("durable ingress list/fetch/ack", () => {
     expect(ingest).not.toHaveBeenCalled()
     expect(source.ack).not.toHaveBeenCalled()
   })
+
+  it("rejects an envelope claimed by a different ingress source", async () => {
+    const source = {
+      id: "different-source",
+      list: vi.fn(async () => ({ items: [{ id: "env-1" }] })),
+      fetch: vi.fn(async () => envelope),
+      ack: vi.fn(async () => undefined),
+    }
+    const ingest = vi.fn()
+    await expect(
+      processConversationIngress({ db: {} as never, sources: [source], ingest }),
+    ).rejects.toThrow("does not match")
+    expect(ingest).not.toHaveBeenCalled()
+    expect(source.ack).not.toHaveBeenCalled()
+  })
 })
