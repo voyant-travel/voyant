@@ -12,9 +12,8 @@
  * that captures a person with nothing challenging the submitter stays behind a
  * secret key until the deployment configures an intake guard.
  *
- * This sits beside the hand-written `createVoyantPublicApiClient`, which covers
- * a couple of dozen operations with runtime validation. That one is still the
- * ergonomic path for those; this one reaches everything the surface serves.
+ * Request and response types come from the generated OpenAPI document. There
+ * is intentionally no second hand-written operation layer in this package.
  */
 import { classifyPublicApiKeyToken, PUBLIC_API_KEY_HEADER } from "@voyant-travel/graph-contracts"
 import createClient, { type ClientOptions } from "openapi-fetch"
