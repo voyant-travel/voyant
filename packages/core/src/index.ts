@@ -172,12 +172,16 @@ export type {
   VoyantGraphUnitManifest,
 } from "./project.js"
 export { VOYANT_EVENT_CATALOG_SCHEMA_VERSION } from "./project.js"
+// Re-exported, not defined here: the prefix table moved to
+// `@voyant-travel/public-api-contracts` so the generated API clients can reach
+// it without dragging the kernel onto the public npm surface (voyant#4626).
+// Every in-repo caller keeps importing it from `core`.
 export {
   classifyPublicApiKeyToken,
   hashPublicApiKeyToken,
   PUBLIC_API_KEY_HEADER,
   PUBLIC_API_KEY_PREFIXES,
-} from "./public-api-key-kind.js"
+} from "@voyant-travel/public-api-contracts"
 export type {
   EntityFetcher,
   EntityFetcherArgs,

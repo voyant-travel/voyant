@@ -16,7 +16,7 @@
  * a couple of dozen operations with runtime validation. That one is still the
  * ergonomic path for those; this one reaches everything the surface serves.
  */
-import { classifyPublicApiKeyToken, PUBLIC_API_KEY_HEADER } from "@voyant-travel/core"
+import { classifyPublicApiKeyToken, PUBLIC_API_KEY_HEADER } from "@voyant-travel/public-api-contracts"
 import createClient, { type ClientOptions } from "openapi-fetch"
 
 import type { PublishablePaths, SecretPaths } from "./generated/index.js"
@@ -74,7 +74,7 @@ export function createPublicApiClient(
     )
   }
 
-  // Classified by `@voyant-travel/core`'s single prefix table rather than a
+  // Classified by the one prefix table in the repo rather than a
   // local rule, for the reason recorded next to it: two copies of that table
   // drifting is an auth bypass, and this would be the copy that drifts.
   const kind = classifyPublicApiKeyToken(token)

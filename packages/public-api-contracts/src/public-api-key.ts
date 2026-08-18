@@ -10,9 +10,17 @@
  * bypass in exactly the way a drifted `matchesPublicPath` would be, so both
  * layers import these.
  *
- * Dependency-free by construction: `core` is below both `hono` and `auth`.
+ * Dependency-free by construction, and it lives HERE rather than in `core`
+ * because a client needs it. `core` is the framework kernel — container, saga,
+ * registry, project — and publishing that so a browser client can check a token
+ * prefix would commit us to a public API nobody intended. These contracts are
+ * already published for exactly this audience, and how a public API key is
+ * shaped is a public API contract (voyant#4626). `core` re-exports it, so every
+ * in-repo caller is unchanged.
  */
-import type { VoyantPublicApiKeyKind } from "./env.js"
+
+/** Which credential a request presented, decided by prefix before any lookup. */
+export type VoyantPublicApiKeyKind = "publishable" | "secret"
 
 /** Token prefix per key kind. Deployed clients hold these; they never change. */
 export const PUBLIC_API_KEY_PREFIXES = {
