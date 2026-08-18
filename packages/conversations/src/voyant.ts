@@ -46,7 +46,12 @@ export const conversationsVoyantModule = defineModule({
     requirePort(conversationsChannelPolicyPort, { optional: true }),
     requirePort(conversationsDeliveryTruthPort, { optional: true }),
   ],
-  provides: { ports: [providePort(relationshipsPersonConversationsRuntimePort)] },
+  provides: {
+    ports: [
+      providePort(conversationsDatabaseRuntimePort),
+      providePort(relationshipsPersonConversationsRuntimePort),
+    ],
+  },
   api: [
     {
       id: "@voyant-travel/conversations#api.admin",
