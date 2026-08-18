@@ -126,10 +126,12 @@ describe("Inquiry operator surfaces", () => {
         onTransition={noOp}
         onClose={noOp}
         onReopen={noOp}
+        onRecordFirstResponse={noOp}
         onConvertToProposal={refusedConversion}
       />,
     )
     expect(html).toContain("Customer request")
+    expect(html).toContain("Record first response")
     expect(html).toContain("We would like a quiet island.")
     expect(html).toContain('for="inquiry-proposal-pipeline"')
     expect(html).toContain('for="inquiry-proposal-stage"')
@@ -154,6 +156,7 @@ describe("Inquiry operator surfaces", () => {
           onTransition={noOp}
           onClose={noOp}
           onReopen={noOp}
+          onRecordFirstResponse={noOp}
           onConvertToProposal={refusedConversion}
         />
       </CrmUiMessagesProvider>,
