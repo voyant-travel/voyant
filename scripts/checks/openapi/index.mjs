@@ -31,7 +31,7 @@ import { fileURLToPath } from "node:url"
 import { promisify } from "node:util"
 
 import { driftedFiles } from "./assertions.mjs"
-import { CONCURRENCY, commandGroups, inParallel } from "./generator-groups.mjs"
+import { CONCURRENCY, commandGroups, inParallel, readerCommands } from "./generator-groups.mjs"
 
 const run = promisify(execFile)
 const here = dirname(fileURLToPath(import.meta.url))
@@ -152,6 +152,12 @@ try {
     // Sequential within a group: these commands can write the same file.
     for (const command of group) await checkGenerator(byCommand.get(command))
   })
+  // Readers run only once every writer has finished and restored, so a
+  // generator that consumes other generators' artifacts never observes one
+  // mid-rewrite.
+  for (const command of readerCommands(generators)) {
+    await checkGenerator(byCommand.get(command))
+  }
 } finally {
   restoreInFlight()
 }
