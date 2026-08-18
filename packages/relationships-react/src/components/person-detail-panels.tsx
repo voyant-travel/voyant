@@ -610,8 +610,8 @@ export function PersonCommunicationsPanel({
           }}
         >
           <Select value={composeOption} onValueChange={(value) => setComposeOption(value ?? "")}>
-            <SelectTrigger aria-label="Conversation sender and recipient">
-              <SelectValue placeholder="Send from…" />
+            <SelectTrigger aria-label={labels.composer.senderRecipientLabel}>
+              <SelectValue placeholder={labels.composer.senderRecipientPlaceholder} />
             </SelectTrigger>
             <SelectContent>
               {composer.data?.map((option) => (
@@ -625,8 +625,8 @@ export function PersonCommunicationsPanel({
             </SelectContent>
           </Select>
           <Input
-            aria-label="Conversation subject"
-            placeholder="Subject"
+            aria-label={labels.composer.subjectLabel}
+            placeholder={labels.composer.subjectPlaceholder}
             value={composeSubject}
             onChange={(event) => setComposeSubject(event.target.value)}
           />
@@ -634,12 +634,12 @@ export function PersonCommunicationsPanel({
             type="submit"
             disabled={!composeOption || !composeText.trim() || composer.start.isPending}
           >
-            Send
+            {labels.composer.send}
           </Button>
           <Textarea
             className="sm:col-span-3"
-            aria-label="Conversation message"
-            placeholder="Write a message…"
+            aria-label={labels.composer.messageLabel}
+            placeholder={labels.composer.messagePlaceholder}
             value={composeText}
             onChange={(event) => setComposeText(event.target.value)}
             rows={2}
@@ -763,7 +763,7 @@ export function PersonCommunicationsPanel({
                     className="text-xs text-primary underline-offset-4 hover:underline"
                     href={`/inbox?conversation=${encodeURIComponent(communication.conversationId)}`}
                   >
-                    Inbox
+                    {labels.inboxLink}
                   </a>
                 ) : null}
               </div>

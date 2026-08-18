@@ -177,6 +177,16 @@ export const crmUiEnDetailMessages = {
       title: "Communications",
       add: "Add communication",
       noSubject: "No subject",
+      inboxLink: "Inbox",
+      composer: {
+        senderRecipientLabel: "Conversation sender and recipient",
+        senderRecipientPlaceholder: "Send from…",
+        subjectLabel: "Conversation subject",
+        subjectPlaceholder: "Subject",
+        send: "Send",
+        messageLabel: "Conversation message",
+        messagePlaceholder: "Write a message…",
+      },
       fields: {
         channel: "Channel",
         direction: "Direction",
