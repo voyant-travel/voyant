@@ -29,8 +29,29 @@ const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "../..")
  */
 export function resolveDocuments(client) {
   if (client.document) return [client.document]
+  return surfaceDocuments(client.surface)
+}
+
+/**
+ * The surface a client belongs to, however it names its inputs.
+ *
+ * A client may select by surface or name one document outright; either way it
+ * is a client FOR a surface, and `packages/<pkg>/openapi/<surface>/<name>.json`
+ * says which. Kept separate from `resolveDocuments` because coverage has to ask
+ * what the surface serves without asking the client — otherwise the answer is
+ * whatever the client already covers.
+ */
+export function surfaceOf(client) {
+  if (client.surface) return client.surface
+  const match = /^packages\/[^/]+\/openapi\/([^/]+)\//.exec(client.document ?? "")
+  if (!match) throw new Error(`api-clients.json: cannot derive a surface for ${client.outDir}`)
+  return match[1]
+}
+
+/** Every tracked document on a surface. */
+export function surfaceDocuments(surface) {
   const tracked = trackedFilesIn(root) ?? []
-  const pattern = new RegExp(`^packages/[^/]+/openapi/${client.surface}/[^/]+\\.json$`)
+  const pattern = new RegExp(`^packages/[^/]+/openapi/${surface}/[^/]+\\.json$`)
   return tracked.filter((file) => pattern.test(file)).sort()
 }
 
