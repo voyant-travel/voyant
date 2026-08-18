@@ -23,7 +23,7 @@
  * neither a failing run nor a killed one leaves the tree different from how it
  * found it.
  */
-import { execFile } from "node:child_process"
+import { execFile, execFileSync } from "node:child_process"
 import { createHash } from "node:crypto"
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
@@ -81,13 +81,35 @@ const byCommand = new Map(generators.map((generator) => [generator.command, gene
  */
 function inputDigests(generator) {
   if (!generator.reads?.length) return []
+
+  const sha = (bytes) => createHash("sha256").update(bytes).digest("hex").slice(0, 12)
+  const committed = (file) => {
+    try {
+      return execFileSync("git", ["show", `HEAD:${file}`], { maxBuffer: 1 << 28 })
+    } catch {
+      return null
+    }
+  }
+
+  // The question is only ever which of two things happened, so answer it
+  // directly: an input that differs from HEAD means the tree was mutated during
+  // the run, and one that matches means the tool produced different output from
+  // identical bytes. Listing every digest and leaving the reader to compare
+  // across machines is the slow way to the same fact.
+  const mutated = generator.reads.filter((file) => {
+    const onDisk = read(file)
+    const inGit = committed(file)
+    return onDisk !== null && inGit !== null && !onDisk.equals(inGit)
+  })
+
+  if (mutated.length === 0) {
+    return [
+      `      every input matches HEAD — the generator produced different output from identical bytes`,
+    ]
+  }
   return [
-    `      inputs it read (sha256, first 12):`,
-    ...generator.reads.map((file) => {
-      const bytes = read(file)
-      const digest = bytes === null ? "MISSING" : createHash("sha256").update(bytes).digest("hex")
-      return `        ${digest.slice(0, 12)}  ${file}`
-    }),
+    `      inputs that DIFFER from HEAD (mutated during this run):`,
+    ...mutated.map((file) => `        ${sha(read(file))}  ${file}`),
   ]
 }
 
