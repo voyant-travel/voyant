@@ -24,6 +24,8 @@ import {
 import { type FlightsRuntime, flightsRuntimePort } from "@voyant-travel/flights"
 import { type PaymentAdapter, paymentAdapterRuntimePort } from "@voyant-travel/payments"
 import {
+  type PublicApiRequestedScope,
+  type PublicApiShoppingContext,
   type PublicApiShoppingRuntime,
   publicApiOpaqueReferenceIssuerPort,
   publicApiShoppingRuntimePort,
@@ -120,10 +122,9 @@ export function createTripsRuntimePortContribution(
         host.getRuntimePort<CatalogCheckoutApiRuntime>(catalogCheckoutApiRuntimePort),
         flights,
         Promise.resolve(cardPayment),
-        host.getRuntimePort<PublicApiShoppingRuntime>(publicApiShoppingRuntimePort),
       ]),
     )
-    .then(([catalog, checkout, flights, resolvedCardPayment, shopping]) => ({
+    .then(([catalog, checkout, flights, resolvedCardPayment]) => ({
       ...createTripsRoutesRuntime(host.primitives, {
         catalog,
         checkout,
@@ -131,9 +132,25 @@ export function createTripsRuntimePortContribution(
         flights,
       }),
       tripSelections: {
-        // Only `resolveScope` is needed, so only that is passed — see the
-        // gateway for why it takes a function rather than the whole runtime.
-        resolveScope: shopping ? shopping.resolveScope.bind(shopping) : undefined,
+        // Read at CALL time, not here. `public-api` requires the opaque-reference
+        // issuer this module provides, and this module needs `public-api`'s
+        // shopping runtime — so neither contributor can run first, and reading
+        // the port while contributors are still being assembled throws
+        // "read before its static contributor provided it".
+        //
+        // Deferring to the first request breaks the cycle without a seam: by
+        // then every contributor has run. Only `resolveScope` is needed, so
+        // that is all this closes over — see the gateway for why it takes a
+        // function rather than the whole runtime.
+        resolveScope: async (
+          context: PublicApiShoppingContext,
+          requested: PublicApiRequestedScope,
+        ) => {
+          const shopping = await host.getRuntimePort<PublicApiShoppingRuntime>(
+            publicApiShoppingRuntimePort,
+          )
+          return shopping.resolveScope(context, requested)
+        },
         selections: tripSelectionsRuntime,
       },
     }))

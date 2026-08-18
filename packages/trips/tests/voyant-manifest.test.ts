@@ -146,6 +146,29 @@ describe("trips deployment manifest", () => {
     expect(withAdapter).toHaveProperty(commerceCardPaymentRuntimePort.id)
   })
 
+  /**
+   * `public-api` requires the opaque-reference issuer this module provides, and
+   * this module needs `public-api`'s shopping runtime — so neither contributor
+   * can be ordered first. Reading that port while contributions are being
+   * assembled throws "read before its static contributor provided it", which
+   * crashed the production image on boot after migrations had already run
+   * (voyant#4627).
+   *
+   * The stub refuses `public-api.shopping.runtime` exactly as the real host does
+   * before contributors have run. An earlier version of this test ANSWERED it,
+   * which made the suite pass over the crash.
+   */
+  it("does not read the shopping runtime while contributions are assembled", async () => {
+    const contribution = createTripsRuntimePortContribution({
+      primitives: { database: { transaction: vi.fn() } } as never,
+      hasRuntimePort: () => false,
+      getRuntimePort: stubRequiredRuntimePortResolver(),
+    })
+
+    // The routes payload is a promise; resolving it must not reach for the port.
+    await expect(contribution[tripsRoutesRuntimePort.id] as Promise<unknown>).resolves.toBeDefined()
+  })
+
   it("publishes the durable shopping issuer and offer resolver", () => {
     const contribution = createTripsRuntimePortContribution({
       primitives: { database: { transaction: vi.fn() } } as never,
@@ -170,8 +193,6 @@ describe("trips deployment manifest", () => {
         return { createValidatedTripSnapshotSession: vi.fn() }
       }
       if (port.id === "commerce.checkout-api-options") return () => ({})
-      if (port.id === "public-api.shopping.runtime")
-        return { resolveScope: vi.fn(), search: vi.fn() }
       throw new Error(`unexpected runtime port ${port.id}`)
     })
     const contribution = createTripsRuntimePortContribution({
@@ -467,7 +488,6 @@ function stubRequiredRuntimePortResolver(paymentAdapter?: PaymentAdapter) {
       return { createValidatedTripSnapshotSession: vi.fn() }
     }
     if (port.id === "commerce.checkout-api-options") return () => ({})
-    if (port.id === "public-api.shopping.runtime") return { resolveScope: vi.fn(), search: vi.fn() }
     if (port.id === paymentAdapterRuntimePort.id && paymentAdapter) return paymentAdapter
     throw new Error(`unexpected runtime port ${port.id}`)
   }) as never
