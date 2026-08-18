@@ -83,6 +83,8 @@ export const notificationChannelAccountRecordSchema = z.object({
   health: z.enum(["unknown", "healthy", "degraded", "unavailable"]),
   inboundCapable: z.boolean(),
   outboundCapable: z.boolean(),
+  inboundIdentity: z.enum(["unambiguous", "ambiguous"]).nullable(),
+  attachmentsCapable: z.boolean(),
   allowedPurposes: z.array(z.string()),
   lastValidatedAt: z.string().nullable(),
   createdAt: z.string(),

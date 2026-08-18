@@ -3,6 +3,7 @@ import {
   bookingsCrmSnapshotRuntimePort,
   bookingsRelationshipsRuntimePort,
 } from "@voyant-travel/bookings/runtime-port"
+import { conversationsPersonDirectoryPort } from "@voyant-travel/conversations/runtime-port"
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 import {
   customFieldsRuntimePort,
@@ -95,6 +96,7 @@ export const relationshipsVoyantModule = defineModule({
       providePort(customFieldValueLifecycleRuntimePort),
       providePort(customFieldValueOperationsRuntimePort),
       providePort(relationshipsBookingEnrichmentDatabaseRuntimePort),
+      providePort(conversationsPersonDirectoryPort),
     ],
   },
   runtimePorts: [

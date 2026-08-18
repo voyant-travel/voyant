@@ -94,7 +94,13 @@
                             "type": ["string", "null"]
                           },
                           "replyAlias": {
-                            "type": "string"
+                            "type": ["string", "null"]
+                          },
+                          "channelAccountId": {
+                            "type": ["string", "null"]
+                          },
+                          "localAddress": {
+                            "type": ["string", "null"]
                           },
                           "customerAddress": {
                             "type": "string"
@@ -110,6 +116,10 @@
                             "minimum": 0
                           },
                           "snoozedUntil": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "closedAt": {
                             "type": ["string", "null"],
                             "format": "date-time"
                           },
@@ -137,11 +147,14 @@
                           "subject",
                           "suggestedSubject",
                           "replyAlias",
+                          "channelAccountId",
+                          "localAddress",
                           "customerAddress",
                           "personRef",
                           "contactPointRef",
                           "unreadCount",
                           "snoozedUntil",
+                          "closedAt",
                           "lastPartAt",
                           "createdAt",
                           "updatedAt"
@@ -242,49 +255,103 @@
           "content": {
             "application/json": {
               "schema": {
-                "type": "object",
-                "properties": {
-                  "inboxId": {
-                    "type": "string",
-                    "minLength": 1
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "inboxId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "personRef": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "contactPointRef": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "channelAccountId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "text": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "idempotencyKey": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "channel": {
+                        "type": "string",
+                        "enum": ["email"]
+                      },
+                      "fromAddress": {
+                        "type": "string",
+                        "format": "email"
+                      },
+                      "subject": {
+                        "type": ["string", "null"]
+                      }
+                    },
+                    "required": [
+                      "inboxId",
+                      "personRef",
+                      "contactPointRef",
+                      "channelAccountId",
+                      "text",
+                      "idempotencyKey",
+                      "channel",
+                      "fromAddress",
+                      "subject"
+                    ]
                   },
-                  "personRef": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "contactPointRef": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "channelAccountId": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "fromAddress": {
-                    "type": "string",
-                    "format": "email"
-                  },
-                  "subject": {
-                    "type": ["string", "null"]
-                  },
-                  "text": {
-                    "type": "string",
-                    "minLength": 1
-                  },
-                  "idempotencyKey": {
-                    "type": "string",
-                    "minLength": 1
+                  {
+                    "type": "object",
+                    "properties": {
+                      "inboxId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "personRef": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "contactPointRef": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "channelAccountId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "text": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "idempotencyKey": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "channel": {
+                        "type": "string",
+                        "enum": ["sms"]
+                      },
+                      "subject": {
+                        "type": "null"
+                      }
+                    },
+                    "required": [
+                      "inboxId",
+                      "personRef",
+                      "contactPointRef",
+                      "channelAccountId",
+                      "text",
+                      "idempotencyKey",
+                      "channel"
+                    ]
                   }
-                },
-                "required": [
-                  "inboxId",
-                  "personRef",
-                  "contactPointRef",
-                  "channelAccountId",
-                  "fromAddress",
-                  "subject",
-                  "text",
-                  "idempotencyKey"
                 ]
               }
             }
@@ -335,7 +402,13 @@
                               "type": ["string", "null"]
                             },
                             "replyAlias": {
-                              "type": "string"
+                              "type": ["string", "null"]
+                            },
+                            "channelAccountId": {
+                              "type": ["string", "null"]
+                            },
+                            "localAddress": {
+                              "type": ["string", "null"]
                             },
                             "customerAddress": {
                               "type": "string"
@@ -351,6 +424,10 @@
                               "minimum": 0
                             },
                             "snoozedUntil": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "closedAt": {
                               "type": ["string", "null"],
                               "format": "date-time"
                             },
@@ -378,11 +455,14 @@
                             "subject",
                             "suggestedSubject",
                             "replyAlias",
+                            "channelAccountId",
+                            "localAddress",
                             "customerAddress",
                             "personRef",
                             "contactPointRef",
                             "unreadCount",
                             "snoozedUntil",
+                            "closedAt",
                             "lastPartAt",
                             "createdAt",
                             "updatedAt"
@@ -517,10 +597,13 @@
                                   "type": "string"
                                 }
                               },
-                              "deliveryStatus": {
+                              "admissionStatus": {
                                 "type": "string",
+                                "enum": ["received", "pending", "admitted", "suppressed"]
+                              },
+                              "deliveryStatus": {
+                                "type": ["string", "null"],
                                 "enum": [
-                                  "received",
                                   "pending",
                                   "accepted",
                                   "delivered",
@@ -528,7 +611,8 @@
                                   "bounced",
                                   "complained",
                                   "suppressed",
-                                  "cancelled"
+                                  "cancelled",
+                                  null
                                 ]
                               },
                               "occurredAt": {
@@ -559,6 +643,7 @@
                               "messageId",
                               "inReplyTo",
                               "references",
+                              "admissionStatus",
                               "deliveryStatus",
                               "occurredAt",
                               "createdAt"
@@ -741,10 +826,13 @@
                                           "type": "string"
                                         }
                                       },
-                                      "deliveryStatus": {
+                                      "admissionStatus": {
                                         "type": "string",
+                                        "enum": ["received", "pending", "admitted", "suppressed"]
+                                      },
+                                      "deliveryStatus": {
+                                        "type": ["string", "null"],
                                         "enum": [
-                                          "received",
                                           "pending",
                                           "accepted",
                                           "delivered",
@@ -752,7 +840,8 @@
                                           "bounced",
                                           "complained",
                                           "suppressed",
-                                          "cancelled"
+                                          "cancelled",
+                                          null
                                         ]
                                       },
                                       "occurredAt": {
@@ -783,6 +872,7 @@
                                       "messageId",
                                       "inReplyTo",
                                       "references",
+                                      "admissionStatus",
                                       "deliveryStatus",
                                       "occurredAt",
                                       "createdAt"
@@ -897,9 +987,37 @@
                               }
                             ]
                           }
+                        },
+                        "channelState": {
+                          "type": ["object", "null"],
+                          "properties": {
+                            "normalizedAddress": {
+                              "type": "string"
+                            },
+                            "health": {
+                              "type": "string",
+                              "enum": ["unknown", "healthy", "degraded", "unavailable"]
+                            },
+                            "available": {
+                              "type": "boolean"
+                            },
+                            "attachmentsCapable": {
+                              "type": "boolean"
+                            },
+                            "suppressed": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "normalizedAddress",
+                            "health",
+                            "available",
+                            "attachmentsCapable",
+                            "suppressed"
+                          ]
                         }
                       },
-                      "required": ["conversation", "parts", "notes", "timeline"]
+                      "required": ["conversation", "parts", "notes", "timeline", "channelState"]
                     }
                   },
                   "required": ["data"]
@@ -1047,7 +1165,13 @@
                               "type": ["string", "null"]
                             },
                             "replyAlias": {
-                              "type": "string"
+                              "type": ["string", "null"]
+                            },
+                            "channelAccountId": {
+                              "type": ["string", "null"]
+                            },
+                            "localAddress": {
+                              "type": ["string", "null"]
                             },
                             "customerAddress": {
                               "type": "string"
@@ -1063,6 +1187,10 @@
                               "minimum": 0
                             },
                             "snoozedUntil": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "closedAt": {
                               "type": ["string", "null"],
                               "format": "date-time"
                             },
@@ -1090,11 +1218,14 @@
                             "subject",
                             "suggestedSubject",
                             "replyAlias",
+                            "channelAccountId",
+                            "localAddress",
                             "customerAddress",
                             "personRef",
                             "contactPointRef",
                             "unreadCount",
                             "snoozedUntil",
+                            "closedAt",
                             "lastPartAt",
                             "createdAt",
                             "updatedAt"
@@ -1229,10 +1360,13 @@
                                   "type": "string"
                                 }
                               },
-                              "deliveryStatus": {
+                              "admissionStatus": {
                                 "type": "string",
+                                "enum": ["received", "pending", "admitted", "suppressed"]
+                              },
+                              "deliveryStatus": {
+                                "type": ["string", "null"],
                                 "enum": [
-                                  "received",
                                   "pending",
                                   "accepted",
                                   "delivered",
@@ -1240,7 +1374,8 @@
                                   "bounced",
                                   "complained",
                                   "suppressed",
-                                  "cancelled"
+                                  "cancelled",
+                                  null
                                 ]
                               },
                               "occurredAt": {
@@ -1271,6 +1406,7 @@
                               "messageId",
                               "inReplyTo",
                               "references",
+                              "admissionStatus",
                               "deliveryStatus",
                               "occurredAt",
                               "createdAt"
@@ -1453,10 +1589,13 @@
                                           "type": "string"
                                         }
                                       },
-                                      "deliveryStatus": {
+                                      "admissionStatus": {
                                         "type": "string",
+                                        "enum": ["received", "pending", "admitted", "suppressed"]
+                                      },
+                                      "deliveryStatus": {
+                                        "type": ["string", "null"],
                                         "enum": [
-                                          "received",
                                           "pending",
                                           "accepted",
                                           "delivered",
@@ -1464,7 +1603,8 @@
                                           "bounced",
                                           "complained",
                                           "suppressed",
-                                          "cancelled"
+                                          "cancelled",
+                                          null
                                         ]
                                       },
                                       "occurredAt": {
@@ -1495,6 +1635,7 @@
                                       "messageId",
                                       "inReplyTo",
                                       "references",
+                                      "admissionStatus",
                                       "deliveryStatus",
                                       "occurredAt",
                                       "createdAt"
@@ -1609,9 +1750,37 @@
                               }
                             ]
                           }
+                        },
+                        "channelState": {
+                          "type": ["object", "null"],
+                          "properties": {
+                            "normalizedAddress": {
+                              "type": "string"
+                            },
+                            "health": {
+                              "type": "string",
+                              "enum": ["unknown", "healthy", "degraded", "unavailable"]
+                            },
+                            "available": {
+                              "type": "boolean"
+                            },
+                            "attachmentsCapable": {
+                              "type": "boolean"
+                            },
+                            "suppressed": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "normalizedAddress",
+                            "health",
+                            "available",
+                            "attachmentsCapable",
+                            "suppressed"
+                          ]
                         }
                       },
-                      "required": ["conversation", "parts", "notes", "timeline"]
+                      "required": ["conversation", "parts", "notes", "timeline", "channelState"]
                     }
                   },
                   "required": ["data"]
@@ -1789,7 +1958,13 @@
                           "type": ["string", "null"]
                         },
                         "replyAlias": {
-                          "type": "string"
+                          "type": ["string", "null"]
+                        },
+                        "channelAccountId": {
+                          "type": ["string", "null"]
+                        },
+                        "localAddress": {
+                          "type": ["string", "null"]
                         },
                         "customerAddress": {
                           "type": "string"
@@ -1805,6 +1980,10 @@
                           "minimum": 0
                         },
                         "snoozedUntil": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "closedAt": {
                           "type": ["string", "null"],
                           "format": "date-time"
                         },
@@ -1832,11 +2011,14 @@
                         "subject",
                         "suggestedSubject",
                         "replyAlias",
+                        "channelAccountId",
+                        "localAddress",
                         "customerAddress",
                         "personRef",
                         "contactPointRef",
                         "unreadCount",
                         "snoozedUntil",
+                        "closedAt",
                         "lastPartAt",
                         "createdAt",
                         "updatedAt"
@@ -2110,10 +2292,13 @@
                             "type": "string"
                           }
                         },
-                        "deliveryStatus": {
+                        "admissionStatus": {
                           "type": "string",
+                          "enum": ["received", "pending", "admitted", "suppressed"]
+                        },
+                        "deliveryStatus": {
+                          "type": ["string", "null"],
                           "enum": [
-                            "received",
                             "pending",
                             "accepted",
                             "delivered",
@@ -2121,7 +2306,8 @@
                             "bounced",
                             "complained",
                             "suppressed",
-                            "cancelled"
+                            "cancelled",
+                            null
                           ]
                         },
                         "occurredAt": {
@@ -2152,6 +2338,7 @@
                         "messageId",
                         "inReplyTo",
                         "references",
+                        "admissionStatus",
                         "deliveryStatus",
                         "occurredAt",
                         "createdAt"
@@ -2316,7 +2503,13 @@
                           "type": ["string", "null"]
                         },
                         "replyAlias": {
-                          "type": "string"
+                          "type": ["string", "null"]
+                        },
+                        "channelAccountId": {
+                          "type": ["string", "null"]
+                        },
+                        "localAddress": {
+                          "type": ["string", "null"]
                         },
                         "customerAddress": {
                           "type": "string"
@@ -2332,6 +2525,10 @@
                           "minimum": 0
                         },
                         "snoozedUntil": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "closedAt": {
                           "type": ["string", "null"],
                           "format": "date-time"
                         },
@@ -2359,11 +2556,14 @@
                         "subject",
                         "suggestedSubject",
                         "replyAlias",
+                        "channelAccountId",
+                        "localAddress",
                         "customerAddress",
                         "personRef",
                         "contactPointRef",
                         "unreadCount",
                         "snoozedUntil",
+                        "closedAt",
                         "lastPartAt",
                         "createdAt",
                         "updatedAt"

@@ -25,7 +25,9 @@
         "conversations.rendered-message-admission",
         "conversations.person-directory",
         "auth.staff-directory",
-        "conversations.attachments"
+        "conversations.attachments",
+        "conversations.channel-policy",
+        "conversations.delivery-truth"
       ],
       "runtimeExport": "createConversationsRuntimePortContribution"
     },
@@ -41,7 +43,8 @@
         "relationships.route-runtime",
         "relationships.mice.runtime",
         "custom-fields.runtime",
-        "relationships.booking-enrichment-database"
+        "relationships.booking-enrichment-database",
+        "conversations.person-directory"
       ],
       "runtimeExport": "createRelationshipsRuntimePortContribution"
     },

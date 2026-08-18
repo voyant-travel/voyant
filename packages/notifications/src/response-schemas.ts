@@ -59,6 +59,8 @@ export const notificationChannelAccountSchema = z.object({
   health: channelAccountHealthSchema,
   inboundCapable: z.boolean(),
   outboundCapable: z.boolean(),
+  inboundIdentity: z.enum(["unambiguous", "ambiguous"]).nullable(),
+  attachmentsCapable: z.boolean(),
   allowedPurposes: z.array(z.string()),
   lastValidatedAt: isoTimestamp.nullable(),
   createdAt: isoTimestamp,

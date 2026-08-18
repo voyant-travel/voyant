@@ -56,6 +56,8 @@ export const PREFIXES = {
   notification_channel_accounts: "ncha",
   notification_delivery_events: "ndev",
   notification_send_operations: "nsop",
+  sms_transport_policies: "smsp",
+  sms_transport_policy_events: "smse",
   contract_document_operations: "lcdo",
   notification_reminder_rules: "ntrl",
   notification_reminder_runs: "ntrn",

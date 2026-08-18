@@ -43,6 +43,13 @@
       "when": 1786978800000,
       "tag": "0005_channel_accounts",
       "breakpoints": true
+    },
+    {
+      "idx": 6,
+      "version": "7",
+      "when": 1787010238233,
+      "tag": "0006_sms_transport_policy",
+      "breakpoints": true
     }
   ]
 }

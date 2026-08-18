@@ -111,6 +111,9 @@ export const notificationsUiRo: NotificationsUiMessages = {
       empty: "Nu este configurat niciun cont de canal.",
       inbound: "Intrare",
       outbound: "Ieșire",
+      ambiguousInbound: "Identitatea de intrare necesită atenție",
+      attachments: "Atașamente acceptate",
+      noAttachments: "Fără atașamente",
       purposes: "Scopuri",
     },
     sections: {

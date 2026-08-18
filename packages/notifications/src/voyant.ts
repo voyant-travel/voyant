@@ -2,7 +2,11 @@ import {
   bookingActionProjectionRuntimePort,
   bookingActionSourceRuntimePort,
 } from "@voyant-travel/bookings/runtime-port"
-import { conversationsRenderedMessageAdmissionPort } from "@voyant-travel/conversations/runtime-port"
+import {
+  conversationsChannelPolicyPort,
+  conversationsDeliveryTruthPort,
+  conversationsRenderedMessageAdmissionPort,
+} from "@voyant-travel/conversations/runtime-port"
 import {
   defineExtension,
   defineModule,
@@ -37,6 +41,8 @@ export const notificationsVoyantModule = defineModule({
     ports: [
       providePort(customerVerificationRuntimePort),
       providePort(conversationsRenderedMessageAdmissionPort),
+      providePort(conversationsChannelPolicyPort),
+      providePort(conversationsDeliveryTruthPort),
       providePort(financeNotificationsRuntimePort),
       providePort(notificationsRuntimePort),
       providePort(notificationsReminderJobRuntimePort),

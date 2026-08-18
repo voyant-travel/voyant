@@ -52,6 +52,7 @@ describe("attachment security state transitions", () => {
     `)
     await client.exec(readMigration("0001_collaboration.sql"))
     await client.exec(readMigration("0002_secure_content.sql"))
+    await client.exec(readMigration("0003_sms_conversations.sql"))
     await client.exec(`
       CREATE TABLE "event_outbox" (
         "id" text PRIMARY KEY,
@@ -363,7 +364,7 @@ async function seedConversation(
     htmlBody: "<p>Original body</p>",
     messageId: "root-message",
     payloadFingerprint: "fingerprint",
-    deliveryStatus: "received",
+    admissionStatus: "received",
     occurredAt: now,
     createdAt: now,
   })

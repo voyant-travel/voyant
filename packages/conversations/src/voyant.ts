@@ -3,7 +3,9 @@ import { defineModule, requirePort } from "@voyant-travel/core/project"
 import {
   conversationIngressSourcePort,
   conversationsAttachmentRuntimePort,
+  conversationsChannelPolicyPort,
   conversationsDatabaseRuntimePort,
+  conversationsDeliveryTruthPort,
   conversationsPersonDirectoryPort,
   conversationsRenderedMessageAdmissionPort,
 } from "./runtime-port.js"
@@ -40,6 +42,8 @@ export const conversationsVoyantModule = defineModule({
     requirePort(conversationsPersonDirectoryPort, { optional: true }),
     requirePort(staffDirectoryRuntimePort),
     requirePort(conversationsAttachmentRuntimePort, { optional: true }),
+    requirePort(conversationsChannelPolicyPort, { optional: true }),
+    requirePort(conversationsDeliveryTruthPort, { optional: true }),
   ],
   api: [
     {

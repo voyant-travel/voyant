@@ -1,12 +1,15 @@
 import {
   canonicalEnvelopePayload,
   canonicalMessageId,
+  type InboundConversationEnvelopeV1,
   type InboundEmailEnvelopeV1,
+  type InboundSmsEnvelopeV1,
+  normalizeE164,
   normalizeEmailAddress,
 } from "@voyant-travel/conversations-contracts"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { insertOutboxEvents } from "@voyant-travel/db/outbox"
-import { and, asc, desc, eq, gt, inArray, lte, or, sql } from "drizzle-orm"
+import { and, asc, desc, eq, gt, gte, inArray, lte, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { ConversationsAttachmentRuntime } from "./attachment-runtime.js"
 import {
@@ -22,16 +25,17 @@ import {
 } from "./content-security.js"
 import type {
   ConversationRenderedServiceMessage,
+  ConversationsChannelPolicy,
   ConversationsPersonDirectory,
   ConversationsRenderedMessageAdmission,
   ConversationsStaffDirectory,
 } from "./runtime-port.js"
 import {
   type Conversation,
+  type ConversationAttachment,
   type ConversationEvent,
   type ConversationInbox,
   type ConversationNote,
-  type ConversationAttachment,
   type ConversationPart,
   conversationAttachments,
   conversationEvents,
@@ -44,7 +48,12 @@ import {
   conversationReadCursors,
   conversations,
 } from "./schema.js"
-import { createReplyAlias, inboundThreadIds, selectExactConversation } from "./threading.js"
+import {
+  createReplyAlias,
+  inboundThreadIds,
+  SMS_RECENTLY_CLOSED_REOPEN_DAYS,
+  selectExactConversation,
+} from "./threading.js"
 
 export class ConversationIngressDriftError extends Error {
   readonly code = "ingress_payload_drift"
@@ -345,6 +354,20 @@ async function defaultInboxId(db: PostgresJsDatabase): Promise<string> {
 /** Idempotently commit one provider-neutral envelope. Acknowledgement happens outside this transaction. */
 export async function ingestEnvelope(
   db: PostgresJsDatabase,
+  envelope: InboundConversationEnvelopeV1,
+  options: {
+    personDirectory?: ConversationsPersonDirectory
+    channelPolicy?: ConversationsChannelPolicy
+    attachmentRuntime?: ConversationsAttachmentRuntime
+  } = {},
+): Promise<{ conversationId: string; partId: string; duplicate: boolean }> {
+  return "channel" in envelope
+    ? ingestSmsEnvelope(db, envelope, options)
+    : ingestEmailEnvelope(db, envelope, options)
+}
+
+async function ingestEmailEnvelope(
+  db: PostgresJsDatabase,
   envelope: InboundEmailEnvelopeV1,
   options: {
     personDirectory?: ConversationsPersonDirectory
@@ -431,6 +454,7 @@ export async function ingestEnvelope(
         subject: envelope.subject,
         suggestedSubject: envelope.subject,
         replyAlias: createReplyAlias(conversationId, receivingAddress),
+        localAddress: normalizeEmailAddress(receivingAddress),
         customerAddress: senderAddress,
         personRef: person?.personRef ?? null,
         contactPointRef: person?.contactPointRef ?? null,
@@ -451,7 +475,8 @@ export async function ingestEnvelope(
         .set({
           status: "open",
           snoozedUntil: null,
-          lastPartAt: occurredAt,
+          closedAt: null,
+          lastPartAt: sql`GREATEST(${conversations.lastPartAt}, ${occurredAt.toISOString()}::timestamptz)`,
           revision: sql`${conversations.revision} + 1`,
           updatedAt: new Date(),
         })
@@ -489,7 +514,7 @@ export async function ingestEnvelope(
         : null,
       references: envelope.threading.references.map(canonicalMessageId),
       payloadFingerprint: fingerprint,
-      deliveryStatus: "received",
+      admissionStatus: "received",
       occurredAt,
     })
     let attachmentsSafe = true
@@ -623,7 +648,306 @@ async function currentOrAllocatedSequence(
   return nextSequence(db, conversationId)
 }
 
-async function findIngressIdentities(db: PostgresJsDatabase, envelope: InboundEmailEnvelopeV1) {
+async function ingestSmsEnvelope(
+  db: PostgresJsDatabase,
+  envelope: InboundSmsEnvelopeV1,
+  options: {
+    personDirectory?: ConversationsPersonDirectory
+    channelPolicy?: ConversationsChannelPolicy
+    attachmentRuntime?: ConversationsAttachmentRuntime
+  },
+): Promise<{ conversationId: string; partId: string; duplicate: boolean }> {
+  if (!options.channelPolicy) {
+    throw new ConversationConflictError("SMS channel policy runtime is unavailable")
+  }
+  const parsed = {
+    ...envelope,
+    receivingAddress: normalizeE164(envelope.receivingAddress),
+    senderAddress: normalizeE164(envelope.senderAddress),
+  }
+  const fingerprint = canonicalEnvelopePayload(parsed)
+  const result = await db.transaction(async (transaction) => {
+    const tx = transaction as PostgresJsDatabase
+    const operationId = newId("conversation_ingress_operations")
+    const [claimed] = await tx
+      .insert(conversationIngressOperations)
+      .values({
+        id: operationId,
+        sourceId: parsed.sourceId,
+        externalEnvelopeId: parsed.externalEnvelopeId,
+        externalMessageId: parsed.externalMessageId,
+        payloadFingerprint: fingerprint,
+        status: "committed",
+      })
+      .onConflictDoNothing()
+      .returning({ id: conversationIngressOperations.id })
+    if (!claimed) return replayIngress(tx, parsed, fingerprint)
+
+    const account = await options.channelPolicy!.inspectInboundSms(tx, parsed)
+    if (account.kind !== "ready" || account.accountId !== parsed.channelAccountId) {
+      throw new ConversationConflictError(`SMS receiving identity is ${account.kind}`)
+    }
+    if (account.normalizedAddress !== parsed.receivingAddress) {
+      throw new ConversationConflictError("SMS receiving identity is ambiguous")
+    }
+    await options.channelPolicy!.projectInboundSmsPolicy(tx, parsed)
+
+    const occurredAt = new Date(parsed.occurredAt)
+    const active = await tx
+      .select()
+      .from(conversations)
+      .where(
+        and(
+          eq(conversations.channel, "sms"),
+          eq(conversations.channelAccountId, account.accountId),
+          eq(conversations.customerAddress, parsed.senderAddress),
+          inArray(conversations.status, ["open", "snoozed"]),
+        ),
+      )
+      .limit(2)
+    if (active.length > 1)
+      throw new ConversationConflictError("SMS receiving identity is ambiguous")
+    let conversation = active[0]
+    if (!conversation) {
+      const cutoff = new Date(occurredAt)
+      cutoff.setUTCDate(cutoff.getUTCDate() - SMS_RECENTLY_CLOSED_REOPEN_DAYS)
+      const [recent] = await tx
+        .select()
+        .from(conversations)
+        .where(
+          and(
+            eq(conversations.channel, "sms"),
+            eq(conversations.channelAccountId, account.accountId),
+            eq(conversations.customerAddress, parsed.senderAddress),
+            eq(conversations.status, "closed"),
+            gte(conversations.closedAt, cutoff),
+            lte(conversations.closedAt, occurredAt),
+          ),
+        )
+        .orderBy(desc(conversations.closedAt))
+        .limit(1)
+      conversation = recent
+    }
+    let resolution: Awaited<ReturnType<ConversationsPersonDirectory["resolveEmail"]>> = {
+      kind: "none",
+    }
+    if (options.personDirectory?.resolvePhone) {
+      resolution = await options.personDirectory.resolvePhone(tx, parsed.senderAddress)
+    }
+    if (!conversation) {
+      const person = resolution.kind === "unique" ? resolution : null
+      const [created] = await tx
+        .insert(conversations)
+        .values({
+          id: newId("conversations"),
+          channel: "sms",
+          channelAccountId: account.accountId,
+          localAddress: account.normalizedAddress,
+          replyAlias: null,
+          customerAddress: parsed.senderAddress,
+          personRef: person?.personRef ?? null,
+          contactPointRef: person?.contactPointRef ?? null,
+          inboxId: await defaultInboxId(tx),
+          nextPartSequence: 2,
+          lastPartAt: occurredAt,
+        })
+        .onConflictDoNothing()
+        .returning()
+      if (created) conversation = created
+      else {
+        ;[conversation] = await tx
+          .select()
+          .from(conversations)
+          .where(
+            and(
+              eq(conversations.channel, "sms"),
+              eq(conversations.channelAccountId, account.accountId),
+              eq(conversations.customerAddress, parsed.senderAddress),
+              inArray(conversations.status, ["open", "snoozed"]),
+            ),
+          )
+          .limit(1)
+      }
+      if (!conversation) throw new ConversationConflictError("SMS thread claim was lost")
+      if (created) {
+        await tx.insert(conversationParticipants).values({
+          conversationId: conversation.id,
+          role: "customer",
+          address: parsed.senderAddress,
+          personRef: person?.personRef ?? null,
+          contactPointRef: person?.contactPointRef ?? null,
+        })
+      }
+    } else {
+      await tx
+        .update(conversations)
+        .set({
+          status: "open",
+          snoozedUntil: null,
+          closedAt: null,
+          lastPartAt: sql`GREATEST(${conversations.lastPartAt}, ${occurredAt.toISOString()}::timestamptz)`,
+          revision: sql`${conversations.revision} + 1`,
+          updatedAt: new Date(),
+        })
+        .where(eq(conversations.id, conversation.id))
+    }
+
+    const partId = newId("conversation_parts")
+    await tx.insert(conversationParts).values({
+      id: partId,
+      conversationId: conversation.id,
+      sequence: await currentOrAllocatedSequence(tx, conversation.id),
+      direction: "inbound",
+      senderAddress: parsed.senderAddress,
+      recipientAddresses: [account.normalizedAddress],
+      textBody: parsed.text,
+      contentStatus: parsed.attachments.length === 0 ? "safe" : "quarantined",
+      classification: "message",
+      replyable: true,
+      externalSourceId: parsed.sourceId,
+      externalMessageId: parsed.externalMessageId,
+      payloadFingerprint: fingerprint,
+      admissionStatus: "received",
+      occurredAt,
+    })
+    let attachmentsSafe = true
+    for (const attachment of parsed.attachments) {
+      if (!options.attachmentRuntime?.importInbound) {
+        throw new ConversationAttachmentUnavailableError(
+          "Inbound attachment import is not configured",
+        )
+      }
+      const declared = normalizeAttachmentMetadata({
+        filename: attachment.filename,
+        contentType: attachment.contentType,
+        sizeBytes: attachment.size,
+      })
+      const imported = await options.attachmentRuntime.importInbound({
+        sourceId: parsed.sourceId,
+        externalId: attachment.externalId,
+        privateHandle: attachment.privateHandle,
+        ...declared,
+      })
+      const scan = await options.attachmentRuntime.scan({
+        privateHandle: imported.privateHandle,
+        filename: imported.filename,
+        declaredContentType: imported.contentType,
+        declaredSizeBytes: imported.sizeBytes,
+      })
+      let verified = declared
+      let scanStatus: "clean" | "blocked" | "failed" = scan.status
+      try {
+        verified = assertDetectedAttachmentMetadata({
+          filename: imported.filename,
+          declaredContentType: imported.contentType,
+          declaredSizeBytes: imported.sizeBytes,
+          detectedContentType: scan.detectedContentType,
+          detectedSizeBytes: scan.detectedSizeBytes,
+        })
+      } catch {
+        scanStatus = "blocked"
+      }
+      if (scanStatus !== "clean") attachmentsSafe = false
+      await tx
+        .insert(conversationAttachments)
+        .values({
+          id: newId("conversation_attachments"),
+          conversationId: conversation.id,
+          partId,
+          sourceId: parsed.sourceId,
+          externalId: attachment.externalId,
+          privateHandle: imported.privateHandle,
+          ...verified,
+          inlineContentId: attachment.inlineContentId ?? null,
+          disposition: attachment.inlineContentId ? "inline" : "attachment",
+          scanStatus,
+          availability: scanStatus === "clean" ? "active" : "quarantined",
+        })
+        .onConflictDoNothing({
+          target: [conversationAttachments.sourceId, conversationAttachments.externalId],
+        })
+    }
+    if (parsed.attachments.length > 0 && attachmentsSafe) {
+      await tx
+        .update(conversationParts)
+        .set({ contentStatus: "safe" })
+        .where(eq(conversationParts.id, partId))
+    }
+    await tx
+      .update(conversationIngressOperations)
+      .set({ conversationPartId: partId, committedAt: new Date() })
+      .where(eq(conversationIngressOperations.id, operationId))
+    const [current] = await tx
+      .select({ inboxId: conversations.inboxId, revision: conversations.revision })
+      .from(conversations)
+      .where(eq(conversations.id, conversation.id))
+      .limit(1)
+    await appendChange(tx, {
+      conversationId: conversation.id,
+      type: "part.received",
+      inboxId: current?.inboxId ?? (await defaultInboxId(tx)),
+      revision: current?.revision ?? 1,
+      payload: {
+        partId,
+        sourceId: parsed.sourceId,
+        channel: "sms",
+        adapterHandledResponse: parsed.adapterHandledResponse,
+      },
+      occurredAt,
+    })
+    return {
+      kind: "result" as const,
+      value: { conversationId: conversation.id, partId, duplicate: false },
+    }
+  })
+  if (result.kind === "drift") {
+    throw new ConversationIngressDriftError("Inbound identity was replayed with different content")
+  }
+  return result.value
+}
+
+async function replayIngress(
+  db: PostgresJsDatabase,
+  envelope: InboundConversationEnvelopeV1,
+  fingerprint: string,
+) {
+  const identities = await findIngressIdentities(db, envelope)
+  if (identities.length === 0) throw new ConversationConflictError("Ingress claim was lost")
+  if (identities.some((identity) => identity.payloadFingerprint !== fingerprint)) {
+    await db
+      .update(conversationIngressOperations)
+      .set({ status: "drifted", error: "A replay reused an identity with different content" })
+      .where(
+        inArray(
+          conversationIngressOperations.id,
+          identities.map(({ id }) => id),
+        ),
+      )
+    return { kind: "drift" as const }
+  }
+  const existing = identities[0]!
+  if (!existing.conversationPartId)
+    throw new ConversationConflictError("Committed ingress is missing its part")
+  const [part] = await db
+    .select({ conversationId: conversationParts.conversationId })
+    .from(conversationParts)
+    .where(eq(conversationParts.id, existing.conversationPartId))
+    .limit(1)
+  if (!part) throw new ConversationConflictError("Committed ingress references a missing part")
+  return {
+    kind: "result" as const,
+    value: {
+      conversationId: part.conversationId,
+      partId: existing.conversationPartId,
+      duplicate: true,
+    },
+  }
+}
+
+async function findIngressIdentities(
+  db: PostgresJsDatabase,
+  envelope: InboundConversationEnvelopeV1,
+) {
   return db
     .select()
     .from(conversationIngressOperations)
@@ -699,11 +1023,12 @@ export async function startConversation(
   admission: ConversationsRenderedMessageAdmission,
   directory: ConversationsPersonDirectory,
   input: {
+    channel?: "email" | "sms"
     personRef: string
     contactPointRef: string
     channelAccountId: string
-    fromAddress: string
-    subject: string | null
+    fromAddress?: string
+    subject?: string | null
     text: string
     html?: string | null
     attachmentIds?: readonly string[]
@@ -712,10 +1037,13 @@ export async function startConversation(
     actor: ConversationActor
     runtimeBindings?: unknown
   },
+  channelPolicy?: ConversationsChannelPolicy,
 ): Promise<ConversationDetail> {
-  const contact = await directory.resolvePersonContactPoint(db, input)
+  const channel = input.channel ?? "email"
+  const contact = await directory.resolvePersonContactPoint(db, { ...input, channel })
   if (!contact) throw new ConversationNotFoundError("Known Person contact point not found")
-  const customerAddress = normalizeEmailAddress(contact.address)
+  const customerAddress =
+    channel === "sms" ? normalizeE164(contact.address) : normalizeEmailAddress(contact.address)
   const [membership] = await db
     .select({ id: conversationInboxMemberships.id })
     .from(conversationInboxMemberships)
@@ -728,13 +1056,27 @@ export async function startConversation(
     )
     .limit(1)
   if (!membership) throw new ConversationAccessDeniedError("Staff member is not an Inbox member")
+  let fromAddress: string
+  if (channel === "sms") {
+    if (!channelPolicy) throw new ConversationConflictError("SMS channel policy is unavailable")
+    const account = await channelPolicy.getOutboundSmsState(db, {
+      channelAccountId: input.channelAccountId,
+      destinationAddress: customerAddress,
+    })
+    if (!account) throw new ConversationConflictError("SMS Channel Account was not found")
+    fromAddress = normalizeE164(account.normalizedAddress)
+  } else {
+    if (!input.fromAddress) throw new ConversationConflictError("Email sender address is required")
+    fromAddress = normalizeEmailAddress(input.fromAddress)
+  }
   const startFingerprint = JSON.stringify({
     personRef: input.personRef,
     contactPointRef: input.contactPointRef,
     channelAccountId: input.channelAccountId,
-    fromAddress: normalizeEmailAddress(input.fromAddress),
+    channel,
+    fromAddress,
     customerAddress,
-    subject: input.subject,
+    subject: input.subject ?? null,
     text: input.text,
     html: sanitizeConversationHtml(input.html),
     attachmentIds: input.attachmentIds ?? [],
@@ -748,9 +1090,12 @@ export async function startConversation(
       .values({
         id,
         inboxId: input.inboxId,
-        subject: input.subject,
+        channel,
+        channelAccountId: input.channelAccountId,
+        localAddress: fromAddress,
+        subject: input.subject ?? null,
         suggestedSubject: null,
-        replyAlias: createReplyAlias(id, input.fromAddress),
+        replyAlias: channel === "email" ? createReplyAlias(id, fromAddress) : null,
         customerAddress,
         personRef: input.personRef,
         contactPointRef: input.contactPointRef,
@@ -758,20 +1103,45 @@ export async function startConversation(
         startPayloadFingerprint: startFingerprint,
         lastPartAt: now,
       })
-      .onConflictDoNothing({ target: conversations.startIdempotencyKey })
+      .onConflictDoNothing()
       .returning()
     if (!created) {
       const [existing] = await tx
         .select()
         .from(conversations)
-        .where(eq(conversations.startIdempotencyKey, input.idempotencyKey))
+        .where(
+          or(
+            eq(conversations.startIdempotencyKey, input.idempotencyKey),
+            ...(channel === "sms"
+              ? [
+                  and(
+                    eq(conversations.channel, "sms"),
+                    eq(conversations.channelAccountId, input.channelAccountId),
+                    eq(conversations.customerAddress, customerAddress),
+                    inArray(conversations.status, ["open", "snoozed"]),
+                  ),
+                ]
+              : []),
+          ),
+        )
         .limit(1)
       if (!existing) throw new ConversationConflictError("Conversation start claim was lost")
-      if (existing.startPayloadFingerprint !== startFingerprint) {
+      if (
+        existing.startIdempotencyKey === input.idempotencyKey &&
+        existing.startPayloadFingerprint !== startFingerprint
+      ) {
         throw new ConversationConflictError(
           "Start idempotency key was reused with different content",
         )
       }
+      await admitReplyWithinTransaction(tx, admission, existing, {
+        conversationId: existing.id,
+        actor: input.actor,
+        channelAccountId: input.channelAccountId,
+        text: input.text,
+        idempotencyKey: input.idempotencyKey,
+        runtimeBindings: input.runtimeBindings,
+      })
       return existing.id
     }
     await tx.insert(conversationParticipants).values({
@@ -813,6 +1183,24 @@ async function admitReplyWithinTransaction(
     actor: ConversationActor
   },
 ): Promise<ConversationPart> {
+  if (conversation.channelAccountId && conversation.channelAccountId !== input.channelAccountId) {
+    throw new ConversationConflictError("Reply must use the conversation Channel Account")
+  }
+  const [claimedReply] = await tx
+    .select()
+    .from(conversationParts)
+    .where(eq(conversationParts.idempotencyKey, input.idempotencyKey))
+    .limit(1)
+  if (claimedReply) {
+    if (
+      claimedReply.conversationId !== conversation.id ||
+      claimedReply.textBody !== input.text ||
+      claimedReply.htmlBody !== (input.html ?? null)
+    ) {
+      throw new ConversationConflictError("Reply idempotency key was reused with different content")
+    }
+    return claimedReply
+  }
   const [lastPart] = await tx
     .select()
     .from(conversationParts)
@@ -840,13 +1228,15 @@ async function admitReplyWithinTransaction(
     conversation.id,
     input.attachmentIds ?? [],
   )
+  const channel: "email" | "sms" = conversation.channel === "sms" ? "sms" : "email"
   const message = {
     channelAccountId: input.channelAccountId,
+    channel,
     target: { type: "@voyant-travel/conversations#part" as const, id: "" },
     purpose: "conversation-reply" as const,
     idempotencyKey: input.idempotencyKey,
     to: conversation.customerAddress,
-    ...(conversation.subject ? { subject: conversation.subject } : {}),
+    ...(channel === "email" && conversation.subject ? { subject: conversation.subject } : {}),
     ...(input.text ? { text: input.text } : {}),
     ...(sanitizedHtml ? { sanitizedHtml } : {}),
     ...(attachments.length > 0
@@ -867,11 +1257,15 @@ async function admitReplyWithinTransaction(
         ? { replyToDeliveryId: lastOutbound.notificationDeliveryId }
         : {}),
     },
-    metadata: {
-      replyAlias: conversation.replyAlias,
-      inReplyTo: lastPart?.messageId ?? null,
-      references,
-    },
+    ...(channel === "email"
+      ? {
+          metadata: {
+            ...(conversation.replyAlias ? { replyAlias: conversation.replyAlias } : {}),
+            inReplyTo: lastPart?.messageId ?? null,
+            references,
+          },
+        }
+      : {}),
   }
   const fingerprint = conversationReplyFingerprint(message)
   const partId = newId("conversation_parts")
@@ -884,14 +1278,14 @@ async function admitReplyWithinTransaction(
       conversationId: conversation.id,
       sequence: await nextSequence(tx, conversation.id),
       direction: "outbound",
-      senderAddress: conversation.replyAlias,
+      senderAddress: conversation.localAddress ?? conversation.replyAlias ?? "",
       recipientAddresses: [conversation.customerAddress],
       subject: conversation.subject,
       textBody: input.text,
       htmlBody: sanitizedHtml,
       payloadFingerprint: fingerprint,
       idempotencyKey: input.idempotencyKey,
-      deliveryStatus: "pending",
+      admissionStatus: "pending",
       occurredAt: now,
       inReplyTo: lastPart?.messageId ?? null,
       references,
@@ -929,7 +1323,7 @@ async function admitReplyWithinTransaction(
     .update(conversationParts)
     .set({
       notificationDeliveryId: admitted.deliveryId,
-      deliveryStatus: admitted.state,
+      admissionStatus: admitted.state === "suppressed" ? "suppressed" : "admitted",
     })
     .where(eq(conversationParts.id, partId))
     .returning()
@@ -1023,6 +1417,7 @@ export async function updateConversationState(
       .set({
         ...(input.status ? { status: input.status } : {}),
         ...(input.status ? { snoozedUntil } : {}),
+        ...(input.status ? { closedAt: input.status === "closed" ? new Date() : null } : {}),
         ...(input.priority ? { priority: input.priority } : {}),
         ...(input.assignedToUserId !== undefined
           ? { assignedToUserId: input.assignedToUserId }

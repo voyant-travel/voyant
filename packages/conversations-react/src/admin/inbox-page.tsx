@@ -67,6 +67,7 @@ function StartConversation() {
     const form = new FormData(event.currentTarget)
     try {
       await conversationsApi.start(fetcher, baseUrl, {
+        channel: "email",
         inboxId: String(form.get("inboxId")),
         personRef: String(form.get("personRef")),
         contactPointRef: String(form.get("contactPointRef")),

@@ -5,7 +5,9 @@ import type { ApiModule } from "@voyant-travel/hono/module"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import {
   conversationsAttachmentRuntimePort,
+  conversationsChannelPolicyPort,
   conversationsDatabaseRuntimePort,
+  conversationsDeliveryTruthPort,
   conversationsPersonDirectoryPort,
   conversationsRenderedMessageAdmissionPort,
 } from "./runtime-port.js"
@@ -53,6 +55,12 @@ export const createConversationsVoyantRuntime = defineGraphRuntimeFactory(
       staffDirectory: await getPort(staffDirectoryRuntimePort),
       attachments: hasPort(conversationsAttachmentRuntimePort)
         ? await getPort(conversationsAttachmentRuntimePort)
+        : undefined,
+      channelPolicy: hasPort(conversationsChannelPolicyPort)
+        ? await getPort(conversationsChannelPolicyPort)
+        : undefined,
+      deliveryTruth: hasPort(conversationsDeliveryTruthPort)
+        ? await getPort(conversationsDeliveryTruthPort)
         : undefined,
     })
   },

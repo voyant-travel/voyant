@@ -68,6 +68,8 @@ export type {
   NotificationSendOperation,
   NotificationsApiModule,
   NotificationTemplate,
+  SmsTransportPolicy,
+  SmsTransportPolicyEvent,
   StaffAlertPreference,
   StaffAlertRoleRouting,
   StaffAlertSettings,
@@ -89,6 +91,8 @@ export {
   notificationTargetTypeEnum,
   notificationTemplateStatusEnum,
   notificationTemplates,
+  smsTransportPolicies,
+  smsTransportPolicyEvents,
   staffAlertPreferences,
   staffAlertSettings,
 } from "./schema.js"

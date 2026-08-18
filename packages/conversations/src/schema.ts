@@ -28,16 +28,11 @@ export const conversationPartDirectionEnum = pgEnum("conversation_part_direction
   "inbound",
   "outbound",
 ])
-export const conversationPartDeliveryStatusEnum = pgEnum("conversation_part_delivery_status", [
+export const conversationPartAdmissionStatusEnum = pgEnum("conversation_part_admission_status", [
   "received",
   "pending",
-  "accepted",
-  "delivered",
-  "failed",
-  "bounced",
-  "complained",
+  "admitted",
   "suppressed",
-  "cancelled",
 ])
 export const conversationParticipantRoleEnum = pgEnum("conversation_participant_role", [
   "customer",
@@ -118,19 +113,25 @@ export const conversations = pgTable(
     status: conversationStatusEnum("status").notNull().default("open"),
     subject: text("subject"),
     suggestedSubject: text("suggested_subject"),
-    replyAlias: text("reply_alias").notNull(),
+    replyAlias: text("reply_alias"),
+    channelAccountId: text("channel_account_id"),
+    localAddress: text("local_address"),
     customerAddress: text("customer_address").notNull(),
     personRef: text("person_ref"),
     contactPointRef: text("contact_point_ref"),
     startIdempotencyKey: text("start_idempotency_key"),
     startPayloadFingerprint: text("start_payload_fingerprint"),
     snoozedUntil: timestamp("snoozed_until", { withTimezone: true }),
+    closedAt: timestamp("closed_at", { withTimezone: true }),
     lastPartAt: timestamp("last_part_at", { withTimezone: true }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
   (table) => [
     uniqueIndex("uidx_conversations_reply_alias").on(table.replyAlias),
+    uniqueIndex("uidx_conversations_active_sms_pair")
+      .on(table.channelAccountId, table.customerAddress)
+      .where(sql`${table.channel} = 'sms' AND ${table.status} IN ('open', 'snoozed')`),
     uniqueIndex("uidx_conversations_start_idempotency").on(table.startIdempotencyKey),
     index("idx_conversations_last_part").on(table.lastPartAt),
     index("idx_conversations_person").on(table.personRef),
@@ -189,7 +190,7 @@ export const conversationParts = pgTable(
     payloadFingerprint: text("payload_fingerprint").notNull(),
     notificationDeliveryId: text("notification_delivery_id"),
     idempotencyKey: text("idempotency_key"),
-    deliveryStatus: conversationPartDeliveryStatusEnum("delivery_status").notNull(),
+    admissionStatus: conversationPartAdmissionStatusEnum("admission_status").notNull(),
     occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
   },

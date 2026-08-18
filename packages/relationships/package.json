@@ -33,6 +33,8 @@
     "@voyant-travel/bookings": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/custom-fields": "workspace:^",
+    "@voyant-travel/conversations": "workspace:^",
+    "@voyant-travel/conversations-contracts": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",

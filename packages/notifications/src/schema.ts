@@ -161,6 +161,12 @@ export const notificationChannelAccounts = pgTable(
     health: channelAccountHealthEnum("health").notNull().default("unknown"),
     inboundCapable: boolean("inbound_capable").notNull().default(false),
     outboundCapable: boolean("outbound_capable").notNull().default(false),
+    inboundIdentity: text("inbound_identity")
+      .$type<"unambiguous" | "ambiguous" | null>()
+      .default(null),
+    /** Opaque runtime source id authorized to deliver inbound traffic for this identity. */
+    inboundSourceId: text("inbound_source_id"),
+    attachmentsCapable: boolean("attachments_capable").notNull().default(false),
     allowedPurposes: jsonb("allowed_purposes").$type<string[]>().notNull().default([]),
     adapterRef: text("adapter_ref").notNull(),
     lastValidatedAt: timestamp("last_validated_at", { withTimezone: true }),
@@ -179,6 +185,60 @@ export const notificationChannelAccounts = pgTable(
 
 export type NotificationChannelAccount = typeof notificationChannelAccounts.$inferSelect
 export type NewNotificationChannelAccount = typeof notificationChannelAccounts.$inferInsert
+
+/** Current hard SMS consent authority, scoped to one sending identity and destination. */
+export const smsTransportPolicies = pgTable(
+  "sms_transport_policies",
+  {
+    id: typeId("sms_transport_policies"),
+    channelAccountId: typeIdRef("channel_account_id")
+      .notNull()
+      .references(() => notificationChannelAccounts.id, { onDelete: "cascade" }),
+    destinationAddress: text("destination_address").notNull(),
+    state: text("state").$type<"allowed" | "hard_opt_out">().notNull(),
+    lastEventOccurredAt: timestamp("last_event_occurred_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("uidx_sms_transport_policy_scope").on(
+      table.channelAccountId,
+      table.destinationAddress,
+    ),
+  ],
+)
+
+/** Immutable inbound opt-in/opt-out ledger; adapter replay cannot project twice. */
+export const smsTransportPolicyEvents = pgTable(
+  "sms_transport_policy_events",
+  {
+    id: typeId("sms_transport_policy_events"),
+    channelAccountId: typeIdRef("channel_account_id")
+      .notNull()
+      .references(() => notificationChannelAccounts.id, { onDelete: "cascade" }),
+    destinationAddress: text("destination_address").notNull(),
+    sourceId: text("source_id").notNull(),
+    externalMessageId: text("external_message_id").notNull(),
+    kind: text("kind").$type<"hard_opt_out" | "opt_in">().notNull(),
+    adapterHandledResponse: boolean("adapter_handled_response").notNull().default(false),
+    occurredAt: timestamp("occurred_at", { withTimezone: true }).notNull(),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("uidx_sms_transport_policy_event_external").on(
+      table.sourceId,
+      table.externalMessageId,
+    ),
+    index("idx_sms_transport_policy_events_scope").on(
+      table.channelAccountId,
+      table.destinationAddress,
+      table.occurredAt,
+    ),
+  ],
+)
+
+export type SmsTransportPolicy = typeof smsTransportPolicies.$inferSelect
+export type SmsTransportPolicyEvent = typeof smsTransportPolicyEvents.$inferSelect
 
 export const notificationDeliveries = pgTable(
   "notification_deliveries",

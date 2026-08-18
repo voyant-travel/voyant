@@ -111,11 +111,12 @@ export const conversationsApi = {
       personRef: string
       contactPointRef: string
       channelAccountId: string
-      fromAddress: string
-      subject: string | null
       text: string
       idempotencyKey: string
-    },
+    } & (
+      | { channel: "email"; fromAddress: string; subject: string | null }
+      | { channel: "sms"; subject?: null }
+    ),
   ) {
     return request<InboxConversationDetail>(fetcher, `${baseUrl}/v1/admin/conversations`, {
       method: "POST",

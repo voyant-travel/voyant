@@ -26,6 +26,8 @@ describe("notifications deployment manifest", () => {
         ports: [
           { id: customerVerificationRuntimePort.id },
           { id: "conversations.rendered-message-admission" },
+          { id: "conversations.channel-policy" },
+          { id: "conversations.delivery-truth" },
           { id: financeNotificationsRuntimePort.id },
           { id: "notifications.runtime" },
           { id: "notifications.reminder-job" },
