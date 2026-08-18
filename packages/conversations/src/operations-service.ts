@@ -390,9 +390,7 @@ export async function getInboxOperationalReport(
   let failedDeliveries = 0
   let suppressedDeliveries = 0
   for (const row of deliveryRows) {
-    const truth = row.notificationDeliveryId
-      ? deliveryTruth[row.notificationDeliveryId]
-      : undefined
+    const truth = row.notificationDeliveryId ? deliveryTruth[row.notificationDeliveryId] : undefined
     if (truth === "failed" || truth === "bounced" || truth === "complained") {
       failedDeliveries += 1
     }

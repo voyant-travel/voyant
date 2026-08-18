@@ -53,6 +53,7 @@ describe("attachment security state transitions", () => {
     await client.exec(readMigration("0001_collaboration.sql"))
     await client.exec(readMigration("0002_secure_content.sql"))
     await client.exec(readMigration("0003_sms_conversations.sql"))
+    await client.exec(readMigration("0004_operational_inbox.sql"))
     await client.exec(`
       CREATE TABLE "event_outbox" (
         "id" text PRIMARY KEY,
