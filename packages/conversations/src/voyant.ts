@@ -1,4 +1,4 @@
-import { staffDirectoryRuntimePort } from "@voyant-travel/auth/staff-directory-runtime-port"
+import { staffDirectoryRuntimePort } from "@voyant-travel/auth/ports"
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 import { relationshipsPersonConversationsRuntimePort } from "@voyant-travel/relationships/runtime-port"
 import {

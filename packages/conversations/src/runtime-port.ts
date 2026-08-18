@@ -1,4 +1,4 @@
-import type { StaffDirectoryRuntimeProvider } from "@voyant-travel/auth/staff-directory-runtime-port"
+import type { StaffDirectoryRuntimeProvider } from "@voyant-travel/auth/ports"
 import type {
   ConversationIngressSource,
   ConversationsRenderedMessageAdmission,

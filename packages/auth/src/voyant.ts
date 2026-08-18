@@ -1,8 +1,8 @@
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 import { customerBusinessAccountOnboardingRuntimePort } from "./customer-business-onboarding-runtime-port.js"
 import { identityAccessRuntimePort } from "./identity-access-runtime-port.js"
+import { staffDirectoryRuntimePort } from "./ports.js"
 import { publicApiRuntimePort } from "./public-api-runtime-port.js"
-import { staffDirectoryRuntimePort } from "./staff-directory-runtime-port.js"
 import { teamManagementRuntimePort } from "./team-management-runtime-port.js"
 
 export const authCustomerBusinessAccountsVoyantModule = defineModule({

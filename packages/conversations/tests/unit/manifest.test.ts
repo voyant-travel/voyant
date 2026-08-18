@@ -1,4 +1,4 @@
-import { staffDirectoryRuntimePort } from "@voyant-travel/auth/staff-directory-runtime-port"
+import { staffDirectoryRuntimePort } from "@voyant-travel/auth/ports"
 import { describe, expect, it } from "vitest"
 import { conversationsVoyantModule } from "../../src/voyant.js"
 
