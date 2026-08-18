@@ -2,6 +2,10 @@ import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import { describe, expect, it } from "vitest"
 
 import { createAuthRuntimePortContribution } from "../../src/runtime-contributor.js"
+import {
+  type StaffDirectoryRuntimeProvider,
+  staffDirectoryRuntimePort,
+} from "../../src/staff-directory-runtime-port.js"
 import type { TeamManagementRuntimeProvider } from "../../src/team-management-runtime-port.js"
 import { teamManagementRuntimePort } from "../../src/team-management-runtime-port.js"
 
@@ -11,6 +15,11 @@ describe("team-management runtime port", () => {
     const provider = contribution[teamManagementRuntimePort.id] as TeamManagementRuntimeProvider
 
     expect(() => teamManagementRuntimePort.test(provider)).not.toThrow()
+    expect(() =>
+      staffDirectoryRuntimePort.test(
+        contribution[staffDirectoryRuntimePort.id] as StaffDirectoryRuntimeProvider,
+      ),
+    ).not.toThrow()
   })
 
   it("rejects incomplete providers", () => {

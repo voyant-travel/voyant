@@ -1,3 +1,4 @@
+import { staffDirectoryRuntimePort } from "@voyant-travel/auth/staff-directory-runtime-port"
 import { defineModule, requirePort } from "@voyant-travel/core/project"
 import {
   conversationIngressSourcePort,
@@ -15,6 +16,18 @@ const adminRuntime = {
   export: "createSelectedConversationsAdminExtension",
 } as const
 
+const conversationChangedPayloadSchema = {
+  type: "object",
+  properties: {
+    conversationId: { type: "string" },
+    inboxId: { type: "string" },
+    revision: { type: "integer", minimum: 1 },
+    change: { type: "string" },
+  },
+  required: ["conversationId", "inboxId", "revision", "change"],
+  additionalProperties: false,
+} as const
+
 export const conversationsVoyantModule = defineModule({
   id: "@voyant-travel/conversations",
   packageName: "@voyant-travel/conversations",
@@ -24,6 +37,7 @@ export const conversationsVoyantModule = defineModule({
     requirePort(conversationIngressSourcePort, { optional: true, cardinality: "many" }),
     requirePort(conversationsRenderedMessageAdmissionPort, { optional: true }),
     requirePort(conversationsPersonDirectoryPort, { optional: true }),
+    requirePort(staffDirectoryRuntimePort),
   ],
   api: [
     {
@@ -40,6 +54,16 @@ export const conversationsVoyantModule = defineModule({
     { id: "@voyant-travel/conversations#schema", source: "@voyant-travel/conversations/schema" },
   ],
   migrations: [{ id: "@voyant-travel/conversations#migrations", source: "./migrations" }],
+  events: [
+    {
+      id: "@voyant-travel/conversations#event.conversation-changed",
+      eventType: "conversation.changed",
+      version: "1.0.0",
+      payloadSchema: conversationChangedPayloadSchema,
+      visibility: "internal",
+      audit: { sourceModule: "conversations", category: "domain" },
+    },
+  ],
   jobs: [
     {
       id: "conversations.ingress",
@@ -56,6 +80,23 @@ export const conversationsVoyantModule = defineModule({
       runtime: {
         entry: "@voyant-travel/conversations/ingress-job",
         export: "runConversationIngressJob",
+      },
+    },
+    {
+      id: "conversations.snooze-expiry",
+      schedule: { cron: "* * * * *", overlap: "skip" },
+      scheduling: {
+        required: true,
+        profiles: {
+          eager: { cron: "* * * * *", overlap: "skip" },
+          economical: { cron: "*/5 * * * *", overlap: "skip" },
+          "scale-to-zero": { cron: "*/15 * * * *", overlap: "skip" },
+        },
+      },
+      wakeup: true,
+      runtime: {
+        entry: "@voyant-travel/conversations/snooze-expiry-job",
+        export: "runConversationSnoozeExpiryJob",
       },
     },
   ],

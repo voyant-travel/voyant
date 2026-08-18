@@ -16,11 +16,13 @@
     "lint": "biome check src/"
   },
   "peerDependencies": {
+    "@tanstack/react-query": "^5.0.0",
     "@voyant-travel/admin": "workspace:^",
     "@voyant-travel/react": "workspace:^",
     "react": "^19.0.0"
   },
   "dependencies": {
+    "@tanstack/react-query": "^5.101.2",
     "lucide-react": "^1.23.0"
   },
   "devDependencies": {

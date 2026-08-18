@@ -31,6 +31,7 @@ const ADMIN_INVALIDATIONS: Readonly<Record<string, ReadonlyArray<QueryKey>>> = {
   booking: [["voyant", "bookings"], DASH_BOOKINGS, DASH_FINANCE],
   payment: [["voyant", "bookings"], ["voyant", "finance"], DASH_BOOKINGS, DASH_FINANCE],
   availability: [["voyant", "availability"], ["voyant", "products"], DASH_PRODUCTS],
+  conversation: [["voyant", "conversations"]],
 }
 
 /** Selected-graph marker for Realtime's workspace-level admin integration. */

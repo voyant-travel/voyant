@@ -7,6 +7,10 @@ import {
 import { createKmsPublicApiCredentialCipher } from "./public-api-credentials.js"
 import { createLocalPublicApiAdapter } from "./public-api-local-adapter.js"
 import { publicApiRuntimePort } from "./public-api-runtime-port.js"
+import {
+  createTeamBackedStaffDirectory,
+  staffDirectoryRuntimePort,
+} from "./staff-directory-runtime-port.js"
 import { createCloudTeamManagementAdapter } from "./team-management-cloud-adapter.js"
 import { createLocalTeamManagementAdapter } from "./team-management-local-adapter.js"
 import { createGuardedTeamManagementProvider } from "./team-management-policy.js"
@@ -127,6 +131,7 @@ export function createAuthRuntimePortContribution(
       "Team management requires deployment.providers.adminAuth to select better-auth or voyant-cloud.",
     )
   })
+  const staffDirectory = createTeamBackedStaffDirectory(teamManagement)
 
   // Self-host public API access: keys carrying their own declared origins and
   // channel, plus the deployment's customer-account settings and KMS-encrypted
@@ -142,6 +147,7 @@ export function createAuthRuntimePortContribution(
   return {
     [identityAccessRuntimePort.id]: identityAccess,
     [teamManagementRuntimePort.id]: teamManagement,
+    [staffDirectoryRuntimePort.id]: staffDirectory,
     [publicApiRuntimePort.id]: publicApi,
   }
 }
