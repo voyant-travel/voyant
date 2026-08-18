@@ -4,7 +4,9 @@ import {
   type VoyantBindings,
   type VoyantVariables,
 } from "@voyant-travel/hono"
-import type { Context, MiddlewareHandler } from "hono"
+import { boundedJsonBody } from "@voyant-travel/hono/middleware/body-size"
+import { isSameOriginMutation } from "@voyant-travel/hono/middleware/security-headers"
+import type { Context } from "hono"
 
 import {
   createPublicApiShoppingGateway,
@@ -182,55 +184,6 @@ function requestId(c: Context<Env>): string | undefined {
   return c.get("requestId")
 }
 
-function boundedJsonBody(maxBytes: number): MiddlewareHandler<Env> {
-  return async (c, next) => {
-    const declaredLength = Number(c.req.header("content-length"))
-    if (Number.isFinite(declaredLength) && declaredLength > maxBytes) {
-      return requestBodyTooLarge(c, maxBytes)
-    }
-
-    const body = c.req.raw.body
-    if (!body) return next()
-    const reader = body.getReader()
-    const decoder = new TextDecoder()
-    let bytesRead = 0
-    let text = ""
-    while (true) {
-      const chunk = await reader.read()
-      if (chunk.done) break
-      bytesRead += chunk.value.byteLength
-      if (bytesRead > maxBytes) {
-        await reader.cancel().catch(() => {})
-        return requestBodyTooLarge(c, maxBytes)
-      }
-      text += decoder.decode(chunk.value, { stream: true })
-    }
-    text += decoder.decode()
-
-    // OpenAPI validation reads through HonoRequest.json(), whose first cache
-    // key is `text`. Supplying the bounded buffer there prevents a second raw
-    // stream read while preserving the normal validator and handler contract.
-    // Hono's runtime body cache stores promises, although its public type
-    // currently describes the resolved values. Seed the runtime shape so a
-    // later `.json()` converts this already-bounded text instead of rereading
-    // the consumed request stream.
-    c.req.bodyCache.text = Promise.resolve(text) as unknown as string
-    return next()
-  }
-}
-
-function requestBodyTooLarge(c: Context<Env>, maxBytes: number): Response {
-  return c.json(
-    {
-      error: "Request body too large",
-      code: "request_body_too_large" as const,
-      maxBytes,
-      requestId: requestId(c),
-    },
-    413,
-  )
-}
-
 function activeShoppingContext(c: Context<Env>): PublicApiShoppingContext | null {
   const channel = c.get("publicChannel")
   if (!channel?.channelId || channel.channelStatus !== "active") return null
@@ -238,17 +191,6 @@ function activeShoppingContext(c: Context<Env>): PublicApiShoppingContext | null
     channelId: channel.channelId,
     userId: c.get("userId") ?? null,
     buyerAccountId: c.get("buyerAccountId") ?? null,
-  }
-}
-
-function requireSameOriginMutation(c: Context<Env>): boolean {
-  if (c.req.header("sec-fetch-site") === "cross-site") return false
-  const origin = c.req.header("origin")?.trim()
-  if (!origin) return false
-  try {
-    return new URL(origin).origin === new URL(c.req.url).origin
-  } catch {
-    return false
   }
 }
 
@@ -390,7 +332,7 @@ export function createPublicApiShoppingPublicRoutes(
       if (!context) {
         return c.json({ error: "active_channel_required", requestId: requestId(c) }, 403)
       }
-      if (!requireSameOriginMutation(c)) {
+      if (!isSameOriginMutation(c)) {
         return c.json({ error: "same_origin_required", requestId: requestId(c) }, 403)
       }
       try {
@@ -409,7 +351,7 @@ export function createPublicApiShoppingPublicRoutes(
       if (!context) {
         return c.json({ error: "active_channel_required", requestId: requestId(c) }, 403)
       }
-      if (!requireSameOriginMutation(c)) {
+      if (!isSameOriginMutation(c)) {
         return c.json({ error: "same_origin_required", requestId: requestId(c) }, 403)
       }
       try {
@@ -431,7 +373,7 @@ export function createPublicApiShoppingPublicRoutes(
       if (!context) {
         return c.json({ error: "active_channel_required", requestId: requestId(c) }, 403)
       }
-      if (!requireSameOriginMutation(c)) {
+      if (!isSameOriginMutation(c)) {
         return c.json({ error: "same_origin_required", requestId: requestId(c) }, 403)
       }
       try {
