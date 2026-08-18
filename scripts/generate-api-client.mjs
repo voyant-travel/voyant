@@ -20,6 +20,7 @@
  * Usage: node scripts/generate-api-client.mjs [--check]
  */
 import { execFile } from "node:child_process"
+import { createHash } from "node:crypto"
 import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
@@ -145,7 +146,18 @@ async function generateModule(document, outDir, client, bundles) {
   // it, instead of somewhere nobody looks.
   const staged = path.join(outDir, ".composed-surface.json")
   const documentPath = composed ? staged : path.join(root, document)
-  if (composed) writeFileSync(staged, JSON.stringify(document, null, 2))
+  if (composed) {
+    const serialised = JSON.stringify(document, null, 2)
+    writeFileSync(staged, serialised)
+    // Printed on every run, not only on failure. The generated client is
+    // byte-compared across machines, so when it disagrees the first question is
+    // always whether the INPUT differed or the tool did — and answering that
+    // from the output alone is impossible.
+    const digest = createHash("sha256").update(serialised).digest("hex").slice(0, 12)
+    console.log(
+      `  composed surface: ${Object.keys(document.paths ?? {}).length} paths, sha ${digest}`,
+    )
+  }
 
   try {
     await execFileAsync(

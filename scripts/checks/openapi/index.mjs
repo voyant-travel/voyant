@@ -118,11 +118,24 @@ async function checkGenerator(generator) {
   for (const { file, bytes } of before) inFlight.set(file, bytes)
   try {
     const [command, ...args] = generator.command.split(" ")
-    await run(command, args)
+    const { stdout } = await run(command, args)
     const snapshots = before.map(({ file, bytes }) => ({ file, before: bytes, after: read(file) }))
     const drifted = driftedFiles(snapshots)
     if (drifted.length > 0) {
-      failures.push(...drifted, ...inputDigests(generator), `    fix with: ${generator.command}`)
+      // The generator's own stdout, which is piped and therefore invisible
+      // otherwise. A generator that reports what it read — how many documents,
+      // what they hashed to — answers "did the input differ?" in the same
+      // output that says the result differed.
+      const said = stdout
+        .split("\n")
+        .filter((line) => line.trim().length > 0)
+        .map((line) => `      | ${line.trim()}`)
+      failures.push(
+        ...drifted,
+        ...inputDigests(generator),
+        ...(said.length > 0 ? [`      the generator reported:`, ...said] : []),
+        `    fix with: ${generator.command}`,
+      )
     }
   } catch (error) {
     failures.push(`${generator.command}: generator failed — ${error.message.split("\n")[0]}`)
