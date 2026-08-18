@@ -1,4 +1,5 @@
 import { describe, expect, it } from "vitest"
+import { z } from "zod"
 import {
   AdapterPayloadDriftError,
   AdapterReplayLedger,
@@ -7,16 +8,25 @@ import {
 import {
   CHANNEL_ADAPTER_PROTOCOL_VERSION,
   ChannelAdapterCompatibilityError,
+  canonicalAdapterPayload,
+  canonicalSchemaPayload,
   channelAdapterDescriptorSchema,
   negotiateChannelAdapter,
   outboundAcceptanceSchema,
+  outboundMessageSchema,
+  smsSegmentCount,
   validateChannelAdapter,
 } from "../src/index.js"
 import { createFixtureChannelAdapterControl, FixtureChannelAdapter } from "../src/testing.js"
 
 describe("custom channel adapter contract", () => {
-  it("runs the reusable conformance suite against the deterministic fixture", async () => {
-    const result = await runChannelAdapterConformance(createFixtureChannelAdapterControl)
+  it.each([
+    "email",
+    "sms",
+  ] as const)("runs a complete %s Inbox flow through its channel-scoped account and source", async (channel) => {
+    const result = await runChannelAdapterConformance(() =>
+      createFixtureChannelAdapterControl(channel),
+    )
     expect(result.passed).toEqual([
       "capability truthfulness and negotiation",
       "invalid authenticity proof rejection",
@@ -24,6 +34,7 @@ describe("custom channel adapter contract", () => {
       "outbound idempotency and payload drift",
       "fetch and acknowledgement crash safety, replay and payload drift",
       "delivery normalization, duplicate replay and payload drift",
+      "lifecycle fetch and acknowledgement crash safety",
       "policy suppression",
       "private attachment streaming",
       "health transitions",
@@ -47,8 +58,9 @@ describe("custom channel adapter contract", () => {
     const lyingAdapter = {
       descriptor: {
         ...adapter.descriptor,
-        capabilities: { ...adapter.descriptor.capabilities, outbound: false },
+        channels: adapter.descriptor.channels.map((channel) => ({ ...channel, outbound: false })),
       },
+      provisionAccount: adapter.provisionAccount.bind(adapter),
       validateAccount: adapter.validateAccount.bind(adapter),
       getHealth: adapter.getHealth.bind(adapter),
       submitOutbound: adapter.submitOutbound.bind(adapter),
@@ -56,8 +68,13 @@ describe("custom channel adapter contract", () => {
       fetchInbound: adapter.fetchInbound.bind(adapter),
       ackInbound: adapter.ackInbound.bind(adapter),
       verifyInboundAuthenticity: adapter.verifyInboundAuthenticity.bind(adapter),
+      queueVerifiedInbound: adapter.queueVerifiedInbound.bind(adapter),
       verifyLifecycleAuthenticity: adapter.verifyLifecycleAuthenticity.bind(adapter),
+      queueVerifiedLifecycle: adapter.queueVerifiedLifecycle.bind(adapter),
       normalizeLifecycleEvents: adapter.normalizeLifecycleEvents.bind(adapter),
+      listLifecycle: adapter.listLifecycle.bind(adapter),
+      fetchLifecycle: adapter.fetchLifecycle.bind(adapter),
+      ackLifecycle: adapter.ackLifecycle.bind(adapter),
       evaluatePolicy: adapter.evaluatePolicy.bind(adapter),
       readPrivateAttachment: adapter.readPrivateAttachment.bind(adapter),
     }
@@ -73,22 +90,34 @@ describe("custom channel adapter contract", () => {
     )
   })
 
+  it("rejects non-JSON canonical fingerprints, including explicit optional undefined", () => {
+    expect(() => canonicalAdapterPayload(undefined)).toThrow(/JSON-compatible/)
+    expect(() => canonicalAdapterPayload(Number.NaN)).toThrow(/finite/)
+    expect(() => canonicalAdapterPayload(new Date())).toThrow(/plain JSON/)
+    expect(() =>
+      canonicalSchemaPayload(z.object({ value: z.string().optional() }), { value: undefined }),
+    ).toThrow(/JSON-compatible/)
+  })
+
   it("keeps credentials and adapter configuration outside public DTOs", () => {
     expect(() =>
       channelAdapterDescriptorSchema.parse({
         protocolVersion: CHANNEL_ADAPTER_PROTOCOL_VERSION,
         adapterId: "custom",
-        capabilities: {
-          channels: ["custom-channel"],
-          outbound: true,
-          inbound: false,
-          lifecycleEvents: false,
-          policyEvaluation: false,
-          privateAttachments: false,
-          accountValidation: false,
-          health: false,
-        },
-        credentials: { token: "must-not-cross-the-boundary" },
+        channels: [
+          {
+            channel: "custom-channel",
+            outbound: true,
+            inbound: false,
+            lifecycleEvents: false,
+            policyEvaluation: false,
+            privateAttachments: false,
+            accountValidation: false,
+            health: false,
+            multimedia: false,
+          },
+        ],
+        credentials: { token: "x" },
       }),
     ).toThrow()
     expect(() =>
@@ -106,6 +135,7 @@ describe("custom channel adapter contract", () => {
     const envelope = {
       protocolVersion: CHANNEL_ADAPTER_PROTOCOL_VERSION,
       adapterAccountRef: control.accountRef,
+      sourceRef: control.sourceRef,
       channel: control.channel,
       externalEnvelopeId: "crash-safe-1",
       externalMessageId: "message-1",
@@ -119,19 +149,54 @@ describe("custom channel adapter contract", () => {
       threadRef: null,
       replyToExternalMessageId: null,
       classification: "message" as const,
+      sms: null,
     }
     control.enqueueInbound(envelope)
     const first = await control.adapter.listInbound?.({
       adapterAccountRef: control.accountRef,
+      sourceRef: control.sourceRef,
       limit: 10,
     })
     await control.adapter.fetchInbound?.(first!.items[0]!)
     expect(
-      await control.adapter.listInbound?.({ adapterAccountRef: control.accountRef, limit: 10 }),
+      await control.adapter.listInbound?.({
+        adapterAccountRef: control.accountRef,
+        sourceRef: control.sourceRef,
+        limit: 10,
+      }),
     ).toMatchObject({ items: [{ id: "crash-safe-1" }] })
     await control.adapter.ackInbound?.(first!.items[0]!)
     expect(
-      await control.adapter.listInbound?.({ adapterAccountRef: control.accountRef, limit: 10 }),
+      await control.adapter.listInbound?.({
+        adapterAccountRef: control.accountRef,
+        sourceRef: control.sourceRef,
+        limit: 10,
+      }),
     ).toMatchObject({ items: [] })
+  })
+
+  it("enforces SMS address and segmentation boundaries", () => {
+    expect(smsSegmentCount("")).toEqual({ encoding: "gsm7", segments: 0 })
+    expect(smsSegmentCount("a".repeat(160))).toEqual({ encoding: "gsm7", segments: 1 })
+    expect(smsSegmentCount("a".repeat(161))).toEqual({ encoding: "gsm7", segments: 2 })
+    expect(smsSegmentCount("✓".repeat(70))).toEqual({ encoding: "ucs2", segments: 1 })
+    expect(smsSegmentCount("✓".repeat(71))).toEqual({ encoding: "ucs2", segments: 2 })
+    expect(smsSegmentCount("^".repeat(80))).toEqual({ encoding: "gsm7", segments: 1 })
+    expect(smsSegmentCount("^".repeat(81))).toEqual({ encoding: "gsm7", segments: 2 })
+    expect(smsSegmentCount("£".repeat(160))).toEqual({ encoding: "gsm7", segments: 1 })
+    expect(() =>
+      outboundMessageSchema.parse({
+        operationId: "sms-1",
+        adapterAccountRef: "account",
+        channel: "sms",
+        recipient: "2025550123",
+        subject: null,
+        text: "hello",
+        sanitizedHtml: null,
+        attachments: [],
+        threadRef: null,
+        metadata: {},
+      }),
+    ).toThrow(/E.164/)
   })
 })

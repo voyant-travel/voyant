@@ -13,6 +13,7 @@ import {
   admitRenderedServiceMessage,
   provisionChannelAccount,
   reconcileNotificationDeliveryEvent,
+  updateChannelAccountLifecycle,
 } from "../../src/service-channel-accounts.js"
 import {
   getOutboundSmsState,
@@ -244,6 +245,37 @@ describe.skipIf(!DB_AVAILABLE)("Channel Account rendered delivery", () => {
     ).rejects.toThrow("unambiguous")
     expect(await context.db.select().from(notificationChannelAccounts)).toHaveLength(0)
     inboundIdentity = "unambiguous"
+  })
+
+  it("rejects provisioning replay drift and never reactivates an archived account", async () => {
+    const draft = {
+      channel: "email" as const,
+      address: "replay@example.test",
+      displayName: "Replay inbox",
+      allowedPurposes: ["conversation-reply"],
+      inboundCapable: true,
+      outboundCapable: true,
+    }
+    const account = await provisionChannelAccount(context.db, adapter, draft)
+    await expect(
+      provisionChannelAccount(context.db, adapter, {
+        ...draft,
+        allowedPurposes: ["marketing"],
+      }),
+    ).rejects.toThrow(/payload drift/)
+    await expect(
+      provisionChannelAccount(context.db, adapter, { ...draft, inboundCapable: false }),
+    ).rejects.toThrow(/payload drift/)
+    await updateChannelAccountLifecycle(context.db, account.id, "archived")
+    await expect(provisionChannelAccount(context.db, adapter, draft)).rejects.toThrow(
+      /cannot reactivate/,
+    )
+    const disabledDraft = { ...draft, address: "disabled-replay@example.test" }
+    const disabled = await provisionChannelAccount(context.db, adapter, disabledDraft)
+    await updateChannelAccountLifecycle(context.db, disabled.id, "disabled")
+    await expect(provisionChannelAccount(context.db, adapter, disabledDraft)).rejects.toThrow(
+      /cannot reactivate/,
+    )
   })
 
   it("enforces account-scoped hard opt-out for staff and automated SMS until a newer opt-in", async () => {

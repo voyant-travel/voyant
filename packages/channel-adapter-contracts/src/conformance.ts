@@ -1,4 +1,5 @@
 import {
+  accountProvisioningResultSchema,
   accountValidationResultSchema,
   adapterHealthSchema,
   CHANNEL_ADAPTER_PROTOCOL_VERSION,
@@ -46,6 +47,7 @@ export class AdapterReplayLedger {
 export interface ChannelAdapterConformanceControl {
   readonly adapter: ChannelAdapterV1
   readonly accountRef: string
+  readonly sourceRef: string
   readonly channel: string
   enqueueInbound(envelope: InboundEnvelope): void
   replaceInbound(envelope: InboundEnvelope): void
@@ -53,6 +55,7 @@ export interface ChannelAdapterConformanceControl {
   setHealth(status: "healthy" | "degraded" | "unavailable"): void
   setRecipientSuppressed(suppressed: boolean): void
   putPrivateAttachment(handle: string, bytes: Uint8Array): void
+  enqueueLifecycle(event: DeliveryLifecycleEvent): void
   lifecycleRequest(events: readonly DeliveryLifecycleEvent[]): {
     adapterAccountRef: string
     headers: Record<string, string>
@@ -105,7 +108,13 @@ export async function runChannelAdapterConformance(
       await validateAccount({
         adapterAccountRef: control.accountRef,
         requiredChannels: [control.channel],
-        requiredCapabilities: ["outbound", "inbound", "health"],
+        requiredCapabilities: [
+          "outbound",
+          "inbound",
+          "lifecycleEvents",
+          "policyEvaluation",
+          "health",
+        ],
       }),
     )
     assert(valid.valid, "configured account must validate")
@@ -117,6 +126,40 @@ export async function runChannelAdapterConformance(
       }),
     )
     assert(!missing.valid, "an unknown account reference must fail validation")
+    const provision = requireValue(
+      control.adapter.provisionAccount,
+      "provisionAccount is missing",
+    ).bind(control.adapter)
+    const provisionInput = {
+      operationId: "conformance-provision-1",
+      channel: control.channel,
+      address: control.channel === "sms" ? "+12025550100" : "inbox@example.test",
+      displayName: "Inbox",
+      inbound: true,
+      outbound: true,
+    }
+    const firstProvision = accountProvisioningResultSchema.parse(await provision(provisionInput))
+    const replayProvision = accountProvisioningResultSchema.parse(
+      await provision({ ...provisionInput }),
+    )
+    assert(
+      firstProvision.adapterAccountRef === replayProvision.adapterAccountRef,
+      "provision replay must return the same account",
+    )
+    assert(
+      firstProvision.inboundSourceRef === control.sourceRef,
+      "provisioning must return the channel-scoped inbound source",
+    )
+    let provisionDriftRejected = false
+    try {
+      await provision({
+        ...provisionInput,
+        address: control.channel === "sms" ? "+12025550101" : "other@example.test",
+      })
+    } catch {
+      provisionDriftRejected = true
+    }
+    assert(provisionDriftRejected, "provision operation payload drift must fail closed")
     passed.push("capability truthfulness and negotiation")
   }
 
@@ -135,6 +178,21 @@ export async function runChannelAdapterConformance(
       }),
     )
     assert(!result.authentic, "an invalid authenticity proof must be rejected")
+    const queue = requireValue(
+      control.adapter.queueVerifiedInbound,
+      "queueVerifiedInbound is missing",
+    ).bind(control.adapter)
+    const queued = await queue({
+      adapterAccountRef: control.accountRef,
+      headers: {},
+      body: new Uint8Array([1]),
+    })
+    assert(!queued.accepted, "invalid raw bytes must not be queued")
+    const page = await requireValue(control.adapter.listInbound, "listInbound is missing").call(
+      control.adapter,
+      { adapterAccountRef: control.accountRef, sourceRef: control.sourceRef, limit: 10 },
+    )
+    assert(page.items.length === 0, "invalid raw bytes must never become listable")
     passed.push("invalid authenticity proof rejection")
   }
 
@@ -186,19 +244,43 @@ export async function runChannelAdapterConformance(
     const ack = requireValue(control.adapter.ackInbound, "ackInbound is missing").bind(
       control.adapter,
     )
-    const beforeFetch = await list({ adapterAccountRef: control.accountRef, limit: 10 })
+    const beforeFetch = await list({
+      adapterAccountRef: control.accountRef,
+      sourceRef: control.sourceRef,
+      limit: 10,
+    })
     assert(beforeFetch.items.length === 1, "queued inbound item must be listed")
     const firstPayload = inboundEnvelopeSchema.parse(await fetch(beforeFetch.items[0]!))
-    assert(firstPayload.threadRef === "conformance-thread-1", "thread reference must be preserved")
-    assert(
-      firstPayload.replyToExternalMessageId === "conformance-parent-1",
-      "reply relationship must be preserved",
-    )
+    if (control.channel === "email") {
+      assert(
+        firstPayload.threadRef === "conformance-thread-1",
+        "thread reference must be preserved",
+      )
+      assert(
+        firstPayload.replyToExternalMessageId === "conformance-parent-1",
+        "reply relationship must be preserved",
+      )
+    } else {
+      assert(firstPayload.sender.address === "+12025550123", "SMS sender must remain strict E.164")
+      assert(
+        firstPayload.recipients[0]?.address === "+12025550100",
+        "SMS receiving identity must remain strict E.164",
+      )
+      assert(firstPayload.sms?.policyEvent === "hard_opt_out", "SMS policy event must be preserved")
+      assert(
+        firstPayload.sms?.adapterHandledResponse,
+        "SMS adapter-handled response must be preserved",
+      )
+    }
     assert(
       ledger.observe("inbound", firstPayload.externalEnvelopeId, firstPayload) === "new",
       "first inbound item must be new",
     )
-    const afterCrash = await list({ adapterAccountRef: control.accountRef, limit: 10 })
+    const afterCrash = await list({
+      adapterAccountRef: control.accountRef,
+      sourceRef: control.sourceRef,
+      limit: 10,
+    })
     assert(afterCrash.items.length === 1, "fetch without ack must leave the item available")
     const duplicatePayload = inboundEnvelopeSchema.parse(await fetch(afterCrash.items[0]!))
     assert(
@@ -216,7 +298,11 @@ export async function runChannelAdapterConformance(
     }
     assert(driftRejected, "refetched payload drift must fail closed")
     await ack(beforeFetch.items[0]!)
-    const afterAck = await list({ adapterAccountRef: control.accountRef, limit: 10 })
+    const afterAck = await list({
+      adapterAccountRef: control.accountRef,
+      sourceRef: control.sourceRef,
+      limit: 10,
+    })
     assert(afterAck.items.length === 0, "acknowledged item must leave the queue")
     passed.push("fetch and acknowledgement crash safety, replay and payload drift")
   }
@@ -253,6 +339,50 @@ export async function runChannelAdapterConformance(
 
   {
     const control = createControl()
+    const event = fixtureLifecycleEvent(control)
+    control.enqueueLifecycle(event)
+    const list = requireValue(control.adapter.listLifecycle, "listLifecycle is missing").bind(
+      control.adapter,
+    )
+    const fetch = requireValue(control.adapter.fetchLifecycle, "fetchLifecycle is missing").bind(
+      control.adapter,
+    )
+    const ack = requireValue(control.adapter.ackLifecycle, "ackLifecycle is missing").bind(
+      control.adapter,
+    )
+    const page = await list({
+      adapterAccountRef: control.accountRef,
+      sourceRef: control.sourceRef,
+      limit: 10,
+    })
+    const fetched = deliveryLifecycleEventSchema.parse(await fetch(page.items[0]!))
+    assert(fetched.externalEventId === event.externalEventId, "lifecycle event must fetch")
+    assert(
+      (
+        await list({
+          adapterAccountRef: control.accountRef,
+          sourceRef: control.sourceRef,
+          limit: 10,
+        })
+      ).items.length === 1,
+      "lifecycle fetch must not acknowledge",
+    )
+    await ack(page.items[0]!)
+    assert(
+      (
+        await list({
+          adapterAccountRef: control.accountRef,
+          sourceRef: control.sourceRef,
+          limit: 10,
+        })
+      ).items.length === 0,
+      "lifecycle acknowledgement removes the event",
+    )
+    passed.push("lifecycle fetch and acknowledgement crash safety")
+  }
+
+  {
+    const control = createControl()
     const evaluate = requireValue(control.adapter.evaluatePolicy, "evaluatePolicy is missing").bind(
       control.adapter,
     )
@@ -261,7 +391,7 @@ export async function runChannelAdapterConformance(
       await evaluate({
         adapterAccountRef: control.accountRef,
         channel: control.channel,
-        recipient: "suppressed@example.test",
+        recipient: control.channel === "sms" ? "+12025550123" : "suppressed@example.test",
         purpose: "conversation",
       }),
     )
@@ -276,7 +406,11 @@ export async function runChannelAdapterConformance(
       "readPrivateAttachment is missing",
     ).bind(control.adapter)
     control.putPrivateAttachment("conformance-attachment-1", new Uint8Array([1, 2, 3]))
-    const stream = await read("conformance-attachment-1")
+    const stream = await read({
+      adapterAccountRef: control.accountRef,
+      sourceRef: control.sourceRef,
+      handle: "conformance-attachment-1",
+    })
     const bytes: number[] = []
     for await (const chunk of stream) bytes.push(...chunk)
     assert(bytes.join(",") === "1,2,3", "private attachment bytes must stream without a public URL")
@@ -327,8 +461,8 @@ function fixtureOutboundMessage(control: ChannelAdapterConformanceControl) {
     operationId: "conformance-operation-1",
     adapterAccountRef: control.accountRef,
     channel: control.channel,
-    recipient: "customer@example.test",
-    subject: "Conformance",
+    recipient: control.channel === "sms" ? "+12025550123" : "customer@example.test",
+    subject: control.channel === "sms" ? null : "Conformance",
     text: "Hello",
     sanitizedHtml: null,
     attachments: [],
@@ -341,19 +475,32 @@ function fixtureEnvelope(control: ChannelAdapterConformanceControl): InboundEnve
   return {
     protocolVersion: CHANNEL_ADAPTER_PROTOCOL_VERSION,
     adapterAccountRef: control.accountRef,
+    sourceRef: control.sourceRef,
     channel: control.channel,
     externalEnvelopeId: "conformance-envelope-1",
     externalMessageId: "conformance-message-1",
     occurredAt: "2026-01-01T00:00:00.000Z",
-    sender: { address: "sender@example.test", displayName: null },
-    recipients: [{ address: "inbox@example.test", displayName: null }],
-    subject: "Conformance",
+    sender: {
+      address: control.channel === "sms" ? "+12025550123" : "sender@example.test",
+      displayName: null,
+    },
+    recipients: [
+      {
+        address: control.channel === "sms" ? "+12025550100" : "inbox@example.test",
+        displayName: null,
+      },
+    ],
+    subject: control.channel === "sms" ? null : "Conformance",
     text: "Hello",
     untrustedHtml: null,
     attachments: [],
     threadRef: "conformance-thread-1",
     replyToExternalMessageId: "conformance-parent-1",
     classification: "message",
+    sms:
+      control.channel === "sms"
+        ? { policyEvent: "hard_opt_out", adapterHandledResponse: true }
+        : null,
   }
 }
 

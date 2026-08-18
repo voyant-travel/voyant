@@ -38,7 +38,16 @@ export async function processConversationIngress(input: {
       summary.fetched += 1
       const result = await (input.ingest ?? ingestEnvelope)(input.db, envelope, {
         personDirectory: input.personDirectory,
-        attachmentRuntime: input.attachmentRuntime,
+        attachmentRuntime: source.importInboundAttachment
+          ? {
+              ...input.attachmentRuntime,
+              importInbound: (attachment) => source.importInboundAttachment!(attachment),
+              scan: input.attachmentRuntime?.scan ?? (async () => ({ status: "failed" as const })),
+              download: input.attachmentRuntime?.download ?? (async () => null),
+              delete: input.attachmentRuntime?.delete ?? (async () => undefined),
+              resolveForSend: input.attachmentRuntime?.resolveForSend ?? (async () => null),
+            }
+          : input.attachmentRuntime,
         channelPolicy: input.channelPolicy,
       })
       if (result.duplicate) summary.duplicates += 1

@@ -15,15 +15,15 @@ translates between those ports and one external transport.
 - Adapter credentials and configuration remain inside the adapter deployment.
 - The host stores only an opaque `adapterAccountRef`.
 - Outbound submission returns `accepted`, never a premature `delivered` result.
-- Inbound ingestion is pull-based: `listInbound`, `fetchInbound`, then `ackInbound`.
+- Inbound and lifecycle ingestion are pull-based: list, fetch, commit, then ack.
   The adapter must retain an item until acknowledgement succeeds.
 - Inbound-message and lifecycle-webhook authenticity are decided by the adapter.
   The contract requires a fail-closed result but intentionally does not prescribe
   an algorithm.
-- Attachments cross the boundary as private handles and are read as byte streams.
+- Attachments cross the boundary as account/source-scoped private handles and are read as byte streams.
   Signed URLs, buffered payload requirements, and raw secrets are not durable
   contract values.
-- Channel identifiers are open strings. Support is negotiated from capabilities.
+- Channel identifiers are open strings. Capabilities, including multimedia, are negotiated per channel.
 
 ## Setup
 
@@ -54,7 +54,5 @@ payload-drift behavior, fetch/ack crash safety, lifecycle normalization, and
 health transitions. `FixtureChannelAdapter` can be used for host integration
 tests without network access.
 
-Channel-specific policy suites may extend the base runner. In particular,
-telephone-number normalization, message segmentation, opt-out keywords, and
-adapter-handled automatic responses belong to a future SMS conformance extension;
-they are not inferred by this channel-neutral contract.
+The SMS surface includes strict E.164 normalization, GSM 03.38/UCS-2 segment
+boundaries, opt-out/opt-in policy events, and adapter-handled response markers.

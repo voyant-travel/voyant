@@ -383,6 +383,7 @@ export async function enqueueNotification({
     provider: providerName,
     template: template?.slug ?? input.templateSlug ?? "direct",
     data,
+    ...(input.purpose ? { purpose: input.purpose } : {}),
     ...(fromAddress ? { from: fromAddress } : {}),
     ...(subject ? { subject } : {}),
     ...(html ? { html } : {}),
@@ -1054,6 +1055,7 @@ function notificationPayload(value: Record<string, unknown>): NotificationPayloa
   const subject = optionalPayloadString(value, "subject")
   const html = optionalPayloadString(value, "html")
   const text = optionalPayloadString(value, "text")
+  const purpose = optionalPayloadString(value, "purpose")
   const attachments = notificationAttachments(value.attachments)
   return {
     to,
@@ -1065,6 +1067,7 @@ function notificationPayload(value: Record<string, unknown>): NotificationPayloa
     ...(subject ? { subject } : {}),
     ...(html ? { html } : {}),
     ...(text ? { text } : {}),
+    ...(purpose ? { purpose } : {}),
     ...(attachments ? { attachments } : {}),
   }
 }

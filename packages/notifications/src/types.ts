@@ -113,6 +113,8 @@ export interface ChannelAccountAdapterCapability {
   matches(adapterRef: string): boolean
   provision(draft: ChannelAccountDraft): Promise<ProvisionedChannelAccount>
   validate(adapterRef: string): Promise<ValidatedChannelAccount>
+  /** Bind the committed host row id before inbound activation. */
+  activate?(input: { channelAccountId: string; adapterRef: string }): Promise<void> | void
 }
 
 /**
@@ -128,6 +130,8 @@ export interface NotificationPayload {
   provider?: string
   /** Template identifier — interpretation is provider-specific. */
   template: string
+  /** Domain-authoritative delivery purpose when admission supplied one. */
+  purpose?: string
   /** Data passed to the template for rendering. */
   data?: unknown
   /** Optional sender override. Providers may have their own defaults. */

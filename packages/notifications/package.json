@@ -15,6 +15,8 @@
     "./job-runtime": "./src/job-runtime.ts",
     "./runtime-port": "./src/runtime-port.ts",
     "./durable-provider-port": "./src/durable-provider-port.ts",
+    "./delivery-lifecycle-source-port": "./src/delivery-lifecycle-source-port.ts",
+    "./delivery-lifecycle-job": "./src/delivery-lifecycle-job.ts",
     "./subscriber-runtime": "./src/subscriber-runtime.ts",
     "./staff-alert-subscriber": "./src/staff-alert-subscriber.ts",
     "./tools": "./src/mcp-runtime.ts",
@@ -41,6 +43,7 @@
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/conversations": "workspace:^",
     "@voyant-travel/conversations-contracts": "workspace:^",
+    "@voyant-travel/channel-adapter-contracts": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/finance": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
@@ -128,6 +131,16 @@
         "types": "./dist/durable-provider-port.d.ts",
         "import": "./dist/durable-provider-port.js",
         "default": "./dist/durable-provider-port.js"
+      },
+      "./delivery-lifecycle-source-port": {
+        "types": "./dist/delivery-lifecycle-source-port.d.ts",
+        "import": "./dist/delivery-lifecycle-source-port.js",
+        "default": "./dist/delivery-lifecycle-source-port.js"
+      },
+      "./delivery-lifecycle-job": {
+        "types": "./dist/delivery-lifecycle-job.d.ts",
+        "import": "./dist/delivery-lifecycle-job.js",
+        "default": "./dist/delivery-lifecycle-job.js"
       },
       "./subscriber-runtime": {
         "types": "./dist/subscriber-runtime.d.ts",
