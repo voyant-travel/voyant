@@ -12446,17 +12446,6 @@ export interface operations {
           }
         }
       }
-      /** @description Missing or mismatched active storefront channel context */
-      403: {
-        headers: {
-          [name: string]: unknown
-        }
-        content: {
-          "application/json": {
-            error: string
-          }
-        }
-      }
       /** @description Payment session not found */
       404: {
         headers: {
