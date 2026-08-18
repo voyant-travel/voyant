@@ -15,6 +15,8 @@
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./runtime-port": "./src/runtime-port.ts",
     "./booking-enrichment-subscriber": "./src/booking-enrichment/subscriber-runtime.ts",
+    "./inquiry-overdue-job": "./src/inquiry-overdue-job.ts",
+    "./reporting": "./src/reporting.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/relationships.json"
   },
@@ -40,6 +42,7 @@
     "@voyant-travel/identity": "workspace:^",
     "@voyant-travel/relationships-contracts": "workspace:^",
     "@voyant-travel/proposals-contracts": "workspace:^",
+    "@voyant-travel/reporting-contracts": "workspace:^",
     "@voyant-travel/tools": "workspace:^",
     "@voyant-travel/types": "workspace:^",
     "@voyant-travel/utils": "workspace:^",
@@ -115,6 +118,16 @@
         "types": "./dist/booking-enrichment/subscriber-runtime.d.ts",
         "import": "./dist/booking-enrichment/subscriber-runtime.js",
         "default": "./dist/booking-enrichment/subscriber-runtime.js"
+      },
+      "./inquiry-overdue-job": {
+        "types": "./dist/inquiry-overdue-job.d.ts",
+        "import": "./dist/inquiry-overdue-job.js",
+        "default": "./dist/inquiry-overdue-job.js"
+      },
+      "./reporting": {
+        "types": "./dist/reporting.d.ts",
+        "import": "./dist/reporting.js",
+        "default": "./dist/reporting.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

@@ -28,6 +28,7 @@ import {
 } from "@voyant-travel/proposals-contracts/inquiry-conversion"
 import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
+import { relationshipsInquiryOverdueJobRuntimePort } from "./inquiry-overdue-job-runtime-port.js"
 import { createPublicApiIntakePersistence } from "./public-api-intake-runtime.js"
 import type { RelationshipsRouteRuntimeOptions } from "./route-runtime.js"
 import {
@@ -230,6 +231,12 @@ export function createRelationshipsRuntimePortContribution(
   }
   return {
     [publicApiIntakeRuntimePortReference.id]: createPublicApiIntakePersistence(),
+    [relationshipsInquiryOverdueJobRuntimePort.id]: {
+      withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
+        host.primitives.database.transaction(bindings, (database) =>
+          operation(database as AnyDrizzleDb),
+        ),
+    },
     [customFieldValueReaderRuntimePort.id]: customFields,
     [customFieldValueLifecycleRuntimePort.id]: relationshipCustomFieldValues,
     [customFieldValueOperationsRuntimePort.id]: relationshipCustomFieldValueOperations,
