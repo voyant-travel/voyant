@@ -71,7 +71,7 @@ export async function runNotificationDeliveryLifecycleJob(
 ): Promise<void> {
   const runtime = await context.getPort(notificationsRuntimePort)
   await processNotificationDeliveryLifecycle({
-    db: runtime.resolveDb() as PostgresJsDatabase,
+    db: runtime.resolveDb(context.bindings) as PostgresJsDatabase,
     sources: await context.getPorts(notificationDeliveryLifecycleSourcePort),
   })
 }
