@@ -106,9 +106,10 @@ export default function ConversationPage({ params }: AdminRoutePageProps) {
           <option value="open">Open</option>
           <option value="closed">Closed</option>
         </select>
-        <label className="flex items-center gap-2 text-sm">
-          Snooze until
+        <div className="flex items-center gap-2 text-sm">
+          <span>Snooze until</span>
           <DateTimePicker
+            placeholder="Snooze until"
             onChange={(value) => {
               if (!value) return
               update.mutate({
@@ -118,7 +119,7 @@ export default function ConversationPage({ params }: AdminRoutePageProps) {
               })
             }}
           />
-        </label>
+        </div>
         <select
           aria-label="Priority"
           value={conversation.priority}
