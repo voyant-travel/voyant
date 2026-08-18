@@ -24,6 +24,7 @@
  * found it.
  */
 import { execFile } from "node:child_process"
+import { createHash } from "node:crypto"
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
 import { dirname, join } from "node:path"
 import { fileURLToPath } from "node:url"
@@ -66,6 +67,30 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
 
 const byCommand = new Map(generators.map((generator) => [generator.command, generator]))
 
+/**
+ * Digests of what a generator READ, printed when its output drifted.
+ *
+ * A generator that consumes other generators' artifacts can only drift for two
+ * reasons: an input differed, or the tool did. Naming which is the whole
+ * difference between a fix and a guess — the public API client drifted in CI
+ * while regenerating byte-identically on the machine looking into it, and there
+ * was no way to tell the two apart from the failure alone.
+ *
+ * Only the digest, never the content: these documents are hundreds of kilobytes
+ * and the question is which one moved, not what it says.
+ */
+function inputDigests(generator) {
+  if (!generator.reads?.length) return []
+  return [
+    `      inputs it read (sha256, first 12):`,
+    ...generator.reads.map((file) => {
+      const bytes = read(file)
+      const digest = bytes === null ? "MISSING" : createHash("sha256").update(bytes).digest("hex")
+      return `        ${digest.slice(0, 12)}  ${file}`
+    }),
+  ]
+}
+
 async function checkGenerator(generator) {
   const before = generator.files.map((file) => ({ file, bytes: read(file) }))
   for (const { file, bytes } of before) inFlight.set(file, bytes)
@@ -75,7 +100,7 @@ async function checkGenerator(generator) {
     const snapshots = before.map(({ file, bytes }) => ({ file, before: bytes, after: read(file) }))
     const drifted = driftedFiles(snapshots)
     if (drifted.length > 0) {
-      failures.push(...drifted, `    fix with: ${generator.command}`)
+      failures.push(...drifted, ...inputDigests(generator), `    fix with: ${generator.command}`)
     }
   } catch (error) {
     failures.push(`${generator.command}: generator failed — ${error.message.split("\n")[0]}`)
