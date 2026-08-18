@@ -79,7 +79,7 @@ export const createMediaAssetSchema = z
       })
     }
   })
-export type CreateMediaAssetInput = z.infer<typeof createMediaAssetSchema>
+export type CreateMediaAssetInput = z.input<typeof createMediaAssetSchema>
 
 /**
  * Editable asset fields. `folderIds`, when present, *replaces* the asset's

@@ -322,6 +322,9 @@ export function createRelationshipsRuntimePortContribution(
               resolvePrivateDocument: async (
                 ...args: Parameters<MediaInquiryAttachmentRuntime["resolvePrivateDocument"]>
               ) => (await inquiryAttachments).resolvePrivateDocument(...args),
+              downloadPrivateDocument: async (
+                ...args: Parameters<MediaInquiryAttachmentRuntime["downloadPrivateDocument"]>
+              ) => (await inquiryAttachments).downloadPrivateDocument(...args),
             },
           }
         : {}),

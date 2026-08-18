@@ -3,10 +3,12 @@ import { describe, expect, it } from "vitest"
 import { INQUIRY_DETAIL_DESTINATION, inquiryDetailPathTemplate } from "./inquiry-navigation.js"
 import {
   assignInquirySchema,
+  attachInquiryAssetSchema,
   closeInquirySchema,
   convertInquiryToProposalSchema,
   createInquirySchema,
   createPublicInquirySchema,
+  inquiryAttachmentRecordSchema,
   inquiryListQuerySchema,
   inquiryRecordSchema,
   inquiryTargetRecordSchema,
@@ -93,7 +95,7 @@ describe("Inquiry contracts", () => {
       limit: 50,
       offset: 0,
     })
-    expect(inquiryListQuerySchema.safeParse({ view: "inbox" }).success).toBe(false)
+    expect(inquiryListQuerySchema.safeParse({ view: "mailbox" }).success).toBe(false)
   })
 
   it("owns the serialized Inquiry record contract", () => {
@@ -130,9 +132,13 @@ describe("Inquiry contracts", () => {
         qualifiedAt: null,
         convertedAt: null,
         closedAt: null,
+        privacyErasedAt: null,
+        privacyErasedBy: null,
+        privacyErasureReason: null,
         createdAt: "2026-08-18T00:00:00.000Z",
         updatedAt: "2026-08-18T00:00:00.000Z",
         targets: [],
+        attachments: [],
       }).success,
     ).toBe(true)
   })
@@ -149,7 +155,6 @@ describe("Inquiry contracts", () => {
           optionLabel: "12 September",
           startDate: "2026-09-12",
           endDate: "2026-09-19",
-          publicUrl: "https://travel.example/cruises/1",
           sourceChannel: "storefront-web",
         },
         createdAt: "2026-08-18T00:00:00.000Z",
@@ -157,7 +162,63 @@ describe("Inquiry contracts", () => {
     ).toMatchObject({ kind: "option_unit", targetId: "avsl_1" })
   })
 
+  it("does not accept caller-supplied attachment file metadata", () => {
+    expect(
+      attachInquiryAssetSchema.safeParse({
+        assetId: "mast_01k00000000000000000000000",
+        caption: "Passport scan",
+        name: "spoofed.pdf",
+        mimeType: "application/pdf",
+        storageKey: "documents/private.pdf",
+        publicUrl: "https://cdn.example/private.pdf",
+      }).success,
+    ).toBe(false)
+    expect(
+      attachInquiryAssetSchema.parse({
+        assetId: "mast_01k00000000000000000000000",
+        caption: "Passport scan",
+      }),
+    ).toEqual({
+      assetId: "mast_01k00000000000000000000000",
+      caption: "Passport scan",
+    })
+    expect(
+      inquiryAttachmentRecordSchema.safeParse({
+        linkId: "lnk_1",
+        inquiryId: "inq_1",
+        assetId: "mast_01k00000000000000000000000",
+        name: "passport.pdf",
+        mimeType: "application/pdf",
+        caption: null,
+        attachedBy: "user_1",
+        createdAt: "2026-08-18T00:00:00.000Z",
+        updatedAt: "2026-08-18T00:00:00.000Z",
+        downloadPath: "/v1/admin/relationships/inquiries/inq_1/attachments/lnk_1/download",
+        storageKey: "documents/private.pdf",
+      }).success,
+    ).toBe(false)
+  })
+
   it("keeps public intake source-controlled and returns an idempotent receipt", () => {
+    expect(
+      createPublicInquirySchema.safeParse({
+        sourceRef: "submission-spoofed",
+        subject: "Question about Kyoto",
+        kind: "product",
+        contactSnapshot: { email: "traveler@example.com" },
+        targets: [
+          {
+            kind: "product",
+            targetId: "prod_1",
+            snapshot: {
+              title: "Kyoto discovery",
+              sourceChannel: "spoofed-channel",
+              publicUrl: "https://travel.example/cruises/1",
+            },
+          },
+        ],
+      }).success,
+    ).toBe(false)
     const intake = createPublicInquirySchema.parse({
       sourceRef: "submission-1",
       subject: "Question about Kyoto",
@@ -168,7 +229,7 @@ describe("Inquiry contracts", () => {
         {
           kind: "product",
           targetId: "prod_1",
-          snapshot: { title: "Kyoto discovery", sourceChannel: "spoofed-channel" },
+          snapshot: { title: "Kyoto discovery" },
         },
       ],
     })

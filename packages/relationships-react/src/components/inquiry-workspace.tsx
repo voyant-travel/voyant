@@ -284,7 +284,9 @@ export function InquiryWorkspace(props: InquiryWorkspaceProps) {
               />
               <Button
                 type="button"
-                disabled={!attachmentFile || !props.onUploadAttachment || props.isUploadingAttachment}
+                disabled={
+                  !attachmentFile || !props.onUploadAttachment || props.isUploadingAttachment
+                }
                 onClick={() => {
                   if (!attachmentFile || !props.onUploadAttachment) return
                   void props.onUploadAttachment(attachmentFile, attachmentCaption).then(() => {
@@ -313,7 +315,10 @@ export function InquiryWorkspace(props: InquiryWorkspaceProps) {
               <label className="text-sm font-medium" htmlFor="inquiry-booking-target">
                 {messages.bookingSessionTarget}
               </label>
-              <Select value={bookingTargetLinkId} onValueChange={setBookingTargetLinkId}>
+              <Select
+                value={bookingTargetLinkId}
+                onValueChange={(value) => setBookingTargetLinkId(value ?? "")}
+              >
                 <SelectTrigger id="inquiry-booking-target">
                   <SelectValue placeholder={messages.bookingSessionTargetPlaceholder} />
                 </SelectTrigger>

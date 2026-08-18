@@ -38,6 +38,11 @@ function record(overrides: Partial<InquiryRecord> = {}): InquiryRecord {
     qualifiedAt: null,
     convertedAt: null,
     closedAt: null,
+    privacyErasedAt: null,
+    privacyErasedBy: null,
+    privacyErasureReason: null,
+    targets: [],
+    attachments: [],
     ...overrides,
   })
 }

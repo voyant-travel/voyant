@@ -22,7 +22,6 @@ export type {
 export { customerSignalsService } from "./customer-signals.js"
 export type { InquiryServiceErrorCode } from "./inquiries.js"
 export { InquiryServiceError, inquiriesService } from "./inquiries.js"
-export type { InquiryBookingConversionRefusalReason } from "./inquiry-booking-conversions.js"
 export {
   convertInquiryToBookingTarget,
   InquiryBookingConversionRefusedError,

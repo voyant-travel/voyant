@@ -5,20 +5,20 @@ import { insertOutboxEvents } from "@voyant-travel/db/outbox"
 import type { MediaInquiryAttachmentRuntime } from "@voyant-travel/media/runtime-port"
 import type {
   AddInquiryTargetInput,
-  AttachInquiryAssetInput,
   AssignInquiryInput,
+  AttachInquiryAssetInput,
   CloseInquiryInput,
   CreateInquiryInput,
   CreatePublicInquiryInput,
   EraseInquiryPrivacyInput,
-  InquiryListQueryInput,
   InquiryAttachmentRecord,
+  InquiryListQueryInput,
   InquiryStatus,
   InquiryTargetRecord,
   ReopenInquiryInput,
   TransitionInquiryInput,
-  UpdateInquiryInput,
   UpdateInquiryAttachmentInput,
+  UpdateInquiryInput,
 } from "@voyant-travel/relationships-contracts"
 import type { InquiryMaterializedTargetKind } from "@voyant-travel/relationships-contracts/inquiry-target-authority/runtime-port"
 import {
@@ -51,6 +51,7 @@ import {
   firstResponseDueAtForInquiry,
   type InquiryFirstResponseSlaPolicy,
 } from "../inquiry-sla-policy.js"
+import type { InquiryTargetValidationRuntime } from "../route-runtime.js"
 import {
   type Inquiry,
   inquiries,
@@ -65,7 +66,6 @@ import {
   inquiryOptionUnitLink,
   inquiryProductLink,
 } from "../standard-links.js"
-import type { InquiryTargetValidationRuntime } from "../route-runtime.js"
 import { paginate } from "./helpers.js"
 
 export type InquiryServiceErrorCode =
@@ -179,23 +179,30 @@ const targetLinks = {
   option_unit: inquiryOptionUnitLink,
 } as const
 
-function targetLinkFor(kind: AddInquiryTargetInput["kind"]) {
+function materializedTargetKind(
+  kind: AddInquiryTargetInput["kind"],
+): InquiryMaterializedTargetKind {
   if (kind === "catalog_item" || kind === "trip") {
     throw new InquiryServiceError(
       "INQUIRY_TARGET_UNSUPPORTED",
       `Inquiry target kind ${kind} has no selected owner linkable`,
     )
   }
+  return kind
+}
+
+function targetLinkFor(kind: InquiryMaterializedTargetKind) {
   return targetLinks[kind]
 }
 
 function serializeTarget(row: typeof inquiryTargetSnapshots.$inferSelect): InquiryTargetRecord {
+  const { title, optionLabel, startDate, endDate, sourceChannel } = row.snapshot
   return {
     linkId: row.linkId,
     inquiryId: row.inquiryId,
     kind: row.kind,
     targetId: row.targetId,
-    snapshot: row.snapshot,
+    snapshot: { title, optionLabel, startDate, endDate, sourceChannel },
     createdAt: row.createdAt.toISOString(),
   }
 }
@@ -224,6 +231,17 @@ async function writeInquiryEvent(
       metadata: { category: "domain", source: "service", eventId },
     },
   ])
+}
+
+async function assertActiveInquiryAttachmentLink(
+  link: LinkService,
+  inquiryId: string,
+  linkId: string,
+): Promise<void> {
+  const active = await link.list(inquiryMediaAssetLink.tableName, { leftId: inquiryId })
+  if (!active.some((candidate) => candidate.id === linkId)) {
+    throw new InquiryServiceError("INQUIRY_TARGET_NOT_FOUND", "Inquiry attachment not found")
+  }
 }
 
 /** Stable policy map consumed by export/erasure reviews and retention tooling. */
@@ -257,7 +275,9 @@ export const inquiriesService = {
         .from(inquiryConversions)
         .where(eq(inquiryConversions.inquiryId, inquiryId))
         .orderBy(asc(inquiryConversions.createdAt)),
-      db.execute(sql`SELECT activity_id FROM activity_links WHERE entity_type::text = 'inquiry' AND entity_id = ${inquiryId}`),
+      db.execute(
+        sql`SELECT activity_id FROM activity_links WHERE entity_type::text = 'inquiry' AND entity_id = ${inquiryId}`,
+      ),
     ])
     return {
       inquiry: { ...inquiry, targets, attachments },
@@ -339,7 +359,9 @@ export const inquiriesService = {
       .where(eq(inquiryAttachmentSnapshots.inquiryId, inquiryId))
       .orderBy(asc(inquiryAttachmentSnapshots.createdAt), asc(inquiryAttachmentSnapshots.linkId))
     const active = new Set(
-      (await link.list(inquiryMediaAssetLink.tableName, { leftId: inquiryId })).map((row) => row.id),
+      (await link.list(inquiryMediaAssetLink.tableName, { leftId: inquiryId })).map(
+        (row) => row.id,
+      ),
     )
     return rows.filter((row) => active.has(row.linkId)).map(serializeAttachment)
   },
@@ -371,6 +393,7 @@ export const inquiriesService = {
     input: AttachInquiryAssetInput,
     actorId: string,
     authority?: MediaInquiryAttachmentRuntime,
+    testHooks?: InquiryTargetMutationTestHooks,
   ): Promise<InquiryAttachmentRecord> {
     requireActor(actorId)
     return db.transaction(async (tx) => {
@@ -410,11 +433,17 @@ export const inquiriesService = {
           await tx
             .select()
             .from(inquiryAttachmentSnapshots)
-            .where(eq(inquiryAttachmentSnapshots.linkId, linked.id))
+            .where(
+              and(
+                eq(inquiryAttachmentSnapshots.inquiryId, inquiryId),
+                eq(inquiryAttachmentSnapshots.assetId, input.assetId),
+              ),
+            )
             .limit(1)
         )[0]
       if (!row) throw new Error("Inquiry attachment metadata could not be persisted")
       if (created) {
+        await testHooks?.beforeOutbox?.(tx)
         await writeInquiryEvent(tx, INQUIRY_UPDATED_EVENT, {
           id: inquiryId,
           actorId,
@@ -434,10 +463,13 @@ export const inquiriesService = {
     linkId: string,
     input: UpdateInquiryAttachmentInput,
     actorId: string,
+    testHooks?: InquiryTargetMutationTestHooks,
   ): Promise<InquiryAttachmentRecord> {
     requireActor(actorId)
     return db.transaction(async (tx) => {
       await lockedInquiry(tx, inquiryId)
+      const transactionLink = createLinkService(() => tx, [inquiryMediaAssetLink])
+      await assertActiveInquiryAttachmentLink(transactionLink, inquiryId, linkId)
       const [updated] = await tx
         .update(inquiryAttachmentSnapshots)
         .set({ caption: input.caption, updatedAt: new Date() })
@@ -451,6 +483,7 @@ export const inquiriesService = {
       if (!updated) {
         throw new InquiryServiceError("INQUIRY_TARGET_NOT_FOUND", "Inquiry attachment not found")
       }
+      await testHooks?.beforeOutbox?.(tx)
       await writeInquiryEvent(tx, INQUIRY_UPDATED_EVENT, {
         id: inquiryId,
         actorId,
@@ -467,10 +500,13 @@ export const inquiriesService = {
     inquiryId: string,
     linkId: string,
     actorId: string,
+    testHooks?: InquiryTargetMutationTestHooks,
   ): Promise<void> {
     requireActor(actorId)
     return db.transaction(async (tx) => {
       await lockedInquiry(tx, inquiryId)
+      const transactionLink = createLinkService(() => tx, [inquiryMediaAssetLink])
+      await assertActiveInquiryAttachmentLink(transactionLink, inquiryId, linkId)
       const [row] = await tx
         .select()
         .from(inquiryAttachmentSnapshots)
@@ -484,9 +520,11 @@ export const inquiriesService = {
       if (!row) {
         throw new InquiryServiceError("INQUIRY_TARGET_NOT_FOUND", "Inquiry attachment not found")
       }
-      const transactionLink = createLinkService(() => tx, [inquiryMediaAssetLink])
       await transactionLink.delete(inquiryMediaAssetLink.tableName, inquiryId, row.assetId)
-      await tx.delete(inquiryAttachmentSnapshots).where(eq(inquiryAttachmentSnapshots.linkId, linkId))
+      await tx
+        .delete(inquiryAttachmentSnapshots)
+        .where(eq(inquiryAttachmentSnapshots.linkId, linkId))
+      await testHooks?.beforeOutbox?.(tx)
       await writeInquiryEvent(tx, INQUIRY_UPDATED_EVENT, {
         id: inquiryId,
         actorId,
@@ -509,7 +547,7 @@ export const inquiriesService = {
       slaPolicy?: InquiryFirstResponseSlaPolicy
     },
   ) {
-    for (const target of input.targets) targetLinkFor(target.kind)
+    for (const target of input.targets) targetLinkFor(materializedTargetKind(target.kind))
     return db.transaction(async (tx) => {
       const { targets, ...inquiryInput } = input
       const result = await this.createInquiry(
@@ -518,6 +556,7 @@ export const inquiriesService = {
           ...inquiryInput,
           source: "storefront",
           sourceRef: `${context.channelId}:${input.sourceRef}`,
+          priority: "normal",
           personId: context.relationshipPersonId ?? null,
           customFields: {
             ...input.customFields,
@@ -613,8 +652,8 @@ export const inquiriesService = {
     testHooks?: InquiryTargetMutationTestHooks,
   ): Promise<InquiryTargetRecord> {
     requireActor(actorId)
-    const definition = targetLinkFor(input.kind)
-    const materializedKind = input.kind as InquiryMaterializedTargetKind
+    const materializedKind = materializedTargetKind(input.kind)
+    const definition = targetLinkFor(materializedKind)
     const expectedPrefix = definition.right.linkable.idPrefix
     if (expectedPrefix && !input.targetId.startsWith(`${expectedPrefix}_`)) {
       throw new InquiryServiceError(
@@ -653,7 +692,7 @@ export const inquiriesService = {
         .values({
           linkId: linked.id,
           inquiryId,
-          kind: input.kind,
+          kind: materializedKind,
           targetId: input.targetId,
           snapshot: input.snapshot,
         })

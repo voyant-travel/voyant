@@ -124,10 +124,13 @@ const inquiryRow: InferSelectModel<typeof inquiries> = {
   qualifiedAt: null,
   convertedAt: null,
   closedAt: null,
+  privacyErasedAt: null,
+  privacyErasedBy: null,
+  privacyErasureReason: null,
   createdAt,
   updatedAt,
 }
-const inquiryResponseRow = { ...inquiryRow, targets: [] }
+const inquiryResponseRow = { ...inquiryRow, targets: [], attachments: [] }
 
 const personDocumentRow: InferSelectModel<typeof personDocuments> = {
   id: "person_documents_00000000000000000",

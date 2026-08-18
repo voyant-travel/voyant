@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: relationships; Inquiry admin route declarations stay co-located with their handlers until this surface is split by capability group.
 import { createRoute, OpenAPIHono, z } from "@hono/zod-openapi"
 import type { LinkService, ModuleContainer } from "@voyant-travel/core"
 import {
@@ -13,11 +14,11 @@ import {
   eraseInquiryPrivacySchema,
   type InquiryBookingConversionResult,
   type InquiryProposalConversionResult,
+  inquiryAttachmentResponseSchema,
+  inquiryAttachmentsResponseSchema,
   inquiryBookingConversionRefusalSchema,
   inquiryBookingConversionResultSchema,
   inquiryCreateResponseSchema,
-  inquiryAttachmentResponseSchema,
-  inquiryAttachmentsResponseSchema,
   inquiryListResponseSchema,
   inquiryPrivacyExportResponseSchema,
   inquiryProposalConversionRefusalSchema,
@@ -157,6 +158,7 @@ const createRouteDefinition = createRoute({
     201: { description: "Created inquiry", ...inquiryCreateResponse },
     404: { description: "Related record not found", ...jsonContent(errorResponseSchema) },
     409: { description: "Inquiry conflict", ...jsonContent(errorResponseSchema) },
+    503: { description: "Runtime authority unavailable", ...jsonContent(errorResponseSchema) },
   },
 })
 const getRoute = createRoute({
@@ -179,6 +181,7 @@ const updateRoute = createRoute({
       ...jsonContent(errorResponseSchema),
     },
     409: { description: "Inquiry conflict", ...jsonContent(errorResponseSchema) },
+    503: { description: "Runtime authority unavailable", ...jsonContent(errorResponseSchema) },
   },
 })
 const addTargetRoute = createRoute({
@@ -219,6 +222,10 @@ const attachAssetRoute = createRoute({
     201: { description: "Attached Media asset", ...jsonContent(inquiryAttachmentResponseSchema) },
     404: { description: "Inquiry or Media asset not found", ...jsonContent(errorResponseSchema) },
     409: { description: "Attachment conflict", ...jsonContent(errorResponseSchema) },
+    503: {
+      description: "Media attachment authority unavailable",
+      ...jsonContent(errorResponseSchema),
+    },
   },
 })
 const updateAttachmentRoute = createRoute({
@@ -229,8 +236,16 @@ const updateAttachmentRoute = createRoute({
     ...requiredJsonBody(updateInquiryAttachmentSchema),
   },
   responses: {
-    200: { description: "Updated attachment caption", ...jsonContent(inquiryAttachmentResponseSchema) },
+    200: {
+      description: "Updated attachment caption",
+      ...jsonContent(inquiryAttachmentResponseSchema),
+    },
     404: { description: "Inquiry attachment not found", ...jsonContent(errorResponseSchema) },
+    409: { description: "Attachment conflict", ...jsonContent(errorResponseSchema) },
+    503: {
+      description: "Media attachment authority unavailable",
+      ...jsonContent(errorResponseSchema),
+    },
   },
 })
 const removeAttachmentRoute = createRoute({
@@ -240,6 +255,11 @@ const removeAttachmentRoute = createRoute({
   responses: {
     204: { description: "Inquiry attachment removed" },
     404: { description: "Inquiry attachment not found", ...jsonContent(errorResponseSchema) },
+    409: { description: "Attachment conflict", ...jsonContent(errorResponseSchema) },
+    503: {
+      description: "Media attachment authority unavailable",
+      ...jsonContent(errorResponseSchema),
+    },
   },
 })
 const downloadAttachmentRoute = createRoute({
@@ -249,7 +269,10 @@ const downloadAttachmentRoute = createRoute({
   responses: {
     200: { description: "Authenticated private Inquiry attachment bytes" },
     404: { description: "Inquiry attachment not found", ...jsonContent(errorResponseSchema) },
-    503: { description: "Media attachment authority unavailable", ...jsonContent(errorResponseSchema) },
+    503: {
+      description: "Media attachment authority unavailable",
+      ...jsonContent(errorResponseSchema),
+    },
   },
 })
 const privacyExportRoute = createRoute({
@@ -257,8 +280,13 @@ const privacyExportRoute = createRoute({
   path: "/inquiries/{id}/privacy-export",
   request: { params: idParamSchema },
   responses: {
-    200: { description: "Inquiry privacy export", ...jsonContent(inquiryPrivacyExportResponseSchema) },
+    200: {
+      description: "Inquiry privacy export",
+      ...jsonContent(inquiryPrivacyExportResponseSchema),
+    },
     404: { description: "Inquiry not found", ...jsonContent(errorResponseSchema) },
+    409: { description: "Inquiry conflict", ...jsonContent(errorResponseSchema) },
+    503: { description: "Runtime authority unavailable", ...jsonContent(errorResponseSchema) },
   },
 })
 const privacyErasureRoute = createRoute({
@@ -269,6 +297,7 @@ const privacyErasureRoute = createRoute({
     200: { description: "Privacy-erased inquiry", ...inquiryResponse },
     404: { description: "Inquiry not found", ...jsonContent(errorResponseSchema) },
     409: { description: "Inquiry conflict", ...jsonContent(errorResponseSchema) },
+    503: { description: "Runtime authority unavailable", ...jsonContent(errorResponseSchema) },
   },
 })
 
@@ -276,6 +305,7 @@ const commandResponses = {
   200: { description: "Updated inquiry", ...inquiryResponse },
   404: { description: "Inquiry not found", ...jsonContent(errorResponseSchema) },
   409: { description: "Inquiry lifecycle conflict", ...jsonContent(errorResponseSchema) },
+  503: { description: "Runtime authority unavailable", ...jsonContent(errorResponseSchema) },
 } as const
 const transitionRoute = createRoute({
   method: "post",
@@ -348,7 +378,11 @@ inquiryRoutes.openapi(listRoute, async (c) => {
         result.data.map(async (inquiry) => ({
           ...inquiry,
           targets: targets.get(inquiry.id) ?? [],
-          attachments: await relationshipsService.listInquiryAttachments(db, requireLink(c), inquiry.id),
+          attachments: await relationshipsService.listInquiryAttachments(
+            db,
+            requireLink(c),
+            inquiry.id,
+          ),
         })),
       ),
     },
@@ -483,7 +517,10 @@ inquiryRoutes.openapi(listAttachmentsRoute, async (c) => {
   const { id } = c.req.valid("param")
   const inquiry = await relationshipsService.getInquiry(c.get("db"), id)
   if (!inquiry) return c.json({ error: "Inquiry not found" }, 404)
-  return c.json({ data: await relationshipsService.listInquiryAttachments(c.get("db"), requireLink(c), id) }, 200)
+  return c.json(
+    { data: await relationshipsService.listInquiryAttachments(c.get("db"), requireLink(c), id) },
+    200,
+  )
 })
 inquiryRoutes.openapi(attachAssetRoute, async (c) => {
   try {
@@ -593,25 +630,26 @@ inquiryRoutes.openapi(convertRoute, async (c) => {
     | undefined
   try {
     const inquiryId = c.req.valid("param").id
-    let result: InquiryProposalConversionResult | InquiryBookingConversionResult
     if (command.kind === "proposal") {
       if (!runtime?.proposalInquiryConversion) {
         return c.json({ error: "Proposal conversion is unavailable" }, 503)
       }
-      result = await convertInquiryToProposal(
+      const result: InquiryProposalConversionResult = await convertInquiryToProposal(
         c.get("db"),
         runtime.proposalInquiryConversion,
         inquiryId,
         command,
         actorId,
       )
+      const body = { data: result }
+      return result.kind === "created" ? c.json(body, 201) : c.json(body, 200)
     } else if (command.kind === "booking") {
       throw new InquiryBookingConversionRefusedError("booking_session_required")
     } else {
       if (!runtime?.inquiryBookingSession) {
         return c.json({ error: "Booking Session conversion is unavailable" }, 503)
       }
-      result = await convertInquiryToBookingTarget(
+      const result: InquiryBookingConversionResult = await convertInquiryToBookingTarget(
         c.get("db"),
         runtime.inquiryBookingSession,
         requireLink(c),
@@ -619,9 +657,9 @@ inquiryRoutes.openapi(convertRoute, async (c) => {
         command,
         actorId,
       )
+      const body = { data: result }
+      return result.kind === "created" ? c.json(body, 201) : c.json(body, 200)
     }
-    const body = { data: result }
-    return result.kind === "created" ? c.json(body, 201) : c.json(body, 200)
   } catch (error) {
     if (error instanceof InquiryProposalConversionRefusedError) {
       return c.json({ error: error.message, reason: error.reason }, 409)

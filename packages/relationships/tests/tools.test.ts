@@ -262,9 +262,13 @@ function inquiry(overrides: Record<string, unknown> = {}) {
     qualifiedAt: null,
     convertedAt: null,
     closedAt: null,
+    privacyErasedAt: null,
+    privacyErasedBy: null,
+    privacyErasureReason: null,
     createdAt: timestamp,
     updatedAt: timestamp,
     targets: [],
+    attachments: [],
     ...overrides,
   }
 }

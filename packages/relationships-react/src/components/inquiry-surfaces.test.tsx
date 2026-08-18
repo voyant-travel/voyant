@@ -55,6 +55,10 @@ const inquiry: InquiryRecord = inquiryRecordSchema.parse({
   qualifiedAt: "2026-08-18T12:00:00.000Z",
   convertedAt: null,
   closedAt: null,
+  privacyErasedAt: null,
+  privacyErasedBy: null,
+  privacyErasureReason: null,
+  attachments: [],
 })
 
 describe("Inquiry operator surfaces", () => {

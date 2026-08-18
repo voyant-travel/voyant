@@ -213,14 +213,10 @@
                             "endDate": {
                               "type": ["string", "null"],
                               "format": "date"
-                            },
-                            "publicUrl": {
-                              "type": ["string", "null"],
-                              "maxLength": 2000,
-                              "format": "uri"
                             }
                           },
-                          "required": ["title"]
+                          "required": ["title"],
+                          "additionalProperties": false
                         }
                       },
                       "required": ["kind", "targetId", "snapshot"]

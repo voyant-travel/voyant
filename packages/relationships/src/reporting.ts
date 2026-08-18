@@ -18,6 +18,11 @@ const REQUIRED_SCOPE = "crm:read"
 const DEFAULT_LIMIT = 100
 const MAXIMUM_LIMIT = 1_000
 type FieldId = (typeof INQUIRY_ACTIVITY_FIELDS)[number]["id"]
+const inquiryActivityFields: ReportDatasetField[] = INQUIRY_ACTIVITY_FIELDS.map((field) => ({
+  ...field,
+  requiredScopes: [...field.requiredScopes],
+  aggregations: [...field.aggregations],
+}))
 
 const expressions: Record<FieldId, SQL> = {
   createdAt: sql`${inquiries.createdAt}`,
@@ -45,9 +50,9 @@ const expressions: Record<FieldId, SQL> = {
 }
 
 const fields = new Map(
-  INQUIRY_ACTIVITY_FIELDS.map((definition) => [
+  inquiryActivityFields.map((definition) => [
     definition.id,
-    { definition, expression: expressions[definition.id] },
+    { definition, expression: expressions[definition.id as FieldId] },
   ]),
 )
 
@@ -59,11 +64,7 @@ export const inquiryActivityDataset: ReportDatasetContribution = {
     description: "Inquiry operations and authoritative durable conversion facts.",
     grain: "One row per inquiry.",
     requiredScopes: [REQUIRED_SCOPE],
-    fields: INQUIRY_ACTIVITY_FIELDS.map((field) => ({
-      ...field,
-      requiredScopes: [...field.requiredScopes],
-      aggregations: [...field.aggregations],
-    })),
+    fields: inquiryActivityFields,
     defaultLimit: DEFAULT_LIMIT,
     maximumLimit: MAXIMUM_LIMIT,
     defaultDateField: "createdAt",

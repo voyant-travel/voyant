@@ -174,12 +174,13 @@ export async function createMediaAsset(
   body: StorageUploadBody,
 ): Promise<CreateMediaAssetResult> {
   const defaultLanguageTag = input.defaultLanguageTag ?? "en"
+  const storageClass = input.storageClass ?? "media"
   assertAltTranslationsExcludeDefault(defaultLanguageTag, input.altTranslations)
 
   const bytes = await toBytes(body)
   const checksum = await computeChecksum(bytes)
 
-  const existing = await findAssetByChecksum(db, checksum, input.storageClass, storage)
+  const existing = await findAssetByChecksum(db, checksum, storageClass, storage)
   if (existing) {
     return { asset: existing, deduped: true }
   }
@@ -197,7 +198,7 @@ export async function createMediaAsset(
       .insert(mediaAsset)
       .values({
         type: input.type,
-        storageClass: input.storageClass,
+        storageClass,
         name: input.name,
         altText: input.altText ?? null,
         defaultLanguageTag,
@@ -227,7 +228,7 @@ export async function createMediaAsset(
   } catch (error) {
     // Lost a race with a concurrent identical upload: the unique checksum index
     // rejected our insert. Fall back to the row the winner created.
-    const raced = await findAssetByChecksum(db, checksum, input.storageClass, storage)
+    const raced = await findAssetByChecksum(db, checksum, storageClass, storage)
     if (raced) return { asset: raced, deduped: true }
     throw error
   }

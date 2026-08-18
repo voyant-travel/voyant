@@ -1,3 +1,4 @@
+// agent-quality: file-size exception -- owner: relationships; Inquiry integration scenarios share one database fixture so transaction and link-table setup stay consistent.
 import { generateLinkTableSql } from "@voyant-travel/core"
 import { createLinkService } from "@voyant-travel/db/links"
 import { eventOutboxTable } from "@voyant-travel/db/schema"
@@ -5,9 +6,18 @@ import { inquiryListQuerySchema } from "@voyant-travel/relationships-contracts"
 import { eq, sql } from "drizzle-orm"
 import { afterAll, beforeAll, beforeEach, describe, expect, it, vi } from "vitest"
 
-import { inquiries, inquiryTargetSnapshots, people } from "../../src/schema.js"
+import {
+  inquiries,
+  inquiryAttachmentSnapshots,
+  inquiryTargetSnapshots,
+  people,
+} from "../../src/schema.js"
 import { type InquiryServiceError, inquiriesService } from "../../src/service/inquiries.js"
-import { inquiryOptionUnitLink, inquiryProductLink } from "../../src/standard-links.js"
+import {
+  inquiryMediaAssetLink,
+  inquiryOptionUnitLink,
+  inquiryProductLink,
+} from "../../src/standard-links.js"
 
 const validTargetValidation = {
   validateTarget: async () => "valid" as const,
@@ -16,14 +26,14 @@ const validTargetValidation = {
 const DB_AVAILABLE = Boolean(process.env.TEST_DATABASE_URL)
 
 describe.skipIf(!DB_AVAILABLE)("inquiriesService", () => {
-  // biome-ignore lint/suspicious/noExplicitAny: test database follows existing integration fixture typing.
+  // biome-ignore lint/suspicious/noExplicitAny: owner: relationships; test database follows existing integration fixture typing.
   let db: any
 
   beforeAll(async () => {
     const { createTestDb, cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     db = createTestDb()
     await cleanupTestDb(db)
-    for (const definition of [inquiryProductLink, inquiryOptionUnitLink]) {
+    for (const definition of [inquiryProductLink, inquiryOptionUnitLink, inquiryMediaAssetLink]) {
       const ddl = generateLinkTableSql(definition)
       await db.execute(sql.raw(ddl.createTable))
       for (const index of ddl.indexes) await db.execute(sql.raw(index))
@@ -33,7 +43,7 @@ describe.skipIf(!DB_AVAILABLE)("inquiriesService", () => {
   beforeEach(async () => {
     const { cleanupTestDb } = await import("@voyant-travel/db/test-utils")
     await cleanupTestDb(db)
-    for (const definition of [inquiryProductLink, inquiryOptionUnitLink]) {
+    for (const definition of [inquiryProductLink, inquiryOptionUnitLink, inquiryMediaAssetLink]) {
       await db.execute(sql.raw(`DELETE FROM "${definition.tableName}"`))
     }
   })
@@ -154,6 +164,100 @@ describe.skipIf(!DB_AVAILABLE)("inquiriesService", () => {
         .select()
         .from(eventOutboxTable)
         .where(eq(eventOutboxTable.name, "inquiry.target_added")),
+    ).toHaveLength(1)
+  })
+
+  it("keeps Inquiry attachment link, snapshot, and outbox writes atomic", async () => {
+    const { inquiry } = await inquiriesService.createInquiry(
+      db,
+      {
+        subject: "Attachment transaction",
+        kind: "general",
+        contactSnapshot: { email: "attachments@example.com" },
+        source: "admin",
+        tags: [],
+        customFields: {},
+      },
+      "user_1",
+    )
+    const link = createLinkService(
+      () => db,
+      [inquiryProductLink, inquiryOptionUnitLink, inquiryMediaAssetLink],
+    )
+    const authority = {
+      resolvePrivateDocument: vi.fn(async () => ({
+        id: "mast_private",
+        name: "passport.pdf",
+        mimeType: "application/pdf",
+      })),
+      downloadPrivateDocument: vi.fn(),
+    }
+
+    await expect(
+      inquiriesService.attachInquiryAsset(
+        db,
+        inquiry.id,
+        { assetId: "mast_private", caption: "Initial" },
+        "user_1",
+        authority,
+        {
+          beforeOutbox: async () => {
+            throw new Error("rollback attachment")
+          },
+        },
+      ),
+    ).rejects.toThrow("rollback attachment")
+    expect(await link.list(inquiryMediaAssetLink.tableName, { leftId: inquiry.id })).toEqual([])
+    expect(
+      await db
+        .select()
+        .from(inquiryAttachmentSnapshots)
+        .where(eq(inquiryAttachmentSnapshots.inquiryId, inquiry.id)),
+    ).toEqual([])
+
+    const attached = await inquiriesService.attachInquiryAsset(
+      db,
+      inquiry.id,
+      { assetId: "mast_private", caption: "Initial" },
+      "user_1",
+      authority,
+    )
+    await expect(
+      inquiriesService.updateInquiryAttachment(
+        db,
+        inquiry.id,
+        attached.linkId,
+        { caption: "Updated" },
+        "user_1",
+        {
+          beforeOutbox: async () => {
+            throw new Error("rollback caption")
+          },
+        },
+      ),
+    ).rejects.toThrow("rollback caption")
+    expect(
+      (
+        await db
+          .select()
+          .from(inquiryAttachmentSnapshots)
+          .where(eq(inquiryAttachmentSnapshots.linkId, attached.linkId))
+      )[0]?.caption,
+    ).toBe("Initial")
+
+    await expect(
+      inquiriesService.removeInquiryAttachment(db, inquiry.id, attached.linkId, "user_1", {
+        beforeOutbox: async () => {
+          throw new Error("rollback removal")
+        },
+      }),
+    ).rejects.toThrow("rollback removal")
+    expect(await link.list(inquiryMediaAssetLink.tableName, { leftId: inquiry.id })).toHaveLength(1)
+    expect(
+      await db
+        .select()
+        .from(inquiryAttachmentSnapshots)
+        .where(eq(inquiryAttachmentSnapshots.linkId, attached.linkId)),
     ).toHaveLength(1)
   })
 

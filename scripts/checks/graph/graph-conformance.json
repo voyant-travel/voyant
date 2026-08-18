@@ -31,9 +31,15 @@
         "custom-fields.runtime",
         "proposals.inquiry-conversion.runtime",
         "catalog.inquiry-booking-session.runtime",
+        "media.inquiry-attachment",
         "relationships.booking-enrichment-database"
       ],
       "runtimeExport": "createRelationshipsRuntimePortContribution"
+    },
+    "@voyant-travel/media": {
+      "requiresSchemas": ["@voyant-travel/db"],
+      "portIds": ["media.inquiry-attachment"],
+      "runtimeExport": "createMediaRuntimePortContribution"
     },
     "@voyant-travel/trips": {
       "requiresSchemas": ["@voyant-travel/db"],

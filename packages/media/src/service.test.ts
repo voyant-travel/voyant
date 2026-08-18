@@ -110,6 +110,46 @@ describe("@voyant-travel/media service (pglite)", () => {
     expect(other.asset.id).not.toBe(first.asset.id)
   })
 
+  it("keeps private documents in the documents storage class with no public URL", async () => {
+    const privateStorage = createLocalStorageProvider({ name: "memory:documents" })
+    const bytes = bytesOf("passport scan bytes")
+
+    const first = await createMediaAsset(
+      db,
+      privateStorage,
+      {
+        type: "document",
+        storageClass: "documents",
+        name: "passport.pdf",
+        mimeType: "application/pdf",
+        defaultLanguageTag: "en",
+      },
+      bytes,
+    )
+    const duplicate = await createMediaAsset(
+      db,
+      privateStorage,
+      {
+        type: "document",
+        storageClass: "documents",
+        name: "passport-copy.pdf",
+        mimeType: "application/pdf",
+        defaultLanguageTag: "en",
+      },
+      bytes,
+    )
+    const publicAsset = await createMediaAsset(db, storage, imageInput, bytes)
+
+    expect(first.deduped).toBe(false)
+    expect(first.asset.storageClass).toBe("documents")
+    expect(first.asset.url).toBeNull()
+    expect(duplicate.deduped).toBe(true)
+    expect(duplicate.asset.id).toBe(first.asset.id)
+    expect(publicAsset.deduped).toBe(false)
+    expect(publicAsset.asset.id).not.toBe(first.asset.id)
+    expect(await privateStorage.get(first.asset.storageKey)).not.toBeNull()
+  })
+
   it("blocks deletion while the asset is in use, then allows it once freed", async () => {
     const { asset } = await createMediaAsset(db, storage, imageInput, bytesOf("in-use-asset"))
 

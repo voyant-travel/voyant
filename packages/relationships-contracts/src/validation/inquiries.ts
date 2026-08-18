@@ -34,14 +34,15 @@ export const inquirySourceSchema = z.enum([
 /** Cross-module subjects an Inquiry can retain as immutable intake context. */
 export const inquiryTargetKindSchema = z.enum(["product", "option_unit", "catalog_item", "trip"])
 
-export const inquiryTargetSnapshotSchema = z.object({
-  title: z.string().trim().min(1).max(500),
-  optionLabel: z.string().trim().min(1).max(500).nullable().optional(),
-  startDate: z.string().date().nullable().optional(),
-  endDate: z.string().date().nullable().optional(),
-  publicUrl: z.string().url().max(2_000).nullable().optional(),
-  sourceChannel: z.string().trim().min(1).max(200).nullable().optional(),
-})
+export const inquiryTargetSnapshotSchema = z
+  .object({
+    title: z.string().trim().min(1).max(500),
+    optionLabel: z.string().trim().min(1).max(500).nullable().optional(),
+    startDate: z.string().date().nullable().optional(),
+    endDate: z.string().date().nullable().optional(),
+    sourceChannel: z.string().trim().min(1).max(200).nullable().optional(),
+  })
+  .strict()
 
 export const addInquiryTargetSchema = z.object({
   kind: inquiryTargetKindSchema,
@@ -58,28 +59,37 @@ export const inquiryTargetRecordSchema = addInquiryTargetSchema.extend({
 export const inquiryTargetsResponseSchema = z.object({ data: z.array(inquiryTargetRecordSchema) })
 export const inquiryTargetResponseSchema = z.object({ data: inquiryTargetRecordSchema })
 
-export const attachInquiryAssetSchema = z.object({
-  assetId: z.string().trim().regex(/^mast_/),
-  caption: z.string().trim().min(1).max(2_000).nullable().optional(),
-})
+export const attachInquiryAssetSchema = z
+  .object({
+    assetId: z
+      .string()
+      .trim()
+      .regex(/^mast_/),
+    caption: z.string().trim().min(1).max(2_000).nullable().optional(),
+  })
+  .strict()
 
-export const updateInquiryAttachmentSchema = z.object({
-  caption: z.string().trim().min(1).max(2_000).nullable(),
-})
+export const updateInquiryAttachmentSchema = z
+  .object({
+    caption: z.string().trim().min(1).max(2_000).nullable(),
+  })
+  .strict()
 
-export const inquiryAttachmentRecordSchema = z.object({
-  linkId: z.string(),
-  inquiryId: z.string(),
-  assetId: z.string(),
-  name: z.string(),
-  mimeType: z.string().nullable(),
-  caption: z.string().nullable(),
-  attachedBy: z.string(),
-  createdAt: z.string(),
-  updatedAt: z.string(),
-  /** Authenticated Media byte route; never a persisted or public URL. */
-  downloadPath: z.string(),
-})
+export const inquiryAttachmentRecordSchema = z
+  .object({
+    linkId: z.string(),
+    inquiryId: z.string(),
+    assetId: z.string(),
+    name: z.string(),
+    mimeType: z.string().nullable(),
+    caption: z.string().nullable(),
+    attachedBy: z.string(),
+    createdAt: z.string(),
+    updatedAt: z.string(),
+    /** Authenticated Media byte route; never a persisted or public URL. */
+    downloadPath: z.string(),
+  })
+  .strict()
 
 export const inquiryAttachmentsResponseSchema = z.object({
   data: z.array(inquiryAttachmentRecordSchema),

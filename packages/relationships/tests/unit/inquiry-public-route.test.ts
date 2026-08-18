@@ -1,4 +1,5 @@
 import { OpenAPIHono } from "@hono/zod-openapi"
+import { handleApiError } from "@voyant-travel/hono"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { afterEach, describe, expect, it, vi } from "vitest"
 
@@ -16,6 +17,7 @@ type Env = {
 
 function appWithContext(context: Omit<Env["Variables"], "db"> & { db?: PostgresJsDatabase } = {}) {
   const app = new OpenAPIHono<Env>()
+  app.onError(handleApiError)
   app.use("*", async (c, next) => {
     c.set("db", context.db ?? ({} as PostgresJsDatabase))
     if (context.userId) c.set("userId", context.userId)
@@ -73,7 +75,7 @@ describe("public Inquiry route", () => {
           {
             kind: "product",
             targetId: "prod_1",
-            snapshot: { title: "Kyoto discovery", sourceChannel: "spoofed-channel" },
+            snapshot: { title: "Kyoto discovery" },
           },
         ],
       }),
@@ -106,6 +108,34 @@ describe("public Inquiry route", () => {
         receivedAt: createdAt.toISOString(),
       },
     })
+  })
+
+  it("rejects caller-supplied public target provenance metadata", async () => {
+    const response = await appWithContext({
+      userId: "customer-user-1",
+      relationshipPersonId: "per_canonical",
+      publicChannel: { channelId: "channel-1", channelStatus: "active" },
+    }).request("/v1/public/relationships/inquiries", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        ...body,
+        kind: "product",
+        targets: [
+          {
+            kind: "product",
+            targetId: "prod_1",
+            snapshot: {
+              title: "Kyoto discovery",
+              sourceChannel: "spoofed-channel",
+              publicUrl: "https://travel.example/cruises/1",
+            },
+          },
+        ],
+      }),
+    })
+
+    expect(response.status).toBe(400)
   })
 
   it("keeps authenticated but unlinked customers targetless instead of trusting the body", async () => {

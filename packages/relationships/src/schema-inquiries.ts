@@ -124,7 +124,6 @@ export interface InquiryTargetSnapshotValue {
   optionLabel?: string | null
   startDate?: string | null
   endDate?: string | null
-  publicUrl?: string | null
   sourceChannel?: string | null
 }
 
