@@ -24,9 +24,8 @@ import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "nod
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { promisify } from "node:util"
-
+import { clientDocuments } from "./lib/api-client-documents.mjs"
 import { keyKindForPath, readApiBundles } from "./lib/openapi-key-kind.mjs"
-import { trackedFilesIn } from "./lib/tracked-files.mjs"
 
 const execFileAsync = promisify(execFile)
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
@@ -108,38 +107,34 @@ export type { components, operations, paths, webhooks } from "./paths.js"
 `
 }
 
-/**
- * The documents a client is generated from: one named outright, or every
- * document on a surface.
- *
- * Read from the TRACKED listing rather than the filesystem, so a git worktree
- * parked in the repository root cannot contribute another checkout's documents
- * to this one's client — the false green that `trackedFilesIn` exists to
- * prevent.
- */
-function resolveDocuments(client) {
-  if (client.document) return [client.document]
-  const tracked = trackedFilesIn(root) ?? []
-  const pattern = new RegExp(`^packages/[^/]+/openapi/${client.surface}/[^/]+\\.json$`)
-  return tracked.filter((file) => pattern.test(file)).sort()
-}
-
 /** `packages/finance/openapi/admin/finance.json` -> `finance`. */
 const moduleNameOf = (document) => path.basename(document, ".json")
 
 async function generateModule(document, outDir, client, bundles) {
-  const documentPath = path.join(root, document)
-  const name = client.document ? "paths" : moduleNameOf(document)
+  const composed = typeof document === "object"
+  const name = composed || client.document ? "paths" : moduleNameOf(document)
 
-  await execFileAsync(
-    "npx",
-    ["openapi-typescript", documentPath, "-o", path.join(outDir, `${name}.ts`)],
-    { cwd: root, maxBuffer: 256 * 1024 * 1024 },
-  )
+  // `openapi-typescript` reads a path, so a composed surface is staged next to
+  // the output and removed afterwards. Under the output directory rather than a
+  // temp dir so a killed run leaves the stray file somewhere `git status` shows
+  // it, instead of somewhere nobody looks.
+  const staged = path.join(outDir, ".composed-surface.json")
+  const documentPath = composed ? staged : path.join(root, document)
+  if (composed) writeFileSync(staged, JSON.stringify(document, null, 2))
+
+  try {
+    await execFileAsync(
+      "npx",
+      ["openapi-typescript", documentPath, "-o", path.join(outDir, `${name}.ts`)],
+      { cwd: root, maxBuffer: 256 * 1024 * 1024 },
+    )
+  } finally {
+    if (composed) rmSync(staged, { force: true })
+  }
 
   if (!client.keyKinds) return { routes: 0, total: 0, files: [`${name}.ts`] }
 
-  const parsed = JSON.parse(readFileSync(documentPath, "utf8"))
+  const parsed = composed ? document : JSON.parse(readFileSync(documentPath, "utf8"))
   const routes = publishablePaths(bundles, parsed)
   writeFileSync(path.join(outDir, "key-kind.ts"), keyKindModule(routes))
   writeFileSync(path.join(outDir, "index.ts"), barrelModule())
@@ -154,8 +149,8 @@ async function generate(client, bundles) {
   const outDir = path.join(root, client.outDir)
   mkdirSync(outDir, { recursive: true })
 
-  const documents = resolveDocuments(client)
-  if (documents.length === 0) {
+  const { parts, documents } = clientDocuments(client)
+  if (parts.length === 0) {
     throw new Error(
       `generate:api-client: ${client.outDir} matched no tracked documents. A client that ` +
         `silently generates nothing looks identical to one that is up to date.`,
