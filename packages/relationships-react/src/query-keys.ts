@@ -76,7 +76,7 @@ export interface PersonCommunicationsListFilters {
   dateFrom?: string | undefined
   dateTo?: string | undefined
   limit?: number | undefined
-  offset?: number | undefined
+  cursor?: string | undefined
 }
 
 export const relationshipsQueryKeys = {

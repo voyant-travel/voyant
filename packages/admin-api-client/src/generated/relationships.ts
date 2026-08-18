@@ -310,6 +310,23 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/v1/admin/relationships/people/{id}/communications/timeline": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    /** GET /v1/admin/relationships/people/{id}/communications/timeline */
+    get: operations["getAdminRelationshipsPeopleByIdCommunicationsTimeline"]
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/v1/admin/relationships/segments": {
     parameters: {
       query?: never
@@ -3014,6 +3031,87 @@ export interface operations {
         }
       }
       /** @description invalid_request */
+      400: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": {
+            error: string
+          }
+        }
+      }
+      /** @description Person not found */
+      404: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": {
+            error: string
+          }
+        }
+      }
+    }
+  }
+  getAdminRelationshipsPeopleByIdCommunicationsTimeline: {
+    parameters: {
+      query?: {
+        limit?: number
+        cursor?: string
+        channel?: "email" | "phone" | "whatsapp" | "sms" | "meeting" | "other"
+        direction?: "inbound" | "outbound"
+        dateFrom?: string
+        dateTo?: string
+      }
+      header?: never
+      path: {
+        id: string
+      }
+      cookie?: never
+    }
+    requestBody?: never
+    responses: {
+      /** @description Exact chronological Person communication timeline */
+      200: {
+        headers: {
+          [name: string]: unknown
+        }
+        content: {
+          "application/json": {
+            data: {
+              id: string
+              personId: string
+              organizationId: string | null
+              conversationId: string | null
+              /** @enum {string} */
+              channel: "email" | "phone" | "whatsapp" | "sms" | "meeting" | "other"
+              /** @enum {string} */
+              direction: "inbound" | "outbound"
+              subject: string | null
+              content: string | null
+              /** @enum {string|null} */
+              deliveryStatus:
+                | "received"
+                | "pending"
+                | "accepted"
+                | "delivered"
+                | "failed"
+                | "bounced"
+                | "complained"
+                | "suppressed"
+                | "cancelled"
+                | null
+              occurredAt: string
+              createdAt: string
+              /** @enum {string} */
+              source: "logged" | "conversation" | "notification"
+            }[]
+            nextCursor: string | null
+          }
+        }
+      }
+      /** @description Invalid or drifted cursor */
       400: {
         headers: {
           [name: string]: unknown

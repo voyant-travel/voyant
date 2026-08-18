@@ -3,7 +3,6 @@ import {
   bookingsCrmSnapshotRuntimePort,
   bookingsRelationshipsRuntimePort,
 } from "@voyant-travel/bookings/runtime-port"
-import { conversationsPersonDirectoryPort } from "@voyant-travel/conversations/runtime-port"
 import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
 import {
   customFieldsRuntimePort,
@@ -30,6 +29,7 @@ const relationshipsAdminRuntime = {
 } as const
 
 const publicApiIntakeRuntimePortReference = { id: "public-api.intake.runtime" } as const
+const conversationsPersonDirectoryPortReference = { id: "conversations.person-directory" } as const
 
 const customerSignalCreatedPayloadSchema = {
   type: "object",
@@ -88,6 +88,7 @@ export const relationshipsVoyantModule = defineModule({
   provides: {
     ports: [
       publicApiIntakeRuntimePortReference,
+      conversationsPersonDirectoryPortReference,
       providePort(relationshipsMiceRuntimePort),
       providePort(bookingsRelationshipsRuntimePort),
       providePort(financeStoredInstrumentRuntimePort),
@@ -96,7 +97,6 @@ export const relationshipsVoyantModule = defineModule({
       providePort(customFieldValueLifecycleRuntimePort),
       providePort(customFieldValueOperationsRuntimePort),
       providePort(relationshipsBookingEnrichmentDatabaseRuntimePort),
-      providePort(conversationsPersonDirectoryPort),
     ],
   },
   runtimePorts: [

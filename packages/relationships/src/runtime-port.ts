@@ -13,20 +13,44 @@ export interface RelationshipsBookingEnrichmentDatabaseRuntime {
 }
 
 /** One message a deployment actually delivered to a person. */
+export type PersonCommunicationChannel = "email" | "sms"
+export type PersonCommunicationDirection = "inbound" | "outbound"
+export type PersonCommunicationDeliveryStatus =
+  | "received"
+  | "pending"
+  | "accepted"
+  | "delivered"
+  | "failed"
+  | "bounced"
+  | "complained"
+  | "suppressed"
+  | "cancelled"
+
+export interface PersonTimelineBoundary {
+  occurredAt: string
+  source: "logged" | "conversation" | "notification"
+  id: string
+}
+
 export interface PersonNotificationDelivery {
   id: string
-  channel: "email" | "sms"
+  channel: PersonCommunicationChannel
   subject: string | null
   body: string | null
-  sentAt: string | null
+  status: PersonCommunicationDeliveryStatus
+  occurredAt: string
   createdAt: string
 }
 
 export interface PersonNotificationDeliveryQuery {
   limit: number
-  offset: number
+  actorUserId: string
+  boundary?: PersonTimelineBoundary
   dateFrom?: string
   dateTo?: string
+  channel?: string
+  direction?: PersonCommunicationDirection
+  includeAllStatuses?: boolean
 }
 
 /**
@@ -43,6 +67,39 @@ export interface RelationshipsPersonNotificationsRuntime {
     personId: string,
     query: PersonNotificationDeliveryQuery,
   ): Promise<readonly PersonNotificationDelivery[]>
+  getDeliveryTruth(
+    db: unknown,
+    deliveryIds: readonly string[],
+  ): Promise<Readonly<Record<string, PersonCommunicationDeliveryStatus>>>
+}
+
+/** A customer-visible part, projected without exposing message transport internals. */
+export interface PersonConversationPart {
+  id: string
+  conversationId: string
+  channel: PersonCommunicationChannel
+  direction: PersonCommunicationDirection
+  subject: string | null
+  body: string | null
+  deliveryStatus: PersonCommunicationDeliveryStatus | null
+  notificationDeliveryId: string | null
+  occurredAt: string
+  createdAt: string
+}
+
+export interface RelationshipsPersonConversationsRuntime {
+  listPersonParts(
+    db: unknown,
+    personId: string,
+    query: PersonNotificationDeliveryQuery,
+  ): Promise<readonly PersonConversationPart[]>
+  findLinkedDeliveryIds(
+    db: unknown,
+    personId: string,
+    deliveryIds: readonly string[],
+    actorUserId: string,
+  ): Promise<readonly string[]>
+  mergePersonHistory(db: unknown, survivorPersonId: string, mergedPersonId: string): Promise<void>
 }
 
 /** Deployment contract consumed by the package-owned Relationships graph runtime. */
@@ -93,6 +150,24 @@ export const relationshipsPersonNotificationsRuntimePort =
       ) {
         throw new Error(
           "relationships.person-notifications provider must implement listPersonDeliveries().",
+        )
+      }
+    },
+  })
+
+export const relationshipsPersonConversationsRuntimePort =
+  definePort<RelationshipsPersonConversationsRuntime>({
+    id: "relationships.person-conversations",
+    test(provider) {
+      if (
+        provider === null ||
+        typeof provider !== "object" ||
+        typeof provider.listPersonParts !== "function" ||
+        typeof provider.findLinkedDeliveryIds !== "function" ||
+        typeof provider.mergePersonHistory !== "function"
+      ) {
+        throw new Error(
+          "relationships.person-conversations provider must implement timeline methods.",
         )
       }
     },

@@ -36,6 +36,7 @@ export {
 export {
   communicationListQuerySchema,
   insertCommunicationLogSchema,
+  personTimelineQuerySchema,
 } from "./validation/communication-log.js"
 export type {
   CustomerSignalInput,

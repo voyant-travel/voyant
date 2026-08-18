@@ -1,5 +1,6 @@
 import { staffDirectoryRuntimePort } from "@voyant-travel/auth/staff-directory-runtime-port"
-import { defineModule, requirePort } from "@voyant-travel/core/project"
+import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
+import { relationshipsPersonConversationsRuntimePort } from "@voyant-travel/relationships/runtime-port"
 import {
   conversationIngressSourcePort,
   conversationsAttachmentRuntimePort,
@@ -45,6 +46,7 @@ export const conversationsVoyantModule = defineModule({
     requirePort(conversationsChannelPolicyPort, { optional: true }),
     requirePort(conversationsDeliveryTruthPort, { optional: true }),
   ],
+  provides: { ports: [providePort(relationshipsPersonConversationsRuntimePort)] },
   api: [
     {
       id: "@voyant-travel/conversations#api.admin",

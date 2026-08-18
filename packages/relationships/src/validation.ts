@@ -60,6 +60,7 @@ export {
   personListSortFieldSchema,
   personRelationshipKindSchema,
   personRelationshipListQuerySchema,
+  personTimelineQuerySchema,
   recordStatusSchema,
   relationTypeSchema,
   resolveCustomerSignalSchema,
