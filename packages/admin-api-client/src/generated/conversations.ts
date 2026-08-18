@@ -15,6 +15,8 @@ export interface paths {
       parameters: {
         query?: {
           status?: "open" | "closed" | "snoozed"
+          inboxId?: string
+          assignedToUserId?: string
           limit?: number
         }
         header?: never
@@ -23,7 +25,7 @@ export interface paths {
       }
       requestBody?: never
       responses: {
-        /** @description Inbox conversations */
+        /** @description Membership-scoped Inbox */
         200: {
           headers: {
             [name: string]: unknown
@@ -33,6 +35,11 @@ export interface paths {
               data: {
                 id: string
                 channel: string
+                inboxId: string
+                assignedToUserId: string | null
+                /** @enum {string} */
+                priority: "low" | "normal" | "high" | "urgent"
+                revision: number
                 /** @enum {string} */
                 status: "open" | "closed" | "snoozed"
                 subject: string | null
@@ -54,6 +61,61 @@ export interface paths {
             }
           }
         }
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation resource not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Revision or idempotency conflict */
+        409: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
       }
     }
     put?: never
@@ -67,6 +129,7 @@ export interface paths {
       requestBody: {
         content: {
           "application/json": {
+            inboxId: string
             personRef: string
             contactPointRef: string
             channelAccountId: string
@@ -90,6 +153,11 @@ export interface paths {
                 conversation: {
                   id: string
                   channel: string
+                  inboxId: string
+                  assignedToUserId: string | null
+                  /** @enum {string} */
+                  priority: "low" | "normal" | "high" | "urgent"
+                  revision: number
                   /** @enum {string} */
                   status: "open" | "closed" | "snoozed"
                   subject: string | null
@@ -111,6 +179,7 @@ export interface paths {
                 parts: {
                   id: string
                   conversationId: string
+                  sequence: number
                   /** @enum {string} */
                   direction: "inbound" | "outbound"
                   senderAddress: string
@@ -141,11 +210,130 @@ export interface paths {
                   /** Format: date-time */
                   createdAt: string
                 }[]
+                notes: {
+                  id: string
+                  conversationId: string
+                  authorUserId: string
+                  body: string
+                  /** Format: date-time */
+                  createdAt: string
+                }[]
+                timeline: (
+                  | {
+                      /** @enum {string} */
+                      kind: "part"
+                      /** Format: date-time */
+                      occurredAt: string
+                      id: string
+                      part: {
+                        id: string
+                        conversationId: string
+                        sequence: number
+                        /** @enum {string} */
+                        direction: "inbound" | "outbound"
+                        senderAddress: string
+                        recipientAddresses: string[]
+                        subject: string | null
+                        textBody: string | null
+                        htmlBody: string | null
+                        attachments: {
+                          [key: string]: unknown
+                        }[]
+                        externalMessageId: string | null
+                        messageId: string | null
+                        inReplyTo: string | null
+                        references: string[]
+                        /** @enum {string} */
+                        deliveryStatus:
+                          | "received"
+                          | "pending"
+                          | "accepted"
+                          | "delivered"
+                          | "failed"
+                          | "bounced"
+                          | "complained"
+                          | "suppressed"
+                          | "cancelled"
+                        /** Format: date-time */
+                        occurredAt: string
+                        /** Format: date-time */
+                        createdAt: string
+                      }
+                    }
+                  | {
+                      /** @enum {string} */
+                      kind: "note"
+                      /** Format: date-time */
+                      occurredAt: string
+                      id: string
+                      note: {
+                        id: string
+                        conversationId: string
+                        authorUserId: string
+                        body: string
+                        /** Format: date-time */
+                        createdAt: string
+                      }
+                    }
+                  | {
+                      /** @enum {string} */
+                      kind: "system"
+                      /** Format: date-time */
+                      occurredAt: string
+                      id: string
+                      event: {
+                        id: string
+                        conversationId: string
+                        type: string
+                        actorUserId: string | null
+                        correlationId: string | null
+                        revision: number
+                        payload: {
+                          [key: string]: unknown
+                        }
+                        /** Format: date-time */
+                        occurredAt: string
+                      }
+                    }
+                )[]
               }
             }
           }
         }
-        /** @description Person contact point not found */
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation resource not found */
         404: {
           headers: {
             [name: string]: unknown
@@ -156,7 +344,7 @@ export interface paths {
             }
           }
         }
-        /** @description Required runtime, admission, or idempotency conflict */
+        /** @description Revision or idempotency conflict */
         409: {
           headers: {
             [name: string]: unknown
@@ -193,7 +381,7 @@ export interface paths {
       }
       requestBody?: never
       responses: {
-        /** @description Conversation thread */
+        /** @description Conversation activity */
         200: {
           headers: {
             [name: string]: unknown
@@ -204,6 +392,11 @@ export interface paths {
                 conversation: {
                   id: string
                   channel: string
+                  inboxId: string
+                  assignedToUserId: string | null
+                  /** @enum {string} */
+                  priority: "low" | "normal" | "high" | "urgent"
+                  revision: number
                   /** @enum {string} */
                   status: "open" | "closed" | "snoozed"
                   subject: string | null
@@ -225,6 +418,7 @@ export interface paths {
                 parts: {
                   id: string
                   conversationId: string
+                  sequence: number
                   /** @enum {string} */
                   direction: "inbound" | "outbound"
                   senderAddress: string
@@ -255,12 +449,142 @@ export interface paths {
                   /** Format: date-time */
                   createdAt: string
                 }[]
+                notes: {
+                  id: string
+                  conversationId: string
+                  authorUserId: string
+                  body: string
+                  /** Format: date-time */
+                  createdAt: string
+                }[]
+                timeline: (
+                  | {
+                      /** @enum {string} */
+                      kind: "part"
+                      /** Format: date-time */
+                      occurredAt: string
+                      id: string
+                      part: {
+                        id: string
+                        conversationId: string
+                        sequence: number
+                        /** @enum {string} */
+                        direction: "inbound" | "outbound"
+                        senderAddress: string
+                        recipientAddresses: string[]
+                        subject: string | null
+                        textBody: string | null
+                        htmlBody: string | null
+                        attachments: {
+                          [key: string]: unknown
+                        }[]
+                        externalMessageId: string | null
+                        messageId: string | null
+                        inReplyTo: string | null
+                        references: string[]
+                        /** @enum {string} */
+                        deliveryStatus:
+                          | "received"
+                          | "pending"
+                          | "accepted"
+                          | "delivered"
+                          | "failed"
+                          | "bounced"
+                          | "complained"
+                          | "suppressed"
+                          | "cancelled"
+                        /** Format: date-time */
+                        occurredAt: string
+                        /** Format: date-time */
+                        createdAt: string
+                      }
+                    }
+                  | {
+                      /** @enum {string} */
+                      kind: "note"
+                      /** Format: date-time */
+                      occurredAt: string
+                      id: string
+                      note: {
+                        id: string
+                        conversationId: string
+                        authorUserId: string
+                        body: string
+                        /** Format: date-time */
+                        createdAt: string
+                      }
+                    }
+                  | {
+                      /** @enum {string} */
+                      kind: "system"
+                      /** Format: date-time */
+                      occurredAt: string
+                      id: string
+                      event: {
+                        id: string
+                        conversationId: string
+                        type: string
+                        actorUserId: string | null
+                        correlationId: string | null
+                        revision: number
+                        payload: {
+                          [key: string]: unknown
+                        }
+                        /** Format: date-time */
+                        occurredAt: string
+                      }
+                    }
+                )[]
               }
             }
           }
         }
-        /** @description Conversation not found */
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation resource not found */
         404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Revision or idempotency conflict */
+        409: {
           headers: {
             [name: string]: unknown
           }
@@ -289,15 +613,20 @@ export interface paths {
       requestBody: {
         content: {
           "application/json": {
+            revision: number
             /** @enum {string} */
-            status: "open" | "closed" | "snoozed"
+            status?: "open" | "closed" | "snoozed"
             /** Format: date-time */
             snoozedUntil?: string | null
+            /** @enum {string} */
+            priority?: "low" | "normal" | "high" | "urgent"
+            assignedToUserId?: string | null
+            inboxId?: string
           }
         }
       }
       responses: {
-        /** @description Updated conversation state */
+        /** @description Updated conversation */
         200: {
           headers: {
             [name: string]: unknown
@@ -307,6 +636,11 @@ export interface paths {
               data: {
                 id: string
                 channel: string
+                inboxId: string
+                assignedToUserId: string | null
+                /** @enum {string} */
+                priority: "low" | "normal" | "high" | "urgent"
+                revision: number
                 /** @enum {string} */
                 status: "open" | "closed" | "snoozed"
                 subject: string | null
@@ -328,8 +662,52 @@ export interface paths {
             }
           }
         }
-        /** @description Conversation not found */
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation resource not found */
         404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Revision or idempotency conflict */
+        409: {
           headers: {
             [name: string]: unknown
           }
@@ -382,6 +760,7 @@ export interface paths {
               data: {
                 id: string
                 conversationId: string
+                sequence: number
                 /** @enum {string} */
                 direction: "inbound" | "outbound"
                 senderAddress: string
@@ -415,7 +794,40 @@ export interface paths {
             }
           }
         }
-        /** @description Conversation not found */
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation resource not found */
         404: {
           headers: {
             [name: string]: unknown
@@ -426,7 +838,7 @@ export interface paths {
             }
           }
         }
-        /** @description Delivery admission or idempotency conflict */
+        /** @description Revision or idempotency conflict */
         409: {
           headers: {
             [name: string]: unknown
@@ -463,9 +875,15 @@ export interface paths {
         }
         cookie?: never
       }
-      requestBody?: never
+      requestBody: {
+        content: {
+          "application/json": {
+            throughSequence?: number
+          }
+        }
+      }
       responses: {
-        /** @description Acknowledged Inbox conversation */
+        /** @description Advanced user read cursor */
         200: {
           headers: {
             [name: string]: unknown
@@ -475,6 +893,11 @@ export interface paths {
               data: {
                 id: string
                 channel: string
+                inboxId: string
+                assignedToUserId: string | null
+                /** @enum {string} */
+                priority: "low" | "normal" | "high" | "urgent"
+                revision: number
                 /** @enum {string} */
                 status: "open" | "closed" | "snoozed"
                 subject: string | null
@@ -496,8 +919,52 @@ export interface paths {
             }
           }
         }
-        /** @description Conversation not found */
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation resource not found */
         404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Revision or idempotency conflict */
+        409: {
           headers: {
             [name: string]: unknown
           }
@@ -509,6 +976,604 @@ export interface paths {
         }
       }
     }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/admin/conversations/{id}/notes": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          id: string
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          "application/json": {
+            revision: number
+            body: string
+          }
+        }
+      }
+      responses: {
+        /** @description Created internal note */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              data: {
+                id: string
+                conversationId: string
+                authorUserId: string
+                body: string
+                /** Format: date-time */
+                createdAt: string
+              }
+            }
+          }
+        }
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation resource not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Revision or idempotency conflict */
+        409: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/admin/conversation-inboxes": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Accessible Inboxes */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              data: {
+                id: string
+                name: string
+                description: string | null
+                isDefault: boolean
+                /** Format: date-time */
+                createdAt: string
+                /** Format: date-time */
+                updatedAt: string
+              }[]
+            }
+          }
+        }
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation resource not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Revision or idempotency conflict */
+        409: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          "application/json": {
+            name: string
+            description?: string | null
+          }
+        }
+      }
+      responses: {
+        /** @description Created Inbox */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              data: {
+                id: string
+                name: string
+                description: string | null
+                isDefault: boolean
+                /** Format: date-time */
+                createdAt: string
+                /** Format: date-time */
+                updatedAt: string
+              }
+            }
+          }
+        }
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation resource not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Revision or idempotency conflict */
+        409: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/admin/conversation-inboxes/default-membership": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Claimed an unowned default Inbox */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              data: {
+                id: string
+                name: string
+                description: string | null
+                isDefault: boolean
+                /** Format: date-time */
+                createdAt: string
+                /** Format: date-time */
+                updatedAt: string
+              }
+            }
+          }
+        }
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation resource not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Revision or idempotency conflict */
+        409: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/admin/conversation-inboxes/{id}/members/{userId}": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          id: string
+          userId: string
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          "application/json": {
+            /** @enum {string} */
+            role: "member" | "manager"
+            active: boolean
+          }
+        }
+      }
+      responses: {
+        /** @description Updated Inbox membership */
+        204: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation resource not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Revision or idempotency conflict */
+        409: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+      }
+    }
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/admin/conversation-inboxes/{id}/assignable-staff": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          id: string
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Active assignable staff */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              data: {
+                userId: string
+                displayName: string
+              }[]
+            }
+          }
+        }
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation resource not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Revision or idempotency conflict */
+        409: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
     delete?: never
     options?: never
     head?: never

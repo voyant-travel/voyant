@@ -3,6 +3,11 @@
   "booking.cancelled": { "entity": "booking", "kind": "booking" },
   "booking.confirmed": { "entity": "booking", "kind": "booking" },
   "booking.refunded": { "entity": "payment", "kind": "booking" },
+  "conversation.changed": {
+    "entity": "conversation",
+    "idKeys": ["conversationId", "id"],
+    "kind": "admin"
+  },
   "contract.executed": { "entity": "contract", "idKeys": ["contractId", "id"], "kind": "admin" },
   "contract.issued": { "entity": "contract", "idKeys": ["contractId", "id"], "kind": "admin" },
   "contract.sent": { "entity": "contract", "idKeys": ["contractId", "id"], "kind": "admin" },

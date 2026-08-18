@@ -1,3 +1,4 @@
+import type { StaffDirectoryRuntimeProvider } from "@voyant-travel/auth/staff-directory-runtime-port"
 import type {
   ConversationIngressSource,
   ConversationsRenderedMessageAdmission,
@@ -28,6 +29,8 @@ export interface ConversationsPersonDirectory {
     input: { personRef: string; contactPointRef: string },
   ): Promise<{ address: string } | null>
 }
+
+export type ConversationsStaffDirectory = StaffDirectoryRuntimeProvider
 
 export const conversationsDatabaseRuntimePort = definePort<ConversationsDatabaseRuntime>({
   id: "conversations.database",

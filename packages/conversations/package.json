@@ -10,6 +10,7 @@
     "./runtime-port": "./src/runtime-port.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
     "./ingress-job": "./src/ingress-job.ts",
+    "./snooze-expiry-job": "./src/snooze-expiry-job.ts",
     "./voyant": "./src/voyant.ts",
     "./openapi/admin": "./openapi/admin/conversations.json"
   },
@@ -22,6 +23,7 @@
     "openapi:generate": "tsx scripts/generate-openapi.ts && biome format --write openapi/admin/conversations.json"
   },
   "dependencies": {
+    "@voyant-travel/auth": "workspace:^",
     "@hono/zod-openapi": "catalog:",
     "@voyant-travel/conversations-contracts": "workspace:^",
     "@voyant-travel/core": "workspace:^",
@@ -71,6 +73,11 @@
         "types": "./dist/ingress-job.d.ts",
         "import": "./dist/ingress-job.js",
         "default": "./dist/ingress-job.js"
+      },
+      "./snooze-expiry-job": {
+        "types": "./dist/snooze-expiry-job.d.ts",
+        "import": "./dist/snooze-expiry-job.js",
+        "default": "./dist/snooze-expiry-job.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

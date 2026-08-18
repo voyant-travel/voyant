@@ -1,3 +1,4 @@
+import { staffDirectoryRuntimePort } from "@voyant-travel/auth/staff-directory-runtime-port"
 import type { Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
 import type { ApiModule } from "@voyant-travel/hono/module"
@@ -21,7 +22,12 @@ export function createConversationsApiModule(
   return {
     module,
     lazyRoutes: {
-      paths: ["/v1/admin/conversations", "/v1/admin/conversations/*"],
+      paths: [
+        "/v1/admin/conversations",
+        "/v1/admin/conversations/*",
+        "/v1/admin/conversation-inboxes",
+        "/v1/admin/conversation-inboxes/*",
+      ],
       load: () =>
         import("./routes.js").then(({ createConversationsRoutes }) =>
           createConversationsRoutes(options),
@@ -41,6 +47,7 @@ export const createConversationsVoyantRuntime = defineGraphRuntimeFactory(
       personDirectory: hasPort(conversationsPersonDirectoryPort)
         ? await getPort(conversationsPersonDirectoryPort)
         : undefined,
+      staffDirectory: await getPort(staffDirectoryRuntimePort),
     })
   },
 )

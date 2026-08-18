@@ -1,21 +1,20 @@
 "use client"
 
+import { useQuery, useQueryClient } from "@tanstack/react-query"
 import { useAdminHref } from "@voyant-travel/admin"
 import { useVoyantReactContext } from "@voyant-travel/react"
-import { type FormEvent, useEffect, useState } from "react"
+import { type FormEvent, useState } from "react"
 import { conversationsApi } from "../api.js"
 import type { InboxConversation } from "../types.js"
 
 export function InboxPage() {
   const { baseUrl, fetcher } = useVoyantReactContext()
-  const [items, setItems] = useState<InboxConversation[]>([])
-  const [error, setError] = useState<string | null>(null)
-  useEffect(() => {
-    conversationsApi
-      .list(fetcher, baseUrl)
-      .then(setItems)
-      .catch((cause) => setError(String(cause)))
-  }, [baseUrl, fetcher])
+  const conversations = useQuery({
+    queryKey: ["voyant", "conversations", "list"],
+    queryFn: () => conversationsApi.list(fetcher, baseUrl),
+  })
+  const items = conversations.data ?? []
+  const error = conversations.error ? String(conversations.error) : null
   return (
     <main className="space-y-6 p-6">
       <header>
@@ -31,7 +30,7 @@ export function InboxPage() {
           <p className="p-6 text-sm text-muted-foreground">No conversations yet.</p>
         ) : null}
       </section>
-      <StartConversation onStarted={(item) => setItems((current) => [item, ...current])} />
+      <StartConversation />
     </main>
   )
 }
@@ -53,15 +52,22 @@ function ConversationRow({ item }: { item: InboxConversation }) {
   )
 }
 
-function StartConversation({ onStarted }: { onStarted(item: InboxConversation): void }) {
+function StartConversation() {
   const { baseUrl, fetcher } = useVoyantReactContext()
+  const queryClient = useQueryClient()
   const [open, setOpen] = useState(false)
   const [error, setError] = useState<string | null>(null)
+  const inboxes = useQuery({
+    queryKey: ["voyant", "conversations", "inboxes"],
+    queryFn: () => conversationsApi.inboxes(fetcher, baseUrl),
+    enabled: open,
+  })
   async function submit(event: FormEvent<HTMLFormElement>) {
     event.preventDefault()
     const form = new FormData(event.currentTarget)
     try {
-      const detail = await conversationsApi.start(fetcher, baseUrl, {
+      await conversationsApi.start(fetcher, baseUrl, {
+        inboxId: String(form.get("inboxId")),
         personRef: String(form.get("personRef")),
         contactPointRef: String(form.get("contactPointRef")),
         channelAccountId: String(form.get("channelAccountId")),
@@ -70,7 +76,7 @@ function StartConversation({ onStarted }: { onStarted(item: InboxConversation): 
         text: String(form.get("text")),
         idempotencyKey: crypto.randomUUID(),
       })
-      onStarted(detail.conversation)
+      await queryClient.invalidateQueries({ queryKey: ["voyant", "conversations"] })
       setOpen(false)
     } catch (cause) {
       setError(String(cause))
@@ -85,6 +91,14 @@ function StartConversation({ onStarted }: { onStarted(item: InboxConversation): 
   return (
     <form className="grid max-w-xl gap-3 rounded-md border p-4" onSubmit={submit}>
       <h2 className="font-medium">New email conversation</h2>
+      <select required name="inboxId" className="rounded border p-2">
+        <option value="">Choose Inbox</option>
+        {(inboxes.data ?? []).map((inbox) => (
+          <option key={inbox.id} value={inbox.id}>
+            {inbox.name}
+          </option>
+        ))}
+      </select>
       <input
         required
         name="personRef"

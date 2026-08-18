@@ -2165,6 +2165,9 @@ importers:
       '@hono/zod-openapi':
         specifier: 'catalog:'
         version: 1.4.0(hono@4.12.25)(zod@4.4.3)
+      '@voyant-travel/auth':
+        specifier: workspace:^
+        version: link:../auth
       '@voyant-travel/conversations-contracts':
         specifier: workspace:^
         version: link:../conversations-contracts
@@ -2221,6 +2224,9 @@ importers:
 
   packages/conversations-react:
     dependencies:
+      '@tanstack/react-query':
+        specifier: ^5.101.2
+        version: 5.101.2(react@19.2.7)
       lucide-react:
         specifier: ^1.23.0
         version: 1.23.0(react@19.2.7)

@@ -23,7 +23,8 @@
         "conversations.database",
         "conversations.ingress-source",
         "conversations.rendered-message-admission",
-        "conversations.person-directory"
+        "conversations.person-directory",
+        "auth.staff-directory"
       ],
       "runtimeExport": "createConversationsRuntimePortContribution"
     },
