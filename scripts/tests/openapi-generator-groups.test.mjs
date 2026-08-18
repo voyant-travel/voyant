@@ -100,3 +100,37 @@ test("inParallel runs no more than the limit at once", async () => {
 test("concurrency is bounded, because each lane is a whole pnpm process tree", () => {
   assert.ok(CONCURRENCY >= 1 && CONCURRENCY <= 4, `unexpected concurrency ${CONCURRENCY}`)
 })
+
+// The bug this exists for: `generate:api-client` writes only client modules, so
+// nothing collides on writes — but it READS every document that drift rewrites
+// in place. Grouped by writes alone it ran concurrently with them and read a
+// document mid-rewrite, which surfaced as a stale generated client in CI only.
+test("a command that reads a file is grouped with the command that writes it", () => {
+  const groups = commandGroups([
+    { command: "writer", files: ["doc.json"] },
+    { command: "reader", files: ["out.ts"], reads: ["doc.json"] },
+    { command: "unrelated", files: ["other.ts"] },
+  ])
+  const of = (name) => groups.findIndex((group) => group.includes(name))
+  assert.equal(of("reader"), of("writer"), "reader must not run beside its writer")
+  assert.notEqual(of("unrelated"), of("writer"))
+})
+
+test("the api-client generator is serialised against every document generator", () => {
+  const { generators } = JSON.parse(
+    readFileSync(new URL("../checks/openapi/generated-specs.json", import.meta.url), "utf8"),
+  )
+  const groups = commandGroups(generators)
+  const client = generators.find((generator) => generator.command.includes("generate:api-client"))
+  assert.ok(client?.reads?.length > 50, "the client generator must declare what it reads")
+
+  const group = groups.find((entry) => entry.includes(client.command))
+  const writesADocument = new Set(
+    generators
+      .filter((generator) => generator.files.some((file) => client.reads.includes(file)))
+      .map((generator) => generator.command),
+  )
+  for (const command of writesADocument) {
+    assert.ok(group.includes(command), `${command} writes a document the client reads`)
+  }
+})

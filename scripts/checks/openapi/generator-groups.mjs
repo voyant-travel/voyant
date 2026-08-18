@@ -30,6 +30,22 @@ import { availableParallelism } from "node:os"
  * @returns {string[][]} each group is a list of commands that must run in sequence
  */
 export function commandGroups(generators) {
+  /**
+   * Reads count too, not only writes.
+   *
+   * Partitioning by written files alone is not enough: `generate:api-client`
+   * writes only client modules, so nothing collides — but it READS all 82
+   * tracked documents, and `verify:openapi-drift` rewrites each document in
+   * place before restoring it. Run concurrently, the client generator can read a
+   * document mid-rewrite and produce output that matches nothing.
+   *
+   * That is not theoretical. It passed locally and failed in CI as
+   * "packages/public-api-client/src/generated/paths.ts: checked-in document is
+   * stale" — a race, so it looked like flakiness rather than a bug.
+   *
+   * A generator declaring `reads` is unioned with every command that writes any
+   * of those files, which serialises exactly the pairs that can interfere.
+   */
   const parent = new Map()
   const find = (command) => {
     let node = command
@@ -55,6 +71,14 @@ export function commandGroups(generators) {
       const existing = writtenBy.get(file)
       if (existing === undefined) writtenBy.set(file, command)
       else union(existing, command)
+    }
+  }
+
+  // A reader must not overlap a writer of the same file.
+  for (const { command, reads } of generators) {
+    for (const file of reads ?? []) {
+      const writer = writtenBy.get(file)
+      if (writer !== undefined) union(writer, command)
     }
   }
 
