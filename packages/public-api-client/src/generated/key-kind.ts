@@ -22,8 +22,6 @@ export type PublishablePath =
   | "/v1/public/products/{productId}/offers"
   | "/v1/public/settings"
   | "/v1/public/shopping/search"
-  | "/v1/public/shopping/trip-selections"
-  | "/v1/public/shopping/trip-selections/book"
 
 /**
  * The surface a publishable key sees. A secret-only operation is absent from

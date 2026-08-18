@@ -43,7 +43,11 @@ import type { AnyDrizzleDb } from "@voyant-travel/db"
 import { openApiValidationHook } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { Context } from "hono"
-import type { PublicApiTripSelectionsRoutesOptions } from "./public-api-trip-selections-routes.js"
+import {
+  createPublicApiTripSelectionsRoutes,
+  type PublicApiTripSelectionsRoutesInput,
+  type PublicApiTripSelectionsRoutesOptions,
+} from "./public-api-trip-selections-routes.js"
 import {
   type CancelTripComponentsDeps,
   type PriceTripDeps,
@@ -1370,3 +1374,22 @@ export function createTripsRoutes(options: TripsRoutesOptionsInput = {}): OpenAP
 export const tripsRoutes = createTripsRoutes()
 
 export type TripsRoutes = ReturnType<typeof createTripsRoutes>
+
+/**
+ * Everything this package serves on the PUBLIC surface, in one place.
+ *
+ * `createTripsRoutes` is mounted on both surfaces; the Trip-selection routes
+ * are public-only (voyant#4627). Both the runtime module and the OpenAPI
+ * generator compose through here so the generated document cannot describe a
+ * different surface from the one that is actually served — the generator used
+ * to call `createTripsRoutes()` directly, which is precisely how a document
+ * drifts from its routes.
+ */
+export function createTripsPublicSurfaceRoutes(
+  options: TripsRoutesOptionsInput = {},
+  tripSelections: PublicApiTripSelectionsRoutesInput = {},
+): OpenAPIHono<Env> {
+  return new OpenAPIHono<Env>({ defaultHook: openApiValidationHook })
+    .route("/", createTripsRoutes(options))
+    .route("/", createPublicApiTripSelectionsRoutes(tripSelections) as never)
+}
