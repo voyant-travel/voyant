@@ -11,9 +11,9 @@
 export type {
   components,
   operations,
-  paths,
   PublishablePath,
   PublishablePaths,
+  paths,
   SecretPaths,
   webhooks,
 } from "./generated/index.js"

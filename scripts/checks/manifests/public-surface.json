@@ -74,10 +74,7 @@
   ],
   "consumers": {
     "voyant-travel/hisky-connector": {
-      "consumes": [
-        "@voyant-travel/connect-provider-sdk",
-        "@voyant-travel/flights-contracts"
-      ]
+      "consumes": ["@voyant-travel/connect-provider-sdk", "@voyant-travel/flights-contracts"]
     },
     "voyant-travel/tui-connector": {
       "consumes": [
@@ -87,34 +84,19 @@
       ]
     },
     "voyant-travel/uniworld-connector": {
-      "consumes": [
-        "@voyant-travel/connect-provider-sdk",
-        "@voyant-travel/data-sdk"
-      ]
+      "consumes": ["@voyant-travel/connect-provider-sdk", "@voyant-travel/data-sdk"]
     },
     "voyant-travel/viking-connector": {
-      "consumes": [
-        "@voyant-travel/connect-provider-sdk",
-        "@voyant-travel/data-sdk"
-      ]
+      "consumes": ["@voyant-travel/connect-provider-sdk", "@voyant-travel/data-sdk"]
     },
     "voyant-travel/silversea-connector": {
-      "consumes": [
-        "@voyant-travel/connect-provider-sdk",
-        "@voyant-travel/data-sdk"
-      ]
+      "consumes": ["@voyant-travel/connect-provider-sdk", "@voyant-travel/data-sdk"]
     },
     "voyant-travel/connect": {
-      "consumes": [
-        "@voyant-travel/catalog-contracts",
-        "@voyant-travel/flights-contracts"
-      ]
+      "consumes": ["@voyant-travel/catalog-contracts", "@voyant-travel/flights-contracts"]
     },
     "voyant-travel/algolia-adapter": {
-      "consumes": [
-        "@voyant-travel/catalog-contracts",
-        "@voyant-travel/graph-contracts"
-      ]
+      "consumes": ["@voyant-travel/catalog-contracts", "@voyant-travel/graph-contracts"]
     },
     "voyant-travel/netopia-adapter": {
       "consumes": [
@@ -142,17 +124,10 @@
       ]
     },
     "voyant-travel/plugin-payload-cms": {
-      "consumes": [
-        "@voyant-travel/core",
-        "@voyant-travel/utils"
-      ]
+      "consumes": ["@voyant-travel/core", "@voyant-travel/utils"]
     },
     "voyant-travel/cli": {
-      "consumes": [
-        "@voyant-travel/cloud-sdk",
-        "@voyant-travel/core",
-        "@voyant-travel/framework"
-      ]
+      "consumes": ["@voyant-travel/cloud-sdk", "@voyant-travel/core", "@voyant-travel/framework"]
     },
     "voyant-travel/platform": {
       "consumes": [
@@ -197,25 +172,17 @@
   "withdrawn": {
     "@voyant-travel/flights": {
       "successor": "@voyant-travel/flights-contracts",
-      "consumers": [
-        "voyant-travel/hisky-connector",
-        "voyant-travel/platform"
-      ],
+      "consumers": ["voyant-travel/hisky-connector", "voyant-travel/platform"],
       "reason": "A connector needs the payload types, not the runtime module. ADR-0022 section 3: contracts packages are an authoring convenience, and a connector's compatibility axis is the worker protocol date. hisky-connector migrated 2026-08-01."
     },
     "@voyant-travel/apps": {
       "successor": "@voyant-travel/app-manifest",
-      "consumers": [
-        "pxmstudio/voyant-smartbill-app",
-        "voyant-travel/platform"
-      ],
+      "consumers": ["pxmstudio/voyant-smartbill-app", "voyant-travel/platform"],
       "reason": "#4059 split the publisher-facing manifest contract out of the host-side runtime module. compileAppManifest, appManifestSchema and canonicalJsonStringify moved verbatim; the release digest is unchanged."
     },
     "@voyant-travel/bookings": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/plugin-smartbill"
-      ],
+      "consumers": ["voyant-travel/plugin-smartbill"],
       "reason": "No successor. plugin-smartbill builds in process against the operator's runtime modules and needs a build path \u2014 #4059 item 4."
     },
     "@voyant-travel/core": {
@@ -230,110 +197,77 @@
     },
     "@voyant-travel/finance": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/netopia-adapter",
-        "voyant-travel/plugin-smartbill"
-      ],
+      "consumers": ["voyant-travel/netopia-adapter", "voyant-travel/plugin-smartbill"],
       "reason": "No successor. See #4059 item 4."
     },
     "@voyant-travel/finance-react": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/plugin-smartbill"
-      ],
+      "consumers": ["voyant-travel/plugin-smartbill"],
       "reason": "No successor. See #4059 item 4."
     },
     "@voyant-travel/framework": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/cli"
-      ],
+      "consumers": ["voyant-travel/cli"],
       "reason": "No successor. The CLI resolves the framework to scaffold and inspect a deployment; under the image model that relationship is unsettled \u2014 #4059 item 4."
     },
     "@voyant-travel/hono": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/netopia-adapter",
-        "voyant-travel/plugin-smartbill"
-      ],
+      "consumers": ["voyant-travel/netopia-adapter", "voyant-travel/plugin-smartbill"],
       "reason": "No successor. See #4059 item 4."
     },
     "@voyant-travel/i18n": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/platform"
-      ],
+      "consumers": ["voyant-travel/platform"],
       "reason": "No successor. Platform is first-party and still resolves an npm copy of the framework; platform#1622 is the fix."
     },
     "@voyant-travel/identity": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/plugin-smartbill"
-      ],
+      "consumers": ["voyant-travel/plugin-smartbill"],
       "reason": "No successor. See #4059 item 4."
     },
     "@voyant-travel/notifications": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/netopia-adapter",
-        "voyant-travel/platform"
-      ],
+      "consumers": ["voyant-travel/netopia-adapter", "voyant-travel/platform"],
       "reason": "No successor. See #4059 item 4."
     },
     "@voyant-travel/operator-settings": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/plugin-smartbill"
-      ],
+      "consumers": ["voyant-travel/plugin-smartbill"],
       "reason": "No successor. See #4059 item 4."
     },
     "@voyant-travel/relationships": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/plugin-smartbill"
-      ],
+      "consumers": ["voyant-travel/plugin-smartbill"],
       "reason": "No successor. See #4059 item 4."
     },
     "@voyant-travel/storage": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/plugin-smartbill"
-      ],
+      "consumers": ["voyant-travel/plugin-smartbill"],
       "reason": "No successor. See #4059 item 4."
     },
     "@voyant-travel/public-api": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/platform"
-      ],
+      "consumers": ["voyant-travel/platform"],
       "reason": "No successor. Platform is first-party; see platform#1622."
     },
     "@voyant-travel/public-api-react": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/platform"
-      ],
+      "consumers": ["voyant-travel/platform"],
       "reason": "No successor. Platform is first-party; see platform#1622."
     },
     "@voyant-travel/tools": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/platform"
-      ],
+      "consumers": ["voyant-travel/platform"],
       "reason": "No successor. Platform is first-party; see platform#1622."
     },
     "@voyant-travel/trips": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/platform"
-      ],
+      "consumers": ["voyant-travel/platform"],
       "reason": "No successor. Platform is first-party; see platform#1622."
     },
     "@voyant-travel/types": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/platform"
-      ],
+      "consumers": ["voyant-travel/platform"],
       "reason": "No successor. Platform is first-party; see platform#1622."
     },
     "@voyant-travel/utils": {
@@ -347,9 +281,7 @@
     },
     "@voyant-travel/vite-config": {
       "successor": null,
-      "consumers": [
-        "voyant-travel/platform"
-      ],
+      "consumers": ["voyant-travel/platform"],
       "reason": "No successor. Platform is first-party; see platform#1622."
     }
   }
