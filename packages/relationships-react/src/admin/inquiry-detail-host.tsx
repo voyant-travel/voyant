@@ -29,6 +29,14 @@ export function InquiryDetailHost({ id }: { id: string }) {
       onReopen={() => mutations.reopen.mutateAsync({ id })}
       onRecordFirstResponse={() => mutations.recordFirstResponse.mutateAsync({ id })}
       isRecordingFirstResponse={mutations.recordFirstResponse.isPending}
+      onUploadAttachment={(file, caption) =>
+        mutations.uploadAttachment.mutateAsync({ id, file, caption })
+      }
+      onUpdateAttachmentCaption={(linkId, caption) =>
+        mutations.updateAttachment.mutateAsync({ id, linkId, caption })
+      }
+      onRemoveAttachment={(linkId) => mutations.removeAttachment.mutateAsync({ id, linkId })}
+      isUploadingAttachment={mutations.uploadAttachment.isPending}
       isConverting={mutations.convertToProposal.isPending}
       isCreatingBookingSession={mutations.convertToBookingSession.isPending}
       onConvertToBookingSession={(input) =>

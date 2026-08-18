@@ -7,10 +7,16 @@
  * raw byte upload/serve surface stays owned by `@voyant-travel/storage`.
  */
 
-import { defineModule, requirePort } from "@voyant-travel/core/project"
-import { storageMediaRuntimePort } from "@voyant-travel/storage/runtime-port"
+import { defineModule, providePort, requirePort } from "@voyant-travel/core/project"
+import {
+  storageMediaRuntimePort,
+  storageObjectRuntimePort,
+} from "@voyant-travel/storage/runtime-port"
 
-import { mediaSiteClientAuthRuntimePort } from "./runtime-port.js"
+import {
+  mediaInquiryAttachmentRuntimePort,
+  mediaSiteClientAuthRuntimePort,
+} from "./runtime-port.js"
 
 const schemaSource = "@voyant-travel/media/schema"
 
@@ -19,8 +25,10 @@ export const mediaVoyantModule = defineModule({
   id: "@voyant-travel/media",
   packageName: "@voyant-travel/media",
   localId: "media",
+  provides: { ports: [providePort(mediaInquiryAttachmentRuntimePort)] },
   runtimePorts: [
     requirePort(storageMediaRuntimePort),
+    requirePort(storageObjectRuntimePort),
     requirePort(mediaSiteClientAuthRuntimePort, { optional: true }),
   ],
   api: [
@@ -40,6 +48,13 @@ export const mediaVoyantModule = defineModule({
     {
       id: "@voyant-travel/media#schema",
       source: schemaSource,
+    },
+  ],
+  links: [
+    {
+      id: "@voyant-travel/media#linkable.asset",
+      kind: "linkable",
+      source: "@voyant-travel/media/linkables",
     },
   ],
   migrations: [

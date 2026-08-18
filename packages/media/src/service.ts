@@ -86,9 +86,14 @@ function resolveAssetUrl(storageKey: string, storage: MediaUrlSource): string | 
 async function findAssetByChecksum(
   db: PostgresJsDatabase,
   checksum: string,
+  storageClass: "media" | "documents",
   storage: MediaUrlSource,
 ): Promise<MediaAssetWithTranslations | null> {
-  const [row] = await db.select().from(mediaAsset).where(eq(mediaAsset.checksum, checksum)).limit(1)
+  const [row] = await db
+    .select()
+    .from(mediaAsset)
+    .where(and(eq(mediaAsset.checksum, checksum), eq(mediaAsset.storageClass, storageClass)))
+    .limit(1)
   return row ? attachTranslations(db, [row], storage).then((assets) => assets[0] ?? null) : null
 }
 
@@ -120,7 +125,7 @@ async function attachTranslations(
   return assets.map((asset) => ({
     ...asset,
     altTranslations: byAssetId.get(asset.id) ?? [],
-    url: resolveAssetUrl(asset.storageKey, storage),
+    url: asset.storageClass === "documents" ? null : resolveAssetUrl(asset.storageKey, storage),
   }))
 }
 
@@ -174,7 +179,7 @@ export async function createMediaAsset(
   const bytes = await toBytes(body)
   const checksum = await computeChecksum(bytes)
 
-  const existing = await findAssetByChecksum(db, checksum, storage)
+  const existing = await findAssetByChecksum(db, checksum, input.storageClass, storage)
   if (existing) {
     return { asset: existing, deduped: true }
   }
@@ -192,6 +197,7 @@ export async function createMediaAsset(
       .insert(mediaAsset)
       .values({
         type: input.type,
+        storageClass: input.storageClass,
         name: input.name,
         altText: input.altText ?? null,
         defaultLanguageTag,
@@ -221,7 +227,7 @@ export async function createMediaAsset(
   } catch (error) {
     // Lost a race with a concurrent identical upload: the unique checksum index
     // rejected our insert. Fall back to the row the winner created.
-    const raced = await findAssetByChecksum(db, checksum, storage)
+    const raced = await findAssetByChecksum(db, checksum, input.storageClass, storage)
     if (raced) return { asset: raced, deduped: true }
     throw error
   }

@@ -76,6 +76,7 @@ type Env = { Variables: { db: PostgresJsDatabase } }
  */
 export interface MediaLibraryRoutesOptions {
   resolveStorage(c: Context): StorageProvider | null
+  resolveDocumentStorage?(c: Context): StorageProvider | null
   siteClientAuth?: MediaSiteClientAuthRuntime
 }
 
@@ -98,6 +99,7 @@ const mediaAssetTranslationRowSchema = z.object({
 const mediaAssetRowSchema = z.object({
   id: z.string(),
   type: mediaAssetTypeSchema,
+  storageClass: z.enum(["media", "documents"]),
   name: z.string(),
   altText: z.string().nullable(),
   defaultLanguageTag: z.string(),
@@ -337,9 +339,6 @@ export function createMediaLibraryRoutes(options: MediaLibraryRoutesOptions) {
 
   // --- Create (multipart upload → dedup → store → catalogue) ---
   routes.post("/v1/admin/media-library/assets", async (c) => {
-    const storage = options.resolveStorage(c)
-    if (!storage) return c.json({ error: "Storage not configured" }, 503)
-
     const form = await c.req.parseBody({ all: true })
     const file = form.file
     if (!(file instanceof File)) {
@@ -368,6 +367,7 @@ export function createMediaLibraryRoutes(options: MediaLibraryRoutesOptions) {
 
     const parsed = createMediaAssetSchema.safeParse({
       type: form.type,
+      storageClass: form.storageClass,
       name: (typeof form.name === "string" && form.name.trim()) || file.name,
       altText:
         typeof form.altText === "string"
@@ -388,6 +388,14 @@ export function createMediaLibraryRoutes(options: MediaLibraryRoutesOptions) {
     if (!parsed.success) {
       return c.json({ error: "invalid_request", issues: parsed.error.issues }, 400)
     }
+    if (parsed.data.storageClass === "documents" && parsed.data.type !== "document") {
+      return c.json({ error: "Only document assets may use private document storage" }, 400)
+    }
+    const storage =
+      parsed.data.storageClass === "documents"
+        ? options.resolveDocumentStorage?.(c)
+        : options.resolveStorage(c)
+    if (!storage) return c.json({ error: "Storage not configured" }, 503)
 
     const bytes = new Uint8Array(await file.arrayBuffer())
     try {
@@ -460,7 +468,12 @@ export function createMediaLibraryRoutes(options: MediaLibraryRoutesOptions) {
     .openapi(deleteAssetRoute, (c) =>
       asRouteResponse(
         (async () => {
-          const storage = options.resolveStorage(c)
+          const current = await getMediaAsset(c.get("db"), c.req.valid("param").assetId)
+          if (!current) return c.json({ error: "Media asset not found" }, 404)
+          const storage =
+            current.storageClass === "documents"
+              ? options.resolveDocumentStorage?.(c)
+              : options.resolveStorage(c)
           if (!storage) return c.json({ error: "Storage not configured" }, 503)
           try {
             const asset = await deleteMediaAsset(c.get("db"), storage, c.req.valid("param").assetId)

@@ -9,16 +9,22 @@ import {
 } from "@voyant-travel/hono"
 import {
   addInquiryTargetSchema,
+  attachInquiryAssetSchema,
+  eraseInquiryPrivacySchema,
   type InquiryBookingConversionResult,
   type InquiryProposalConversionResult,
   inquiryBookingConversionRefusalSchema,
   inquiryBookingConversionResultSchema,
   inquiryCreateResponseSchema,
+  inquiryAttachmentResponseSchema,
+  inquiryAttachmentsResponseSchema,
   inquiryListResponseSchema,
+  inquiryPrivacyExportResponseSchema,
   inquiryProposalConversionRefusalSchema,
   inquiryProposalConversionResultSchema,
   inquiryResponseSchema,
   inquiryTargetResponseSchema,
+  updateInquiryAttachmentSchema,
 } from "@voyant-travel/relationships-contracts"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import type { Context } from "hono"
@@ -97,6 +103,12 @@ function inquiryTargetValidation(c: Context<Env>) {
     | undefined
   return runtime?.inquiryTargetValidation
 }
+function inquiryAttachmentAuthority(c: Context<Env>) {
+  const runtime = c.get("container")?.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY) as
+    | RelationshipsRouteRuntime
+    | undefined
+  return runtime?.inquiryAttachments
+}
 
 async function withTargets(
   db: PostgresJsDatabase,
@@ -106,6 +118,7 @@ async function withTargets(
   return {
     ...inquiry,
     targets: await relationshipsService.listInquiryTargets(db, link, inquiry.id as string),
+    attachments: await relationshipsService.listInquiryAttachments(db, link, inquiry.id as string),
   }
 }
 function serviceErrorResponse(c: Context<Env>, error: unknown) {
@@ -116,6 +129,9 @@ function serviceErrorResponse(c: Context<Env>, error: unknown) {
   }
   if (error.code === "INQUIRY_TARGET_NOT_FOUND") return c.json({ error: error.message }, 404)
   if (error.code === "INQUIRY_TARGET_VALIDATION_UNAVAILABLE") {
+    return c.json({ error: error.message }, 503)
+  }
+  if (error.code === "INQUIRY_ATTACHMENT_AUTHORITY_UNAVAILABLE") {
     return c.json({ error: error.message }, 503)
   }
   return c.json({ error: error.message }, 409)
@@ -184,6 +200,75 @@ const deleteTargetRoute = createRoute({
     204: { description: "Inquiry target removed" },
     404: { description: "Inquiry or target not found", ...jsonContent(errorResponseSchema) },
     409: { description: "Inquiry target conflict", ...jsonContent(errorResponseSchema) },
+  },
+})
+const listAttachmentsRoute = createRoute({
+  method: "get",
+  path: "/inquiries/{id}/attachments",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "Inquiry attachments", ...jsonContent(inquiryAttachmentsResponseSchema) },
+    404: { description: "Inquiry not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+const attachAssetRoute = createRoute({
+  method: "post",
+  path: "/inquiries/{id}/attachments",
+  request: { params: idParamSchema, ...requiredJsonBody(attachInquiryAssetSchema) },
+  responses: {
+    201: { description: "Attached Media asset", ...jsonContent(inquiryAttachmentResponseSchema) },
+    404: { description: "Inquiry or Media asset not found", ...jsonContent(errorResponseSchema) },
+    409: { description: "Attachment conflict", ...jsonContent(errorResponseSchema) },
+  },
+})
+const updateAttachmentRoute = createRoute({
+  method: "patch",
+  path: "/inquiries/{id}/attachments/{linkId}",
+  request: {
+    params: idParamSchema.extend({ linkId: z.string().min(1) }),
+    ...requiredJsonBody(updateInquiryAttachmentSchema),
+  },
+  responses: {
+    200: { description: "Updated attachment caption", ...jsonContent(inquiryAttachmentResponseSchema) },
+    404: { description: "Inquiry attachment not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+const removeAttachmentRoute = createRoute({
+  method: "delete",
+  path: "/inquiries/{id}/attachments/{linkId}",
+  request: { params: idParamSchema.extend({ linkId: z.string().min(1) }) },
+  responses: {
+    204: { description: "Inquiry attachment removed" },
+    404: { description: "Inquiry attachment not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+const downloadAttachmentRoute = createRoute({
+  method: "get",
+  path: "/inquiries/{id}/attachments/{linkId}/download",
+  request: { params: idParamSchema.extend({ linkId: z.string().min(1) }) },
+  responses: {
+    200: { description: "Authenticated private Inquiry attachment bytes" },
+    404: { description: "Inquiry attachment not found", ...jsonContent(errorResponseSchema) },
+    503: { description: "Media attachment authority unavailable", ...jsonContent(errorResponseSchema) },
+  },
+})
+const privacyExportRoute = createRoute({
+  method: "get",
+  path: "/inquiries/{id}/privacy-export",
+  request: { params: idParamSchema },
+  responses: {
+    200: { description: "Inquiry privacy export", ...jsonContent(inquiryPrivacyExportResponseSchema) },
+    404: { description: "Inquiry not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+const privacyErasureRoute = createRoute({
+  method: "post",
+  path: "/inquiries/{id}/privacy-erasure",
+  request: { params: idParamSchema, ...requiredJsonBody(eraseInquiryPrivacySchema) },
+  responses: {
+    200: { description: "Privacy-erased inquiry", ...inquiryResponse },
+    404: { description: "Inquiry not found", ...jsonContent(errorResponseSchema) },
+    409: { description: "Inquiry conflict", ...jsonContent(errorResponseSchema) },
   },
 })
 
@@ -259,10 +344,13 @@ inquiryRoutes.openapi(listRoute, async (c) => {
   return c.json(
     {
       ...result,
-      data: result.data.map((inquiry) => ({
-        ...inquiry,
-        targets: targets.get(inquiry.id) ?? [],
-      })),
+      data: await Promise.all(
+        result.data.map(async (inquiry) => ({
+          ...inquiry,
+          targets: targets.get(inquiry.id) ?? [],
+          attachments: await relationshipsService.listInquiryAttachments(db, requireLink(c), inquiry.id),
+        })),
+      ),
     },
     200,
   )
@@ -391,13 +479,102 @@ inquiryRoutes.openapi(deleteTargetRoute, async (c) => {
     return serviceErrorResponse(c, error)
   }
 })
+inquiryRoutes.openapi(listAttachmentsRoute, async (c) => {
+  const { id } = c.req.valid("param")
+  const inquiry = await relationshipsService.getInquiry(c.get("db"), id)
+  if (!inquiry) return c.json({ error: "Inquiry not found" }, 404)
+  return c.json({ data: await relationshipsService.listInquiryAttachments(c.get("db"), requireLink(c), id) }, 200)
+})
+inquiryRoutes.openapi(attachAssetRoute, async (c) => {
+  try {
+    const data = await relationshipsService.attachInquiryAsset(
+      c.get("db"),
+      c.req.valid("param").id,
+      await parseJsonBody(c, attachInquiryAssetSchema),
+      requireUserId(c),
+      inquiryAttachmentAuthority(c),
+    )
+    return c.json({ data }, 201)
+  } catch (error) {
+    return serviceErrorResponse(c, error)
+  }
+})
+inquiryRoutes.openapi(updateAttachmentRoute, async (c) => {
+  try {
+    const { id, linkId } = c.req.valid("param")
+    const data = await relationshipsService.updateInquiryAttachment(
+      c.get("db"),
+      id,
+      linkId,
+      await parseJsonBody(c, updateInquiryAttachmentSchema),
+      requireUserId(c),
+    )
+    return c.json({ data }, 200)
+  } catch (error) {
+    return serviceErrorResponse(c, error)
+  }
+})
+inquiryRoutes.openapi(removeAttachmentRoute, async (c) => {
+  try {
+    const { id, linkId } = c.req.valid("param")
+    await relationshipsService.removeInquiryAttachment(c.get("db"), id, linkId, requireUserId(c))
+    return c.body(null, 204)
+  } catch (error) {
+    return serviceErrorResponse(c, error)
+  }
+})
+inquiryRoutes.openapi(downloadAttachmentRoute, async (c) => {
+  const { id, linkId } = c.req.valid("param")
+  const attachment = await relationshipsService.resolveInquiryAttachment(
+    c.get("db"),
+    requireLink(c),
+    id,
+    linkId,
+  )
+  if (!attachment) return c.json({ error: "Inquiry attachment not found" }, 404)
+  const authority = inquiryAttachmentAuthority(c)
+  if (!authority) return c.json({ error: "Media attachment authority is unavailable" }, 503)
+  const download = await authority.downloadPrivateDocument(c.get("db"), c.env, attachment.assetId)
+  if (!download) return c.json({ error: "Inquiry attachment not found" }, 404)
+  const filename = download.name.replace(/["\\\r\n]/g, "_")
+  return c.body(download.body, 200, {
+    "Content-Type": download.mimeType ?? "application/octet-stream",
+    "Content-Disposition": `attachment; filename="${filename}"`,
+    "Cache-Control": "private, no-store",
+  })
+})
+inquiryRoutes.openapi(privacyExportRoute, async (c) => {
+  try {
+    const data = await relationshipsService.exportInquiryPrivacy(
+      c.get("db"),
+      requireLink(c),
+      c.req.valid("param").id,
+    )
+    return c.json({ data }, 200)
+  } catch (error) {
+    return serviceErrorResponse(c, error)
+  }
+})
+inquiryRoutes.openapi(privacyErasureRoute, async (c) => {
+  try {
+    const row = await relationshipsService.eraseInquiryPrivacy(
+      c.get("db"),
+      c.req.valid("param").id,
+      await parseJsonBody(c, eraseInquiryPrivacySchema),
+      requireUserId(c),
+    )
+    return c.json({ data: await withTargets(c.get("db"), requireLink(c), row) }, 200)
+  } catch (error) {
+    return serviceErrorResponse(c, error)
+  }
+})
 inquiryRoutes.openapi(recordFirstResponseRoute, async (c) => {
   const actorId = requireUserId(c)
   const id = c.req.valid("param").id
   try {
     await parseJsonBody(c, recordInquiryFirstResponseSchema)
     const row = await relationshipsService.recordFirstResponse(c.get("db"), id, actorId)
-    return c.json({ data: row }, 200)
+    return c.json({ data: await withTargets(c.get("db"), requireLink(c), row) }, 200)
   } catch (error) {
     return serviceErrorResponse(c, error)
   }

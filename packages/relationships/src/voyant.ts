@@ -12,6 +12,7 @@ import {
   customFieldValueReaderRuntimePort,
 } from "@voyant-travel/core/runtime-port"
 import { financeStoredInstrumentRuntimePort } from "@voyant-travel/finance/runtime-port"
+import { mediaInquiryAttachmentRuntimePort } from "@voyant-travel/media/runtime-port"
 import { proposalInquiryConversionRuntimePort } from "@voyant-travel/proposals-contracts/inquiry-conversion/runtime-port"
 import { inquiryTargetAuthorityRuntimePort } from "@voyant-travel/relationships-contracts/inquiry-target-authority/runtime-port"
 import { relationshipsInquiryOverdueJobRuntimePort } from "./inquiry-overdue-job-runtime-port.js"
@@ -194,6 +195,7 @@ export const relationshipsVoyantModule = defineModule({
     requirePort(proposalInquiryConversionRuntimePort, { optional: true }),
     requirePort(inquiryTargetAuthorityRuntimePort, { optional: true, cardinality: "many" }),
     requirePort(catalogInquiryBookingSessionRuntimePort, { optional: true }),
+    requirePort(mediaInquiryAttachmentRuntimePort, { optional: true }),
     // Optional so a deployment that selects CRM without Bookings still boots;
     // the enrichment subscriber simply has nothing to read.
     requirePort(bookingsCrmSnapshotRuntimePort, { optional: true }),
@@ -284,6 +286,12 @@ export const relationshipsVoyantModule = defineModule({
       kind: "definition",
       source: "@voyant-travel/relationships/standard-links",
       export: "inquiryOptionUnitLink",
+    },
+    {
+      id: "@voyant-travel/relationships#link.inquiry-media-asset",
+      kind: "definition",
+      source: "@voyant-travel/relationships/standard-links",
+      export: "inquiryMediaAssetLink",
     },
   ],
   events: [

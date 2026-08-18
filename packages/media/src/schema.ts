@@ -41,6 +41,8 @@ export const mediaAsset = pgTable(
     id: typeId("media_asset"),
     /** `image | video | document` — kept as text (no pg enum / CREATE TYPE). */
     type: text("type").$type<MediaAssetType>().notNull(),
+    /** Logical storage store; sensitive documents never resolve through public media. */
+    storageClass: text("storage_class").$type<"media" | "documents">().notNull().default("media"),
     name: text("name").notNull(),
     /** Accessible alternative text in `defaultLanguageTag` — nullable. */
     altText: text("alt"),
@@ -80,7 +82,9 @@ export const mediaAsset = pgTable(
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
   },
-  (table) => [uniqueIndex("uidx_media_asset_checksum").on(table.checksum)],
+  (table) => [
+    uniqueIndex("uidx_media_asset_storage_checksum").on(table.storageClass, table.checksum),
+  ],
 )
 
 export type MediaAsset = typeof mediaAsset.$inferSelect

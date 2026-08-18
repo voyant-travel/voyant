@@ -1676,6 +1676,9 @@ importers:
       '@voyant-travel/inventory':
         specifier: workspace:^
         version: link:../inventory
+      '@voyant-travel/media':
+        specifier: workspace:^
+        version: link:../media
       '@voyant-travel/inventory-react':
         specifier: workspace:^
         version: link:../inventory-react

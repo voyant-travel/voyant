@@ -22,6 +22,13 @@
       "when": 1785229116774,
       "tag": "20260728085836_media_asset_drop_persisted_url",
       "breakpoints": true
+    },
+    {
+      "idx": 3,
+      "version": "7",
+      "when": 1787063100000,
+      "tag": "20260818142500_private_document_storage",
+      "breakpoints": true
     }
   ]
 }

@@ -23,3 +23,36 @@ export const mediaSiteClientAuthRuntimePort = definePort<MediaSiteClientAuthRunt
     }
   },
 })
+
+export interface InquiryAttachmentAsset {
+  id: string
+  name: string
+  mimeType: string | null
+}
+export interface InquiryAttachmentDownload extends InquiryAttachmentAsset {
+  body: ArrayBuffer
+}
+
+/** Media owner authority used before an Inquiry may link a private document. */
+export interface MediaInquiryAttachmentRuntime {
+  resolvePrivateDocument(db: unknown, assetId: string): Promise<InquiryAttachmentAsset | null>
+  downloadPrivateDocument(
+    db: unknown,
+    bindings: unknown,
+    assetId: string,
+  ): Promise<InquiryAttachmentDownload | null>
+}
+
+export const mediaInquiryAttachmentRuntimePort = definePort<MediaInquiryAttachmentRuntime>({
+  id: "media.inquiry-attachment",
+  test(provider) {
+    if (
+      provider === null ||
+      typeof provider !== "object" ||
+      typeof provider.resolvePrivateDocument !== "function" ||
+      typeof provider.downloadPrivateDocument !== "function"
+    ) {
+      throw new Error("media.inquiry-attachment provider must implement resolvePrivateDocument().")
+    }
+  },
+})
