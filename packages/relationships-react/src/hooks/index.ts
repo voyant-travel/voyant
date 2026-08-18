@@ -32,6 +32,13 @@ export {
   usePersonCommunications,
 } from "./use-person-communications.js"
 export {
+  type PersonComposerChannelAccount,
+  type PersonComposerContact,
+  type PersonComposerOption,
+  selectConversationComposerOptions,
+  usePersonConversationComposer,
+} from "./use-person-conversation-composer.js"
+export {
   type CreatePersonDocumentFromPlaintextInput,
   type CreatePersonDocumentInput,
   type UpdatePersonDocumentFromPlaintextInput,

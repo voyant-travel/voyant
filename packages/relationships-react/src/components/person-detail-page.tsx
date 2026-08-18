@@ -70,6 +70,7 @@ export type {
 
 export function PersonDetailPage({
   id,
+  canWriteConversations = false,
   className,
   onBack,
   onDeleted,
@@ -200,6 +201,7 @@ export function PersonDetailPage({
           documentsPending={documentsQuery.isPending}
           paymentMethodsPending={paymentMethodsQuery.isPending}
           communicationsPending={communicationsQuery.isPending}
+          canWriteConversations={canWriteConversations}
           onUpdateField={updateField}
           onPersonOpen={onPersonOpen}
           slots={slots}
@@ -326,6 +328,7 @@ export interface PersonMainProps {
   documentsPending: boolean
   paymentMethodsPending: boolean
   communicationsPending: boolean
+  canWriteConversations: boolean
   onUpdateField: (patch: UpdatePersonInput) => Promise<void>
   onPersonOpen?: (personId: string) => void
   slots?: PersonDetailPageSlots
@@ -346,6 +349,7 @@ export function PersonMain({
   documentsPending,
   paymentMethodsPending,
   communicationsPending,
+  canWriteConversations,
   onUpdateField,
   onPersonOpen,
   slots,
@@ -489,6 +493,7 @@ export function PersonMain({
                 personId={person.id}
                 communications={communications}
                 communicationsPending={communicationsPending}
+                canWriteConversations={canWriteConversations}
               />
             </CardContent>
           </Card>

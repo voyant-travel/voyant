@@ -8,6 +8,7 @@ describe("Conversations-owned consumer ports", () => {
   it("keeps People resolution read-only", () => {
     const provider = {
       resolveEmail: async () => ({ kind: "none" as const }),
+      resolvePhone: async () => ({ kind: "none" as const }),
       resolvePersonContactPoint: async () => null,
     }
     expect(() => conversationsPersonDirectoryPort.test?.(provider)).not.toThrow()

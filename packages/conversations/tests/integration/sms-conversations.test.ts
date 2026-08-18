@@ -192,6 +192,7 @@ describe.skipIf(!DB_AVAILABLE)("SMS conversation integration", () => {
       { admitRenderedServiceMessage: admit },
       {
         resolveEmail: async () => ({ kind: "none" }),
+        resolvePhone: async () => ({ kind: "none" }),
         resolvePersonContactPoint: async () => ({ address: "+12025550123" }),
       },
       {

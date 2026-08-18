@@ -243,6 +243,38 @@ export type CommunicationLogRecord = z.infer<typeof communicationLogRecordSchema
 export const communicationLogListResponse = listEnvelope(communicationLogRecordSchema)
 export const communicationLogSingleResponse = singleEnvelope(communicationLogRecordSchema)
 
+export const personTimelineRecordSchema = z.object({
+  id: z.string(),
+  personId: z.string(),
+  organizationId: z.string().nullable(),
+  conversationId: z.string().nullable(),
+  channel: communicationChannelSchema,
+  direction: communicationDirectionSchema,
+  subject: z.string().nullable(),
+  content: z.string().nullable(),
+  deliveryStatus: z
+    .enum([
+      "received",
+      "pending",
+      "accepted",
+      "delivered",
+      "failed",
+      "bounced",
+      "complained",
+      "suppressed",
+      "cancelled",
+    ])
+    .nullable(),
+  occurredAt: z.string(),
+  createdAt: z.string(),
+  source: z.enum(["logged", "conversation", "notification"]),
+})
+export type PersonTimelineRecord = z.infer<typeof personTimelineRecordSchema>
+export const personTimelinePageResponse = z.object({
+  data: z.array(personTimelineRecordSchema),
+  nextCursor: z.string().nullable(),
+})
+
 export const customerSignalKindSchema = z.enum([
   "wishlist",
   "notify",

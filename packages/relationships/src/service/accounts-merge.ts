@@ -353,7 +353,18 @@ async function dedupePersonJoinTables(db: PostgresJsDatabase, keepId: string, me
 }
 
 export const accountMergeService = {
-  async mergePerson(db: PostgresJsDatabase, keepId: string, mergeId: string) {
+  async mergePerson(
+    db: PostgresJsDatabase,
+    keepId: string,
+    mergeId: string,
+    conversations?: {
+      mergePersonHistory(
+        db: unknown,
+        survivorPersonId: string,
+        mergedPersonId: string,
+      ): Promise<void>
+    },
+  ) {
     if (keepId === mergeId) {
       throw new RelationshipsMergeError("Cannot merge a person into itself", 400)
     }
@@ -495,6 +506,8 @@ export const accountMergeService = {
         keepId,
         mergeId,
       )
+
+      await conversations?.mergePersonHistory(tx, keepId, mergeId)
 
       await tx.delete(people).where(eq(people.id, mergeId))
 

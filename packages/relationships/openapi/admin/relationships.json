@@ -5247,6 +5247,207 @@
         "x-voyant-package-name": "@voyant-travel/relationships"
       }
     },
+    "/v1/admin/relationships/people/{id}/communications/timeline": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 100,
+              "default": 50
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["email", "phone", "whatsapp", "sms", "meeting", "other"]
+            },
+            "required": false,
+            "name": "channel",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["inbound", "outbound"]
+            },
+            "required": false,
+            "name": "direction",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "dateFrom",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "dateTo",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Exact chronological Person communication timeline",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "personId": {
+                            "type": "string"
+                          },
+                          "organizationId": {
+                            "type": ["string", "null"]
+                          },
+                          "conversationId": {
+                            "type": ["string", "null"]
+                          },
+                          "channel": {
+                            "type": "string",
+                            "enum": ["email", "phone", "whatsapp", "sms", "meeting", "other"]
+                          },
+                          "direction": {
+                            "type": "string",
+                            "enum": ["inbound", "outbound"]
+                          },
+                          "subject": {
+                            "type": ["string", "null"]
+                          },
+                          "content": {
+                            "type": ["string", "null"]
+                          },
+                          "deliveryStatus": {
+                            "type": ["string", "null"],
+                            "enum": [
+                              "received",
+                              "pending",
+                              "accepted",
+                              "delivered",
+                              "failed",
+                              "bounced",
+                              "complained",
+                              "suppressed",
+                              "cancelled",
+                              null
+                            ]
+                          },
+                          "occurredAt": {
+                            "type": "string"
+                          },
+                          "createdAt": {
+                            "type": "string"
+                          },
+                          "source": {
+                            "type": "string",
+                            "enum": ["logged", "conversation", "notification"]
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "personId",
+                          "organizationId",
+                          "conversationId",
+                          "channel",
+                          "direction",
+                          "subject",
+                          "content",
+                          "deliveryStatus",
+                          "occurredAt",
+                          "createdAt",
+                          "source"
+                        ]
+                      }
+                    },
+                    "nextCursor": {
+                      "type": ["string", "null"]
+                    }
+                  },
+                  "required": ["data", "nextCursor"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid or drifted cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Person not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        },
+        "operationId": "getAdminRelationshipsPeopleByIdCommunicationsTimeline",
+        "summary": "GET /v1/admin/relationships/people/{id}/communications/timeline",
+        "tags": ["relationships"],
+        "x-voyant-module": "relationships",
+        "x-voyant-surface": "admin",
+        "x-voyant-api-id": "@voyant-travel/relationships#api.admin",
+        "x-voyant-unit-id": "@voyant-travel/relationships",
+        "x-voyant-package-name": "@voyant-travel/relationships"
+      }
+    },
     "/v1/admin/relationships/segments": {
       "get": {
         "responses": {

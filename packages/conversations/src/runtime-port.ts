@@ -26,7 +26,7 @@ export type PersonEmailResolution =
 /** Read-only People boundary. It deliberately has no create or merge operation. */
 export interface ConversationsPersonDirectory {
   resolveEmail(db: unknown, address: string): Promise<PersonEmailResolution>
-  resolvePhone?(db: unknown, address: string): Promise<PersonEmailResolution>
+  resolvePhone(db: unknown, address: string): Promise<PersonEmailResolution>
   resolvePersonContactPoint(
     db: unknown,
     input: { personRef: string; contactPointRef: string; channel?: "email" | "sms" },
@@ -121,6 +121,7 @@ export const conversationsPersonDirectoryPort = definePort<ConversationsPersonDi
       !provider ||
       typeof provider !== "object" ||
       typeof provider.resolveEmail !== "function" ||
+      typeof provider.resolvePhone !== "function" ||
       typeof provider.resolvePersonContactPoint !== "function"
     ) {
       throw new Error(

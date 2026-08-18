@@ -1,12 +1,12 @@
 import type { ReactNode } from "react"
 import type {
   ActivityRecord,
-  CommunicationLogRecord,
   OrganizationRecord,
   PersonDocumentRecord,
   PersonPaymentMethodRecord,
   PersonRecord,
   PersonRelationshipRecord,
+  PersonTimelineRecord,
   PersonTravelSnapshotRecord,
 } from "../index.js"
 
@@ -95,16 +95,18 @@ export type PersonPaymentMethod = Pick<
 >
 
 export type PersonCommunication = Pick<
-  CommunicationLogRecord,
+  PersonTimelineRecord,
   | "channel"
   | "content"
   | "createdAt"
   | "direction"
   | "id"
   | "personId"
-  | "sentAt"
+  | "occurredAt"
   | "source"
   | "subject"
+  | "conversationId"
+  | "deliveryStatus"
 >
 
 export type PersonTravelSnapshot = PersonTravelSnapshotRecord
@@ -136,6 +138,7 @@ export interface PersonDetailPageSlots {
 
 export interface PersonDetailPageProps {
   id: string
+  canWriteConversations?: boolean
   className?: string
   onBack?: () => void
   onDeleted?: () => void

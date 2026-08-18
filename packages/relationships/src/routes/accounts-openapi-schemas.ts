@@ -164,6 +164,38 @@ export const communicationLogEntrySchema = z.object({
   source: z.enum(["logged", "notification"]).default("logged"),
 })
 
+export const personTimelineEntrySchema = z.object({
+  id: idSchema,
+  personId: z.string(),
+  organizationId: z.string().nullable(),
+  conversationId: z.string().nullable(),
+  channel: communicationChannelSchema,
+  direction: communicationDirectionSchema,
+  subject: z.string().nullable(),
+  content: z.string().nullable(),
+  deliveryStatus: z
+    .enum([
+      "received",
+      "pending",
+      "accepted",
+      "delivered",
+      "failed",
+      "bounced",
+      "complained",
+      "suppressed",
+      "cancelled",
+    ])
+    .nullable(),
+  occurredAt: isoTimestamp,
+  createdAt: isoTimestamp,
+  source: z.enum(["logged", "conversation", "notification"]),
+})
+
+export const personTimelinePageSchema = z.object({
+  data: z.array(personTimelineEntrySchema),
+  nextCursor: z.string().nullable(),
+})
+
 // --- segments ---------------------------------------------------------------
 
 export const segmentSchema = z.object({

@@ -38,6 +38,7 @@ import type {
 import {
   usePerson,
   usePersonCommunicationMutation,
+  usePersonConversationComposer,
   usePersonDocumentMutation,
   usePersonPaymentMethodMutation,
   useRevealPersonDocument,
@@ -548,18 +549,24 @@ export interface PersonCommunicationsPanelProps {
   communications: PersonCommunication[]
   communicationsPending: boolean
   personId: string
+  canWriteConversations: boolean
 }
 
 export function PersonCommunicationsPanel({
   communications,
   communicationsPending,
   personId,
+  canWriteConversations,
 }: PersonCommunicationsPanelProps) {
   const i18n = useCrmUiI18nOrDefault()
   const messages = useCrmUiMessagesOrDefault()
   const labels = messages.personDetail.communications
   const mutation = usePersonCommunicationMutation(personId)
+  const composer = usePersonConversationComposer(personId, canWriteConversations)
   const [isCreating, setIsCreating] = useState(false)
+  const [composeOption, setComposeOption] = useState("")
+  const [composeSubject, setComposeSubject] = useState("")
+  const [composeText, setComposeText] = useState("")
   const [form, setForm] = useState<CommunicationFormState>(() => emptyCommunicationFormState())
 
   const set = <K extends keyof CommunicationFormState>(key: K, value: CommunicationFormState[K]) =>
@@ -584,6 +591,61 @@ export function PersonCommunicationsPanel({
 
   return (
     <section className="flex flex-col gap-3">
+      {(composer.data?.length ?? 0) > 0 ? (
+        <form
+          className="grid gap-2 rounded-md border p-3 sm:grid-cols-[minmax(0,1fr)_minmax(0,1fr)_auto]"
+          onSubmit={async (event) => {
+            event.preventDefault()
+            const option = composer.data?.find(
+              (candidate) => `${candidate.account.id}:${candidate.contact.id}` === composeOption,
+            )
+            if (!option || !composeText.trim()) return
+            await composer.start.mutateAsync({
+              option,
+              subject: composeSubject.trim() || null,
+              text: composeText.trim(),
+            })
+            setComposeSubject("")
+            setComposeText("")
+          }}
+        >
+          <Select value={composeOption} onValueChange={(value) => setComposeOption(value ?? "")}>
+            <SelectTrigger aria-label="Conversation sender and recipient">
+              <SelectValue placeholder="Send from…" />
+            </SelectTrigger>
+            <SelectContent>
+              {composer.data?.map((option) => (
+                <SelectItem
+                  key={`${option.account.id}:${option.contact.id}`}
+                  value={`${option.account.id}:${option.contact.id}`}
+                >
+                  {option.account.displayName} → {option.contact.value}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Input
+            aria-label="Conversation subject"
+            placeholder="Subject"
+            value={composeSubject}
+            onChange={(event) => setComposeSubject(event.target.value)}
+          />
+          <Button
+            type="submit"
+            disabled={!composeOption || !composeText.trim() || composer.start.isPending}
+          >
+            Send
+          </Button>
+          <Textarea
+            className="sm:col-span-3"
+            aria-label="Conversation message"
+            placeholder="Write a message…"
+            value={composeText}
+            onChange={(event) => setComposeText(event.target.value)}
+            rows={2}
+          />
+        </form>
+      ) : null}
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium text-foreground">{labels.title}</h3>
         {!isCreating ? (
@@ -684,7 +746,7 @@ export function PersonCommunicationsPanel({
                   </p>
                 ) : null}
                 <p className="text-xs text-muted-foreground">
-                  {formatCrmRelative(i18n, communication.sentAt ?? communication.createdAt)}
+                  {formatCrmRelative(i18n, communication.occurredAt)}
                 </p>
               </div>
               <div className="flex flex-col items-end gap-1">
@@ -692,6 +754,17 @@ export function PersonCommunicationsPanel({
                 <Badge variant="secondary">{labels.directionLabels[communication.direction]}</Badge>
                 {communication.source === "notification" ? (
                   <Badge variant="outline">{labels.automaticBadge}</Badge>
+                ) : null}
+                {communication.deliveryStatus ? (
+                  <Badge variant="outline">{communication.deliveryStatus}</Badge>
+                ) : null}
+                {communication.conversationId ? (
+                  <a
+                    className="text-xs text-primary underline-offset-4 hover:underline"
+                    href={`/inbox?conversation=${encodeURIComponent(communication.conversationId)}`}
+                  >
+                    Inbox
+                  </a>
                 ) : null}
               </div>
             </li>
