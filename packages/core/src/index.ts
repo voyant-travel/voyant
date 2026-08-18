@@ -7,7 +7,7 @@ export {
   hashPublicApiKeyToken,
   PUBLIC_API_KEY_HEADER,
   PUBLIC_API_KEY_PREFIXES,
-} from "@voyant-travel/public-api-contracts"
+} from "@voyant-travel/graph-contracts"
 export type {
   AnalyticsEmitter,
   AnalyticsEventName,

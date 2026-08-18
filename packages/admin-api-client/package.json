@@ -41,7 +41,7 @@
     }
   },
   "dependencies": {
-    "@voyant-travel/public-api-contracts": "workspace:^",
+    "@voyant-travel/graph-contracts": "workspace:^",
     "openapi-fetch": "catalog:"
   },
   "devDependencies": {

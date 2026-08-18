@@ -16,10 +16,7 @@
  * a couple of dozen operations with runtime validation. That one is still the
  * ergonomic path for those; this one reaches everything the surface serves.
  */
-import {
-  classifyPublicApiKeyToken,
-  PUBLIC_API_KEY_HEADER,
-} from "@voyant-travel/public-api-contracts"
+import { classifyPublicApiKeyToken, PUBLIC_API_KEY_HEADER } from "@voyant-travel/graph-contracts"
 import createClient, { type ClientOptions } from "openapi-fetch"
 
 import type { PublishablePaths, SecretPaths } from "./generated/index.js"

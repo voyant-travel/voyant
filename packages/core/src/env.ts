@@ -25,7 +25,7 @@ export type Actor = "staff" | "customer" | "partner" | "supplier"
 // Defined in `public-api-contracts` so the generated clients can reach it
 // without the kernel (voyant#4626); imported as well as re-exported because
 // this file uses it.
-import type { VoyantPublicApiKeyKind } from "@voyant-travel/public-api-contracts"
+import type { VoyantPublicApiKeyKind } from "@voyant-travel/graph-contracts"
 
 export type { VoyantPublicApiKeyKind }
 

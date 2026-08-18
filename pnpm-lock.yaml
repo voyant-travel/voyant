@@ -1013,9 +1013,9 @@ importers:
 
   packages/admin-api-client:
     dependencies:
-      '@voyant-travel/public-api-contracts':
+      '@voyant-travel/graph-contracts':
         specifier: workspace:^
-        version: link:../public-api-contracts
+        version: link:../graph-contracts
       openapi-fetch:
         specifier: 'catalog:'
         version: 0.17.0
@@ -2162,9 +2162,6 @@ importers:
       '@voyant-travel/graph-contracts':
         specifier: workspace:^
         version: link:../graph-contracts
-      '@voyant-travel/public-api-contracts':
-        specifier: workspace:^
-        version: link:../public-api-contracts
     devDependencies:
       '@voyant-travel/voyant-typescript-config':
         specifier: workspace:^
@@ -5200,9 +5197,9 @@ importers:
 
   packages/public-api-client:
     dependencies:
-      '@voyant-travel/public-api-contracts':
+      '@voyant-travel/graph-contracts':
         specifier: workspace:^
-        version: link:../public-api-contracts
+        version: link:../graph-contracts
       openapi-fetch:
         specifier: 'catalog:'
         version: 0.17.0

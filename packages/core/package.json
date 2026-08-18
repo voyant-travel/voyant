@@ -31,8 +31,7 @@
     "prepack": "pnpm run build"
   },
   "dependencies": {
-    "@voyant-travel/graph-contracts": "workspace:^",
-    "@voyant-travel/public-api-contracts": "workspace:^"
+    "@voyant-travel/graph-contracts": "workspace:^"
   },
   "devDependencies": {
     "@voyant-travel/voyant-typescript-config": "workspace:^",
