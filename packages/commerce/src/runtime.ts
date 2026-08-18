@@ -178,8 +178,10 @@ export function createCommerceRuntime(requirements: CommerceRuntimeRequirements)
       // delivery turns those boundaries into savepoints and retains their row
       // locks until every step finishes, inverting the booking-confirmed lock
       // order and allowing Postgres to deadlock the two deliveries.
-      withDb: <T>(bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<T>) =>
-        operation(primitives.database.resolve<PostgresJsDatabase>(bindings)),
+      withDb: <T>(bindings: unknown, operation: (db: PostgresJsDatabase) => Promise<T>) => {
+        const database = primitives.database.resolve<PostgresJsDatabase>(bindings)
+        return operation(resolvePrimaryDatabase(database))
+      },
     },
     checkoutLegal: legal,
     promotionRedemptionDatabase: {
@@ -220,6 +222,10 @@ export function createCommerceRuntime(requirements: CommerceRuntimeRequirements)
       },
     },
   }
+}
+
+function resolvePrimaryDatabase(database: PostgresJsDatabase): PostgresJsDatabase {
+  return (database as PostgresJsDatabase & { $primary?: PostgresJsDatabase }).$primary ?? database
 }
 
 function stringValue(value: unknown): string | undefined {

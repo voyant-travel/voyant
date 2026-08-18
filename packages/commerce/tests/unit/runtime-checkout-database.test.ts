@@ -6,8 +6,9 @@ import { createCommerceRuntimePortContribution } from "../../src/runtime-contrib
 describe("commerce checkout database runtime", () => {
   it("runs checkout finalization against the resolved database without an outer transaction", async () => {
     const bindings = { requestId: "req_1" }
-    const db = { name: "resolved-db" }
-    const resolve = vi.fn(() => db)
+    const primaryDb = { name: "primary-db" }
+    const replicaAwareDb = { name: "replica-aware-db", $primary: primaryDb }
+    const resolve = vi.fn(() => replicaAwareDb)
     const transaction = vi.fn(async () => {
       throw new Error("checkout finalization must not hold a saga-wide transaction")
     })
@@ -37,7 +38,7 @@ describe("commerce checkout database runtime", () => {
     })
     const checkoutDatabase = await ports[catalogCheckoutDatabaseRuntimePort.id]
     const operation = vi.fn(async (resolvedDb: unknown) => {
-      expect(resolvedDb).toBe(db)
+      expect(resolvedDb).toBe(primaryDb)
       return "completed"
     })
 
