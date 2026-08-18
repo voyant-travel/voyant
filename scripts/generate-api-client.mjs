@@ -153,10 +153,23 @@ async function generateModule(document, outDir, client, bundles) {
     // byte-compared across machines, so when it disagrees the first question is
     // always whether the INPUT differed or the tool did — and answering that
     // from the output alone is impossible.
+    const sha = (value) =>
+      createHash("sha256").update(JSON.stringify(value)).digest("hex").slice(0, 12)
     const digest = createHash("sha256").update(serialised).digest("hex").slice(0, 12)
     console.log(
       `  composed surface: ${Object.keys(document.paths ?? {}).length} paths, sha ${digest}`,
     )
+    // Per section, then per path. When the composed bytes differ between two
+    // machines while every input file matches HEAD, the only way to find out
+    // WHICH operation moved is to hash them individually — comparing 900 KiB of
+    // generated TypeScript by eye is not a diagnosis.
+    console.log(
+      `  sections: info ${sha(document.info)} servers ${sha(document.servers)} ` +
+        `components ${sha(document.components)} paths ${sha(document.paths)}`,
+    )
+    for (const [route, item] of Object.entries(document.paths ?? {})) {
+      console.log(`  path ${sha(item)} ${route}`)
+    }
   }
 
   try {
