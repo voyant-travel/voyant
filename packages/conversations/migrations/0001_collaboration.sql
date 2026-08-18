@@ -51,7 +51,7 @@ ALTER TABLE "conversations" ADD COLUMN "revision" integer DEFAULT 1 NOT NULL;-->
 ALTER TABLE "conversations" ADD COLUMN "next_part_sequence" integer DEFAULT 1 NOT NULL;--> statement-breakpoint
 INSERT INTO "conversation_inboxes" ("id", "name", "description", "is_default")
 VALUES ('cvin_01k2p3q4r5s6t7v8w9x0y1z2a3', 'Inbox', 'Default customer communications Inbox', true)
-ON CONFLICT ("name") DO NOTHING;--> statement-breakpoint
+ON CONFLICT ("id") DO NOTHING;--> statement-breakpoint
 UPDATE "conversations"
 SET "inbox_id" = (
 	SELECT "id" FROM "conversation_inboxes" ORDER BY "is_default" DESC, "created_at" ASC LIMIT 1
