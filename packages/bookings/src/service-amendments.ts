@@ -13,6 +13,10 @@ import type {
   PreviewTravelerRosterChangeInput,
   TravelerCorrectionPatch,
 } from "@voyant-travel/bookings-contracts"
+import {
+  ACTIVE_BOOKING_ALLOCATION_STATUSES,
+  isActiveBookingAllocationStatus,
+} from "@voyant-travel/bookings-contracts"
 import { newId } from "@voyant-travel/db/lib/typeid"
 import { and, asc, eq, inArray, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
@@ -528,7 +532,7 @@ async function buildRosterPlans(
       )
     }
     const allocation = activeAllocations[0]!
-    if (allocation.quantity + quantityDelta < 0) {
+    if (!allocation.availabilitySlotId && allocation.quantity + quantityDelta < 0) {
       throw new RosterPlanError(
         "unsupported_configuration",
         "Allocation quantity cannot become negative",
@@ -825,8 +829,24 @@ async function buildItemAddPlan(
     )
   }
 
+  const capacityClaimQuantity = Math.max(booking.pax ?? addition.quantity, 0)
   if (slot) {
-    const room = slot.unlimited || (slot.remainingPax ?? 0) >= addition.quantity
+    const existingAllocations = await db
+      .select({ quantity: bookingAllocations.quantity })
+      .from(bookingAllocations)
+      .where(
+        and(
+          eq(bookingAllocations.bookingId, booking.id),
+          eq(bookingAllocations.availabilitySlotId, slot.id),
+          inArray(bookingAllocations.status, ACTIVE_BOOKING_ALLOCATION_STATUSES),
+        ),
+      )
+    const existingClaim = existingAllocations.reduce(
+      (sum, allocation) => sum + allocation.quantity,
+      0,
+    )
+    const additionalClaim = Math.max(capacityClaimQuantity - existingClaim, 0)
+    const room = slot.unlimited || (slot.remainingPax ?? 0) >= additionalClaim
     if (slot.status !== "open" || slot.pastCutoff || slot.tooEarly || !room) {
       throw new RosterPlanError("availability_changed", "Departure cannot take this addition")
     }
@@ -849,6 +869,7 @@ async function buildItemAddPlan(
     optionId: addition.optionId ?? option?.id ?? null,
     optionUnitId: addition.optionUnitId ?? null,
     availabilitySlotId: addition.availabilitySlotId ?? null,
+    capacityClaimQuantity,
     quantity,
     title: addition.title ?? unitName ?? option?.name ?? product.name,
     sellCurrency: booking.sellCurrency,
@@ -928,7 +949,20 @@ async function buildItemMovePlan(
   // slot looked up by id alone lets a caller move onto another product's
   // departure, which would decrement capacity nobody is travelling on.
   const target = await loadAdditionSlot(db, move.availabilitySlotId, item.productId)
-  const room = target.unlimited || (target.remainingPax ?? 0) >= item.quantity
+  const capacityClaimQuantity = Math.max(booking.pax ?? item.quantity, 0)
+  const sourceClaimPeers = state.allocations.filter(
+    (allocation) =>
+      allocation.bookingItemId !== item.id &&
+      allocation.availabilitySlotId === item.availabilitySlotId &&
+      isActiveBookingAllocationStatus(allocation.status),
+  )
+  const targetClaimPeers = state.allocations.filter(
+    (allocation) =>
+      allocation.availabilitySlotId === move.availabilitySlotId &&
+      isActiveBookingAllocationStatus(allocation.status),
+  )
+  const toCapacityQuantity = targetClaimPeers.length === 0 ? capacityClaimQuantity : 0
+  const room = target.unlimited || (target.remainingPax ?? 0) >= toCapacityQuantity
   if (target.status !== "open" || target.pastCutoff || target.tooEarly || !room) {
     throw new RosterPlanError(
       "availability_changed",
@@ -1053,6 +1087,9 @@ async function buildItemMovePlan(
     bookingItemId: item.id,
     allocationId: allocation.id,
     quantity: item.quantity,
+    fromCapacityQuantity: sourceClaimPeers.length === 0 ? capacityClaimQuantity : 0,
+    toCapacityQuantity,
+    sourceClaimCarrierAllocationId: sourceClaimPeers[0]?.id ?? null,
     productId: item.productId,
     fromAvailabilitySlotId: item.availabilitySlotId ?? null,
     toAvailabilitySlotId: move.availabilitySlotId,
@@ -2207,7 +2244,7 @@ async function finalizeRosterApply(
       const rosterPlans = amendment.operationPlan.filter(
         (plan): plan is BookingAmendmentRosterItemPlan => !isItemAddPlan(plan),
       )
-      await applyCapacityAndAllocationPlan(tx, rosterPlans, now)
+      await applyCapacityAndAllocationPlan(tx, rosterPlans, booking.pax, now)
       const amendmentTravelerId = requireAmendmentTravelerId(amendment)
       const requested = amendment.requestedChange
       if (requested.type === "traveler_add") {
@@ -2386,46 +2423,49 @@ async function finalizeItemMoveApply(
       if (!plan) return { status: "invalid_state" as const }
 
       const now = dependencies.now?.() ?? new Date()
+      const toCapacityQuantity = plan.toCapacityQuantity ?? plan.quantity
+      const fromCapacityQuantity = plan.fromCapacityQuantity ?? plan.quantity
 
       // Take the new departure's capacity first. If this fails there is
       // nothing to undo, whereas releasing first and failing here would
       // leave the booking holding no seat at all.
-      const [claimed] = await tx
-        .update(availabilitySlotsRef)
-        // agent-quality: raw-sql reviewed -- owner: bookings; conditional capacity decrement uses locked, server-owned plan data and Drizzle identifiers.
-        .set({
-          remainingPax: sql`CASE WHEN ${availabilitySlotsRef.unlimited} THEN ${availabilitySlotsRef.remainingPax} ELSE ${availabilitySlotsRef.remainingPax} - ${plan.quantity} END`,
-          updatedAt: now,
-        })
-        .where(
-          and(
-            eq(availabilitySlotsRef.id, plan.toAvailabilitySlotId),
-            ...(plan.productId ? [eq(availabilitySlotsRef.productId, plan.productId)] : []),
-            eq(availabilitySlotsRef.status, "open"),
-            eq(availabilitySlotsRef.pastCutoff, false),
-            eq(availabilitySlotsRef.tooEarly, false),
-            // agent-quality: raw-sql reviewed -- owner: bookings; atomic positive-capacity guard over a Drizzle identifier.
-            or(
-              eq(availabilitySlotsRef.unlimited, true),
-              sql`${availabilitySlotsRef.remainingPax} >= ${plan.quantity}`,
+      if (toCapacityQuantity > 0) {
+        const [claimed] = await tx
+          .update(availabilitySlotsRef)
+          // agent-quality: raw-sql reviewed -- owner: bookings; conditional capacity decrement uses locked, server-owned plan data and Drizzle identifiers.
+          .set({
+            remainingPax: sql`CASE WHEN ${availabilitySlotsRef.unlimited} THEN ${availabilitySlotsRef.remainingPax} ELSE ${availabilitySlotsRef.remainingPax} - ${toCapacityQuantity} END`,
+            updatedAt: now,
+          })
+          .where(
+            and(
+              eq(availabilitySlotsRef.id, plan.toAvailabilitySlotId),
+              ...(plan.productId ? [eq(availabilitySlotsRef.productId, plan.productId)] : []),
+              eq(availabilitySlotsRef.status, "open"),
+              eq(availabilitySlotsRef.pastCutoff, false),
+              eq(availabilitySlotsRef.tooEarly, false),
+              or(
+                eq(availabilitySlotsRef.unlimited, true),
+                sql`${availabilitySlotsRef.remainingPax} >= ${toCapacityQuantity}`,
+              ),
             ),
-          ),
-        )
-        .returning({ id: availabilitySlotsRef.id })
-      if (!claimed) {
-        throw new RosterPlanError(
-          "availability_changed",
-          "The target departure filled up",
-          plan.bookingItemId,
-        )
+          )
+          .returning({ id: availabilitySlotsRef.id })
+        if (!claimed) {
+          throw new RosterPlanError(
+            "availability_changed",
+            "The target departure filled up",
+            plan.bookingItemId,
+          )
+        }
       }
 
-      if (plan.fromAvailabilitySlotId) {
+      if (plan.fromAvailabilitySlotId && fromCapacityQuantity > 0) {
         await tx
           .update(availabilitySlotsRef)
           // agent-quality: raw-sql reviewed -- owner: bookings; capacity restore uses locked, server-owned plan data and Drizzle identifiers.
           .set({
-            remainingPax: sql`CASE WHEN ${availabilitySlotsRef.unlimited} THEN ${availabilitySlotsRef.remainingPax} ELSE ${availabilitySlotsRef.remainingPax} + ${plan.quantity} END`,
+            remainingPax: sql`CASE WHEN ${availabilitySlotsRef.unlimited} THEN ${availabilitySlotsRef.remainingPax} ELSE ${availabilitySlotsRef.remainingPax} + ${fromCapacityQuantity} END`,
             // A departure that sold out only because of this booking becomes
             // sellable again the moment the booking leaves it.
             status: sql`CASE WHEN ${availabilitySlotsRef.status} = 'sold_out' THEN 'open' ELSE ${availabilitySlotsRef.status} END`,
@@ -2434,9 +2474,20 @@ async function finalizeItemMoveApply(
           .where(eq(availabilitySlotsRef.id, plan.fromAvailabilitySlotId))
       }
 
+      if (plan.sourceClaimCarrierAllocationId) {
+        await tx
+          .update(bookingAllocations)
+          .set({ quantity: Math.max(booking.pax ?? plan.quantity, 0), updatedAt: now })
+          .where(eq(bookingAllocations.id, plan.sourceClaimCarrierAllocationId))
+      }
+
       await tx
         .update(bookingAllocations)
-        .set({ availabilitySlotId: plan.toAvailabilitySlotId, updatedAt: now })
+        .set({
+          availabilitySlotId: plan.toAvailabilitySlotId,
+          quantity: toCapacityQuantity,
+          updatedAt: now,
+        })
         .where(eq(bookingAllocations.id, plan.allocationId))
 
       await tx
@@ -2551,35 +2602,86 @@ async function finalizeItemAddApply(
       if (!plan) return { status: "invalid_state" as const }
 
       const now = dependencies.now?.() ?? new Date()
+      const capacityClaimQuantity =
+        plan.capacityClaimQuantity ?? Math.max(booking.pax ?? plan.quantity, 0)
+      let existingSlotAllocations: AllocationRow[] = []
 
       if (plan.availabilitySlotId) {
-        const [updated] = await tx
-          .update(availabilitySlotsRef)
-          // agent-quality: raw-sql reviewed -- owner: bookings; conditional capacity decrement uses locked, server-owned plan data and Drizzle identifiers.
-          .set({
-            remainingPax: sql`CASE WHEN ${availabilitySlotsRef.unlimited} THEN ${availabilitySlotsRef.remainingPax} ELSE ${availabilitySlotsRef.remainingPax} - ${plan.quantity} END`,
-            updatedAt: now,
-          })
+        existingSlotAllocations = await tx
+          .select()
+          .from(bookingAllocations)
           .where(
             and(
-              eq(availabilitySlotsRef.id, plan.availabilitySlotId),
-              // Re-asserted at apply, not just at preview: the decrement
-              // must land on the product the item claims, or capacity
-              // moves on one product while the booking records another.
-              eq(availabilitySlotsRef.productId, plan.productId),
-              eq(availabilitySlotsRef.status, "open"),
-              eq(availabilitySlotsRef.pastCutoff, false),
-              eq(availabilitySlotsRef.tooEarly, false),
-              // agent-quality: raw-sql reviewed -- owner: bookings; atomic positive-capacity guard over a Drizzle identifier.
-              or(
-                eq(availabilitySlotsRef.unlimited, true),
-                sql`${availabilitySlotsRef.remainingPax} >= ${plan.quantity}`,
-              ),
+              eq(bookingAllocations.bookingId, booking.id),
+              eq(bookingAllocations.availabilitySlotId, plan.availabilitySlotId),
+              inArray(bookingAllocations.status, ACTIVE_BOOKING_ALLOCATION_STATUSES),
             ),
           )
-          .returning({ id: availabilitySlotsRef.id })
-        if (!updated) {
-          throw new RosterPlanError("availability_changed", "Departure filled up", PENDING_ITEM_ID)
+          .orderBy(asc(bookingAllocations.createdAt), asc(bookingAllocations.id))
+          .for("update")
+
+        const existingClaim = existingSlotAllocations.reduce(
+          (sum, allocation) => sum + allocation.quantity,
+          0,
+        )
+        const capacityDelta = capacityClaimQuantity - existingClaim
+        if (capacityDelta > 0) {
+          const [updated] = await tx
+            .update(availabilitySlotsRef)
+            // agent-quality: raw-sql reviewed -- owner: bookings; the server-owned booking/departure claim is applied atomically with a positive-capacity guard.
+            .set({
+              remainingPax: sql`CASE WHEN ${availabilitySlotsRef.unlimited} THEN ${availabilitySlotsRef.remainingPax} ELSE ${availabilitySlotsRef.remainingPax} - ${capacityDelta} END`,
+              updatedAt: now,
+            })
+            .where(
+              and(
+                eq(availabilitySlotsRef.id, plan.availabilitySlotId),
+                eq(availabilitySlotsRef.productId, plan.productId),
+                eq(availabilitySlotsRef.status, "open"),
+                eq(availabilitySlotsRef.pastCutoff, false),
+                eq(availabilitySlotsRef.tooEarly, false),
+                or(
+                  eq(availabilitySlotsRef.unlimited, true),
+                  sql`${availabilitySlotsRef.remainingPax} >= ${capacityDelta}`,
+                ),
+              ),
+            )
+            .returning({ id: availabilitySlotsRef.id })
+          if (!updated) {
+            throw new RosterPlanError(
+              "availability_changed",
+              "Departure filled up",
+              PENDING_ITEM_ID,
+            )
+          }
+        } else if (capacityDelta < 0) {
+          await tx
+            .update(availabilitySlotsRef)
+            // agent-quality: raw-sql reviewed -- owner: bookings; normalizing an over-counted booking claim returns only the server-derived excess.
+            .set({
+              remainingPax: sql`CASE WHEN ${availabilitySlotsRef.unlimited} THEN ${availabilitySlotsRef.remainingPax} ELSE ${availabilitySlotsRef.remainingPax} + ${-capacityDelta} END`,
+              updatedAt: now,
+            })
+            .where(eq(availabilitySlotsRef.id, plan.availabilitySlotId))
+        }
+
+        if (existingSlotAllocations.length > 0) {
+          const [carrier, ...duplicates] = existingSlotAllocations
+          await tx
+            .update(bookingAllocations)
+            .set({ quantity: capacityClaimQuantity, updatedAt: now })
+            .where(eq(bookingAllocations.id, carrier!.id))
+          if (duplicates.length > 0) {
+            await tx
+              .update(bookingAllocations)
+              .set({ quantity: 0, updatedAt: now })
+              .where(
+                inArray(
+                  bookingAllocations.id,
+                  duplicates.map((allocation) => allocation.id),
+                ),
+              )
+          }
         }
       }
 
@@ -2619,7 +2721,7 @@ async function finalizeItemAddApply(
         optionId: plan.optionId,
         optionUnitId: plan.optionUnitId,
         availabilitySlotId: plan.availabilitySlotId,
-        quantity: plan.quantity,
+        quantity: existingSlotAllocations.length > 0 ? 0 : capacityClaimQuantity,
         allocationType: "unit",
         status: "confirmed",
         confirmedAt: now,
@@ -2671,8 +2773,10 @@ async function finalizeItemAddApply(
 async function applyCapacityAndAllocationPlan(
   tx: PostgresJsDatabase,
   plans: BookingAmendmentRosterItemPlan[],
+  bookingPaxBefore: number | null,
   now: Date,
 ) {
+  const lockedAllocations = new Map<string, AllocationRow>()
   for (const plan of plans) {
     const [allocation] = await tx
       .select()
@@ -2683,24 +2787,50 @@ async function applyCapacityAndAllocationPlan(
     if (!allocation || allocation.quantity !== plan.allocationQuantityBefore) {
       throw new RosterPlanError("availability_changed", "Allocation changed", plan.bookingItemId)
     }
-    if (plan.availabilitySlotId && plan.quantityDelta > 0) {
+    lockedAllocations.set(plan.allocationId, allocation)
+  }
+
+  const slotPlans = new Map<string, BookingAmendmentRosterItemPlan>()
+  for (const plan of plans) {
+    if (plan.availabilitySlotId && !slotPlans.has(plan.availabilitySlotId)) {
+      slotPlans.set(plan.availabilitySlotId, plan)
+    }
+  }
+
+  for (const [slotId, plan] of slotPlans) {
+    const allocation = lockedAllocations.get(plan.allocationId)!
+    const liveAllocations = await tx
+      .select()
+      .from(bookingAllocations)
+      .where(
+        and(
+          eq(bookingAllocations.bookingId, allocation.bookingId),
+          eq(bookingAllocations.availabilitySlotId, slotId),
+          inArray(bookingAllocations.status, ACTIVE_BOOKING_ALLOCATION_STATUSES),
+        ),
+      )
+      .orderBy(asc(bookingAllocations.createdAt), asc(bookingAllocations.id))
+      .for("update")
+    const currentClaim = liveAllocations.reduce((sum, candidate) => sum + candidate.quantity, 0)
+    const desiredClaim = Math.max((bookingPaxBefore ?? currentClaim) + plan.quantityDelta, 0)
+    const capacityDelta = desiredClaim - currentClaim
+    if (capacityDelta > 0) {
       const [updated] = await tx
         .update(availabilitySlotsRef)
-        // agent-quality: raw-sql reviewed -- owner: bookings; conditional capacity decrement uses locked, server-owned plan data and Drizzle identifiers.
+        // agent-quality: raw-sql reviewed -- owner: bookings; one passenger-denominated claim delta is applied per booking/departure, regardless of priced line count.
         .set({
-          remainingPax: sql`CASE WHEN ${availabilitySlotsRef.unlimited} THEN ${availabilitySlotsRef.remainingPax} ELSE ${availabilitySlotsRef.remainingPax} - 1 END`,
+          remainingPax: sql`CASE WHEN ${availabilitySlotsRef.unlimited} THEN ${availabilitySlotsRef.remainingPax} ELSE ${availabilitySlotsRef.remainingPax} - ${capacityDelta} END`,
           updatedAt: now,
         })
         .where(
           and(
-            eq(availabilitySlotsRef.id, plan.availabilitySlotId),
+            eq(availabilitySlotsRef.id, slotId),
             eq(availabilitySlotsRef.status, "open"),
             eq(availabilitySlotsRef.pastCutoff, false),
             eq(availabilitySlotsRef.tooEarly, false),
-            // agent-quality: raw-sql reviewed -- owner: bookings; atomic positive-capacity guard over a Drizzle identifier.
             or(
               eq(availabilitySlotsRef.unlimited, true),
-              sql`${availabilitySlotsRef.remainingPax} >= 1`,
+              sql`${availabilitySlotsRef.remainingPax} >= ${capacityDelta}`,
             ),
           ),
         )
@@ -2713,25 +2843,43 @@ async function applyCapacityAndAllocationPlan(
         )
       }
     }
-    if (plan.availabilitySlotId && plan.quantityDelta < 0) {
+    if (capacityDelta < 0) {
       await tx
         .update(availabilitySlotsRef)
-        // agent-quality: raw-sql reviewed -- owner: bookings; conditional capacity release uses locked, server-owned plan data and Drizzle identifiers.
+        // agent-quality: raw-sql reviewed -- owner: bookings; the server-derived passenger claim reduction is returned to the slot.
         .set({
-          remainingPax: sql`CASE WHEN ${availabilitySlotsRef.unlimited} THEN ${availabilitySlotsRef.remainingPax} ELSE COALESCE(${availabilitySlotsRef.remainingPax}, 0) + 1 END`,
+          remainingPax: sql`CASE WHEN ${availabilitySlotsRef.unlimited} THEN ${availabilitySlotsRef.remainingPax} ELSE COALESCE(${availabilitySlotsRef.remainingPax}, 0) + ${-capacityDelta} END`,
           updatedAt: now,
         })
-        .where(eq(availabilitySlotsRef.id, plan.availabilitySlotId))
+        .where(eq(availabilitySlotsRef.id, slotId))
     }
+
+    const [carrier, ...duplicates] = liveAllocations
+    if (carrier) {
+      await tx
+        .update(bookingAllocations)
+        .set({ quantity: desiredClaim, updatedAt: now })
+        .where(eq(bookingAllocations.id, carrier.id))
+    }
+    if (duplicates.length > 0) {
+      await tx
+        .update(bookingAllocations)
+        .set({ quantity: 0, updatedAt: now })
+        .where(
+          inArray(
+            bookingAllocations.id,
+            duplicates.map((candidate) => candidate.id),
+          ),
+        )
+    }
+  }
+
+  for (const plan of plans.filter((candidate) => !candidate.availabilitySlotId)) {
+    const allocation = lockedAllocations.get(plan.allocationId)!
     const [updatedAllocation] = await tx
       .update(bookingAllocations)
       .set({ quantity: allocation.quantity + plan.quantityDelta, updatedAt: now })
-      .where(
-        and(
-          eq(bookingAllocations.id, allocation.id),
-          eq(bookingAllocations.quantity, plan.allocationQuantityBefore),
-        ),
-      )
+      .where(eq(bookingAllocations.id, allocation.id))
       .returning({ id: bookingAllocations.id })
     if (!updatedAllocation) {
       throw new RosterPlanError("availability_changed", "Allocation changed", plan.bookingItemId)
