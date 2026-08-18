@@ -23,8 +23,7 @@ import {
   type FinanceStoredInstrumentRuntime,
   financeStoredInstrumentRuntimePort,
 } from "@voyant-travel/finance/runtime-port"
-import { identityContactPoints } from "@voyant-travel/identity/schema"
-import { and, eq, inArray, or, sql } from "drizzle-orm"
+import { sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 import { createPublicApiIntakePersistence } from "./public-api-intake-runtime.js"
 import type { RelationshipsRouteRuntimeOptions } from "./route-runtime.js"
@@ -39,6 +38,10 @@ import {
   relationshipsPersonNotificationsRuntimePort,
   relationshipsRouteRuntimePort,
 } from "./runtime-port.js"
+import {
+  findPersonContactPointAddress,
+  listPersonContactPointMatches,
+} from "./service/accounts-resolve.js"
 import { relationshipsService } from "./service/index.js"
 
 interface ConversationsPersonDirectory {
@@ -244,24 +247,7 @@ async function resolveDirectoryAddress(
   const database = db as PostgresJsDatabase
   const normalized = normalizeDirectoryAddress(channel, address)
   const kinds = channel === "email" ? (["email"] as const) : (["phone", "mobile", "sms"] as const)
-  const rows = await database
-    .select({
-      id: identityContactPoints.id,
-      personRef: identityContactPoints.entityId,
-      address: identityContactPoints.value,
-    })
-    .from(identityContactPoints)
-    .where(
-      and(
-        eq(identityContactPoints.entityType, "person"),
-        inArray(identityContactPoints.kind, kinds),
-        or(
-          eq(identityContactPoints.normalizedValue, normalized),
-          sql`lower(${identityContactPoints.value}) = ${normalized.toLowerCase()}`,
-        ),
-      ),
-    )
-    .limit(3)
+  const rows = await listPersonContactPointMatches(database, { kinds, normalized, limit: 3 })
   return classifyDirectoryRows(rows, channel)
 }
 
@@ -352,22 +338,14 @@ export function createRelationshipsRuntimePortContribution(
         const channel = input.channel ?? "email"
         const kinds =
           channel === "email" ? (["email"] as const) : (["phone", "mobile", "sms"] as const)
-        const [row] = await database
-          .select({ address: identityContactPoints.value })
-          .from(identityContactPoints)
-          .where(
-            and(
-              eq(identityContactPoints.id, input.contactPointRef),
-              eq(identityContactPoints.entityType, "person"),
-              eq(identityContactPoints.entityId, input.personRef),
-              inArray(identityContactPoints.kind, kinds),
-            ),
-          )
-          .limit(1)
-        if (!row) return null
+        const address = await findPersonContactPointAddress(database, {
+          personRef: input.personRef,
+          contactPointRef: input.contactPointRef,
+          kinds,
+        })
+        if (!address) return null
         return {
-          address:
-            channel === "sms" ? normalizeE164(row.address) : normalizeEmailAddress(row.address),
+          address: channel === "sms" ? normalizeE164(address) : normalizeEmailAddress(address),
         }
       },
     } satisfies ConversationsPersonDirectory,
