@@ -290,6 +290,9 @@
       "@voyant-travel/auth/public-api-runtime-port": ["../auth/dist/public-api-runtime-port.d.ts"],
       "@voyant-travel/auth/runtime-contributor": ["../auth/dist/runtime-contributor.d.ts"],
       "@voyant-travel/auth/server": ["../auth/dist/server.d.ts"],
+      "@voyant-travel/auth/staff-directory-runtime-port": [
+        "../auth/dist/staff-directory-runtime-port.d.ts"
+      ],
       "@voyant-travel/auth/team-management-runtime-port": [
         "../auth/dist/team-management-runtime-port.d.ts"
       ],
@@ -594,6 +597,17 @@
       ],
       "@voyant-travel/catalog/tools": ["../catalog/dist/mcp-runtime.d.ts"],
       "@voyant-travel/catalog/voyant": ["../catalog/dist/voyant.d.ts"],
+      "@voyant-travel/channel-adapter-contracts": ["../channel-adapter-contracts/dist/index.d.ts"],
+      "@voyant-travel/channel-adapter-contracts/adapter-manifest": [
+        "../channel-adapter-contracts/dist/adapter-manifest.d.ts"
+      ],
+      "@voyant-travel/channel-adapter-contracts/conformance": [
+        "../channel-adapter-contracts/dist/conformance.d.ts"
+      ],
+      "@voyant-travel/channel-adapter-contracts/testing": [
+        "../channel-adapter-contracts/dist/testing.d.ts"
+      ],
+      "@voyant-travel/channel-adapter-contracts/v1": ["../channel-adapter-contracts/dist/v1.d.ts"],
       "@voyant-travel/charters": ["../charters/dist/index.d.ts"],
       "@voyant-travel/charters-contracts": ["../charters-contracts/dist/index.d.ts"],
       "@voyant-travel/charters-contracts/content-shape": [
@@ -760,6 +774,32 @@
       "@voyant-travel/commerce/tools": ["../commerce/dist/mcp-runtime.d.ts"],
       "@voyant-travel/commerce/validation": ["../commerce/dist/validation.d.ts"],
       "@voyant-travel/commerce/voyant": ["../commerce/dist/voyant.d.ts"],
+      "@voyant-travel/communications-adapter-runtime": [
+        "../communications-adapter-runtime/dist/index.d.ts"
+      ],
+      "@voyant-travel/communications-adapter-runtime/runtime-contributor": [
+        "../communications-adapter-runtime/dist/runtime-contributor.d.ts"
+      ],
+      "@voyant-travel/communications-adapter-runtime/voyant": [
+        "../communications-adapter-runtime/dist/voyant.d.ts"
+      ],
+      "@voyant-travel/conversations": ["../conversations/dist/index.d.ts"],
+      "@voyant-travel/conversations-contracts": ["../conversations-contracts/dist/index.d.ts"],
+      "@voyant-travel/conversations-react": ["../conversations-react/dist/index.d.ts"],
+      "@voyant-travel/conversations-react/admin": ["../conversations-react/dist/admin/index.d.ts"],
+      "@voyant-travel/conversations/attachment-retention-job": [
+        "../conversations/dist/attachment-retention-job.d.ts"
+      ],
+      "@voyant-travel/conversations/ingress-job": ["../conversations/dist/ingress-job.d.ts"],
+      "@voyant-travel/conversations/runtime-contributor": [
+        "../conversations/dist/runtime-contributor.d.ts"
+      ],
+      "@voyant-travel/conversations/runtime-port": ["../conversations/dist/runtime-port.d.ts"],
+      "@voyant-travel/conversations/schema": ["../conversations/dist/schema.d.ts"],
+      "@voyant-travel/conversations/snooze-expiry-job": [
+        "../conversations/dist/snooze-expiry-job.d.ts"
+      ],
+      "@voyant-travel/conversations/voyant": ["../conversations/dist/voyant.d.ts"],
       "@voyant-travel/core": ["../core/dist/index.d.ts"],
       "@voyant-travel/core/analytics": ["../core/dist/analytics.d.ts"],
       "@voyant-travel/core/container": ["../core/dist/container.d.ts"],
@@ -1615,11 +1655,18 @@
         "../notifications-react/dist/query-keys.d.ts"
       ],
       "@voyant-travel/notifications-react/ui": ["../notifications-react/dist/ui.d.ts"],
+      "@voyant-travel/notifications/delivery-lifecycle-job": [
+        "../notifications/dist/delivery-lifecycle-job.d.ts"
+      ],
+      "@voyant-travel/notifications/delivery-lifecycle-source-port": [
+        "../notifications/dist/delivery-lifecycle-source-port.d.ts"
+      ],
       "@voyant-travel/notifications/durable-provider-port": [
         "../notifications/dist/durable-provider-port.d.ts"
       ],
       "@voyant-travel/notifications/emails": ["../notifications/dist/emails/index.d.ts"],
       "@voyant-travel/notifications/job-runtime": ["../notifications/dist/job-runtime.d.ts"],
+      "@voyant-travel/notifications/ports": ["../notifications/dist/ports.d.ts"],
       "@voyant-travel/notifications/reminder-job": ["../notifications/dist/reminder-job.d.ts"],
       "@voyant-travel/notifications/routes": ["../notifications/dist/routes.d.ts"],
       "@voyant-travel/notifications/runtime-contributor": [
