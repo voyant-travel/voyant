@@ -9,9 +9,11 @@ import {
   useAdminNavigate,
   useOperatorAdminMessages,
 } from "@voyant-travel/admin"
+import { useCapabilities } from "@voyant-travel/admin-react"
 
 import { PersonDetailPage } from "../components/person-detail-page.js"
 import { usePerson } from "../index.js"
+import { canStartPersonConversation } from "./conversation-capability.js"
 import { type PersonDetailBookingsTabContext, personDetailBookingsTabSlot } from "./slots.js"
 
 export interface PersonDetailHostProps {
@@ -31,6 +33,8 @@ export interface PersonDetailHostProps {
  *     card travels the widget seam, not an import).
  */
 export function PersonDetailHost({ id }: PersonDetailHostProps) {
+  const capabilities = useCapabilities()
+  const canWriteConversations = canStartPersonConversation(capabilities.data)
   const messages = useOperatorAdminMessages().crm.personDetail
   const navigateTo = useAdminNavigate()
   const resolveHref = useAdminHref()
@@ -56,6 +60,7 @@ export function PersonDetailHost({ id }: PersonDetailHostProps) {
   return (
     <PersonDetailPage
       id={id}
+      canWriteConversations={canWriteConversations}
       onBack={() => navigateTo("person.list", {})}
       onDeleted={() => navigateTo("person.list", {})}
       onOrganizationOpen={(organizationId) => navigateTo("organization.detail", { organizationId })}

@@ -52,7 +52,10 @@ import {
 } from "../route-runtime.js"
 import { RelationshipsMergeError } from "../service/accounts-merge.js"
 import { relationshipsService } from "../service/index.js"
-import { mergePersonCommunications } from "../service/person-communications.js"
+import {
+  InvalidPersonTimelineCursorError,
+  listPersonTimeline,
+} from "../service/person-communications.js"
 import {
   communicationListQuerySchema,
   insertCommunicationLogSchema,
@@ -66,6 +69,7 @@ import {
   mergePersonSchema,
   organizationListQuerySchema,
   personListQuerySchema,
+  personTimelineQuerySchema,
   updateOrganizationNoteSchema,
   updateOrganizationSchema,
   updatePersonNoteSchema,
@@ -85,6 +89,7 @@ import {
   personNoteSchema,
   personPaymentMethodSchema,
   personSchema,
+  personTimelinePageSchema,
   segmentIdParamSchema,
   segmentSchema,
   successResponseSchema,
@@ -762,6 +767,20 @@ const listCommunicationsRoute = createRoute({
   },
 })
 
+const listPersonTimelineRoute = createRoute({
+  method: "get",
+  path: "/people/{id}/communications/timeline",
+  request: { params: idParamSchema, query: personTimelineQuerySchema },
+  responses: {
+    200: {
+      description: "Exact chronological Person communication timeline",
+      ...jsonContent(personTimelinePageSchema),
+    },
+    400: { description: "Invalid or drifted cursor", ...jsonContent(errorResponseSchema) },
+    404: { description: "Person not found", ...jsonContent(errorResponseSchema) },
+  },
+})
+
 const createCommunicationRoute = createRoute({
   method: "post",
   path: "/people/{id}/communications",
@@ -833,10 +852,14 @@ peopleRoutes
   .openapi(mergePersonRoute, async (c) => {
     try {
       const body = c.req.valid("json")
+      const runtime = c.get("container")?.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY) as
+        | RelationshipsRouteRuntime
+        | undefined
       const row = await relationshipsService.mergePerson(
         c.get("db"),
         c.req.valid("param").id,
         body.mergeId,
+        runtime?.personConversations,
       )
       // The service always returns the hydrated survivor (email/phone/website);
       // the `?? row` fallback in the service only widens the static type.
@@ -968,6 +991,7 @@ peopleRoutes
   .openapi(listCommunicationsRoute, async (c) => {
     const personId = c.req.valid("param").id
     const query = c.req.valid("query")
+    const actorUserId = requireUserId(c)
     const runtime = c.get("container")?.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY) as
       | RelationshipsRouteRuntime
       | undefined
@@ -977,9 +1001,62 @@ peopleRoutes
       // inbound is asking for hand-logged entries only.
       query.direction === "inbound" || !runtime?.personNotifications
         ? Promise.resolve([])
-        : runtime.personNotifications.listPersonDeliveries(c.get("db"), personId, query),
+        : runtime.personNotifications.listPersonDeliveries(c.get("db"), personId, {
+            ...query,
+            actorUserId,
+          }),
     ])
-    return c.json({ data: mergePersonCommunications(personId, logged, delivered, query) }, 200)
+    return c.json(
+      {
+        data: [
+          ...logged.map((row) => ({ ...row, source: "logged" as const })),
+          ...delivered.map((row) => ({
+            id: row.id,
+            personId,
+            organizationId: null,
+            channel: row.channel,
+            direction: "outbound" as const,
+            subject: row.subject,
+            content: row.body,
+            sentAt: new Date(row.occurredAt),
+            createdAt: new Date(row.createdAt),
+            source: "notification" as const,
+          })),
+        ]
+          .sort(
+            (left, right) =>
+              (right.sentAt ?? right.createdAt).getTime() -
+              (left.sentAt ?? left.createdAt).getTime(),
+          )
+          .slice(0, query.limit),
+      },
+      200,
+    )
+  })
+  .openapi(listPersonTimelineRoute, async (c) => {
+    const personId = c.req.valid("param").id
+    const query = c.req.valid("query")
+    const actorUserId = requireUserId(c)
+    if (!(await relationshipsService.getPersonById(c.get("db"), personId))) {
+      return c.json({ error: "Person not found" }, 404)
+    }
+    const runtime = c.get("container")?.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY) as
+      | RelationshipsRouteRuntime
+      | undefined
+    try {
+      return c.json(
+        await listPersonTimeline(c.get("db"), personId, query, actorUserId, {
+          notifications: runtime?.personNotifications,
+          conversations: runtime?.personConversations,
+        }),
+        200,
+      )
+    } catch (error) {
+      if (error instanceof InvalidPersonTimelineCursorError) {
+        return c.json({ error: error.code }, 400)
+      }
+      throw error
+    }
   })
   .openapi(createCommunicationRoute, async (c) => {
     const row = await relationshipsService.createCommunication(

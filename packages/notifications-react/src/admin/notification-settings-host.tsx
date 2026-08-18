@@ -1,5 +1,6 @@
 "use client"
 
+import { ChannelAccountsList } from "../components/channel-accounts-list.js"
 import { NotificationSettingsForm } from "../components/notification-settings-form.js"
 import { useNotificationsUiMessagesOrDefault } from "../i18n/index.js"
 
@@ -16,6 +17,7 @@ export function NotificationSettingsHost() {
         <h1 className="text-2xl font-semibold">{messages.settings.heading}</h1>
         <p className="text-sm text-muted-foreground">{messages.settings.description}</p>
       </div>
+      <ChannelAccountsList />
       <NotificationSettingsForm />
     </div>
   )

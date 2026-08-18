@@ -1,0 +1,10 @@
+{
+  "extends": "@voyant-travel/voyant-typescript-config/base.json",
+  "compilerOptions": {
+    "composite": false,
+    "module": "ESNext",
+    "moduleResolution": "Bundler",
+    "jsx": "react-jsx"
+  },
+  "include": ["src/**/*", "tests/**/*"]
+}

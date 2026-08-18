@@ -24,6 +24,97 @@ export interface NotificationAttachment {
   disposition?: "attachment" | "inline"
   /** Optional inline content id. */
   contentId?: string
+  /** Private attachment-store handle. Never a public URL or embedded credential. */
+  privateHandle?: string
+}
+
+export interface QualifiedNotificationTargetRef {
+  /** Package-qualified record kind, for example `@voyant-travel/conversations#thread`. */
+  type: string
+  id: string
+}
+
+export interface RenderedServiceMessageAttachment {
+  privateHandle: string
+  filename: string
+  contentType?: string
+  disposition?: "attachment" | "inline"
+  contentId?: string
+}
+
+/** Provider-neutral, already-rendered service message admitted to the durable sender. */
+export interface RenderedServiceMessage {
+  channelAccountId: string
+  channel?: "email" | "sms"
+  to: string
+  target: QualifiedNotificationTargetRef
+  purpose: string
+  idempotencyKey: string
+  subject?: string
+  text?: string
+  sanitizedHtml?: string
+  attachments?: ReadonlyArray<RenderedServiceMessageAttachment>
+  thread?: {
+    threadId?: string
+    replyToDeliveryId?: string
+  }
+  organizationId?: string
+  metadata?: Record<string, unknown>
+}
+
+export type NotificationDeliveryTruth =
+  | "pending"
+  | "accepted"
+  | "delivered"
+  | "failed"
+  | "bounced"
+  | "complained"
+  | "suppressed"
+  | "cancelled"
+
+export interface NormalizedNotificationDeliveryEvent {
+  adapterRef: string
+  adapterEventId: string
+  deliveryId: string
+  status: Exclude<NotificationDeliveryTruth, "pending">
+  occurredAt: Date
+  details?: Record<string, unknown>
+}
+
+export interface ChannelAccountDraft {
+  channel: NotificationChannel
+  address: string
+  displayName: string
+  allowedPurposes: ReadonlyArray<string>
+  inboundCapable?: boolean
+  outboundCapable?: boolean
+}
+
+export interface ProvisionedChannelAccount {
+  adapterRef: string
+  normalizedAddress: string
+  displayAddress: string
+}
+
+export interface ValidatedChannelAccount {
+  health: "healthy" | "degraded" | "unavailable"
+  inboundCapable: boolean
+  outboundCapable: boolean
+  /** Required and unambiguous before an SMS identity can receive Inbox traffic. */
+  inboundIdentity?: "unambiguous" | "ambiguous"
+  /** Opaque ingress source id bound by the adapter to this receiving identity. */
+  inboundSourceId?: string
+  attachmentsCapable?: boolean
+}
+
+/** Runtime-only authority for provisioning and validating adapter identities. */
+export interface ChannelAccountAdapterCapability {
+  readonly protocol: "notification-channel-account-v1"
+  matches(adapterRef: string): boolean
+  provision(draft: ChannelAccountDraft): Promise<ProvisionedChannelAccount>
+  validate(adapterRef: string): Promise<ValidatedChannelAccount>
+  /** Bind the committed host row id before inbound activation. */
+  activate?(input: { channelAccountId: string; adapterRef: string }): Promise<void> | void
 }
 
 /**
@@ -39,6 +130,8 @@ export interface NotificationPayload {
   provider?: string
   /** Template identifier — interpretation is provider-specific. */
   template: string
+  /** Domain-authoritative delivery purpose when admission supplied one. */
+  purpose?: string
   /** Data passed to the template for rendering. */
   data?: unknown
   /** Optional sender override. Providers may have their own defaults. */
@@ -92,7 +185,7 @@ export interface DurableNotificationDeliveryCapability {
  * request-scoped or transport-specific provider implementation.
  */
 export interface NotificationProvider {
-  /** Unique provider name (e.g. "resend", "local", "twilio"). */
+  /** Unique adapter selection name. Kept internal to durable operation state. */
   readonly name: string
   /** Channels this provider can handle. */
   readonly channels: ReadonlyArray<NotificationChannel>
@@ -104,4 +197,10 @@ export interface NotificationProvider {
   readonly defaultFromAddress?: string | null
   /** The only delivery mutation. Missing or malformed implementations fail closed. */
   readonly durableDelivery: DurableNotificationDeliveryCapability
+  /** Optional runtime-only Channel Account provisioning/validation capability. */
+  readonly channelAccounts?: ChannelAccountAdapterCapability
 }
+
+export type NotificationPrivateAttachmentResolver = ConversationPrivateAttachmentDeliveryResolver
+
+import type { ConversationPrivateAttachmentDeliveryResolver } from "@voyant-travel/conversations-contracts"

@@ -10,6 +10,11 @@ describe("@voyant-travel/schema-kit", () => {
     expect(typeIdSchema("bookings").safeParse("not-a-typeid").success).toBe(false)
   })
 
+  it("assigns stable prefixes to Channel Accounts and delivery events", () => {
+    expect(newId("notification_channel_accounts")).toMatch(/^ncha_/)
+    expect(newId("notification_delivery_events")).toMatch(/^ndev_/)
+  })
+
   it("coerces boolean query params correctly (the z.coerce.boolean footgun)", () => {
     expect(booleanQueryParam.parse("true")).toBe(true)
     expect(booleanQueryParam.parse("1")).toBe(true)

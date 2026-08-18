@@ -135,7 +135,16 @@ const proposalWriteRisk = {
 
 const proposalProposalDeliverySchema = z.object({
   id: z.string(),
-  status: z.enum(["pending", "sent", "failed", "cancelled"]),
+  status: z.enum([
+    "pending",
+    "accepted",
+    "delivered",
+    "failed",
+    "bounced",
+    "complained",
+    "suppressed",
+    "cancelled",
+  ]),
   channel: z.enum(["email", "sms"]),
   provider: z.string(),
   providerMessageId: z.string().nullable(),

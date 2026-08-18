@@ -2,6 +2,7 @@ import {
   type BookingsRelationshipsRuntime,
   bookingsRelationshipsRuntimePort,
 } from "@voyant-travel/bookings/runtime-port"
+import { normalizeE164, normalizeEmailAddress } from "@voyant-travel/conversations-contracts"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import {
   type CustomFieldsRuntime,
@@ -29,17 +30,33 @@ import type { RelationshipsRouteRuntimeOptions } from "./route-runtime.js"
 import {
   type RelationshipsBookingEnrichmentDatabaseRuntime,
   type RelationshipsMiceRuntime,
+  type RelationshipsPersonConversationsRuntime,
   type RelationshipsPersonNotificationsRuntime,
   relationshipsBookingEnrichmentDatabaseRuntimePort,
   relationshipsMiceRuntimePort,
+  relationshipsPersonConversationsRuntimePort,
   relationshipsPersonNotificationsRuntimePort,
   relationshipsRouteRuntimePort,
 } from "./runtime-port.js"
+import {
+  findPersonContactPointAddress,
+  listPersonContactPointMatches,
+} from "./service/accounts-resolve.js"
 import { relationshipsService } from "./service/index.js"
+
+interface ConversationsPersonDirectory {
+  resolveEmail(db: unknown, address: string): Promise<DirectoryResolution>
+  resolvePhone(db: unknown, address: string): Promise<DirectoryResolution>
+  resolvePersonContactPoint(
+    db: unknown,
+    input: { personRef: string; contactPointRef: string; channel?: "email" | "sms" },
+  ): Promise<{ address: string } | null>
+}
 
 const publicApiIntakeRuntimePortReference = {
   id: "public-api.intake.runtime",
 } as const
+const conversationsPersonDirectoryPortReference = { id: "conversations.person-directory" } as const
 
 const relationshipCustomFieldTables = {
   person: "people",
@@ -179,6 +196,61 @@ async function resolvePersonNotifications(
   }
 }
 
+async function resolvePersonConversations(
+  host: RelationshipsRuntimeContributorHost,
+): Promise<RelationshipsPersonConversationsRuntime | undefined> {
+  if (host.hasRuntimePort?.(relationshipsPersonConversationsRuntimePort) === false) return undefined
+  try {
+    return await host.getRuntimePort(relationshipsPersonConversationsRuntimePort)
+  } catch {
+    return undefined
+  }
+}
+
+type DirectoryResolution =
+  | { kind: "none" }
+  | { kind: "ambiguous" }
+  | {
+      kind: "unique"
+      personRef: string
+      contactPointRef: string
+      address: string
+      channel: "email" | "sms"
+    }
+
+function normalizeDirectoryAddress(channel: "email" | "sms", value: string): string {
+  return channel === "email" ? normalizeEmailAddress(value) : normalizeE164(value)
+}
+
+export function classifyDirectoryRows(
+  rows: readonly { id: string; personRef: string; address: string }[],
+  channel: "email" | "sms",
+): DirectoryResolution {
+  const people = new Set(rows.map((row) => row.personRef))
+  if (people.size === 0) return { kind: "none" }
+  if (people.size > 1 || rows.length > 1) return { kind: "ambiguous" }
+  const row = rows[0]!
+  return {
+    kind: "unique",
+    personRef: row.personRef,
+    contactPointRef: row.id,
+    address: normalizeDirectoryAddress(channel, row.address),
+    channel,
+  }
+}
+
+async function resolveDirectoryAddress(
+  db: unknown,
+  channel: "email" | "sms",
+  address: string,
+): Promise<DirectoryResolution> {
+  const database = db as PostgresJsDatabase
+  const normalized = normalizeDirectoryAddress(channel, address)
+  const kinds = channel === "email" ? (["email"] as const) : (["phone", "mobile", "sms"] as const)
+  const rows = await listPersonContactPointMatches(database, { kinds, normalized, limit: 3 })
+  return classifyDirectoryRows(rows, channel)
+}
+
 /** Package-owned registration map for Relationships deployment adapters. */
 export function createRelationshipsRuntimePortContribution(
   host: RelationshipsRuntimeContributorHost,
@@ -187,6 +259,7 @@ export function createRelationshipsRuntimePortContribution(
     host.getRuntimePort<CustomFieldsRuntime>(customFieldsRuntimePort),
   )
   const personNotifications = resolvePersonNotifications(host)
+  const personConversations = resolvePersonConversations(host)
   const customFields: CustomFieldValueReaderRuntime = {
     async resolveVisibleValues(db, entity, entityId, channel) {
       const database = db as PostgresJsDatabase
@@ -233,12 +306,49 @@ export function createRelationshipsRuntimePortContribution(
       personNotifications: {
         listPersonDeliveries: async (db, personId, query) =>
           (await personNotifications)?.listPersonDeliveries(db, personId, query) ?? [],
+        getDeliveryTruth: async (db, deliveryIds) =>
+          (await personNotifications)?.getDeliveryTruth(db, deliveryIds) ?? {},
+      },
+      personConversations: {
+        listPersonParts: async (db, personId, query) =>
+          (await personConversations)?.listPersonParts(db, personId, query) ?? [],
+        findLinkedDeliveryIds: async (db, personId, deliveryIds, actorUserId) =>
+          (await personConversations)?.findLinkedDeliveryIds(
+            db,
+            personId,
+            deliveryIds,
+            actorUserId,
+          ) ?? [],
+        mergePersonHistory: async (db, survivorPersonId, mergedPersonId) =>
+          (await personConversations)?.mergePersonHistory(db, survivorPersonId, mergedPersonId),
       },
     } satisfies RelationshipsRouteRuntimeOptions,
     [relationshipsMiceRuntimePort.id]: {
       personExists: async (db, personId) =>
         (await relationshipsService.getPersonById(db as never, personId)) != null,
     } satisfies RelationshipsMiceRuntime,
+    [conversationsPersonDirectoryPortReference.id]: {
+      resolveEmail: (db: unknown, address: string) => resolveDirectoryAddress(db, "email", address),
+      resolvePhone: (db: unknown, address: string) => resolveDirectoryAddress(db, "sms", address),
+      async resolvePersonContactPoint(
+        db: unknown,
+        input: { personRef: string; contactPointRef: string; channel?: "email" | "sms" },
+      ) {
+        const database = db as PostgresJsDatabase
+        const channel = input.channel ?? "email"
+        const kinds =
+          channel === "email" ? (["email"] as const) : (["phone", "mobile", "sms"] as const)
+        const address = await findPersonContactPointAddress(database, {
+          personRef: input.personRef,
+          contactPointRef: input.contactPointRef,
+          kinds,
+        })
+        if (!address) return null
+        return {
+          address: channel === "sms" ? normalizeE164(address) : normalizeEmailAddress(address),
+        }
+      },
+    } satisfies ConversationsPersonDirectory,
     [relationshipsBookingEnrichmentDatabaseRuntimePort.id]: {
       withDb: <T>(bindings: unknown, operation: (db: AnyDrizzleDb) => Promise<T>) =>
         host.primitives.database.transaction(bindings, (database) =>

@@ -14,6 +14,8 @@
   "extensionSurface": [
     "@voyant-travel/admin-extension-sdk",
     "@voyant-travel/app-manifest",
+    "@voyant-travel/channel-adapter-contracts",
+    "@voyant-travel/conversations-contracts",
     "@voyant-travel/custom-fields-contracts",
     "@voyant-travel/graph-contracts",
     "@voyant-travel/public-api-contracts",

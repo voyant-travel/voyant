@@ -177,6 +177,16 @@ export const crmUiRoDetailMessages = {
       title: "Comunicari",
       add: "Adauga comunicare",
       noSubject: "Fara subiect",
+      inboxLink: "Inbox",
+      composer: {
+        senderRecipientLabel: "Expeditorul si destinatarul conversatiei",
+        senderRecipientPlaceholder: "Trimite de la…",
+        subjectLabel: "Subiectul conversatiei",
+        subjectPlaceholder: "Subiect",
+        send: "Trimite",
+        messageLabel: "Mesajul conversatiei",
+        messagePlaceholder: "Scrie un mesaj…",
+      },
       fields: {
         channel: "Canal",
         direction: "Directie",

@@ -1,3 +1,8 @@
+import {
+  conversationsChannelPolicyPort,
+  conversationsDeliveryTruthPort,
+  conversationsRenderedMessageAdmissionPort,
+} from "@voyant-travel/conversations/runtime-port"
 import type { VoyantRuntimeHostPrimitives } from "@voyant-travel/core"
 import type { VoyantPort } from "@voyant-travel/core/project"
 import {
@@ -11,6 +16,11 @@ import {
   proposalsNotificationsRuntimePort,
 } from "@voyant-travel/proposals/runtime-port"
 import { relationshipsPersonNotificationsRuntimePort } from "@voyant-travel/relationships/runtime-port"
+import {
+  createConversationsChannelPolicy,
+  createConversationsDeliveryTruthReader,
+  createConversationsRenderedMessageAdmission,
+} from "./conversations-runtime.js"
 import { toCustomerVerificationNotificationProviders } from "./customer-verification-runtime.js"
 import {
   type DurableNotificationProviderRuntime,
@@ -45,6 +55,10 @@ export function createNotificationsRuntimePortContribution(
   } satisfies CustomerVerificationRoutesOptions
   const contribution: Record<string, unknown> = {
     [notificationsRuntimePort.id]: runtime,
+    [conversationsRenderedMessageAdmissionPort.id]:
+      createConversationsRenderedMessageAdmission(runtime),
+    [conversationsChannelPolicyPort.id]: createConversationsChannelPolicy(),
+    [conversationsDeliveryTruthPort.id]: createConversationsDeliveryTruthReader(),
     [notificationsReminderJobRuntimePort.id]: runtime.resolveReminderJobRuntime(undefined),
     [customerVerificationRuntimePort.id]: verification,
     [financeNotificationsRuntimePort.id]: createFinanceNotificationsRuntime(

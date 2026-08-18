@@ -13,6 +13,7 @@ export {
 } from "./provider.js"
 export { notificationsQueryKeys } from "./query-keys.js"
 export {
+  getNotificationChannelAccountsQueryOptions,
   getNotificationDeliveriesQueryOptions,
   getNotificationDeliveryQueryOptions,
   getNotificationReminderRuleQueryOptions,

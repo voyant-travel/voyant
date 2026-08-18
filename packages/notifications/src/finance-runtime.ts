@@ -66,9 +66,17 @@ function resolveNotificationProviders(
 type NotificationDeliveryLike = {
   id: string
   templateSlug: string | null
-  channel: "email" | "sms"
+  channel: string
   provider: string
-  status: "pending" | "sent" | "failed" | "cancelled"
+  status:
+    | "pending"
+    | "accepted"
+    | "delivered"
+    | "failed"
+    | "bounced"
+    | "complained"
+    | "suppressed"
+    | "cancelled"
   toAddress: string
   subject: string | null
   sentAt: Date | string | null
@@ -106,7 +114,7 @@ function toCheckoutReminderRun(run: {
   status: CheckoutReminderRunRecord["status"]
   delivery?: {
     status: CheckoutReminderRunRecord["deliveryStatus"]
-    channel: "email" | "sms"
+    channel: string
     provider: string | null
   } | null
   recipient: string | null

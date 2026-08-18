@@ -17,6 +17,20 @@
     "allow": {}
   },
   "packages": {
+    "@voyant-travel/conversations": {
+      "requiresSchemas": ["@voyant-travel/db"],
+      "portIds": [
+        "conversations.database",
+        "conversations.ingress-source",
+        "conversations.rendered-message-admission",
+        "conversations.person-directory",
+        "auth.staff-directory",
+        "conversations.attachments",
+        "conversations.channel-policy",
+        "conversations.delivery-truth"
+      ],
+      "runtimeExport": "createConversationsRuntimePortContribution"
+    },
     "@voyant-travel/flights": {
       "requiresSchemas": ["@voyant-travel/finance"],
       "requiredCapabilities": ["finance.payment-sessions"],
@@ -29,7 +43,8 @@
         "relationships.route-runtime",
         "relationships.mice.runtime",
         "custom-fields.runtime",
-        "relationships.booking-enrichment-database"
+        "relationships.booking-enrichment-database",
+        "conversations.person-directory"
       ],
       "runtimeExport": "createRelationshipsRuntimePortContribution"
     },

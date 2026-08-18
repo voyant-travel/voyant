@@ -7,6 +7,7 @@ import {
   createInvitationsAdminRoutes,
   createInvitationsPublicRoutes,
 } from "../../src/invitations-routes.js"
+import { staffDirectoryRuntimePort } from "../../src/staff-directory-runtime-port.js"
 import { teamManagementRuntimePort } from "../../src/team-management-runtime-port.js"
 import { createTeamAdminRoutes } from "../../src/team-routes.js"
 import {
@@ -87,8 +88,10 @@ describe("auth identity/access deployment manifests", () => {
     expect(authTeamVoyantModule).toMatchObject({
       id: "@voyant-travel/auth#team",
       packageName: "@voyant-travel/auth",
-      provides: { ports: [{ id: teamManagementRuntimePort.id }] },
-      runtimePorts: [{ id: teamManagementRuntimePort.id }],
+      provides: {
+        ports: [{ id: teamManagementRuntimePort.id }, { id: staffDirectoryRuntimePort.id }],
+      },
+      runtimePorts: [{ id: teamManagementRuntimePort.id }, { id: staffDirectoryRuntimePort.id }],
       api: [
         {
           surface: "admin",

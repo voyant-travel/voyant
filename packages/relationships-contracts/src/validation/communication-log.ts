@@ -23,3 +23,13 @@ export const communicationListQuerySchema = paginationSchema.extend({
   dateFrom: z.string().optional(),
   dateTo: z.string().optional(),
 })
+
+/** Stable keyset pagination for the cross-authority Person timeline. */
+export const personTimelineQuerySchema = z.object({
+  limit: z.coerce.number().int().positive().max(100).default(50),
+  cursor: z.string().min(1).optional(),
+  channel: communicationChannelSchema.optional(),
+  direction: communicationDirectionSchema.optional(),
+  dateFrom: z.string().datetime({ offset: true }).optional(),
+  dateTo: z.string().datetime({ offset: true }).optional(),
+})

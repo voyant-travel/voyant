@@ -1,0 +1,67 @@
+{
+  "name": "@voyant-travel/communications-adapter-runtime",
+  "version": "0.1.0",
+  "description": "Provider-neutral graph bridge for custom communications channel adapters.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./voyant": "./src/voyant.ts",
+    "./runtime-contributor": "./src/runtime-contributor.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "test": "vitest run",
+    "lint": "biome check src/ tests/"
+  },
+  "dependencies": {
+    "@voyant-travel/channel-adapter-contracts": "workspace:^",
+    "@voyant-travel/conversations": "workspace:^",
+    "@voyant-travel/conversations-contracts": "workspace:^",
+    "@voyant-travel/core": "workspace:^",
+    "@voyant-travel/notifications": "workspace:^"
+  },
+  "devDependencies": {
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./voyant": {
+        "types": "./dist/voyant.d.ts",
+        "import": "./dist/voyant.js",
+        "default": "./dist/voyant.js"
+      },
+      "./runtime-contributor": {
+        "types": "./dist/runtime-contributor.d.ts",
+        "import": "./dist/runtime-contributor.js",
+        "default": "./dist/runtime-contributor.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "voyant": {
+    "schemaVersion": "voyant.package.v1",
+    "kind": "adapter",
+    "manifest": "./voyant",
+    "runtime": {
+      "entry": "./runtime-contributor",
+      "export": "createCommunicationsAdapterRuntimePortContribution"
+    }
+  },
+  "private": true
+}

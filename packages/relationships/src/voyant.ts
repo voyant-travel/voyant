@@ -29,6 +29,7 @@ const relationshipsAdminRuntime = {
 } as const
 
 const publicApiIntakeRuntimePortReference = { id: "public-api.intake.runtime" } as const
+const conversationsPersonDirectoryPortReference = { id: "conversations.person-directory" } as const
 
 const customerSignalCreatedPayloadSchema = {
   type: "object",
@@ -87,6 +88,7 @@ export const relationshipsVoyantModule = defineModule({
   provides: {
     ports: [
       publicApiIntakeRuntimePortReference,
+      conversationsPersonDirectoryPortReference,
       providePort(relationshipsMiceRuntimePort),
       providePort(bookingsRelationshipsRuntimePort),
       providePort(financeStoredInstrumentRuntimePort),

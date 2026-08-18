@@ -58,7 +58,11 @@ async function cleanupNotificationsTestData(
       notification_reminder_rules,
       notification_settings,
       notification_send_operations,
+      sms_transport_policy_events,
+      sms_transport_policies,
+      notification_delivery_events,
       notification_deliveries,
+      notification_channel_accounts,
       notification_templates,
       payment_sessions,
       invoice_renditions,
@@ -97,6 +101,29 @@ export function createNotificationsTestContext(options?: {
     await db.execute(sql`
       DO $$
       BEGIN
+        CREATE TYPE channel_account_lifecycle AS ENUM ('pending', 'active', 'disabled', 'archived');
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE channel_account_health AS ENUM ('unknown', 'healthy', 'degraded', 'unavailable');
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
+      DO $$
+      BEGIN
+        CREATE TYPE notification_delivery_event_status AS ENUM (
+          'accepted', 'delivered', 'failed', 'bounced', 'complained', 'suppressed', 'cancelled'
+        );
+      EXCEPTION WHEN duplicate_object THEN NULL;
+      END $$;
+    `)
+    await db.execute(sql`
+      DO $$
+      BEGIN
         CREATE TYPE notification_send_operation_status AS ENUM (
           'pending',
           'processing',
@@ -124,6 +151,19 @@ export function createNotificationsTestContext(options?: {
         WHEN duplicate_object THEN NULL;
       END $$;
     `)
+    await db.execute(
+      sql`ALTER TYPE notification_delivery_status ADD VALUE IF NOT EXISTS 'accepted'`,
+    )
+    await db.execute(
+      sql`ALTER TYPE notification_delivery_status ADD VALUE IF NOT EXISTS 'delivered'`,
+    )
+    await db.execute(sql`ALTER TYPE notification_delivery_status ADD VALUE IF NOT EXISTS 'bounced'`)
+    await db.execute(
+      sql`ALTER TYPE notification_delivery_status ADD VALUE IF NOT EXISTS 'complained'`,
+    )
+    await db.execute(
+      sql`ALTER TYPE notification_delivery_status ADD VALUE IF NOT EXISTS 'suppressed'`,
+    )
     await db.execute(sql`
       DO $$
       BEGIN
@@ -398,12 +438,72 @@ export function createNotificationsTestContext(options?: {
       )
     `)
     await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS notification_channel_accounts (
+        id text PRIMARY KEY NOT NULL,
+        channel text NOT NULL,
+        normalized_address text NOT NULL,
+        display_name text NOT NULL,
+        display_address text NOT NULL,
+        lifecycle channel_account_lifecycle NOT NULL DEFAULT 'pending',
+        health channel_account_health NOT NULL DEFAULT 'unknown',
+        inbound_capable boolean NOT NULL DEFAULT false,
+        outbound_capable boolean NOT NULL DEFAULT false,
+        inbound_identity text,
+        inbound_source_id text,
+        attachments_capable boolean NOT NULL DEFAULT false,
+        allowed_purposes jsonb NOT NULL DEFAULT '[]'::jsonb,
+        adapter_ref text NOT NULL UNIQUE,
+        last_validated_at timestamp with time zone,
+        created_at timestamp with time zone DEFAULT now() NOT NULL,
+        updated_at timestamp with time zone DEFAULT now() NOT NULL,
+        UNIQUE (channel, normalized_address)
+      )
+    `)
+    await db.execute(
+      sql`ALTER TABLE notification_channel_accounts ADD COLUMN IF NOT EXISTS inbound_identity text`,
+    )
+    await db.execute(
+      sql`ALTER TABLE notification_channel_accounts ADD COLUMN IF NOT EXISTS inbound_source_id text`,
+    )
+    await db.execute(
+      sql`ALTER TABLE notification_channel_accounts ADD COLUMN IF NOT EXISTS attachments_capable boolean NOT NULL DEFAULT false`,
+    )
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS sms_transport_policies (
+        id text PRIMARY KEY NOT NULL,
+        channel_account_id text NOT NULL REFERENCES notification_channel_accounts(id) ON DELETE CASCADE,
+        destination_address text NOT NULL,
+        state text NOT NULL,
+        last_event_occurred_at timestamp with time zone NOT NULL,
+        created_at timestamp with time zone DEFAULT now() NOT NULL,
+        updated_at timestamp with time zone DEFAULT now() NOT NULL,
+        UNIQUE (channel_account_id, destination_address)
+      )
+    `)
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS sms_transport_policy_events (
+        id text PRIMARY KEY NOT NULL,
+        channel_account_id text NOT NULL REFERENCES notification_channel_accounts(id) ON DELETE CASCADE,
+        destination_address text NOT NULL,
+        source_id text NOT NULL,
+        external_message_id text NOT NULL,
+        kind text NOT NULL,
+        adapter_handled_response boolean NOT NULL DEFAULT false,
+        occurred_at timestamp with time zone NOT NULL,
+        created_at timestamp with time zone DEFAULT now() NOT NULL,
+        UNIQUE (source_id, external_message_id)
+      )
+    `)
+    await db.execute(sql`
       CREATE TABLE IF NOT EXISTS notification_deliveries (
         id text PRIMARY KEY NOT NULL,
+        channel_account_id text,
         template_id text,
         template_slug text,
         target_type notification_target_type NOT NULL DEFAULT 'other',
         target_id text,
+        qualified_target_type text,
+        purpose text,
         person_id text,
         organization_id text,
         booking_id text,
@@ -422,10 +522,38 @@ export function createNotificationsTestContext(options?: {
         metadata jsonb,
         error_message text,
         scheduled_for timestamp with time zone,
+        accepted_at timestamp with time zone,
+        delivered_at timestamp with time zone,
         sent_at timestamp with time zone,
         failed_at timestamp with time zone,
         created_at timestamp with time zone DEFAULT now() NOT NULL,
         updated_at timestamp with time zone DEFAULT now() NOT NULL
+      )
+    `)
+    await db.execute(
+      sql`ALTER TABLE notification_deliveries ADD COLUMN IF NOT EXISTS channel_account_id text`,
+    )
+    await db.execute(
+      sql`ALTER TABLE notification_deliveries ADD COLUMN IF NOT EXISTS qualified_target_type text`,
+    )
+    await db.execute(sql`ALTER TABLE notification_deliveries ADD COLUMN IF NOT EXISTS purpose text`)
+    await db.execute(
+      sql`ALTER TABLE notification_deliveries ADD COLUMN IF NOT EXISTS accepted_at timestamp with time zone`,
+    )
+    await db.execute(
+      sql`ALTER TABLE notification_deliveries ADD COLUMN IF NOT EXISTS delivered_at timestamp with time zone`,
+    )
+    await db.execute(sql`
+      CREATE TABLE IF NOT EXISTS notification_delivery_events (
+        id text PRIMARY KEY NOT NULL,
+        delivery_id text NOT NULL REFERENCES notification_deliveries(id) ON DELETE CASCADE,
+        adapter_ref text NOT NULL,
+        adapter_event_id text NOT NULL,
+        status notification_delivery_event_status NOT NULL,
+        occurred_at timestamp with time zone NOT NULL,
+        details jsonb,
+        created_at timestamp with time zone DEFAULT now() NOT NULL,
+        UNIQUE (adapter_ref, adapter_event_id)
       )
     `)
     await db.execute(sql`

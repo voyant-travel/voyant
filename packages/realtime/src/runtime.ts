@@ -62,6 +62,8 @@ export const realtimeInvalidationRoutes = {
       hint: { entity: "availability", id: productId },
     }
   },
+  "conversation.changed": (event) =>
+    adminHint("conversation", firstId(event, "conversationId", "id")),
 } satisfies RealtimeRoutes
 
 function invalidationSubscriber(eventType: keyof typeof realtimeInvalidationRoutes) {
@@ -133,6 +135,8 @@ export const realtimePaymentCompletedInvalidationSubscriber =
 export const realtimeAvailabilitySlotChangedInvalidationSubscriber = invalidationSubscriber(
   "availability.slot.changed",
 )
+export const realtimeConversationChangedInvalidationSubscriber =
+  invalidationSubscriber("conversation.changed")
 
 /** Build deterministic route options from the deployment-selected transport. */
 export function createRealtimeRuntime(

@@ -5,7 +5,7 @@ import { useQuery } from "@tanstack/react-query"
 import { fetchWithValidation } from "../client.js"
 import { useVoyantContext } from "../provider.js"
 import { type PersonCommunicationsListFilters, relationshipsQueryKeys } from "../query-keys.js"
-import { communicationLogListResponse } from "../schemas.js"
+import { personTimelinePageResponse } from "../schemas.js"
 
 export interface UsePersonCommunicationsOptions extends PersonCommunicationsListFilters {
   enabled?: boolean
@@ -28,11 +28,11 @@ export function usePersonCommunications(
       if (filters.dateFrom) params.set("dateFrom", filters.dateFrom)
       if (filters.dateTo) params.set("dateTo", filters.dateTo)
       if (filters.limit !== undefined) params.set("limit", String(filters.limit))
-      if (filters.offset !== undefined) params.set("offset", String(filters.offset))
+      if (filters.cursor !== undefined) params.set("cursor", filters.cursor)
       const qs = params.toString()
       return fetchWithValidation(
-        `/v1/admin/relationships/people/${personId}/communications${qs ? `?${qs}` : ""}`,
-        communicationLogListResponse,
+        `/v1/admin/relationships/people/${personId}/communications/timeline${qs ? `?${qs}` : ""}`,
+        personTimelinePageResponse,
         { baseUrl, fetcher },
       )
     },

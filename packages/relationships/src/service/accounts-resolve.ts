@@ -1,5 +1,5 @@
 import { identityContactPoints } from "@voyant-travel/identity/schema"
-import { and, eq } from "drizzle-orm"
+import { and, eq, inArray, or, sql } from "drizzle-orm"
 import type { PostgresJsDatabase } from "drizzle-orm/postgres-js"
 
 import type { people } from "../schema.js"
@@ -39,6 +39,57 @@ export interface UpsertPersonFromContactOptions {
    * snapshot has no email or phone dedupe key.
    */
   requireContactPoint?: boolean
+}
+
+type InboxContactPointKind = "email" | "phone" | "mobile" | "sms"
+
+/** Read-only exact contact lookup used by the Conversations directory adapter. */
+export async function listPersonContactPointMatches(
+  db: PostgresJsDatabase,
+  input: { kinds: readonly InboxContactPointKind[]; normalized: string; limit?: number },
+): Promise<Array<{ id: string; personRef: string; address: string }>> {
+  return db
+    .select({
+      id: identityContactPoints.id,
+      personRef: identityContactPoints.entityId,
+      address: identityContactPoints.value,
+    })
+    .from(identityContactPoints)
+    .where(
+      and(
+        eq(identityContactPoints.entityType, "person"),
+        inArray(identityContactPoints.kind, input.kinds),
+        or(
+          eq(identityContactPoints.normalizedValue, input.normalized),
+          sql`lower(${identityContactPoints.value}) = ${input.normalized.toLowerCase()}`,
+        ),
+      ),
+    )
+    .limit(input.limit ?? 3)
+}
+
+/** Resolve one Person-owned contact point without exposing Identity tables to runtime wiring. */
+export async function findPersonContactPointAddress(
+  db: PostgresJsDatabase,
+  input: {
+    personRef: string
+    contactPointRef: string
+    kinds: readonly InboxContactPointKind[]
+  },
+): Promise<string | null> {
+  const [row] = await db
+    .select({ address: identityContactPoints.value })
+    .from(identityContactPoints)
+    .where(
+      and(
+        eq(identityContactPoints.id, input.contactPointRef),
+        eq(identityContactPoints.entityType, "person"),
+        eq(identityContactPoints.entityId, input.personRef),
+        inArray(identityContactPoints.kind, input.kinds),
+      ),
+    )
+    .limit(1)
+  return row?.address ?? null
 }
 
 function splitName(name: string | null | undefined): {

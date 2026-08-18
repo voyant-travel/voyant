@@ -35,7 +35,7 @@ export function createProposalsNotificationsRuntime(
       return {
         id: delivery.id,
         status: delivery.status,
-        channel: delivery.channel,
+        channel: input.channel,
         provider: delivery.provider,
         providerMessageId: delivery.providerMessageId,
         toAddress: delivery.toAddress,

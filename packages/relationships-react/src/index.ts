@@ -60,6 +60,13 @@ export {
   usePersonCommunications,
 } from "./hooks/use-person-communications.js"
 export {
+  type PersonComposerChannelAccount,
+  type PersonComposerContact,
+  type PersonComposerOption,
+  selectConversationComposerOptions,
+  usePersonConversationComposer,
+} from "./hooks/use-person-conversation-composer.js"
+export {
   type CreatePersonDocumentFromPlaintextInput,
   type CreatePersonDocumentInput,
   type UpdatePersonDocumentFromPlaintextInput,
@@ -165,6 +172,7 @@ export {
   type PersonRecord,
   type PersonRelationshipKind,
   type PersonRelationshipRecord,
+  type PersonTimelineRecord,
   type PersonTravelSnapshotRecord,
   personDocumentRecordSchema,
   personDocumentTypeSchema,
@@ -176,5 +184,7 @@ export {
   personRecordSchema,
   personRelationshipKindSchema,
   personRelationshipRecordSchema,
+  personTimelinePageResponse,
+  personTimelineRecordSchema,
   personTravelSnapshotSchema,
 } from "./schemas.js"

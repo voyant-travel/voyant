@@ -24,6 +24,7 @@ describe("relationships deployment manifest", () => {
       provides: {
         ports: [
           { id: "public-api.intake.runtime" },
+          { id: "conversations.person-directory" },
           { id: relationshipsMiceRuntimePort.id },
           { id: bookingsRelationshipsRuntimePort.id },
           { id: financeStoredInstrumentRuntimePort.id },

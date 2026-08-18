@@ -84,6 +84,10 @@
       "types": "./src/team-management-runtime-port.ts",
       "default": "./src/team-management-runtime-port.ts"
     },
+    "./staff-directory-runtime-port": {
+      "types": "./src/staff-directory-runtime-port.ts",
+      "default": "./src/staff-directory-runtime-port.ts"
+    },
     "./public-api-runtime-port": {
       "types": "./src/public-api-runtime-port.ts",
       "default": "./src/public-api-runtime-port.ts"
@@ -260,6 +264,11 @@
         "types": "./dist/team-management-runtime-port.d.ts",
         "import": "./dist/team-management-runtime-port.js",
         "default": "./dist/team-management-runtime-port.js"
+      },
+      "./staff-directory-runtime-port": {
+        "types": "./dist/staff-directory-runtime-port.d.ts",
+        "import": "./dist/staff-directory-runtime-port.js",
+        "default": "./dist/staff-directory-runtime-port.js"
       },
       "./tools": {
         "types": "./dist/mcp-runtime.d.ts",

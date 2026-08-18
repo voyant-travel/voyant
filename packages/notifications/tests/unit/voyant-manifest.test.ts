@@ -3,6 +3,11 @@ import { customerVerificationRuntimePort } from "@voyant-travel/identity/runtime
 import { proposalsNotificationsRuntimePort } from "@voyant-travel/proposals/runtime-port"
 import { describe, expect, it } from "vitest"
 import { durableNotificationProviderPort } from "../../src/durable-provider-port.js"
+import {
+  NOTIFICATION_SEND_COMPLETED_EVENT,
+  NOTIFICATION_SEND_DEAD_LETTERED_EVENT,
+  NOTIFICATION_SEND_REQUESTED_EVENT,
+} from "../../src/service-durable-send.js"
 import { staffAlertSubscriberRuntimeDescriptors } from "../../src/staff-alert-subscriber.js"
 import { notificationsReminderSubscriberRuntimeDescriptors } from "../../src/subscriber-runtime.js"
 import {
@@ -20,6 +25,9 @@ describe("notifications deployment manifest", () => {
         capabilities: ["notifications.delivery"],
         ports: [
           { id: customerVerificationRuntimePort.id },
+          { id: "conversations.rendered-message-admission" },
+          { id: "conversations.channel-policy" },
+          { id: "conversations.delivery-truth" },
           { id: financeNotificationsRuntimePort.id },
           { id: "notifications.runtime" },
           { id: "notifications.reminder-job" },
@@ -36,6 +44,11 @@ describe("notifications deployment manifest", () => {
           id: durableNotificationProviderPort.id,
           optional: true,
           conformance: expect.any(Object),
+        },
+        {
+          id: "notifications.delivery-lifecycle-source",
+          optional: true,
+          cardinality: "many",
         },
         { id: "bookings.booking-action-projection.runtime", optional: true },
         {
@@ -59,6 +72,23 @@ describe("notifications deployment manifest", () => {
       schema: [{ id: "@voyant-travel/notifications#schema" }],
       migrations: [{ id: "@voyant-travel/notifications#migrations" }],
       jobs: [
+        {
+          id: "notifications.reconcile-delivery-lifecycle",
+          schedule: { cron: "* * * * *", overlap: "skip" },
+          scheduling: {
+            required: true,
+            profiles: {
+              eager: { cron: "* * * * *", overlap: "skip" },
+              economical: { cron: "*/5 * * * *", overlap: "skip" },
+              "scale-to-zero": { cron: "*/15 * * * *", overlap: "skip" },
+            },
+          },
+          wakeup: true,
+          runtime: {
+            entry: "@voyant-travel/notifications/delivery-lifecycle-job",
+            export: "runNotificationDeliveryLifecycleJob",
+          },
+        },
         {
           id: "notifications.deliver-durable-sends",
           schedule: { cron: "* * * * *", overlap: "skip" },
@@ -95,6 +125,7 @@ describe("notifications deployment manifest", () => {
       ],
     })
     expect(notificationsVoyantModule.links?.map((link) => link.id)).toEqual([
+      "@voyant-travel/notifications#linkable.notification-channel-account",
       "@voyant-travel/notifications#linkable.notification-template",
       "@voyant-travel/notifications#linkable.notification-delivery",
       "@voyant-travel/notifications#linkable.notification-reminder-rule",
@@ -104,6 +135,7 @@ describe("notifications deployment manifest", () => {
       "@voyant-travel/notifications#linkable.notification-settings",
     ])
     expect(notificationsVoyantModule.links?.map((link) => link.export)).toEqual([
+      "notificationChannelAccountLinkable",
       "notificationTemplateLinkable",
       "notificationDeliveryLinkable",
       "notificationReminderRuleLinkable",
@@ -144,6 +176,14 @@ describe("notifications deployment manifest", () => {
         payloadSchema,
       ]),
     )
+
+    for (const emittedEvent of [
+      NOTIFICATION_SEND_REQUESTED_EVENT,
+      NOTIFICATION_SEND_COMPLETED_EVENT,
+      NOTIFICATION_SEND_DEAD_LETTERED_EVENT,
+    ]) {
+      expect(events.has(emittedEvent), `missing manifest event ${emittedEvent}`).toBe(true)
+    }
 
     expect(events.get("booking.documents.sent")).toMatchObject({
       required: ["bookingId", "recipient", "deliveryId", "provider", "documentKeys"],

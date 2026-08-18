@@ -1,0 +1,70 @@
+{
+  "name": "@voyant-travel/channel-adapter-contracts",
+  "version": "0.1.0",
+  "description": "Versioned, provider-neutral contracts and conformance tools for custom communication channel adapters.",
+  "license": "Apache-2.0",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./adapter-manifest": "./src/adapter-manifest.ts",
+    "./v1": "./src/v1.ts",
+    "./conformance": "./src/conformance.ts",
+    "./testing": "./src/testing.ts"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json",
+    "typecheck": "tsc -p tsconfig.typecheck.json",
+    "test": "vitest run",
+    "lint": "biome check src/ tests/"
+  },
+  "dependencies": {
+    "zod": "catalog:"
+  },
+  "devDependencies": {
+    "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "typescript": "catalog:",
+    "vitest": "catalog:"
+  },
+  "files": [
+    "dist",
+    "README.md"
+  ],
+  "publishConfig": {
+    "access": "public",
+    "exports": {
+      ".": {
+        "types": "./dist/index.d.ts",
+        "import": "./dist/index.js",
+        "default": "./dist/index.js"
+      },
+      "./adapter-manifest": {
+        "types": "./dist/adapter-manifest.d.ts",
+        "import": "./dist/adapter-manifest.js",
+        "default": "./dist/adapter-manifest.js"
+      },
+      "./v1": {
+        "types": "./dist/v1.d.ts",
+        "import": "./dist/v1.js",
+        "default": "./dist/v1.js"
+      },
+      "./conformance": {
+        "types": "./dist/conformance.d.ts",
+        "import": "./dist/conformance.js",
+        "default": "./dist/conformance.js"
+      },
+      "./testing": {
+        "types": "./dist/testing.d.ts",
+        "import": "./dist/testing.js",
+        "default": "./dist/testing.js"
+      }
+    },
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts"
+  },
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/voyant-travel/voyant.git",
+    "directory": "packages/channel-adapter-contracts"
+  }
+}

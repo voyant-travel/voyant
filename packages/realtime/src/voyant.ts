@@ -148,6 +148,7 @@ export const realtimeVoyantModule = defineModule({
     ["booking.refunded", "realtimeBookingRefundedInvalidationSubscriber"],
     ["payment.completed", "realtimePaymentCompletedInvalidationSubscriber"],
     ["availability.slot.changed", "realtimeAvailabilitySlotChangedInvalidationSubscriber"],
+    ["conversation.changed", "realtimeConversationChangedInvalidationSubscriber"],
   ].map(([eventType, exportName]) => ({
     id: `@voyant-travel/realtime#subscriber.admin-invalidation.${eventType}`,
     eventType,

@@ -52,5 +52,11 @@ export async function runDueNotificationSendsJob(
     return
   }
   const selectedRuntime = await context.getPort(durableNotificationProviderPort)
+  if (selectedRuntime.privateAttachmentResolver) {
+    await drainDurableNotificationSends(db, selectedRuntime.providers, {
+      privateAttachmentResolver: selectedRuntime.privateAttachmentResolver,
+    })
+    return
+  }
   await drainDurableNotificationSends(db, selectedRuntime.providers)
 }

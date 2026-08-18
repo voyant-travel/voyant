@@ -3,6 +3,11 @@ import {
   bookingActionSourceRuntimePort,
 } from "@voyant-travel/bookings/runtime-port"
 import {
+  conversationsChannelPolicyPort,
+  conversationsDeliveryTruthPort,
+  conversationsRenderedMessageAdmissionPort,
+} from "@voyant-travel/conversations/runtime-port"
+import {
   defineExtension,
   defineModule,
   providePort,
@@ -12,6 +17,7 @@ import { financeNotificationsRuntimePort } from "@voyant-travel/finance/runtime-
 import { customerVerificationRuntimePort } from "@voyant-travel/identity/runtime-port"
 import { proposalsNotificationsRuntimePort } from "@voyant-travel/proposals/runtime-port"
 import { relationshipsPersonNotificationsRuntimePort } from "@voyant-travel/relationships/runtime-port"
+import { notificationDeliveryLifecycleSourcePort } from "./delivery-lifecycle-source-port.js"
 import { durableNotificationProviderPort } from "./durable-provider-port.js"
 import { bookingDocumentsSentEventPayloadSchema } from "./event-payload-schemas.js"
 import { notificationsReminderJobRuntimePort } from "./reminder-job-runtime-port.js"
@@ -28,6 +34,7 @@ export const notificationsVoyantModule = defineModule({
     requirePort(notificationsRuntimePort),
     requirePort(notificationsReminderJobRuntimePort),
     requirePort(durableNotificationProviderPort, { optional: true }),
+    requirePort(notificationDeliveryLifecycleSourcePort, { optional: true, cardinality: "many" }),
     requirePort(bookingActionProjectionRuntimePort, { optional: true }),
     requirePort(bookingActionSourceRuntimePort, { optional: true, cardinality: "many" }),
   ],
@@ -35,6 +42,9 @@ export const notificationsVoyantModule = defineModule({
     capabilities: ["notifications.delivery"],
     ports: [
       providePort(customerVerificationRuntimePort),
+      providePort(conversationsRenderedMessageAdmissionPort),
+      providePort(conversationsChannelPolicyPort),
+      providePort(conversationsDeliveryTruthPort),
       providePort(financeNotificationsRuntimePort),
       providePort(notificationsRuntimePort),
       providePort(notificationsReminderJobRuntimePort),
@@ -68,6 +78,12 @@ export const notificationsVoyantModule = defineModule({
     },
   ],
   links: [
+    {
+      id: "@voyant-travel/notifications#linkable.notification-channel-account",
+      kind: "linkable",
+      source: schemaSource,
+      export: "notificationChannelAccountLinkable",
+    },
     {
       id: "@voyant-travel/notifications#linkable.notification-template",
       kind: "linkable",
@@ -112,6 +128,23 @@ export const notificationsVoyantModule = defineModule({
     },
   ],
   jobs: [
+    {
+      id: "notifications.reconcile-delivery-lifecycle",
+      schedule: { cron: "* * * * *", overlap: "skip" },
+      scheduling: {
+        required: true,
+        profiles: {
+          eager: { cron: "* * * * *", overlap: "skip" },
+          economical: { cron: "*/5 * * * *", overlap: "skip" },
+          "scale-to-zero": { cron: "*/15 * * * *", overlap: "skip" },
+        },
+      },
+      wakeup: true,
+      runtime: {
+        entry: "@voyant-travel/notifications/delivery-lifecycle-job",
+        export: "runNotificationDeliveryLifecycleJob",
+      },
+    },
     {
       id: "notifications.deliver-durable-sends",
       schedule: { cron: "* * * * *", overlap: "skip" },
@@ -167,8 +200,8 @@ export const notificationsVoyantModule = defineModule({
       audit: { sourceModule: "notifications", category: "domain" },
     },
     {
-      id: "@voyant-travel/notifications#event.notification.sent",
-      eventType: "notification.sent",
+      id: "@voyant-travel/notifications#event.notification.accepted",
+      eventType: "notification.accepted",
       version: "1.0.0",
       payloadSchema: {
         type: "object",

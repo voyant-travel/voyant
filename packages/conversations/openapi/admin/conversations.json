@@ -1,0 +1,4897 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "Voyant Conversations Admin API",
+    "version": "0.1.0",
+    "description": "Provider-neutral operator Inbox routes."
+  },
+  "servers": [
+    {
+      "url": "/"
+    }
+  ],
+  "paths": {
+    "/v1/admin/conversations": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["open", "closed", "snoozed"]
+            },
+            "required": false,
+            "name": "status",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "inboxId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "assignedToUserId",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["low", "normal", "high", "urgent"]
+            },
+            "required": false,
+            "name": "priority",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["true", "false"]
+            },
+            "required": false,
+            "name": "unread",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            },
+            "required": false,
+            "name": "channel",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "participant",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "unassigned",
+                "assigned_to_me",
+                "waiting_on_staff",
+                "waiting_on_customer",
+                "snoozed",
+                "closed"
+              ]
+            },
+            "required": false,
+            "name": "queue",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "integer",
+              "exclusiveMinimum": 0,
+              "maximum": 100
+            },
+            "required": false,
+            "name": "limit",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Membership-scoped operational Inbox page",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "channel": {
+                            "type": "string"
+                          },
+                          "inboxId": {
+                            "type": "string"
+                          },
+                          "assignedToUserId": {
+                            "type": ["string", "null"]
+                          },
+                          "priority": {
+                            "type": "string",
+                            "enum": ["low", "normal", "high", "urgent"]
+                          },
+                          "revision": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["open", "closed", "snoozed"]
+                          },
+                          "subject": {
+                            "type": ["string", "null"]
+                          },
+                          "suggestedSubject": {
+                            "type": ["string", "null"]
+                          },
+                          "replyAlias": {
+                            "type": ["string", "null"]
+                          },
+                          "channelAccountId": {
+                            "type": ["string", "null"]
+                          },
+                          "localAddress": {
+                            "type": ["string", "null"]
+                          },
+                          "customerAddress": {
+                            "type": "string"
+                          },
+                          "personRef": {
+                            "type": ["string", "null"]
+                          },
+                          "contactPointRef": {
+                            "type": ["string", "null"]
+                          },
+                          "unreadCount": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "snoozedUntil": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "waitingOn": {
+                            "type": ["string", "null"],
+                            "enum": ["staff", "customer", null]
+                          },
+                          "firstResponseAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "resolvedAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "closedAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "lastInboundAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "lastOutboundAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "lastPartAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "channel",
+                          "inboxId",
+                          "assignedToUserId",
+                          "priority",
+                          "revision",
+                          "status",
+                          "subject",
+                          "suggestedSubject",
+                          "replyAlias",
+                          "channelAccountId",
+                          "localAddress",
+                          "customerAddress",
+                          "personRef",
+                          "contactPointRef",
+                          "unreadCount",
+                          "snoozedUntil",
+                          "waitingOn",
+                          "firstResponseAt",
+                          "resolvedAt",
+                          "closedAt",
+                          "lastInboundAt",
+                          "lastOutboundAt",
+                          "lastPartAt",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    },
+                    "page": {
+                      "type": "object",
+                      "properties": {
+                        "nextCursor": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["nextCursor"]
+                    }
+                  },
+                  "required": ["data", "page"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "oneOf": [
+                  {
+                    "type": "object",
+                    "properties": {
+                      "inboxId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "personRef": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "contactPointRef": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "channelAccountId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "text": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "idempotencyKey": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "channel": {
+                        "type": "string",
+                        "enum": ["email"]
+                      },
+                      "fromAddress": {
+                        "type": "string",
+                        "format": "email"
+                      },
+                      "subject": {
+                        "type": ["string", "null"]
+                      }
+                    },
+                    "required": [
+                      "inboxId",
+                      "personRef",
+                      "contactPointRef",
+                      "channelAccountId",
+                      "text",
+                      "idempotencyKey",
+                      "channel",
+                      "fromAddress",
+                      "subject"
+                    ]
+                  },
+                  {
+                    "type": "object",
+                    "properties": {
+                      "inboxId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "personRef": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "contactPointRef": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "channelAccountId": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "text": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "idempotencyKey": {
+                        "type": "string",
+                        "minLength": 1
+                      },
+                      "channel": {
+                        "type": "string",
+                        "enum": ["sms"]
+                      },
+                      "subject": {
+                        "type": "null"
+                      }
+                    },
+                    "required": [
+                      "inboxId",
+                      "personRef",
+                      "contactPointRef",
+                      "channelAccountId",
+                      "text",
+                      "idempotencyKey",
+                      "channel"
+                    ]
+                  }
+                ]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Started conversation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "conversation": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "channel": {
+                              "type": "string"
+                            },
+                            "inboxId": {
+                              "type": "string"
+                            },
+                            "assignedToUserId": {
+                              "type": ["string", "null"]
+                            },
+                            "priority": {
+                              "type": "string",
+                              "enum": ["low", "normal", "high", "urgent"]
+                            },
+                            "revision": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": ["open", "closed", "snoozed"]
+                            },
+                            "subject": {
+                              "type": ["string", "null"]
+                            },
+                            "suggestedSubject": {
+                              "type": ["string", "null"]
+                            },
+                            "replyAlias": {
+                              "type": ["string", "null"]
+                            },
+                            "channelAccountId": {
+                              "type": ["string", "null"]
+                            },
+                            "localAddress": {
+                              "type": ["string", "null"]
+                            },
+                            "customerAddress": {
+                              "type": "string"
+                            },
+                            "personRef": {
+                              "type": ["string", "null"]
+                            },
+                            "contactPointRef": {
+                              "type": ["string", "null"]
+                            },
+                            "unreadCount": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "snoozedUntil": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "waitingOn": {
+                              "type": ["string", "null"],
+                              "enum": ["staff", "customer", null]
+                            },
+                            "firstResponseAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "resolvedAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "closedAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "lastInboundAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "lastOutboundAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "lastPartAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "channel",
+                            "inboxId",
+                            "assignedToUserId",
+                            "priority",
+                            "revision",
+                            "status",
+                            "subject",
+                            "suggestedSubject",
+                            "replyAlias",
+                            "channelAccountId",
+                            "localAddress",
+                            "customerAddress",
+                            "personRef",
+                            "contactPointRef",
+                            "unreadCount",
+                            "snoozedUntil",
+                            "waitingOn",
+                            "firstResponseAt",
+                            "resolvedAt",
+                            "closedAt",
+                            "lastInboundAt",
+                            "lastOutboundAt",
+                            "lastPartAt",
+                            "createdAt",
+                            "updatedAt"
+                          ]
+                        },
+                        "parts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "conversationId": {
+                                "type": "string"
+                              },
+                              "sequence": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0
+                              },
+                              "direction": {
+                                "type": "string",
+                                "enum": ["inbound", "outbound"]
+                              },
+                              "senderAddress": {
+                                "type": "string"
+                              },
+                              "recipientAddresses": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "subject": {
+                                "type": ["string", "null"]
+                              },
+                              "textBody": {
+                                "type": ["string", "null"]
+                              },
+                              "htmlBody": {
+                                "type": ["string", "null"]
+                              },
+                              "contentStatus": {
+                                "type": "string",
+                                "enum": ["safe", "quarantined", "redacted"]
+                              },
+                              "legacyAttachmentCount": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "classification": {
+                                "type": "string",
+                                "enum": [
+                                  "message",
+                                  "automatic_reply",
+                                  "delivery_status",
+                                  "complaint",
+                                  "suspicious"
+                                ]
+                              },
+                              "replyable": {
+                                "type": "boolean"
+                              },
+                              "attachments": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "filename": {
+                                      "type": "string"
+                                    },
+                                    "contentType": {
+                                      "type": "string"
+                                    },
+                                    "sizeBytes": {
+                                      "type": "integer",
+                                      "minimum": 0
+                                    },
+                                    "disposition": {
+                                      "type": "string",
+                                      "enum": ["attachment", "inline"]
+                                    },
+                                    "inlineContentId": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "scanStatus": {
+                                      "type": "string",
+                                      "enum": ["pending", "clean", "blocked", "failed"]
+                                    },
+                                    "availability": {
+                                      "type": "string",
+                                      "enum": [
+                                        "active",
+                                        "quarantined",
+                                        "redaction_pending",
+                                        "redacted"
+                                      ]
+                                    },
+                                    "createdAt": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "filename",
+                                    "contentType",
+                                    "sizeBytes",
+                                    "disposition",
+                                    "inlineContentId",
+                                    "scanStatus",
+                                    "availability",
+                                    "createdAt"
+                                  ]
+                                }
+                              },
+                              "externalMessageId": {
+                                "type": ["string", "null"]
+                              },
+                              "messageId": {
+                                "type": ["string", "null"]
+                              },
+                              "inReplyTo": {
+                                "type": ["string", "null"]
+                              },
+                              "references": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "admissionStatus": {
+                                "type": "string",
+                                "enum": ["received", "pending", "admitted", "suppressed"]
+                              },
+                              "deliveryStatus": {
+                                "type": ["string", "null"],
+                                "enum": [
+                                  "pending",
+                                  "accepted",
+                                  "delivered",
+                                  "failed",
+                                  "bounced",
+                                  "complained",
+                                  "suppressed",
+                                  "cancelled",
+                                  null
+                                ]
+                              },
+                              "occurredAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "conversationId",
+                              "sequence",
+                              "direction",
+                              "senderAddress",
+                              "recipientAddresses",
+                              "subject",
+                              "textBody",
+                              "htmlBody",
+                              "contentStatus",
+                              "legacyAttachmentCount",
+                              "classification",
+                              "replyable",
+                              "attachments",
+                              "externalMessageId",
+                              "messageId",
+                              "inReplyTo",
+                              "references",
+                              "admissionStatus",
+                              "deliveryStatus",
+                              "occurredAt",
+                              "createdAt"
+                            ]
+                          }
+                        },
+                        "notes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "conversationId": {
+                                "type": "string"
+                              },
+                              "authorUserId": {
+                                "type": "string"
+                              },
+                              "body": {
+                                "type": "string"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "conversationId",
+                              "authorUserId",
+                              "body",
+                              "createdAt"
+                            ]
+                          }
+                        },
+                        "timeline": {
+                          "type": "array",
+                          "items": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["part"]
+                                  },
+                                  "occurredAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "part": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "conversationId": {
+                                        "type": "string"
+                                      },
+                                      "sequence": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0
+                                      },
+                                      "direction": {
+                                        "type": "string",
+                                        "enum": ["inbound", "outbound"]
+                                      },
+                                      "senderAddress": {
+                                        "type": "string"
+                                      },
+                                      "recipientAddresses": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "subject": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "textBody": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "htmlBody": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "contentStatus": {
+                                        "type": "string",
+                                        "enum": ["safe", "quarantined", "redacted"]
+                                      },
+                                      "legacyAttachmentCount": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                      },
+                                      "classification": {
+                                        "type": "string",
+                                        "enum": [
+                                          "message",
+                                          "automatic_reply",
+                                          "delivery_status",
+                                          "complaint",
+                                          "suspicious"
+                                        ]
+                                      },
+                                      "replyable": {
+                                        "type": "boolean"
+                                      },
+                                      "attachments": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "filename": {
+                                              "type": "string"
+                                            },
+                                            "contentType": {
+                                              "type": "string"
+                                            },
+                                            "sizeBytes": {
+                                              "type": "integer",
+                                              "minimum": 0
+                                            },
+                                            "disposition": {
+                                              "type": "string",
+                                              "enum": ["attachment", "inline"]
+                                            },
+                                            "inlineContentId": {
+                                              "type": ["string", "null"]
+                                            },
+                                            "scanStatus": {
+                                              "type": "string",
+                                              "enum": ["pending", "clean", "blocked", "failed"]
+                                            },
+                                            "availability": {
+                                              "type": "string",
+                                              "enum": [
+                                                "active",
+                                                "quarantined",
+                                                "redaction_pending",
+                                                "redacted"
+                                              ]
+                                            },
+                                            "createdAt": {
+                                              "type": "string",
+                                              "format": "date-time"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "filename",
+                                            "contentType",
+                                            "sizeBytes",
+                                            "disposition",
+                                            "inlineContentId",
+                                            "scanStatus",
+                                            "availability",
+                                            "createdAt"
+                                          ]
+                                        }
+                                      },
+                                      "externalMessageId": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "messageId": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "inReplyTo": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "references": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "admissionStatus": {
+                                        "type": "string",
+                                        "enum": ["received", "pending", "admitted", "suppressed"]
+                                      },
+                                      "deliveryStatus": {
+                                        "type": ["string", "null"],
+                                        "enum": [
+                                          "pending",
+                                          "accepted",
+                                          "delivered",
+                                          "failed",
+                                          "bounced",
+                                          "complained",
+                                          "suppressed",
+                                          "cancelled",
+                                          null
+                                        ]
+                                      },
+                                      "occurredAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      },
+                                      "createdAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "conversationId",
+                                      "sequence",
+                                      "direction",
+                                      "senderAddress",
+                                      "recipientAddresses",
+                                      "subject",
+                                      "textBody",
+                                      "htmlBody",
+                                      "contentStatus",
+                                      "legacyAttachmentCount",
+                                      "classification",
+                                      "replyable",
+                                      "attachments",
+                                      "externalMessageId",
+                                      "messageId",
+                                      "inReplyTo",
+                                      "references",
+                                      "admissionStatus",
+                                      "deliveryStatus",
+                                      "occurredAt",
+                                      "createdAt"
+                                    ]
+                                  }
+                                },
+                                "required": ["kind", "occurredAt", "id", "part"]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["note"]
+                                  },
+                                  "occurredAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "note": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "conversationId": {
+                                        "type": "string"
+                                      },
+                                      "authorUserId": {
+                                        "type": "string"
+                                      },
+                                      "body": {
+                                        "type": "string"
+                                      },
+                                      "createdAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "conversationId",
+                                      "authorUserId",
+                                      "body",
+                                      "createdAt"
+                                    ]
+                                  }
+                                },
+                                "required": ["kind", "occurredAt", "id", "note"]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["system"]
+                                  },
+                                  "occurredAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "event": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "conversationId": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "type": "string"
+                                      },
+                                      "actorUserId": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "correlationId": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "revision": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0
+                                      },
+                                      "payload": {
+                                        "type": "object",
+                                        "additionalProperties": {}
+                                      },
+                                      "occurredAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "conversationId",
+                                      "type",
+                                      "actorUserId",
+                                      "correlationId",
+                                      "revision",
+                                      "payload",
+                                      "occurredAt"
+                                    ]
+                                  }
+                                },
+                                "required": ["kind", "occurredAt", "id", "event"]
+                              }
+                            ]
+                          }
+                        },
+                        "channelState": {
+                          "type": ["object", "null"],
+                          "properties": {
+                            "normalizedAddress": {
+                              "type": "string"
+                            },
+                            "health": {
+                              "type": "string",
+                              "enum": ["unknown", "healthy", "degraded", "unavailable"]
+                            },
+                            "available": {
+                              "type": "boolean"
+                            },
+                            "attachmentsCapable": {
+                              "type": "boolean"
+                            },
+                            "suppressed": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "normalizedAddress",
+                            "health",
+                            "available",
+                            "attachmentsCapable",
+                            "suppressed"
+                          ]
+                        }
+                      },
+                      "required": ["conversation", "parts", "notes", "timeline", "channelState"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/bulk": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "revision": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": ["id", "revision"]
+                    },
+                    "minItems": 1,
+                    "maxItems": 100
+                  },
+                  "changes": {
+                    "type": "object",
+                    "properties": {
+                      "assignedToUserId": {
+                        "type": ["string", "null"]
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": ["open", "closed", "snoozed"]
+                      },
+                      "snoozedUntil": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": ["items", "changes"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Audited optimistic bulk update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "channel": {
+                            "type": "string"
+                          },
+                          "inboxId": {
+                            "type": "string"
+                          },
+                          "assignedToUserId": {
+                            "type": ["string", "null"]
+                          },
+                          "priority": {
+                            "type": "string",
+                            "enum": ["low", "normal", "high", "urgent"]
+                          },
+                          "revision": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["open", "closed", "snoozed"]
+                          },
+                          "subject": {
+                            "type": ["string", "null"]
+                          },
+                          "suggestedSubject": {
+                            "type": ["string", "null"]
+                          },
+                          "replyAlias": {
+                            "type": ["string", "null"]
+                          },
+                          "channelAccountId": {
+                            "type": ["string", "null"]
+                          },
+                          "localAddress": {
+                            "type": ["string", "null"]
+                          },
+                          "customerAddress": {
+                            "type": "string"
+                          },
+                          "personRef": {
+                            "type": ["string", "null"]
+                          },
+                          "contactPointRef": {
+                            "type": ["string", "null"]
+                          },
+                          "unreadCount": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "snoozedUntil": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "waitingOn": {
+                            "type": ["string", "null"],
+                            "enum": ["staff", "customer", null]
+                          },
+                          "firstResponseAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "resolvedAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "closedAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "lastInboundAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "lastOutboundAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "lastPartAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "channel",
+                          "inboxId",
+                          "assignedToUserId",
+                          "priority",
+                          "revision",
+                          "status",
+                          "subject",
+                          "suggestedSubject",
+                          "replyAlias",
+                          "channelAccountId",
+                          "localAddress",
+                          "customerAddress",
+                          "personRef",
+                          "contactPointRef",
+                          "unreadCount",
+                          "snoozedUntil",
+                          "waitingOn",
+                          "firstResponseAt",
+                          "resolvedAt",
+                          "closedAt",
+                          "lastInboundAt",
+                          "lastOutboundAt",
+                          "lastPartAt",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/reporting": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": true,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": true,
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "inboxId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Content-free operational reporting with non-authoritative SLA semantics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "period": {
+                          "type": "object",
+                          "properties": {
+                            "from": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "to": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": ["from", "to"]
+                        },
+                        "volumes": {
+                          "type": "object",
+                          "properties": {
+                            "new": {
+                              "type": "number"
+                            },
+                            "opened": {
+                              "type": "number"
+                            },
+                            "closed": {
+                              "type": "number"
+                            }
+                          },
+                          "required": ["new", "opened", "closed"]
+                        },
+                        "backlog": {
+                          "type": "number"
+                        },
+                        "averagesMs": {
+                          "type": "object",
+                          "properties": {
+                            "firstResponse": {
+                              "type": ["number", "null"]
+                            },
+                            "resolution": {
+                              "type": ["number", "null"]
+                            },
+                            "customerWaiting": {
+                              "type": ["number", "null"]
+                            }
+                          },
+                          "required": ["firstResponse", "resolution", "customerWaiting"]
+                        },
+                        "delivery": {
+                          "type": "object",
+                          "properties": {
+                            "failed": {
+                              "type": "number"
+                            },
+                            "suppressed": {
+                              "type": "number"
+                            }
+                          },
+                          "required": ["failed", "suppressed"]
+                        },
+                        "ingress": {
+                          "type": "object",
+                          "properties": {
+                            "averageLagMs": {
+                              "type": ["number", "null"]
+                            },
+                            "failedOrDrifted": {
+                              "type": "number"
+                            }
+                          },
+                          "required": ["averageLagMs", "failedOrDrifted"]
+                        },
+                        "sla": {
+                          "type": "object",
+                          "properties": {
+                            "authoritative": {
+                              "type": "boolean",
+                              "enum": [false]
+                            },
+                            "clock": {
+                              "type": "string",
+                              "enum": ["elapsed"]
+                            },
+                            "startsAt": {
+                              "type": "string",
+                              "enum": ["conversation_created"]
+                            },
+                            "pauses": {
+                              "type": "string",
+                              "enum": ["none"]
+                            },
+                            "reopen": {
+                              "type": "string",
+                              "enum": ["original_clock_continues"]
+                            },
+                            "businessHours": {
+                              "type": "string",
+                              "enum": ["not_configured"]
+                            }
+                          },
+                          "required": [
+                            "authoritative",
+                            "clock",
+                            "startsAt",
+                            "pauses",
+                            "reopen",
+                            "businessHours"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "period",
+                        "volumes",
+                        "backlog",
+                        "averagesMs",
+                        "delivery",
+                        "ingress",
+                        "sla"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/{id}": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Conversation activity",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "conversation": {
+                          "type": "object",
+                          "properties": {
+                            "id": {
+                              "type": "string"
+                            },
+                            "channel": {
+                              "type": "string"
+                            },
+                            "inboxId": {
+                              "type": "string"
+                            },
+                            "assignedToUserId": {
+                              "type": ["string", "null"]
+                            },
+                            "priority": {
+                              "type": "string",
+                              "enum": ["low", "normal", "high", "urgent"]
+                            },
+                            "revision": {
+                              "type": "integer",
+                              "exclusiveMinimum": 0
+                            },
+                            "status": {
+                              "type": "string",
+                              "enum": ["open", "closed", "snoozed"]
+                            },
+                            "subject": {
+                              "type": ["string", "null"]
+                            },
+                            "suggestedSubject": {
+                              "type": ["string", "null"]
+                            },
+                            "replyAlias": {
+                              "type": ["string", "null"]
+                            },
+                            "channelAccountId": {
+                              "type": ["string", "null"]
+                            },
+                            "localAddress": {
+                              "type": ["string", "null"]
+                            },
+                            "customerAddress": {
+                              "type": "string"
+                            },
+                            "personRef": {
+                              "type": ["string", "null"]
+                            },
+                            "contactPointRef": {
+                              "type": ["string", "null"]
+                            },
+                            "unreadCount": {
+                              "type": "integer",
+                              "minimum": 0
+                            },
+                            "snoozedUntil": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "waitingOn": {
+                              "type": ["string", "null"],
+                              "enum": ["staff", "customer", null]
+                            },
+                            "firstResponseAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "resolvedAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "closedAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "lastInboundAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "lastOutboundAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "lastPartAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "createdAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "updatedAt": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": [
+                            "id",
+                            "channel",
+                            "inboxId",
+                            "assignedToUserId",
+                            "priority",
+                            "revision",
+                            "status",
+                            "subject",
+                            "suggestedSubject",
+                            "replyAlias",
+                            "channelAccountId",
+                            "localAddress",
+                            "customerAddress",
+                            "personRef",
+                            "contactPointRef",
+                            "unreadCount",
+                            "snoozedUntil",
+                            "waitingOn",
+                            "firstResponseAt",
+                            "resolvedAt",
+                            "closedAt",
+                            "lastInboundAt",
+                            "lastOutboundAt",
+                            "lastPartAt",
+                            "createdAt",
+                            "updatedAt"
+                          ]
+                        },
+                        "parts": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "conversationId": {
+                                "type": "string"
+                              },
+                              "sequence": {
+                                "type": "integer",
+                                "exclusiveMinimum": 0
+                              },
+                              "direction": {
+                                "type": "string",
+                                "enum": ["inbound", "outbound"]
+                              },
+                              "senderAddress": {
+                                "type": "string"
+                              },
+                              "recipientAddresses": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "subject": {
+                                "type": ["string", "null"]
+                              },
+                              "textBody": {
+                                "type": ["string", "null"]
+                              },
+                              "htmlBody": {
+                                "type": ["string", "null"]
+                              },
+                              "contentStatus": {
+                                "type": "string",
+                                "enum": ["safe", "quarantined", "redacted"]
+                              },
+                              "legacyAttachmentCount": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "classification": {
+                                "type": "string",
+                                "enum": [
+                                  "message",
+                                  "automatic_reply",
+                                  "delivery_status",
+                                  "complaint",
+                                  "suspicious"
+                                ]
+                              },
+                              "replyable": {
+                                "type": "boolean"
+                              },
+                              "attachments": {
+                                "type": "array",
+                                "items": {
+                                  "type": "object",
+                                  "properties": {
+                                    "id": {
+                                      "type": "string"
+                                    },
+                                    "filename": {
+                                      "type": "string"
+                                    },
+                                    "contentType": {
+                                      "type": "string"
+                                    },
+                                    "sizeBytes": {
+                                      "type": "integer",
+                                      "minimum": 0
+                                    },
+                                    "disposition": {
+                                      "type": "string",
+                                      "enum": ["attachment", "inline"]
+                                    },
+                                    "inlineContentId": {
+                                      "type": ["string", "null"]
+                                    },
+                                    "scanStatus": {
+                                      "type": "string",
+                                      "enum": ["pending", "clean", "blocked", "failed"]
+                                    },
+                                    "availability": {
+                                      "type": "string",
+                                      "enum": [
+                                        "active",
+                                        "quarantined",
+                                        "redaction_pending",
+                                        "redacted"
+                                      ]
+                                    },
+                                    "createdAt": {
+                                      "type": "string",
+                                      "format": "date-time"
+                                    }
+                                  },
+                                  "required": [
+                                    "id",
+                                    "filename",
+                                    "contentType",
+                                    "sizeBytes",
+                                    "disposition",
+                                    "inlineContentId",
+                                    "scanStatus",
+                                    "availability",
+                                    "createdAt"
+                                  ]
+                                }
+                              },
+                              "externalMessageId": {
+                                "type": ["string", "null"]
+                              },
+                              "messageId": {
+                                "type": ["string", "null"]
+                              },
+                              "inReplyTo": {
+                                "type": ["string", "null"]
+                              },
+                              "references": {
+                                "type": "array",
+                                "items": {
+                                  "type": "string"
+                                }
+                              },
+                              "admissionStatus": {
+                                "type": "string",
+                                "enum": ["received", "pending", "admitted", "suppressed"]
+                              },
+                              "deliveryStatus": {
+                                "type": ["string", "null"],
+                                "enum": [
+                                  "pending",
+                                  "accepted",
+                                  "delivered",
+                                  "failed",
+                                  "bounced",
+                                  "complained",
+                                  "suppressed",
+                                  "cancelled",
+                                  null
+                                ]
+                              },
+                              "occurredAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "conversationId",
+                              "sequence",
+                              "direction",
+                              "senderAddress",
+                              "recipientAddresses",
+                              "subject",
+                              "textBody",
+                              "htmlBody",
+                              "contentStatus",
+                              "legacyAttachmentCount",
+                              "classification",
+                              "replyable",
+                              "attachments",
+                              "externalMessageId",
+                              "messageId",
+                              "inReplyTo",
+                              "references",
+                              "admissionStatus",
+                              "deliveryStatus",
+                              "occurredAt",
+                              "createdAt"
+                            ]
+                          }
+                        },
+                        "notes": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "conversationId": {
+                                "type": "string"
+                              },
+                              "authorUserId": {
+                                "type": "string"
+                              },
+                              "body": {
+                                "type": "string"
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "conversationId",
+                              "authorUserId",
+                              "body",
+                              "createdAt"
+                            ]
+                          }
+                        },
+                        "timeline": {
+                          "type": "array",
+                          "items": {
+                            "oneOf": [
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["part"]
+                                  },
+                                  "occurredAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "part": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "conversationId": {
+                                        "type": "string"
+                                      },
+                                      "sequence": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0
+                                      },
+                                      "direction": {
+                                        "type": "string",
+                                        "enum": ["inbound", "outbound"]
+                                      },
+                                      "senderAddress": {
+                                        "type": "string"
+                                      },
+                                      "recipientAddresses": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "subject": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "textBody": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "htmlBody": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "contentStatus": {
+                                        "type": "string",
+                                        "enum": ["safe", "quarantined", "redacted"]
+                                      },
+                                      "legacyAttachmentCount": {
+                                        "type": "integer",
+                                        "minimum": 0
+                                      },
+                                      "classification": {
+                                        "type": "string",
+                                        "enum": [
+                                          "message",
+                                          "automatic_reply",
+                                          "delivery_status",
+                                          "complaint",
+                                          "suspicious"
+                                        ]
+                                      },
+                                      "replyable": {
+                                        "type": "boolean"
+                                      },
+                                      "attachments": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "object",
+                                          "properties": {
+                                            "id": {
+                                              "type": "string"
+                                            },
+                                            "filename": {
+                                              "type": "string"
+                                            },
+                                            "contentType": {
+                                              "type": "string"
+                                            },
+                                            "sizeBytes": {
+                                              "type": "integer",
+                                              "minimum": 0
+                                            },
+                                            "disposition": {
+                                              "type": "string",
+                                              "enum": ["attachment", "inline"]
+                                            },
+                                            "inlineContentId": {
+                                              "type": ["string", "null"]
+                                            },
+                                            "scanStatus": {
+                                              "type": "string",
+                                              "enum": ["pending", "clean", "blocked", "failed"]
+                                            },
+                                            "availability": {
+                                              "type": "string",
+                                              "enum": [
+                                                "active",
+                                                "quarantined",
+                                                "redaction_pending",
+                                                "redacted"
+                                              ]
+                                            },
+                                            "createdAt": {
+                                              "type": "string",
+                                              "format": "date-time"
+                                            }
+                                          },
+                                          "required": [
+                                            "id",
+                                            "filename",
+                                            "contentType",
+                                            "sizeBytes",
+                                            "disposition",
+                                            "inlineContentId",
+                                            "scanStatus",
+                                            "availability",
+                                            "createdAt"
+                                          ]
+                                        }
+                                      },
+                                      "externalMessageId": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "messageId": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "inReplyTo": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "references": {
+                                        "type": "array",
+                                        "items": {
+                                          "type": "string"
+                                        }
+                                      },
+                                      "admissionStatus": {
+                                        "type": "string",
+                                        "enum": ["received", "pending", "admitted", "suppressed"]
+                                      },
+                                      "deliveryStatus": {
+                                        "type": ["string", "null"],
+                                        "enum": [
+                                          "pending",
+                                          "accepted",
+                                          "delivered",
+                                          "failed",
+                                          "bounced",
+                                          "complained",
+                                          "suppressed",
+                                          "cancelled",
+                                          null
+                                        ]
+                                      },
+                                      "occurredAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      },
+                                      "createdAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "conversationId",
+                                      "sequence",
+                                      "direction",
+                                      "senderAddress",
+                                      "recipientAddresses",
+                                      "subject",
+                                      "textBody",
+                                      "htmlBody",
+                                      "contentStatus",
+                                      "legacyAttachmentCount",
+                                      "classification",
+                                      "replyable",
+                                      "attachments",
+                                      "externalMessageId",
+                                      "messageId",
+                                      "inReplyTo",
+                                      "references",
+                                      "admissionStatus",
+                                      "deliveryStatus",
+                                      "occurredAt",
+                                      "createdAt"
+                                    ]
+                                  }
+                                },
+                                "required": ["kind", "occurredAt", "id", "part"]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["note"]
+                                  },
+                                  "occurredAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "note": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "conversationId": {
+                                        "type": "string"
+                                      },
+                                      "authorUserId": {
+                                        "type": "string"
+                                      },
+                                      "body": {
+                                        "type": "string"
+                                      },
+                                      "createdAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "conversationId",
+                                      "authorUserId",
+                                      "body",
+                                      "createdAt"
+                                    ]
+                                  }
+                                },
+                                "required": ["kind", "occurredAt", "id", "note"]
+                              },
+                              {
+                                "type": "object",
+                                "properties": {
+                                  "kind": {
+                                    "type": "string",
+                                    "enum": ["system"]
+                                  },
+                                  "occurredAt": {
+                                    "type": "string",
+                                    "format": "date-time"
+                                  },
+                                  "id": {
+                                    "type": "string"
+                                  },
+                                  "event": {
+                                    "type": "object",
+                                    "properties": {
+                                      "id": {
+                                        "type": "string"
+                                      },
+                                      "conversationId": {
+                                        "type": "string"
+                                      },
+                                      "type": {
+                                        "type": "string"
+                                      },
+                                      "actorUserId": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "correlationId": {
+                                        "type": ["string", "null"]
+                                      },
+                                      "revision": {
+                                        "type": "integer",
+                                        "exclusiveMinimum": 0
+                                      },
+                                      "payload": {
+                                        "type": "object",
+                                        "additionalProperties": {}
+                                      },
+                                      "occurredAt": {
+                                        "type": "string",
+                                        "format": "date-time"
+                                      }
+                                    },
+                                    "required": [
+                                      "id",
+                                      "conversationId",
+                                      "type",
+                                      "actorUserId",
+                                      "correlationId",
+                                      "revision",
+                                      "payload",
+                                      "occurredAt"
+                                    ]
+                                  }
+                                },
+                                "required": ["kind", "occurredAt", "id", "event"]
+                              }
+                            ]
+                          }
+                        },
+                        "channelState": {
+                          "type": ["object", "null"],
+                          "properties": {
+                            "normalizedAddress": {
+                              "type": "string"
+                            },
+                            "health": {
+                              "type": "string",
+                              "enum": ["unknown", "healthy", "degraded", "unavailable"]
+                            },
+                            "available": {
+                              "type": "boolean"
+                            },
+                            "attachmentsCapable": {
+                              "type": "boolean"
+                            },
+                            "suppressed": {
+                              "type": "boolean"
+                            }
+                          },
+                          "required": [
+                            "normalizedAddress",
+                            "health",
+                            "available",
+                            "attachmentsCapable",
+                            "suppressed"
+                          ]
+                        }
+                      },
+                      "required": ["conversation", "parts", "notes", "timeline", "channelState"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "patch": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "status": {
+                    "type": "string",
+                    "enum": ["open", "closed", "snoozed"]
+                  },
+                  "snoozedUntil": {
+                    "type": ["string", "null"],
+                    "format": "date-time"
+                  },
+                  "priority": {
+                    "type": "string",
+                    "enum": ["low", "normal", "high", "urgent"]
+                  },
+                  "assignedToUserId": {
+                    "type": ["string", "null"]
+                  },
+                  "inboxId": {
+                    "type": "string"
+                  }
+                },
+                "required": ["revision"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Updated conversation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "channel": {
+                          "type": "string"
+                        },
+                        "inboxId": {
+                          "type": "string"
+                        },
+                        "assignedToUserId": {
+                          "type": ["string", "null"]
+                        },
+                        "priority": {
+                          "type": "string",
+                          "enum": ["low", "normal", "high", "urgent"]
+                        },
+                        "revision": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["open", "closed", "snoozed"]
+                        },
+                        "subject": {
+                          "type": ["string", "null"]
+                        },
+                        "suggestedSubject": {
+                          "type": ["string", "null"]
+                        },
+                        "replyAlias": {
+                          "type": ["string", "null"]
+                        },
+                        "channelAccountId": {
+                          "type": ["string", "null"]
+                        },
+                        "localAddress": {
+                          "type": ["string", "null"]
+                        },
+                        "customerAddress": {
+                          "type": "string"
+                        },
+                        "personRef": {
+                          "type": ["string", "null"]
+                        },
+                        "contactPointRef": {
+                          "type": ["string", "null"]
+                        },
+                        "unreadCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "snoozedUntil": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "waitingOn": {
+                          "type": ["string", "null"],
+                          "enum": ["staff", "customer", null]
+                        },
+                        "firstResponseAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "resolvedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "closedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "lastInboundAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "lastOutboundAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "lastPartAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "channel",
+                        "inboxId",
+                        "assignedToUserId",
+                        "priority",
+                        "revision",
+                        "status",
+                        "subject",
+                        "suggestedSubject",
+                        "replyAlias",
+                        "channelAccountId",
+                        "localAddress",
+                        "customerAddress",
+                        "personRef",
+                        "contactPointRef",
+                        "unreadCount",
+                        "snoozedUntil",
+                        "waitingOn",
+                        "firstResponseAt",
+                        "resolvedAt",
+                        "closedAt",
+                        "lastInboundAt",
+                        "lastOutboundAt",
+                        "lastPartAt",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/{id}/replies": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "channelAccountId": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "text": {
+                    "type": ["string", "null"],
+                    "minLength": 1
+                  },
+                  "html": {
+                    "type": ["string", "null"]
+                  },
+                  "attachmentIds": {
+                    "type": "array",
+                    "items": {
+                      "type": "string",
+                      "minLength": 1
+                    },
+                    "maxItems": 10,
+                    "default": []
+                  },
+                  "idempotencyKey": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["channelAccountId", "text", "idempotencyKey"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Atomically admitted reply",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "conversationId": {
+                          "type": "string"
+                        },
+                        "sequence": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        },
+                        "direction": {
+                          "type": "string",
+                          "enum": ["inbound", "outbound"]
+                        },
+                        "senderAddress": {
+                          "type": "string"
+                        },
+                        "recipientAddresses": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "subject": {
+                          "type": ["string", "null"]
+                        },
+                        "textBody": {
+                          "type": ["string", "null"]
+                        },
+                        "htmlBody": {
+                          "type": ["string", "null"]
+                        },
+                        "contentStatus": {
+                          "type": "string",
+                          "enum": ["safe", "quarantined", "redacted"]
+                        },
+                        "legacyAttachmentCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "classification": {
+                          "type": "string",
+                          "enum": [
+                            "message",
+                            "automatic_reply",
+                            "delivery_status",
+                            "complaint",
+                            "suspicious"
+                          ]
+                        },
+                        "replyable": {
+                          "type": "boolean"
+                        },
+                        "attachments": {
+                          "type": "array",
+                          "items": {
+                            "type": "object",
+                            "properties": {
+                              "id": {
+                                "type": "string"
+                              },
+                              "filename": {
+                                "type": "string"
+                              },
+                              "contentType": {
+                                "type": "string"
+                              },
+                              "sizeBytes": {
+                                "type": "integer",
+                                "minimum": 0
+                              },
+                              "disposition": {
+                                "type": "string",
+                                "enum": ["attachment", "inline"]
+                              },
+                              "inlineContentId": {
+                                "type": ["string", "null"]
+                              },
+                              "scanStatus": {
+                                "type": "string",
+                                "enum": ["pending", "clean", "blocked", "failed"]
+                              },
+                              "availability": {
+                                "type": "string",
+                                "enum": ["active", "quarantined", "redaction_pending", "redacted"]
+                              },
+                              "createdAt": {
+                                "type": "string",
+                                "format": "date-time"
+                              }
+                            },
+                            "required": [
+                              "id",
+                              "filename",
+                              "contentType",
+                              "sizeBytes",
+                              "disposition",
+                              "inlineContentId",
+                              "scanStatus",
+                              "availability",
+                              "createdAt"
+                            ]
+                          }
+                        },
+                        "externalMessageId": {
+                          "type": ["string", "null"]
+                        },
+                        "messageId": {
+                          "type": ["string", "null"]
+                        },
+                        "inReplyTo": {
+                          "type": ["string", "null"]
+                        },
+                        "references": {
+                          "type": "array",
+                          "items": {
+                            "type": "string"
+                          }
+                        },
+                        "admissionStatus": {
+                          "type": "string",
+                          "enum": ["received", "pending", "admitted", "suppressed"]
+                        },
+                        "deliveryStatus": {
+                          "type": ["string", "null"],
+                          "enum": [
+                            "pending",
+                            "accepted",
+                            "delivered",
+                            "failed",
+                            "bounced",
+                            "complained",
+                            "suppressed",
+                            "cancelled",
+                            null
+                          ]
+                        },
+                        "occurredAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "conversationId",
+                        "sequence",
+                        "direction",
+                        "senderAddress",
+                        "recipientAddresses",
+                        "subject",
+                        "textBody",
+                        "htmlBody",
+                        "contentStatus",
+                        "legacyAttachmentCount",
+                        "classification",
+                        "replyable",
+                        "attachments",
+                        "externalMessageId",
+                        "messageId",
+                        "inReplyTo",
+                        "references",
+                        "admissionStatus",
+                        "deliveryStatus",
+                        "occurredAt",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/{id}/read": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "throughSequence": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                }
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Advanced user read cursor",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "channel": {
+                          "type": "string"
+                        },
+                        "inboxId": {
+                          "type": "string"
+                        },
+                        "assignedToUserId": {
+                          "type": ["string", "null"]
+                        },
+                        "priority": {
+                          "type": "string",
+                          "enum": ["low", "normal", "high", "urgent"]
+                        },
+                        "revision": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        },
+                        "status": {
+                          "type": "string",
+                          "enum": ["open", "closed", "snoozed"]
+                        },
+                        "subject": {
+                          "type": ["string", "null"]
+                        },
+                        "suggestedSubject": {
+                          "type": ["string", "null"]
+                        },
+                        "replyAlias": {
+                          "type": ["string", "null"]
+                        },
+                        "channelAccountId": {
+                          "type": ["string", "null"]
+                        },
+                        "localAddress": {
+                          "type": ["string", "null"]
+                        },
+                        "customerAddress": {
+                          "type": "string"
+                        },
+                        "personRef": {
+                          "type": ["string", "null"]
+                        },
+                        "contactPointRef": {
+                          "type": ["string", "null"]
+                        },
+                        "unreadCount": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "snoozedUntil": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "waitingOn": {
+                          "type": ["string", "null"],
+                          "enum": ["staff", "customer", null]
+                        },
+                        "firstResponseAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "resolvedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "closedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "lastInboundAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "lastOutboundAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "lastPartAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "channel",
+                        "inboxId",
+                        "assignedToUserId",
+                        "priority",
+                        "revision",
+                        "status",
+                        "subject",
+                        "suggestedSubject",
+                        "replyAlias",
+                        "channelAccountId",
+                        "localAddress",
+                        "customerAddress",
+                        "personRef",
+                        "contactPointRef",
+                        "unreadCount",
+                        "snoozedUntil",
+                        "waitingOn",
+                        "firstResponseAt",
+                        "resolvedAt",
+                        "closedAt",
+                        "lastInboundAt",
+                        "lastOutboundAt",
+                        "lastPartAt",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/{id}/notes": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "revision": {
+                    "type": "integer",
+                    "exclusiveMinimum": 0
+                  },
+                  "body": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 20000
+                  }
+                },
+                "required": ["revision", "body"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created internal note",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "conversationId": {
+                          "type": "string"
+                        },
+                        "authorUserId": {
+                          "type": "string"
+                        },
+                        "body": {
+                          "type": "string"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": ["id", "conversationId", "authorUserId", "body", "createdAt"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversation-inboxes": {
+      "get": {
+        "responses": {
+          "200": {
+            "description": "Accessible Inboxes",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "name": {
+                            "type": "string"
+                          },
+                          "description": {
+                            "type": ["string", "null"]
+                          },
+                          "isDefault": {
+                            "type": "boolean"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "name",
+                          "description",
+                          "isDefault",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      },
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "name": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "description": {
+                    "type": ["string", "null"]
+                  }
+                },
+                "required": ["name"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Created Inbox",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": ["string", "null"]
+                        },
+                        "isDefault": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "description",
+                        "isDefault",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversation-inboxes/default-membership": {
+      "post": {
+        "responses": {
+          "200": {
+            "description": "Claimed an unowned default Inbox",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "name": {
+                          "type": "string"
+                        },
+                        "description": {
+                          "type": ["string", "null"]
+                        },
+                        "isDefault": {
+                          "type": "boolean"
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        },
+                        "updatedAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "name",
+                        "description",
+                        "isDefault",
+                        "createdAt",
+                        "updatedAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversation-inboxes/{id}/members/{userId}": {
+      "put": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "userId",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "role": {
+                    "type": "string",
+                    "enum": ["member", "manager"]
+                  },
+                  "active": {
+                    "type": "boolean"
+                  }
+                },
+                "required": ["role", "active"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "204": {
+            "description": "Updated Inbox membership"
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversation-inboxes/{id}/assignable-staff": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Active assignable staff",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "userId": {
+                            "type": "string"
+                          },
+                          "displayName": {
+                            "type": "string"
+                          }
+                        },
+                        "required": ["userId", "displayName"]
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/{id}/attachments/tickets": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "filename": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "contentType": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sizeBytes": {
+                    "type": "integer",
+                    "minimum": 0
+                  }
+                },
+                "required": ["filename", "contentType", "sizeBytes"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Short-lived private upload ticket",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "token": {
+                          "type": "string"
+                        },
+                        "method": {
+                          "type": "string",
+                          "enum": ["PUT", "POST"]
+                        },
+                        "url": {
+                          "type": "string",
+                          "format": "uri"
+                        },
+                        "headers": {
+                          "type": "object",
+                          "additionalProperties": {
+                            "type": "string"
+                          }
+                        },
+                        "expiresAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": ["token", "method", "url", "expiresAt"]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Private attachment upload unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Attachment rejected by policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/{id}/attachments/finalize": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          }
+        ],
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "filename": {
+                    "type": "string",
+                    "minLength": 1,
+                    "maxLength": 255
+                  },
+                  "contentType": {
+                    "type": "string",
+                    "minLength": 1
+                  },
+                  "sizeBytes": {
+                    "type": "integer",
+                    "minimum": 0
+                  },
+                  "token": {
+                    "type": "string",
+                    "minLength": 1
+                  }
+                },
+                "required": ["filename", "contentType", "sizeBytes", "token"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "201": {
+            "description": "Attachment finalized and scanned",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "filename": {
+                          "type": "string"
+                        },
+                        "contentType": {
+                          "type": "string"
+                        },
+                        "sizeBytes": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "disposition": {
+                          "type": "string",
+                          "enum": ["attachment", "inline"]
+                        },
+                        "inlineContentId": {
+                          "type": ["string", "null"]
+                        },
+                        "scanStatus": {
+                          "type": "string",
+                          "enum": ["pending", "clean", "blocked", "failed"]
+                        },
+                        "availability": {
+                          "type": "string",
+                          "enum": ["active", "quarantined", "redaction_pending", "redacted"]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "filename",
+                        "contentType",
+                        "sizeBytes",
+                        "disposition",
+                        "inlineContentId",
+                        "scanStatus",
+                        "availability",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Upload unavailable or drifted",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "422": {
+            "description": "Attachment rejected by policy",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/{id}/attachments/{attachmentId}/download": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "attachmentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Private attachment stream",
+            "content": {
+              "application/octet-stream": {
+                "schema": {
+                  "type": "string",
+                  "format": "binary"
+                }
+              }
+            }
+          },
+          "302": {
+            "description": "Short-lived private download redirect"
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Clean attachment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Private attachment runtime unavailable",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/{id}/attachments/{attachmentId}/redact": {
+      "post": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "id",
+            "in": "path"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": true,
+            "name": "attachmentId",
+            "in": "path"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Attachment queued for redaction",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "filename": {
+                          "type": "string"
+                        },
+                        "contentType": {
+                          "type": "string"
+                        },
+                        "sizeBytes": {
+                          "type": "integer",
+                          "minimum": 0
+                        },
+                        "disposition": {
+                          "type": "string",
+                          "enum": ["attachment", "inline"]
+                        },
+                        "inlineContentId": {
+                          "type": ["string", "null"]
+                        },
+                        "scanStatus": {
+                          "type": "string",
+                          "enum": ["pending", "clean", "blocked", "failed"]
+                        },
+                        "availability": {
+                          "type": "string",
+                          "enum": ["active", "quarantined", "redaction_pending", "redacted"]
+                        },
+                        "createdAt": {
+                          "type": "string",
+                          "format": "date-time"
+                        }
+                      },
+                      "required": [
+                        "id",
+                        "filename",
+                        "contentType",
+                        "sizeBytes",
+                        "disposition",
+                        "inlineContentId",
+                        "scanStatus",
+                        "availability",
+                        "createdAt"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Attachment not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

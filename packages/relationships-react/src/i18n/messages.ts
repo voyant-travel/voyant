@@ -481,6 +481,16 @@ export type CrmUiMessages = {
       title: string
       add: string
       noSubject: string
+      inboxLink: string
+      composer: {
+        senderRecipientLabel: string
+        senderRecipientPlaceholder: string
+        subjectLabel: string
+        subjectPlaceholder: string
+        send: string
+        messageLabel: string
+        messagePlaceholder: string
+      }
       fields: {
         channel: string
         direction: string
