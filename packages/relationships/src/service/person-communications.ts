@@ -60,11 +60,17 @@ export class InvalidPersonTimelineCursorError extends Error {
 }
 
 function base64UrlEncode(value: string): string {
-  return Buffer.from(value, "utf8").toString("base64url")
+  const bytes = new TextEncoder().encode(value)
+  return btoa(String.fromCharCode(...bytes))
+    .replace(/\+/g, "-")
+    .replace(/\//g, "_")
+    .replace(/=+$/g, "")
 }
 
 function base64UrlDecode(value: string): string {
-  return Buffer.from(value, "base64url").toString("utf8")
+  const base64 = value.replace(/-/g, "+").replace(/_/g, "/")
+  const binary = atob(base64.padEnd(Math.ceil(base64.length / 4) * 4, "="))
+  return new TextDecoder().decode(Uint8Array.from(binary, (character) => character.charCodeAt(0)))
 }
 
 function filterIdentity(query: PersonTimelineQuery): string {

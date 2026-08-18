@@ -991,6 +991,7 @@ peopleRoutes
   .openapi(listCommunicationsRoute, async (c) => {
     const personId = c.req.valid("param").id
     const query = c.req.valid("query")
+    const actorUserId = requireUserId(c)
     const runtime = c.get("container")?.resolve(RELATIONSHIPS_ROUTE_RUNTIME_CONTAINER_KEY) as
       | RelationshipsRouteRuntime
       | undefined
@@ -1000,7 +1001,10 @@ peopleRoutes
       // inbound is asking for hand-logged entries only.
       query.direction === "inbound" || !runtime?.personNotifications
         ? Promise.resolve([])
-        : runtime.personNotifications.listPersonDeliveries(c.get("db"), personId, query),
+        : runtime.personNotifications.listPersonDeliveries(c.get("db"), personId, {
+            ...query,
+            actorUserId,
+          }),
     ])
     return c.json(
       {
