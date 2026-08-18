@@ -1,12 +1,14 @@
+import { OpenAPIHono } from "@hono/zod-openapi"
 import type { BootstrapContext, Module } from "@voyant-travel/core"
 import { defineGraphRuntimeFactory } from "@voyant-travel/core/project"
-import { stampOpenApiRegistryApiId } from "@voyant-travel/hono"
+import { openApiValidationHook, stampOpenApiRegistryApiId } from "@voyant-travel/hono"
 import type { ApiModule } from "@voyant-travel/hono/module"
 
 import {
   TRIPS_PAYMENT_SUBSCRIBER_RUNTIME_KEY,
   type TripsPaymentSubscriberRuntime,
 } from "./payment-subscriber-runtime.js"
+import { createPublicApiTripSelectionsRoutes } from "./public-api-trip-selections-routes.js"
 import {
   createTripsRoutes,
   type TripsRoutesOptions,
@@ -131,8 +133,23 @@ export function createTripsApiModule(options: TripsApiModuleOptions = {}) {
     )
   }
   if (publicRoutes) {
+    const publicSurface = withTripsRouteSurface(resolvedRouteOptions, "public")
     apiModule.publicRoutes = stampOpenApiRegistryApiId(
-      createTripsRoutes(withTripsRouteSurface(resolvedRouteOptions, "public")),
+      // Trip selections mount here rather than inside `createTripsRoutes`
+      // because that factory serves BOTH surfaces and gates admin-only
+      // operations per request — which still documents them on both. These are
+      // public-only, so composing them on the public app is what keeps them out
+      // of the admin document (voyant#4627).
+      new OpenAPIHono({ defaultHook: openApiValidationHook })
+        .route("/", createTripsRoutes(publicSurface) as never)
+        .route(
+          "/",
+          createPublicApiTripSelectionsRoutes(async () => {
+            const resolved =
+              typeof publicSurface === "function" ? await publicSurface() : publicSurface
+            return resolved.tripSelections
+          }) as never,
+        ),
       "@voyant-travel/trips#api.public",
     )
   }

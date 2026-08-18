@@ -13,7 +13,16 @@ const ISO_DATE = /^\d{4}-\d{2}-\d{2}$/
 const CURRENCY = /^[A-Z]{3}$/
 const LANGUAGE_TAG = /^[A-Za-z]{2,3}(?:-[A-Za-z0-9]{2,8})*$/
 
-const opaqueRefSchema = z.string().min(16).max(512)
+/**
+ * The shape of an opaque reference issued by the shopping layer.
+ *
+ * Exported because `trips` consumes the same values: shopping issues the refs
+ * and trips redeems them into a selection (voyant#4627). Two definitions of the
+ * bound would let one side start issuing refs the other rejects, and the failure
+ * would surface as a validation error on a ref that is actually valid.
+ */
+export const publicApiOpaqueRefSchema = z.string().min(16).max(512)
+const opaqueRefSchema = publicApiOpaqueRefSchema
 const isoDateSchema = z.string().regex(ISO_DATE, "Expected an ISO 8601 calendar date (YYYY-MM-DD)")
 const currencyCodeSchema = z.string().regex(CURRENCY, "Expected an ISO 4217 currency code")
 const localeSchema = z.string().regex(LANGUAGE_TAG, "Expected a BCP 47 language tag")

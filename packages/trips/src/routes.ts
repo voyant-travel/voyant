@@ -44,6 +44,10 @@ import { openApiValidationHook } from "@voyant-travel/hono"
 import { listResponseSchema } from "@voyant-travel/types"
 import type { Context } from "hono"
 import {
+  createPublicApiTripSelectionsRoutes,
+  type PublicApiTripSelectionsRoutesOptions,
+} from "./public-api-trip-selections-routes.js"
+import {
   type CancelTripComponentsDeps,
   type PriceTripDeps,
   type ReserveTripDeps,
@@ -87,6 +91,14 @@ export interface TripsRoutesOptions {
   reserveTripDeps?: TripsRouteDeps<ReserveTripDeps>
   startCheckoutDeps?: TripsRouteDeps<StartCheckoutDeps>
   cancelTripComponentsDeps?: TripsRouteDeps<CancelTripComponentsDeps>
+  /**
+   * Wiring for the public Trip-selection routes, which arrived here from
+   * `public-api` with voyant#4627. Carried on this port rather than a dedicated
+   * one because this package now owns both the routes and the runtime behind
+   * them — a separate port would be a seam with the same module on both sides.
+   * Ignored on the admin surface, which does not mount them.
+   */
+  tripSelections?: PublicApiTripSelectionsRoutesOptions
 }
 
 export type TripsRouteDeps<T> = T | ((c: Context<Env>) => T | Promise<T | undefined> | undefined)
