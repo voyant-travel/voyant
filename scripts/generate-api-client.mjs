@@ -20,7 +20,7 @@
  * Usage: node scripts/generate-api-client.mjs [--check]
  */
 import { execFile } from "node:child_process"
-import { mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
+import { existsSync, mkdirSync, readdirSync, readFileSync, rmSync, writeFileSync } from "node:fs"
 import path from "node:path"
 import { fileURLToPath } from "node:url"
 import { promisify } from "node:util"
@@ -28,6 +28,31 @@ import { clientDocuments } from "./lib/api-client-documents.mjs"
 import { keyKindForPath, readApiBundles } from "./lib/openapi-key-kind.mjs"
 
 const execFileAsync = promisify(execFile)
+
+/**
+ * The workspace's own binary, never `npx`.
+ *
+ * `npx <tool>` prefers a local install but silently DOWNLOADS the latest
+ * published version when it cannot find one, so the generator's output depends
+ * on whichever resolution happens to win on that machine. That is not a
+ * theoretical risk for this script: `openapi-typescript` builds on the
+ * TypeScript compiler API, ADR-0023 records that a major version of it breaks
+ * outright, and the generated client is byte-compared by `verify:openapi-drift`
+ * — so a different version is a red check with no local reproduction.
+ *
+ * Resolving through `node_modules/.bin` fails loudly instead: a missing tool is
+ * a missing dependency, which is a fixable statement, unlike a silent upgrade.
+ */
+function workspaceBin(name) {
+  const binary = path.join(root, "node_modules", ".bin", name)
+  if (!existsSync(binary)) {
+    throw new Error(
+      `generate:api-client: ${name} is not installed in the workspace. ` +
+        `Run \`pnpm install\` — this script deliberately does not fall back to npx.`,
+    )
+  }
+  return binary
+}
 const root = path.resolve(path.dirname(fileURLToPath(import.meta.url)), "..")
 const GRAPH = "apps/operator/.voyant/deployment-graph.generated.json"
 
@@ -124,8 +149,8 @@ async function generateModule(document, outDir, client, bundles) {
 
   try {
     await execFileAsync(
-      "npx",
-      ["openapi-typescript", documentPath, "-o", path.join(outDir, `${name}.ts`)],
+      workspaceBin("openapi-typescript"),
+      [documentPath, "-o", path.join(outDir, `${name}.ts`)],
       { cwd: root, maxBuffer: 256 * 1024 * 1024 },
     )
   } finally {
@@ -234,9 +259,8 @@ assertRegistered(clients, producedByOutDir)
 // from the formatter failing the generator, instead of leaving unformatted
 // output behind that the drift check then reports as a diff.
 await execFileAsync(
-  "npx",
+  workspaceBin("biome"),
   [
-    "biome",
     "format",
     "--write",
     "--files-max-size=8388608",
