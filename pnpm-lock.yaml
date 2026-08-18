@@ -5197,6 +5197,9 @@ importers:
 
   packages/public-api-client:
     dependencies:
+      '@voyant-travel/core':
+        specifier: workspace:^
+        version: link:../core
       openapi-fetch:
         specifier: 'catalog:'
         version: 0.17.0

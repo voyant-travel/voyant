@@ -17,7 +17,8 @@
     "./errors": "./src/errors.ts",
     "./operations": "./src/operations.ts",
     "./schemas": "./src/schemas.ts",
-    "./generated": "./src/generated/index.ts"
+    "./generated": "./src/generated/index.ts",
+    "./typed-client": "./src/typed-client.ts"
   },
   "scripts": {
     "build": "tsc -p tsconfig.build.json",
@@ -91,6 +92,11 @@
         "types": "./dist/generated/index.d.ts",
         "import": "./dist/generated/index.js",
         "default": "./dist/generated/index.js"
+      },
+      "./typed-client": {
+        "types": "./dist/typed-client.d.ts",
+        "import": "./dist/typed-client.js",
+        "default": "./dist/typed-client.js"
       }
     },
     "main": "./dist/index.js",
@@ -98,6 +104,7 @@
   },
   "private": true,
   "dependencies": {
+    "@voyant-travel/core": "workspace:^",
     "openapi-fetch": "catalog:"
   }
 }

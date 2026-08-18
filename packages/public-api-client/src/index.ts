@@ -53,6 +53,12 @@ export {
 export * from "./errors.js"
 export * from "./operations.js"
 export * from "./schemas.js"
+export {
+  createPublicApiClient,
+  PublicApiClientCredentialError,
+  type PublishableClientOptions,
+  type SecretClientOptions,
+} from "./typed-client.js"
 
 export function createVoyantPublicApiClient(options: VoyantPublicApiClientOptions) {
   const client = {
