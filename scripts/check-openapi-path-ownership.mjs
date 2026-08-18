@@ -43,14 +43,28 @@ const baselinePath = path.join(root, "scripts/checks/openapi/path-ownership-base
 const { generators } = JSON.parse(readFileSync(specsPath, "utf8"))
 const baseline = JSON.parse(readFileSync(baselinePath, "utf8")).unownedPaths
 
-/** Documents to probe: the OpenAPI artifacts, not the generated clients. */
-const targets = generators
-  .filter((generator) => !generator.command.includes("generate:api-client"))
-  .flatMap((generator) =>
-    generator.files
-      .filter((file) => file.endsWith(".json"))
-      .map((file) => ({ file, command: generator.command })),
-  )
+/**
+ * Documents to probe: the OpenAPI artifacts, not the generated clients.
+ *
+ * Grouped by FILE, because a document may legitimately be registered under more
+ * than one command — one artifact fed by two packages' route modules. Ownership
+ * is then the union over its commands: a path is owned if any generator that
+ * claims the file puts it back.
+ *
+ * Probing per (file, command) pair instead reported every path of a two-command
+ * document as unowned, because emptying it and running one of the two returns
+ * only that one's paths.
+ */
+const byFile = new Map()
+for (const generator of generators) {
+  if (generator.command.includes("generate:api-client")) continue
+  for (const file of generator.files) {
+    if (!file.endsWith(".json")) continue
+    if (!byFile.has(file)) byFile.set(file, [])
+    byFile.get(file).push(generator.command)
+  }
+}
+const targets = [...byFile].map(([file, commands]) => ({ file, commands }))
 
 /** Original bytes, so a killed run cannot leave an emptied document behind. */
 const held = new Map()
@@ -68,7 +82,7 @@ for (const signal of ["SIGINT", "SIGTERM"]) {
 const pathsOf = (file) => Object.keys(JSON.parse(readFileSync(file, "utf8")).paths ?? {})
 
 /** What the generator puts back into an emptied document is what it owns. */
-function ownedPaths({ file, command }) {
+function ownedPaths(file, command) {
   const absolute = path.join(root, file)
   const original = readFileSync(absolute)
   held.set(file, original)
@@ -92,7 +106,24 @@ let pathTotal = 0
 try {
   for (const target of targets) {
     const declared = pathsOf(path.join(root, target.file))
-    const owned = ownedPaths(target)
+    const owned = new Set()
+
+    for (const command of target.commands) {
+      const produced = ownedPaths(target.file, command)
+      for (const route of produced) owned.add(route)
+
+      // A command registered for a document it does not write. `verify:openapi-drift`
+      // regenerates and diffs the files each command lists, so such a pair diffs a
+      // file that command never touches — it always matches, and the document looks
+      // checked by one more generator than actually checks it.
+      if (produced.size === 0 && declared.length > 0) {
+        violations.push(
+          `generated-specs.json registers ${target.file} under \`${command}\`, which produces ` +
+            `none of its paths. Drift diffs it there against a generator that never writes it.`,
+        )
+      }
+    }
+
     const unowned = declared.filter((route) => !owned.has(route))
 
     pathTotal += declared.length

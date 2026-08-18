@@ -16,8 +16,9 @@
  * drift from the real generator exactly the way the specs drifted from the
  * routes.
  *
- * The originals are restored in a `finally`, so a failing run leaves the tree
- * exactly as it found it.
+ * The originals are restored in a `finally`, and again on SIGINT/SIGTERM, so
+ * neither a failing run nor a killed one leaves the tree different from how it
+ * found it.
  */
 import { execFileSync } from "node:child_process"
 import { existsSync, readFileSync, writeFileSync } from "node:fs"
@@ -33,8 +34,32 @@ const read = (file) => (existsSync(file) ? readFileSync(file) : null)
 
 const failures = []
 
+/**
+ * The originals of the generator currently running.
+ *
+ * The `finally` below covers a generator that throws, but not a process that is
+ * killed — Ctrl-C, a CI cancellation, an OOM inside a generator. Without this
+ * the regenerated documents are left in the tree, and because the run also
+ * *looks* like it just failed, the natural next step is to inspect a tree that
+ * has quietly been modified.
+ */
+let inFlight = []
+const restoreInFlight = () => {
+  for (const { file, bytes } of inFlight) {
+    if (bytes !== null) writeFileSync(file, bytes)
+  }
+  inFlight = []
+}
+for (const signal of ["SIGINT", "SIGTERM"]) {
+  process.on(signal, () => {
+    restoreInFlight()
+    process.exit(130)
+  })
+}
+
 for (const generator of generators) {
   const before = generator.files.map((file) => ({ file, bytes: read(file) }))
+  inFlight = before
   try {
     const [command, ...args] = generator.command.split(" ")
     execFileSync(command, args, { stdio: "pipe" })
@@ -53,6 +78,7 @@ for (const generator of generators) {
     for (const { file, bytes } of before) {
       if (bytes !== null) writeFileSync(file, bytes)
     }
+    inFlight = []
   }
 }
 
