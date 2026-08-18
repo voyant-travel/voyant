@@ -1,6 +1,11 @@
 import { definePort } from "@voyant-travel/core/project"
 
-import type { NotificationPayload, NotificationProvider, NotificationResult } from "./types.js"
+import type {
+  NotificationPayload,
+  NotificationPrivateAttachmentResolver,
+  NotificationProvider,
+  NotificationResult,
+} from "./types.js"
 
 export interface DurableNotificationProviderProbe {
   /** Isolated, non-delivering instances of the exact selected implementations. */
@@ -13,6 +18,8 @@ export interface DurableNotificationProviderProbe {
 /** Exact selected provider set plus an isolated, non-delivering behavioral probe. */
 export interface DurableNotificationProviderRuntime {
   readonly providers: ReadonlyArray<NotificationProvider>
+  /** Deployment-wired resolver; required only while private-handle sends exist. */
+  readonly privateAttachmentResolver?: NotificationPrivateAttachmentResolver
   createIsolatedProbe(): Promise<DurableNotificationProviderProbe>
 }
 
@@ -100,6 +107,14 @@ function assertRuntimeShape(runtime: DurableNotificationProviderRuntime): void {
     throw new Error("notifications.durable-provider must expose providers and an isolated probe")
   }
   for (const provider of runtime.providers) assertDurableProvider(provider)
+  if (
+    runtime.privateAttachmentResolver &&
+    typeof runtime.privateAttachmentResolver.resolveForDelivery !== "function"
+  ) {
+    throw new Error(
+      "notifications.durable-provider privateAttachmentResolver must implement resolveForDelivery()",
+    )
+  }
   assertUniqueProviderNames(runtime.providers, "selected runtime")
 }
 

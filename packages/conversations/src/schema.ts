@@ -47,6 +47,28 @@ export const conversationIngressStatusEnum = pgEnum("conversation_ingress_status
   "committed",
   "drifted",
 ])
+export const conversationPartContentStatusEnum = pgEnum("conversation_part_content_status", [
+  "safe",
+  "quarantined",
+  "redacted",
+])
+export const conversationPartClassificationEnum = pgEnum("conversation_part_classification", [
+  "message",
+  "automatic_reply",
+  "delivery_status",
+  "complaint",
+  "suspicious",
+])
+export const conversationAttachmentScanStatusEnum = pgEnum("conversation_attachment_scan_status", [
+  "pending",
+  "clean",
+  "blocked",
+  "failed",
+])
+export const conversationAttachmentAvailabilityEnum = pgEnum(
+  "conversation_attachment_availability",
+  ["active", "quarantined", "redaction_pending", "redacted"],
+)
 
 export const conversationInboxes = pgTable(
   "conversation_inboxes",
@@ -153,10 +175,12 @@ export const conversationParts = pgTable(
     subject: text("subject"),
     textBody: text("text_body"),
     htmlBody: text("html_body"),
-    attachments: jsonb("attachments")
-      .$type<readonly Record<string, unknown>[]>()
+    contentStatus: conversationPartContentStatusEnum("content_status").notNull().default("safe"),
+    legacyAttachmentCount: integer("legacy_attachment_count").notNull().default(0),
+    classification: conversationPartClassificationEnum("classification")
       .notNull()
-      .default([]),
+      .default("message"),
+    replyable: boolean("replyable").notNull().default(true),
     externalSourceId: text("external_source_id"),
     externalMessageId: text("external_message_id"),
     messageId: text("message_id"),
@@ -214,6 +238,47 @@ export const conversationNotes = pgTable(
   ],
 )
 
+/**
+ * Closed attachment metadata. Object bytes and provider credentials remain behind
+ * the runtime-only private handle; signed URLs are deliberately never persisted.
+ */
+export const conversationAttachments = pgTable(
+  "conversation_attachments",
+  {
+    id: typeId("conversation_attachments"),
+    conversationId: typeIdRef("conversation_id")
+      .notNull()
+      .references(() => conversations.id, { onDelete: "cascade" }),
+    partId: typeIdRef("part_id").references(() => conversationParts.id, {
+      onDelete: "cascade",
+    }),
+    sourceId: text("source_id"),
+    externalId: text("external_id"),
+    privateHandle: text("private_handle"),
+    filename: text("filename").notNull(),
+    contentType: text("content_type").notNull(),
+    sizeBytes: integer("size_bytes").notNull(),
+    disposition: text("disposition").notNull().default("attachment"),
+    inlineContentId: text("inline_content_id"),
+    scanStatus: conversationAttachmentScanStatusEnum("scan_status").notNull().default("pending"),
+    availability: conversationAttachmentAvailabilityEnum("availability")
+      .notNull()
+      .default("quarantined"),
+    retentionUntil: timestamp("retention_until", { withTimezone: true }),
+    scannedAt: timestamp("scanned_at", { withTimezone: true }),
+    redactedAt: timestamp("redacted_at", { withTimezone: true }),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+    updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("uidx_conversation_attachment_handle").on(table.privateHandle),
+    uniqueIndex("uidx_conversation_attachment_external").on(table.sourceId, table.externalId),
+    index("idx_conversation_attachments_conversation").on(table.conversationId, table.createdAt),
+    index("idx_conversation_attachments_part").on(table.partId),
+    index("idx_conversation_attachments_retention").on(table.availability, table.retentionUntil),
+  ],
+)
+
 export const conversationEvents = pgTable(
   "conversation_events",
   {
@@ -260,5 +325,6 @@ export type ConversationPart = typeof conversationParts.$inferSelect
 export type ConversationInbox = typeof conversationInboxes.$inferSelect
 export type ConversationNote = typeof conversationNotes.$inferSelect
 export type ConversationEvent = typeof conversationEvents.$inferSelect
+export type ConversationAttachment = typeof conversationAttachments.$inferSelect
 
 export const conversationsModule: Module = { name: "conversations", requiresTransactionalDb: true }

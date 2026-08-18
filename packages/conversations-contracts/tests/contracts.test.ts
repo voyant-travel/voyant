@@ -18,6 +18,7 @@ const envelope = {
   text: "Hello",
   html: null,
   attachments: [],
+  classification: "message" as const,
   threading: { messageId: "<message-1@example.test>", inReplyTo: null, references: [] },
   occurredAt: "2026-08-17T10:00:00.000Z",
 }

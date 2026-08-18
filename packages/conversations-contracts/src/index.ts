@@ -27,6 +27,9 @@ export const inboundEmailEnvelopeV1Schema = z.object({
   text: z.string().nullable(),
   html: z.string().nullable(),
   attachments: z.array(inboundAttachmentSchema).default([]),
+  classification: z
+    .enum(["message", "automatic_reply", "delivery_status", "complaint", "suspicious"])
+    .default("message"),
   threading: z.object({
     messageId: z.string().min(1).nullable(),
     inReplyTo: z.string().min(1).nullable(),
@@ -67,6 +70,13 @@ export interface ConversationRenderedServiceMessage {
   subject?: string
   text?: string
   sanitizedHtml?: string
+  attachments?: ReadonlyArray<{
+    privateHandle: string
+    filename: string
+    contentType: string
+    disposition: "attachment" | "inline"
+    contentId?: string
+  }>
   thread: { threadId: string; replyToDeliveryId?: string }
   metadata: {
     replyAlias: string
@@ -95,6 +105,24 @@ export interface ConversationsRenderedMessageAdmission {
     message: ConversationRenderedServiceMessage,
     context?: { bindings?: unknown },
   ): Promise<ConversationMessageAdmissionResult>
+}
+
+export interface ConversationPrivateAttachmentDeliveryResolver {
+  resolveForDelivery(input: {
+    targetId: string
+    privateHandle: string
+    filename: string
+    contentType?: string
+    disposition?: "attachment" | "inline"
+    contentId?: string
+  }): Promise<{
+    filename: string
+    contentType: string
+    disposition: "attachment" | "inline"
+    contentId?: string
+    contentBase64?: string
+    path?: string
+  }>
 }
 
 /** Stable, order-independent JSON used to detect replay payload drift. */

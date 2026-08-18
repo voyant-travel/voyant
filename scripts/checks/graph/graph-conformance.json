@@ -24,7 +24,8 @@
         "conversations.ingress-source",
         "conversations.rendered-message-admission",
         "conversations.person-directory",
-        "auth.staff-directory"
+        "auth.staff-directory",
+        "conversations.attachments"
       ],
       "runtimeExport": "createConversationsRuntimePortContribution"
     },

@@ -36,6 +36,7 @@ import type {
   NotificationAttachment,
   NotificationChannel,
   NotificationPayload,
+  NotificationPrivateAttachmentResolver,
   NotificationProvider,
   NotificationResult,
 } from "./types.js"
@@ -548,6 +549,8 @@ export interface DrainDurableNotificationSendsOptions {
   now?: Date
   visibilityTimeoutMs?: number
   retryBaseMs?: number
+  /** Revalidates and materializes private handles immediately before every attempt. */
+  privateAttachmentResolver?: NotificationPrivateAttachmentResolver
   testHooks?: {
     afterProviderAccepted?: (
       operation: NotificationSendOperation,
@@ -626,7 +629,11 @@ export async function drainDurableNotificationSends(
 
     try {
       const context = { idempotencyKey: operation.providerIdempotencyKey }
-      const payload = notificationPayload(operation.requestPayload)
+      const payload = await materializeNotificationPrivateAttachments(
+        notificationPayload(operation.requestPayload),
+        options.privateAttachmentResolver,
+        { targetId: operation.targetId },
+      )
       const providerResult = await capability.send(payload, context)
       if (providerResult.provider !== operation.provider) {
         throw new NotificationError(
@@ -660,6 +667,40 @@ export async function drainDurableNotificationSends(
   }
 
   return result
+}
+
+export async function materializeNotificationPrivateAttachments(
+  payload: NotificationPayload,
+  resolver: NotificationPrivateAttachmentResolver | undefined,
+  target: { targetId: string },
+): Promise<NotificationPayload> {
+  const attachments = payload.attachments
+  if (!attachments?.some(({ privateHandle }) => privateHandle)) return payload
+  if (!resolver) {
+    throw new NotificationError("Private attachment resolver is not configured")
+  }
+  const materialized = await Promise.all(
+    attachments.map(async (attachment) => {
+      if (!attachment.privateHandle) return attachment
+      const resolved = await resolver.resolveForDelivery({
+        targetId: target.targetId,
+        privateHandle: attachment.privateHandle,
+        filename: attachment.filename,
+        contentType: attachment.contentType,
+        disposition: attachment.disposition,
+        contentId: attachment.contentId,
+      })
+      return {
+        filename: resolved.filename,
+        contentType: resolved.contentType,
+        disposition: resolved.disposition,
+        contentId: resolved.contentId,
+        contentBase64: resolved.contentBase64,
+        path: resolved.path,
+      }
+    }),
+  )
+  return { ...payload, attachments: materialized }
 }
 
 /** Whether queued or leased sends require the exact selected provider runtime. */

@@ -187,8 +187,31 @@ export interface paths {
                   subject: string | null
                   textBody: string | null
                   htmlBody: string | null
+                  /** @enum {string} */
+                  contentStatus: "safe" | "quarantined" | "redacted"
+                  legacyAttachmentCount: number
+                  /** @enum {string} */
+                  classification:
+                    | "message"
+                    | "automatic_reply"
+                    | "delivery_status"
+                    | "complaint"
+                    | "suspicious"
+                  replyable: boolean
                   attachments: {
-                    [key: string]: unknown
+                    id: string
+                    filename: string
+                    contentType: string
+                    sizeBytes: number
+                    /** @enum {string} */
+                    disposition: "attachment" | "inline"
+                    inlineContentId: string | null
+                    /** @enum {string} */
+                    scanStatus: "pending" | "clean" | "blocked" | "failed"
+                    /** @enum {string} */
+                    availability: "active" | "quarantined" | "redaction_pending" | "redacted"
+                    /** Format: date-time */
+                    createdAt: string
                   }[]
                   externalMessageId: string | null
                   messageId: string | null
@@ -236,8 +259,31 @@ export interface paths {
                         subject: string | null
                         textBody: string | null
                         htmlBody: string | null
+                        /** @enum {string} */
+                        contentStatus: "safe" | "quarantined" | "redacted"
+                        legacyAttachmentCount: number
+                        /** @enum {string} */
+                        classification:
+                          | "message"
+                          | "automatic_reply"
+                          | "delivery_status"
+                          | "complaint"
+                          | "suspicious"
+                        replyable: boolean
                         attachments: {
-                          [key: string]: unknown
+                          id: string
+                          filename: string
+                          contentType: string
+                          sizeBytes: number
+                          /** @enum {string} */
+                          disposition: "attachment" | "inline"
+                          inlineContentId: string | null
+                          /** @enum {string} */
+                          scanStatus: "pending" | "clean" | "blocked" | "failed"
+                          /** @enum {string} */
+                          availability: "active" | "quarantined" | "redaction_pending" | "redacted"
+                          /** Format: date-time */
+                          createdAt: string
                         }[]
                         externalMessageId: string | null
                         messageId: string | null
@@ -426,8 +472,31 @@ export interface paths {
                   subject: string | null
                   textBody: string | null
                   htmlBody: string | null
+                  /** @enum {string} */
+                  contentStatus: "safe" | "quarantined" | "redacted"
+                  legacyAttachmentCount: number
+                  /** @enum {string} */
+                  classification:
+                    | "message"
+                    | "automatic_reply"
+                    | "delivery_status"
+                    | "complaint"
+                    | "suspicious"
+                  replyable: boolean
                   attachments: {
-                    [key: string]: unknown
+                    id: string
+                    filename: string
+                    contentType: string
+                    sizeBytes: number
+                    /** @enum {string} */
+                    disposition: "attachment" | "inline"
+                    inlineContentId: string | null
+                    /** @enum {string} */
+                    scanStatus: "pending" | "clean" | "blocked" | "failed"
+                    /** @enum {string} */
+                    availability: "active" | "quarantined" | "redaction_pending" | "redacted"
+                    /** Format: date-time */
+                    createdAt: string
                   }[]
                   externalMessageId: string | null
                   messageId: string | null
@@ -475,8 +544,31 @@ export interface paths {
                         subject: string | null
                         textBody: string | null
                         htmlBody: string | null
+                        /** @enum {string} */
+                        contentStatus: "safe" | "quarantined" | "redacted"
+                        legacyAttachmentCount: number
+                        /** @enum {string} */
+                        classification:
+                          | "message"
+                          | "automatic_reply"
+                          | "delivery_status"
+                          | "complaint"
+                          | "suspicious"
+                        replyable: boolean
                         attachments: {
-                          [key: string]: unknown
+                          id: string
+                          filename: string
+                          contentType: string
+                          sizeBytes: number
+                          /** @enum {string} */
+                          disposition: "attachment" | "inline"
+                          inlineContentId: string | null
+                          /** @enum {string} */
+                          scanStatus: "pending" | "clean" | "blocked" | "failed"
+                          /** @enum {string} */
+                          availability: "active" | "quarantined" | "redaction_pending" | "redacted"
+                          /** Format: date-time */
+                          createdAt: string
                         }[]
                         externalMessageId: string | null
                         messageId: string | null
@@ -743,8 +835,10 @@ export interface paths {
         content: {
           "application/json": {
             channelAccountId: string
-            text: string
+            text: string | null
             html?: string | null
+            /** @default [] */
+            attachmentIds?: string[]
             idempotencyKey: string
           }
         }
@@ -768,8 +862,31 @@ export interface paths {
                 subject: string | null
                 textBody: string | null
                 htmlBody: string | null
+                /** @enum {string} */
+                contentStatus: "safe" | "quarantined" | "redacted"
+                legacyAttachmentCount: number
+                /** @enum {string} */
+                classification:
+                  | "message"
+                  | "automatic_reply"
+                  | "delivery_status"
+                  | "complaint"
+                  | "suspicious"
+                replyable: boolean
                 attachments: {
-                  [key: string]: unknown
+                  id: string
+                  filename: string
+                  contentType: string
+                  sizeBytes: number
+                  /** @enum {string} */
+                  disposition: "attachment" | "inline"
+                  inlineContentId: string | null
+                  /** @enum {string} */
+                  scanStatus: "pending" | "clean" | "blocked" | "failed"
+                  /** @enum {string} */
+                  availability: "active" | "quarantined" | "redaction_pending" | "redacted"
+                  /** Format: date-time */
+                  createdAt: string
                 }[]
                 externalMessageId: string | null
                 messageId: string | null
@@ -1574,6 +1691,467 @@ export interface paths {
     }
     put?: never
     post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/admin/conversations/{id}/attachments/tickets": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          id: string
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          "application/json": {
+            filename: string
+            contentType: string
+            sizeBytes: number
+          }
+        }
+      }
+      responses: {
+        /** @description Short-lived private upload ticket */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              data: {
+                token: string
+                /** @enum {string} */
+                method: "PUT" | "POST"
+                /** Format: uri */
+                url: string
+                headers?: {
+                  [key: string]: string
+                }
+                /** Format: date-time */
+                expiresAt: string
+              }
+            }
+          }
+        }
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Private attachment upload unavailable */
+        409: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Attachment rejected by policy */
+        422: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/admin/conversations/{id}/attachments/finalize": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          id: string
+        }
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          "application/json": {
+            filename: string
+            contentType: string
+            sizeBytes: number
+            token: string
+          }
+        }
+      }
+      responses: {
+        /** @description Attachment finalized and scanned */
+        201: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              data: {
+                id: string
+                filename: string
+                contentType: string
+                sizeBytes: number
+                /** @enum {string} */
+                disposition: "attachment" | "inline"
+                inlineContentId: string | null
+                /** @enum {string} */
+                scanStatus: "pending" | "clean" | "blocked" | "failed"
+                /** @enum {string} */
+                availability: "active" | "quarantined" | "redaction_pending" | "redacted"
+                /** Format: date-time */
+                createdAt: string
+              }
+            }
+          }
+        }
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Upload unavailable or drifted */
+        409: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Attachment rejected by policy */
+        422: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/admin/conversations/{id}/attachments/{attachmentId}/download": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          id: string
+          attachmentId: string
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Private attachment stream */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/octet-stream": string
+          }
+        }
+        /** @description Short-lived private download redirect */
+        302: {
+          headers: {
+            [name: string]: unknown
+          }
+          content?: never
+        }
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Clean attachment not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Private attachment runtime unavailable */
+        409: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/admin/conversations/{id}/attachments/{attachmentId}/redact": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path: {
+          id: string
+          attachmentId: string
+        }
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Attachment queued for redaction */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              data: {
+                id: string
+                filename: string
+                contentType: string
+                sizeBytes: number
+                /** @enum {string} */
+                disposition: "attachment" | "inline"
+                inlineContentId: string | null
+                /** @enum {string} */
+                scanStatus: "pending" | "clean" | "blocked" | "failed"
+                /** @enum {string} */
+                availability: "active" | "quarantined" | "redaction_pending" | "redacted"
+                /** Format: date-time */
+                createdAt: string
+              }
+            }
+          }
+        }
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Attachment not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Revision or idempotency conflict */
+        409: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+      }
+    }
     delete?: never
     options?: never
     head?: never

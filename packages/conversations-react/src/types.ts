@@ -20,6 +20,11 @@ export interface InboxPart {
   senderAddress: string
   textBody: string | null
   htmlBody: string | null
+  contentStatus: "safe" | "quarantined" | "redacted"
+  legacyAttachmentCount: number
+  classification: "message" | "automatic_reply" | "delivery_status" | "complaint" | "suspicious"
+  replyable: boolean
+  attachments: InboxAttachment[]
   deliveryStatus: string
   occurredAt: string
 }
@@ -41,6 +46,16 @@ export interface ConversationInbox {
 export interface AssignableStaff {
   userId: string
   displayName: string
+}
+
+export interface InboxAttachment {
+  id: string
+  filename: string
+  contentType: string
+  sizeBytes: number
+  disposition: "attachment" | "inline"
+  scanStatus: "pending" | "clean" | "blocked" | "failed"
+  availability: "active" | "quarantined" | "redaction_pending" | "redacted"
 }
 
 export interface InboxConversationDetail {

@@ -15,6 +15,13 @@
       "when": 1787007746929,
       "tag": "0001_collaboration",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "7",
+      "when": 1787012000000,
+      "tag": "0002_secure_content",
+      "breakpoints": true
     }
   ]
 }

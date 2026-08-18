@@ -85,7 +85,13 @@ export const conversationsApi = {
     fetcher: VoyantFetcher,
     baseUrl: string,
     id: string,
-    input: { channelAccountId: string; text: string; idempotencyKey: string },
+    input: {
+      channelAccountId: string
+      text: string
+      html?: string | null
+      attachmentIds?: string[]
+      idempotencyKey: string
+    },
   ) {
     return request<InboxPart>(
       fetcher,

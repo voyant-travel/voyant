@@ -9,6 +9,7 @@
     "./schema": "./src/schema.ts",
     "./runtime-port": "./src/runtime-port.ts",
     "./runtime-contributor": "./src/runtime-contributor.ts",
+    "./attachment-retention-job": "./src/attachment-retention-job.ts",
     "./ingress-job": "./src/ingress-job.ts",
     "./snooze-expiry-job": "./src/snooze-expiry-job.ts",
     "./voyant": "./src/voyant.ts",
@@ -29,12 +30,17 @@
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/hono": "workspace:^",
+    "@voyant-travel/storage": "workspace:^",
     "drizzle-orm": "catalog:",
     "hono": "catalog:",
+    "sanitize-html": "^2.17.5",
     "zod": "catalog:"
   },
   "devDependencies": {
+    "@electric-sql/pglite": "^0.5.4",
+    "@types/node": "catalog:",
     "@voyant-travel/voyant-typescript-config": "workspace:^",
+    "@types/sanitize-html": "^2.16.1",
     "drizzle-kit": "^0.31.10",
     "tsx": "catalog:",
     "typescript": "catalog:",
@@ -78,6 +84,11 @@
         "types": "./dist/snooze-expiry-job.d.ts",
         "import": "./dist/snooze-expiry-job.js",
         "default": "./dist/snooze-expiry-job.js"
+      },
+      "./attachment-retention-job": {
+        "types": "./dist/attachment-retention-job.d.ts",
+        "import": "./dist/attachment-retention-job.js",
+        "default": "./dist/attachment-retention-job.js"
       },
       "./voyant": {
         "types": "./dist/voyant.d.ts",

@@ -1,5 +1,5 @@
 {
   "extends": "@voyant-travel/voyant-typescript-config/base.json",
-  "compilerOptions": { "composite": false, "module": "ESNext", "moduleResolution": "Bundler" },
+  "compilerOptions": { "composite": false, "module": "ESNext", "moduleResolution": "Bundler", "types": ["node"] },
   "include": ["src/**/*", "tests/**/*"]
 }

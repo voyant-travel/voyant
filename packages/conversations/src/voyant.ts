@@ -2,6 +2,7 @@ import { staffDirectoryRuntimePort } from "@voyant-travel/auth/staff-directory-r
 import { defineModule, requirePort } from "@voyant-travel/core/project"
 import {
   conversationIngressSourcePort,
+  conversationsAttachmentRuntimePort,
   conversationsDatabaseRuntimePort,
   conversationsPersonDirectoryPort,
   conversationsRenderedMessageAdmissionPort,
@@ -38,6 +39,7 @@ export const conversationsVoyantModule = defineModule({
     requirePort(conversationsRenderedMessageAdmissionPort, { optional: true }),
     requirePort(conversationsPersonDirectoryPort, { optional: true }),
     requirePort(staffDirectoryRuntimePort),
+    requirePort(conversationsAttachmentRuntimePort, { optional: true }),
   ],
   api: [
     {
@@ -97,6 +99,23 @@ export const conversationsVoyantModule = defineModule({
       runtime: {
         entry: "@voyant-travel/conversations/snooze-expiry-job",
         export: "runConversationSnoozeExpiryJob",
+      },
+    },
+    {
+      id: "conversations.attachment-retention",
+      schedule: { cron: "17 * * * *", overlap: "skip" },
+      scheduling: {
+        required: true,
+        profiles: {
+          eager: { cron: "17 * * * *", overlap: "skip" },
+          economical: { cron: "17 */6 * * *", overlap: "skip" },
+          "scale-to-zero": { cron: "17 3 * * *", overlap: "skip" },
+        },
+      },
+      wakeup: true,
+      runtime: {
+        entry: "@voyant-travel/conversations/attachment-retention-job",
+        export: "runConversationAttachmentRetentionJob",
       },
     },
   ],

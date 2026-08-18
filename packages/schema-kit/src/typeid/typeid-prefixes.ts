@@ -48,6 +48,7 @@ export const PREFIXES = {
   conversation_parts: "cvpa",
   conversation_read_cursors: "cvrc",
   conversation_notes: "cvnt",
+  conversation_attachments: "cvat",
   conversation_events: "cvev",
   conversation_ingress_operations: "cvio",
   notification_templates: "ntpl",
