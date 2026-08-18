@@ -10,7 +10,28 @@ export interface InboxConversation {
   customerAddress: string
   personRef: string | null
   unreadCount: number
+  channel: string
+  waitingOn: "staff" | "customer" | null
   lastPartAt: string
+}
+
+export interface InboxConversationPage {
+  data: InboxConversation[]
+  page: { nextCursor: string | null }
+}
+
+export interface InboxOperationalReport {
+  period: { from: string; to: string }
+  volumes: { new: number; opened: number; closed: number }
+  backlog: number
+  averagesMs: {
+    firstResponse: number | null
+    resolution: number | null
+    customerWaiting: number | null
+  }
+  delivery: { failed: number; suppressed: number }
+  ingress: { averageLagMs: number | null; failedOrDrifted: number }
+  sla: { authoritative: false; businessHours: "not_configured" }
 }
 
 export interface InboxPart {

@@ -41,6 +41,98 @@
           },
           {
             "schema": {
+              "type": "string",
+              "enum": ["low", "normal", "high", "urgent"]
+            },
+            "required": false,
+            "name": "priority",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": ["true", "false"]
+            },
+            "required": false,
+            "name": "unread",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 32
+            },
+            "required": false,
+            "name": "channel",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "participant",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 2,
+              "maxLength": 100
+            },
+            "required": false,
+            "name": "q",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": false,
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "enum": [
+                "unassigned",
+                "assigned_to_me",
+                "waiting_on_staff",
+                "waiting_on_customer",
+                "snoozed",
+                "closed"
+              ]
+            },
+            "required": false,
+            "name": "queue",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "minLength": 1,
+              "maxLength": 1024
+            },
+            "required": false,
+            "name": "cursor",
+            "in": "query"
+          },
+          {
+            "schema": {
               "type": "integer",
               "exclusiveMinimum": 0,
               "maximum": 100
@@ -52,7 +144,7 @@
         ],
         "responses": {
           "200": {
-            "description": "Membership-scoped Inbox",
+            "description": "Membership-scoped operational Inbox page",
             "content": {
               "application/json": {
                 "schema": {
@@ -119,7 +211,27 @@
                             "type": ["string", "null"],
                             "format": "date-time"
                           },
+                          "waitingOn": {
+                            "type": ["string", "null"],
+                            "enum": ["staff", "customer", null]
+                          },
+                          "firstResponseAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "resolvedAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
                           "closedAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "lastInboundAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "lastOutboundAt": {
                             "type": ["string", "null"],
                             "format": "date-time"
                           },
@@ -154,15 +266,29 @@
                           "contactPointRef",
                           "unreadCount",
                           "snoozedUntil",
+                          "waitingOn",
+                          "firstResponseAt",
+                          "resolvedAt",
                           "closedAt",
+                          "lastInboundAt",
+                          "lastOutboundAt",
                           "lastPartAt",
                           "createdAt",
                           "updatedAt"
                         ]
                       }
+                    },
+                    "page": {
+                      "type": "object",
+                      "properties": {
+                        "nextCursor": {
+                          "type": ["string", "null"]
+                        }
+                      },
+                      "required": ["nextCursor"]
                     }
                   },
-                  "required": ["data"]
+                  "required": ["data", "page"]
                 }
               }
             }
@@ -427,7 +553,27 @@
                               "type": ["string", "null"],
                               "format": "date-time"
                             },
+                            "waitingOn": {
+                              "type": ["string", "null"],
+                              "enum": ["staff", "customer", null]
+                            },
+                            "firstResponseAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "resolvedAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
                             "closedAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "lastInboundAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "lastOutboundAt": {
                               "type": ["string", "null"],
                               "format": "date-time"
                             },
@@ -462,7 +608,12 @@
                             "contactPointRef",
                             "unreadCount",
                             "snoozedUntil",
+                            "waitingOn",
+                            "firstResponseAt",
+                            "resolvedAt",
                             "closedAt",
+                            "lastInboundAt",
+                            "lastOutboundAt",
                             "lastPartAt",
                             "createdAt",
                             "updatedAt"
@@ -1108,6 +1259,530 @@
         }
       }
     },
+    "/v1/admin/conversations/bulk": {
+      "post": {
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "items": {
+                    "type": "array",
+                    "items": {
+                      "type": "object",
+                      "properties": {
+                        "id": {
+                          "type": "string"
+                        },
+                        "revision": {
+                          "type": "integer",
+                          "exclusiveMinimum": 0
+                        }
+                      },
+                      "required": ["id", "revision"]
+                    },
+                    "minItems": 1,
+                    "maxItems": 100
+                  },
+                  "changes": {
+                    "type": "object",
+                    "properties": {
+                      "assignedToUserId": {
+                        "type": ["string", "null"]
+                      },
+                      "status": {
+                        "type": "string",
+                        "enum": ["open", "closed", "snoozed"]
+                      },
+                      "snoozedUntil": {
+                        "type": ["string", "null"],
+                        "format": "date-time"
+                      }
+                    },
+                    "additionalProperties": false
+                  }
+                },
+                "required": ["items", "changes"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": {
+            "description": "Audited optimistic bulk update",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "array",
+                      "items": {
+                        "type": "object",
+                        "properties": {
+                          "id": {
+                            "type": "string"
+                          },
+                          "channel": {
+                            "type": "string"
+                          },
+                          "inboxId": {
+                            "type": "string"
+                          },
+                          "assignedToUserId": {
+                            "type": ["string", "null"]
+                          },
+                          "priority": {
+                            "type": "string",
+                            "enum": ["low", "normal", "high", "urgent"]
+                          },
+                          "revision": {
+                            "type": "integer",
+                            "exclusiveMinimum": 0
+                          },
+                          "status": {
+                            "type": "string",
+                            "enum": ["open", "closed", "snoozed"]
+                          },
+                          "subject": {
+                            "type": ["string", "null"]
+                          },
+                          "suggestedSubject": {
+                            "type": ["string", "null"]
+                          },
+                          "replyAlias": {
+                            "type": ["string", "null"]
+                          },
+                          "channelAccountId": {
+                            "type": ["string", "null"]
+                          },
+                          "localAddress": {
+                            "type": ["string", "null"]
+                          },
+                          "customerAddress": {
+                            "type": "string"
+                          },
+                          "personRef": {
+                            "type": ["string", "null"]
+                          },
+                          "contactPointRef": {
+                            "type": ["string", "null"]
+                          },
+                          "unreadCount": {
+                            "type": "integer",
+                            "minimum": 0
+                          },
+                          "snoozedUntil": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "waitingOn": {
+                            "type": ["string", "null"],
+                            "enum": ["staff", "customer", null]
+                          },
+                          "firstResponseAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "resolvedAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "closedAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "lastInboundAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "lastOutboundAt": {
+                            "type": ["string", "null"],
+                            "format": "date-time"
+                          },
+                          "lastPartAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "createdAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          },
+                          "updatedAt": {
+                            "type": "string",
+                            "format": "date-time"
+                          }
+                        },
+                        "required": [
+                          "id",
+                          "channel",
+                          "inboxId",
+                          "assignedToUserId",
+                          "priority",
+                          "revision",
+                          "status",
+                          "subject",
+                          "suggestedSubject",
+                          "replyAlias",
+                          "channelAccountId",
+                          "localAddress",
+                          "customerAddress",
+                          "personRef",
+                          "contactPointRef",
+                          "unreadCount",
+                          "snoozedUntil",
+                          "waitingOn",
+                          "firstResponseAt",
+                          "resolvedAt",
+                          "closedAt",
+                          "lastInboundAt",
+                          "lastOutboundAt",
+                          "lastPartAt",
+                          "createdAt",
+                          "updatedAt"
+                        ]
+                      }
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
+    "/v1/admin/conversations/reporting": {
+      "get": {
+        "parameters": [
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": true,
+            "name": "from",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string",
+              "format": "date-time"
+            },
+            "required": true,
+            "name": "to",
+            "in": "query"
+          },
+          {
+            "schema": {
+              "type": "string"
+            },
+            "required": false,
+            "name": "inboxId",
+            "in": "query"
+          }
+        ],
+        "responses": {
+          "200": {
+            "description": "Content-free operational reporting with non-authoritative SLA semantics",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "data": {
+                      "type": "object",
+                      "properties": {
+                        "period": {
+                          "type": "object",
+                          "properties": {
+                            "from": {
+                              "type": "string",
+                              "format": "date-time"
+                            },
+                            "to": {
+                              "type": "string",
+                              "format": "date-time"
+                            }
+                          },
+                          "required": ["from", "to"]
+                        },
+                        "volumes": {
+                          "type": "object",
+                          "properties": {
+                            "new": {
+                              "type": "number"
+                            },
+                            "opened": {
+                              "type": "number"
+                            },
+                            "closed": {
+                              "type": "number"
+                            }
+                          },
+                          "required": ["new", "opened", "closed"]
+                        },
+                        "backlog": {
+                          "type": "number"
+                        },
+                        "averagesMs": {
+                          "type": "object",
+                          "properties": {
+                            "firstResponse": {
+                              "type": ["number", "null"]
+                            },
+                            "resolution": {
+                              "type": ["number", "null"]
+                            },
+                            "customerWaiting": {
+                              "type": ["number", "null"]
+                            }
+                          },
+                          "required": ["firstResponse", "resolution", "customerWaiting"]
+                        },
+                        "delivery": {
+                          "type": "object",
+                          "properties": {
+                            "failed": {
+                              "type": "number"
+                            },
+                            "suppressed": {
+                              "type": "number"
+                            }
+                          },
+                          "required": ["failed", "suppressed"]
+                        },
+                        "ingress": {
+                          "type": "object",
+                          "properties": {
+                            "averageLagMs": {
+                              "type": ["number", "null"]
+                            },
+                            "failedOrDrifted": {
+                              "type": "number"
+                            }
+                          },
+                          "required": ["averageLagMs", "failedOrDrifted"]
+                        },
+                        "sla": {
+                          "type": "object",
+                          "properties": {
+                            "authoritative": {
+                              "type": "boolean",
+                              "enum": [false]
+                            },
+                            "clock": {
+                              "type": "string",
+                              "enum": ["elapsed"]
+                            },
+                            "startsAt": {
+                              "type": "string",
+                              "enum": ["conversation_created"]
+                            },
+                            "pauses": {
+                              "type": "string",
+                              "enum": ["none"]
+                            },
+                            "reopen": {
+                              "type": "string",
+                              "enum": ["original_clock_continues"]
+                            },
+                            "businessHours": {
+                              "type": "string",
+                              "enum": ["not_configured"]
+                            }
+                          },
+                          "required": [
+                            "authoritative",
+                            "clock",
+                            "startsAt",
+                            "pauses",
+                            "reopen",
+                            "businessHours"
+                          ]
+                        }
+                      },
+                      "required": [
+                        "period",
+                        "volumes",
+                        "backlog",
+                        "averagesMs",
+                        "delivery",
+                        "ingress",
+                        "sla"
+                      ]
+                    }
+                  },
+                  "required": ["data"]
+                }
+              }
+            }
+          },
+          "400": {
+            "description": "Invalid conversation operation",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "401": {
+            "description": "Authenticated staff required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "403": {
+            "description": "Inbox membership required",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "404": {
+            "description": "Conversation resource not found",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          },
+          "409": {
+            "description": "Revision or idempotency conflict",
+            "content": {
+              "application/json": {
+                "schema": {
+                  "type": "object",
+                  "properties": {
+                    "error": {
+                      "type": "string"
+                    }
+                  },
+                  "required": ["error"]
+                }
+              }
+            }
+          }
+        }
+      }
+    },
     "/v1/admin/conversations/{id}": {
       "get": {
         "parameters": [
@@ -1190,7 +1865,27 @@
                               "type": ["string", "null"],
                               "format": "date-time"
                             },
+                            "waitingOn": {
+                              "type": ["string", "null"],
+                              "enum": ["staff", "customer", null]
+                            },
+                            "firstResponseAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "resolvedAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
                             "closedAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "lastInboundAt": {
+                              "type": ["string", "null"],
+                              "format": "date-time"
+                            },
+                            "lastOutboundAt": {
                               "type": ["string", "null"],
                               "format": "date-time"
                             },
@@ -1225,7 +1920,12 @@
                             "contactPointRef",
                             "unreadCount",
                             "snoozedUntil",
+                            "waitingOn",
+                            "firstResponseAt",
+                            "resolvedAt",
                             "closedAt",
+                            "lastInboundAt",
+                            "lastOutboundAt",
                             "lastPartAt",
                             "createdAt",
                             "updatedAt"
@@ -1983,7 +2683,27 @@
                           "type": ["string", "null"],
                           "format": "date-time"
                         },
+                        "waitingOn": {
+                          "type": ["string", "null"],
+                          "enum": ["staff", "customer", null]
+                        },
+                        "firstResponseAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "resolvedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
                         "closedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "lastInboundAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "lastOutboundAt": {
                           "type": ["string", "null"],
                           "format": "date-time"
                         },
@@ -2018,7 +2738,12 @@
                         "contactPointRef",
                         "unreadCount",
                         "snoozedUntil",
+                        "waitingOn",
+                        "firstResponseAt",
+                        "resolvedAt",
                         "closedAt",
+                        "lastInboundAt",
+                        "lastOutboundAt",
                         "lastPartAt",
                         "createdAt",
                         "updatedAt"
@@ -2528,7 +3253,27 @@
                           "type": ["string", "null"],
                           "format": "date-time"
                         },
+                        "waitingOn": {
+                          "type": ["string", "null"],
+                          "enum": ["staff", "customer", null]
+                        },
+                        "firstResponseAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "resolvedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
                         "closedAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "lastInboundAt": {
+                          "type": ["string", "null"],
+                          "format": "date-time"
+                        },
+                        "lastOutboundAt": {
                           "type": ["string", "null"],
                           "format": "date-time"
                         },
@@ -2563,7 +3308,12 @@
                         "contactPointRef",
                         "unreadCount",
                         "snoozedUntil",
+                        "waitingOn",
+                        "firstResponseAt",
+                        "resolvedAt",
                         "closedAt",
+                        "lastInboundAt",
+                        "lastOutboundAt",
                         "lastPartAt",
                         "createdAt",
                         "updatedAt"

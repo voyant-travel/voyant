@@ -4,7 +4,9 @@ import type {
   ConversationInbox,
   InboxConversation,
   InboxConversationDetail,
+  InboxConversationPage,
   InboxNote,
+  InboxOperationalReport,
   InboxPart,
 } from "./types.js"
 
@@ -17,9 +19,40 @@ async function request<T>(fetcher: VoyantFetcher, url: string, init?: RequestIni
 }
 
 export const conversationsApi = {
-  list(fetcher: VoyantFetcher, baseUrl: string, filters: { inboxId?: string } = {}) {
-    const query = filters.inboxId ? `?inboxId=${encodeURIComponent(filters.inboxId)}` : ""
-    return request<InboxConversation[]>(fetcher, `${baseUrl}/v1/admin/conversations${query}`)
+  async list(
+    fetcher: VoyantFetcher,
+    baseUrl: string,
+    filters: Record<string, string | boolean | undefined> = {},
+  ): Promise<InboxConversationPage> {
+    const query = new URLSearchParams()
+    for (const [key, value] of Object.entries(filters)) {
+      if (value !== undefined && value !== "") query.set(key, String(value))
+    }
+    const response = await fetcher(`${baseUrl}/v1/admin/conversations?${query}`)
+    const payload = (await response.json()) as InboxConversationPage & { error?: string }
+    if (!response.ok) throw new Error(payload.error ?? `Request failed (${response.status})`)
+    return payload
+  },
+  bulk(
+    fetcher: VoyantFetcher,
+    baseUrl: string,
+    input: {
+      items: Array<{ id: string; revision: number }>
+      changes: { assignedToUserId?: string | null; status?: InboxConversation["status"] }
+    },
+  ) {
+    return request<InboxConversation[]>(fetcher, `${baseUrl}/v1/admin/conversations/bulk`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(input),
+    })
+  },
+  reporting(fetcher: VoyantFetcher, baseUrl: string, from: string, to: string) {
+    const query = new URLSearchParams({ from, to })
+    return request<InboxOperationalReport>(
+      fetcher,
+      `${baseUrl}/v1/admin/conversations/reporting?${query}`,
+    )
   },
   get(fetcher: VoyantFetcher, baseUrl: string, id: string) {
     return request<InboxConversationDetail>(

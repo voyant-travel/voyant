@@ -17,6 +17,21 @@ export interface paths {
           status?: "open" | "closed" | "snoozed"
           inboxId?: string
           assignedToUserId?: string
+          priority?: "low" | "normal" | "high" | "urgent"
+          unread?: "true" | "false"
+          channel?: string
+          participant?: string
+          q?: string
+          from?: string
+          to?: string
+          queue?:
+            | "unassigned"
+            | "assigned_to_me"
+            | "waiting_on_staff"
+            | "waiting_on_customer"
+            | "snoozed"
+            | "closed"
+          cursor?: string
           limit?: number
         }
         header?: never
@@ -25,7 +40,7 @@ export interface paths {
       }
       requestBody?: never
       responses: {
-        /** @description Membership-scoped Inbox */
+        /** @description Membership-scoped operational Inbox page */
         200: {
           headers: {
             [name: string]: unknown
@@ -53,8 +68,18 @@ export interface paths {
                 unreadCount: number
                 /** Format: date-time */
                 snoozedUntil: string | null
+                /** @enum {string|null} */
+                waitingOn: "staff" | "customer" | null
+                /** Format: date-time */
+                firstResponseAt: string | null
+                /** Format: date-time */
+                resolvedAt: string | null
                 /** Format: date-time */
                 closedAt: string | null
+                /** Format: date-time */
+                lastInboundAt: string | null
+                /** Format: date-time */
+                lastOutboundAt: string | null
                 /** Format: date-time */
                 lastPartAt: string
                 /** Format: date-time */
@@ -62,6 +87,9 @@ export interface paths {
                 /** Format: date-time */
                 updatedAt: string
               }[]
+              page: {
+                nextCursor: string | null
+              }
             }
           }
         }
@@ -189,8 +217,18 @@ export interface paths {
                   unreadCount: number
                   /** Format: date-time */
                   snoozedUntil: string | null
+                  /** @enum {string|null} */
+                  waitingOn: "staff" | "customer" | null
+                  /** Format: date-time */
+                  firstResponseAt: string | null
+                  /** Format: date-time */
+                  resolvedAt: string | null
                   /** Format: date-time */
                   closedAt: string | null
+                  /** Format: date-time */
+                  lastInboundAt: string | null
+                  /** Format: date-time */
+                  lastOutboundAt: string | null
                   /** Format: date-time */
                   lastPartAt: string
                   /** Format: date-time */
@@ -443,6 +481,289 @@ export interface paths {
     patch?: never
     trace?: never
   }
+  "/v1/admin/conversations/bulk": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get?: never
+    put?: never
+    post: {
+      parameters: {
+        query?: never
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody: {
+        content: {
+          "application/json": {
+            items: {
+              id: string
+              revision: number
+            }[]
+            changes: {
+              assignedToUserId?: string | null
+              /** @enum {string} */
+              status?: "open" | "closed" | "snoozed"
+              /** Format: date-time */
+              snoozedUntil?: string | null
+            }
+          }
+        }
+      }
+      responses: {
+        /** @description Audited optimistic bulk update */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              data: {
+                id: string
+                channel: string
+                inboxId: string
+                assignedToUserId: string | null
+                /** @enum {string} */
+                priority: "low" | "normal" | "high" | "urgent"
+                revision: number
+                /** @enum {string} */
+                status: "open" | "closed" | "snoozed"
+                subject: string | null
+                suggestedSubject: string | null
+                replyAlias: string | null
+                channelAccountId: string | null
+                localAddress: string | null
+                customerAddress: string
+                personRef: string | null
+                contactPointRef: string | null
+                unreadCount: number
+                /** Format: date-time */
+                snoozedUntil: string | null
+                /** @enum {string|null} */
+                waitingOn: "staff" | "customer" | null
+                /** Format: date-time */
+                firstResponseAt: string | null
+                /** Format: date-time */
+                resolvedAt: string | null
+                /** Format: date-time */
+                closedAt: string | null
+                /** Format: date-time */
+                lastInboundAt: string | null
+                /** Format: date-time */
+                lastOutboundAt: string | null
+                /** Format: date-time */
+                lastPartAt: string
+                /** Format: date-time */
+                createdAt: string
+                /** Format: date-time */
+                updatedAt: string
+              }[]
+            }
+          }
+        }
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation resource not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Revision or idempotency conflict */
+        409: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+      }
+    }
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
+  "/v1/admin/conversations/reporting": {
+    parameters: {
+      query?: never
+      header?: never
+      path?: never
+      cookie?: never
+    }
+    get: {
+      parameters: {
+        query: {
+          from: string
+          to: string
+          inboxId?: string
+        }
+        header?: never
+        path?: never
+        cookie?: never
+      }
+      requestBody?: never
+      responses: {
+        /** @description Content-free operational reporting with non-authoritative SLA semantics */
+        200: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              data: {
+                period: {
+                  /** Format: date-time */
+                  from: string
+                  /** Format: date-time */
+                  to: string
+                }
+                volumes: {
+                  new: number
+                  opened: number
+                  closed: number
+                }
+                backlog: number
+                averagesMs: {
+                  firstResponse: number | null
+                  resolution: number | null
+                  customerWaiting: number | null
+                }
+                delivery: {
+                  failed: number
+                  suppressed: number
+                }
+                ingress: {
+                  averageLagMs: number | null
+                  failedOrDrifted: number
+                }
+                sla: {
+                  /** @enum {boolean} */
+                  authoritative: false
+                  /** @enum {string} */
+                  clock: "elapsed"
+                  /** @enum {string} */
+                  startsAt: "conversation_created"
+                  /** @enum {string} */
+                  pauses: "none"
+                  /** @enum {string} */
+                  reopen: "original_clock_continues"
+                  /** @enum {string} */
+                  businessHours: "not_configured"
+                }
+              }
+            }
+          }
+        }
+        /** @description Invalid conversation operation */
+        400: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Authenticated staff required */
+        401: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Inbox membership required */
+        403: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Conversation resource not found */
+        404: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+        /** @description Revision or idempotency conflict */
+        409: {
+          headers: {
+            [name: string]: unknown
+          }
+          content: {
+            "application/json": {
+              error: string
+            }
+          }
+        }
+      }
+    }
+    put?: never
+    post?: never
+    delete?: never
+    options?: never
+    head?: never
+    patch?: never
+    trace?: never
+  }
   "/v1/admin/conversations/{id}": {
     parameters: {
       query?: never
@@ -490,8 +811,18 @@ export interface paths {
                   unreadCount: number
                   /** Format: date-time */
                   snoozedUntil: string | null
+                  /** @enum {string|null} */
+                  waitingOn: "staff" | "customer" | null
+                  /** Format: date-time */
+                  firstResponseAt: string | null
+                  /** Format: date-time */
+                  resolvedAt: string | null
                   /** Format: date-time */
                   closedAt: string | null
+                  /** Format: date-time */
+                  lastInboundAt: string | null
+                  /** Format: date-time */
+                  lastOutboundAt: string | null
                   /** Format: date-time */
                   lastPartAt: string
                   /** Format: date-time */
@@ -796,8 +1127,18 @@ export interface paths {
                 unreadCount: number
                 /** Format: date-time */
                 snoozedUntil: string | null
+                /** @enum {string|null} */
+                waitingOn: "staff" | "customer" | null
+                /** Format: date-time */
+                firstResponseAt: string | null
+                /** Format: date-time */
+                resolvedAt: string | null
                 /** Format: date-time */
                 closedAt: string | null
+                /** Format: date-time */
+                lastInboundAt: string | null
+                /** Format: date-time */
+                lastOutboundAt: string | null
                 /** Format: date-time */
                 lastPartAt: string
                 /** Format: date-time */
@@ -1084,8 +1425,18 @@ export interface paths {
                 unreadCount: number
                 /** Format: date-time */
                 snoozedUntil: string | null
+                /** @enum {string|null} */
+                waitingOn: "staff" | "customer" | null
+                /** Format: date-time */
+                firstResponseAt: string | null
+                /** Format: date-time */
+                resolvedAt: string | null
                 /** Format: date-time */
                 closedAt: string | null
+                /** Format: date-time */
+                lastInboundAt: string | null
+                /** Format: date-time */
+                lastOutboundAt: string | null
                 /** Format: date-time */
                 lastPartAt: string
                 /** Format: date-time */

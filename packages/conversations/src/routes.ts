@@ -12,6 +12,12 @@ import {
   requestAttachmentRedaction,
 } from "./attachment-service.js"
 import { ConversationAttachmentPolicyError } from "./content-security.js"
+import {
+  bulkUpdateConversations,
+  ConversationQueryError,
+  getInboxOperationalReport,
+  listOperationalConversations,
+} from "./operations-service.js"
 import type {
   ConversationsChannelPolicy,
   ConversationsDeliveryTruthReader,
@@ -34,7 +40,6 @@ import {
   getConversation,
   listAssignableStaff,
   listConversationInboxes,
-  listConversations,
   markConversationRead,
   replyToConversation,
   setConversationInboxMembership,
@@ -79,7 +84,12 @@ const conversationSchema = z.object({
   contactPointRef: z.string().nullable(),
   unreadCount: z.number().int().nonnegative(),
   snoozedUntil: timestamp.nullable(),
+  waitingOn: z.enum(["staff", "customer"]).nullable(),
+  firstResponseAt: timestamp.nullable(),
+  resolvedAt: timestamp.nullable(),
   closedAt: timestamp.nullable(),
+  lastInboundAt: timestamp.nullable(),
+  lastOutboundAt: timestamp.nullable(),
   lastPartAt: timestamp,
   createdAt: timestamp,
   updatedAt: timestamp,
@@ -212,11 +222,102 @@ const listRoute = createRoute({
       status: z.enum(["open", "closed", "snoozed"]).optional(),
       inboxId: z.string().optional(),
       assignedToUserId: z.string().optional(),
+      priority: priority.optional(),
+      unread: z
+        .enum(["true", "false"])
+        .transform((value) => value === "true")
+        .optional(),
+      channel: z.string().trim().min(1).max(32).optional(),
+      participant: z.string().trim().min(2).max(100).optional(),
+      q: z.string().trim().min(2).max(100).optional(),
+      from: timestamp.optional(),
+      to: timestamp.optional(),
+      queue: z
+        .enum([
+          "unassigned",
+          "assigned_to_me",
+          "waiting_on_staff",
+          "waiting_on_customer",
+          "snoozed",
+          "closed",
+        ])
+        .optional(),
+      cursor: z.string().min(1).max(1024).optional(),
       limit: z.coerce.number().int().positive().max(100).optional(),
     }),
   },
   responses: {
-    200: json(data(z.array(conversationSchema)), "Membership-scoped Inbox"),
+    200: json(
+      z.object({
+        data: z.array(conversationSchema),
+        page: z.object({ nextCursor: z.string().nullable() }),
+      }),
+      "Membership-scoped operational Inbox page",
+    ),
+    ...standardErrors,
+  },
+})
+const bulkRoute = createRoute({
+  method: "post",
+  path: "/v1/admin/conversations/bulk",
+  request: {
+    body: body(
+      z.object({
+        items: z
+          .array(z.object({ id: z.string(), revision: z.number().int().positive() }))
+          .min(1)
+          .max(100),
+        changes: z
+          .object({
+            assignedToUserId: z.string().nullable().optional(),
+            status: z.enum(["open", "closed", "snoozed"]).optional(),
+            snoozedUntil: timestamp.nullable().optional(),
+          })
+          .strict()
+          .refine(
+            (value) => Object.keys(value).length > 0,
+            "A lifecycle or assignment change is required",
+          ),
+      }),
+    ),
+  },
+  responses: {
+    200: json(data(z.array(conversationSchema)), "Audited optimistic bulk update"),
+    ...standardErrors,
+  },
+})
+const reportingRoute = createRoute({
+  method: "get",
+  path: "/v1/admin/conversations/reporting",
+  request: {
+    query: z.object({ from: timestamp, to: timestamp, inboxId: z.string().optional() }),
+  },
+  responses: {
+    200: json(
+      data(
+        z.object({
+          period: z.object({ from: timestamp, to: timestamp }),
+          volumes: z.object({ new: z.number(), opened: z.number(), closed: z.number() }),
+          backlog: z.number(),
+          averagesMs: z.object({
+            firstResponse: z.number().nullable(),
+            resolution: z.number().nullable(),
+            customerWaiting: z.number().nullable(),
+          }),
+          delivery: z.object({ failed: z.number(), suppressed: z.number() }),
+          ingress: z.object({ averageLagMs: z.number().nullable(), failedOrDrifted: z.number() }),
+          sla: z.object({
+            authoritative: z.literal(false),
+            clock: z.literal("elapsed"),
+            startsAt: z.literal("conversation_created"),
+            pauses: z.literal("none"),
+            reopen: z.literal("original_clock_continues"),
+            businessHours: z.literal("not_configured"),
+          }),
+        }),
+      ),
+      "Content-free operational reporting with non-authoritative SLA semantics",
+    ),
     ...standardErrors,
   },
 })
@@ -528,6 +629,7 @@ async function toDetailDto(
 
 function serviceError(error: unknown): { status: 400 | 403 | 404 | 409; error: string } | null {
   if (error instanceof ConversationNotFoundError) return { status: 404, error: error.code }
+  if (error instanceof ConversationQueryError) return { status: 400, error: error.code }
   if (error instanceof ConversationAccessDeniedError) return { status: 403, error: error.code }
   if (error instanceof ConversationInvalidStateError) return { status: 400, error: error.code }
   if (error instanceof ConversationConflictError || error instanceof ConversationIngressDriftError)
@@ -572,11 +674,44 @@ export function createConversationsRoutes(options: ConversationsRoutesOptions) {
   register(listRoute, async (c: RouteContext) => {
     const actor = await actorFor(c)
     if (!actor) return c.json({ error: "active_staff_required" }, 401)
-    const rows = await listConversations(options.resolveDb(c.env), {
-      ...c.req.valid("query"),
+    const query = c.req.valid("query")
+    const page = await listOperationalConversations(options.resolveDb(c.env), {
+      ...query,
       userId: actor.userId,
+      ...(query.from ? { from: new Date(query.from) } : {}),
+      ...(query.to ? { to: new Date(query.to) } : {}),
     })
-    return c.json(response({ data: rows.map(toConversationDto) }), 200)
+    return c.json(response({ data: page.data.map(toConversationDto), page: page.page }), 200)
+  })
+  register(bulkRoute, async (c: RouteContext) => {
+    const actor = await actorFor(c)
+    if (!actor) return c.json({ error: "active_staff_required" }, 401)
+    const result = await handle(() =>
+      bulkUpdateConversations(options.resolveDb(c.env), {
+        actor,
+        staffDirectory: options.staffDirectory,
+        runtimeBindings: c.env,
+        ...c.req.valid("json"),
+      }),
+    )
+    if (result.error) return c.json({ error: result.error.error }, result.error.status)
+    return c.json(response({ data: result.value!.map(toConversationDto) }), 200)
+  })
+  register(reportingRoute, async (c: RouteContext) => {
+    const actor = await actorFor(c)
+    if (!actor) return c.json({ error: "active_staff_required" }, 401)
+    const query = c.req.valid("query")
+    const result = await handle(() =>
+      getInboxOperationalReport(options.resolveDb(c.env), {
+        userId: actor.userId,
+        from: new Date(query.from),
+        to: new Date(query.to),
+        ...(query.inboxId ? { inboxId: query.inboxId } : {}),
+        ...(options.deliveryTruth ? { deliveryTruth: options.deliveryTruth } : {}),
+      }),
+    )
+    if (result.error) return c.json({ error: result.error.error }, result.error.status)
+    return c.json(response({ data: result.value }), 200)
   })
   register(detailRoute, async (c: RouteContext) => {
     const actor = await actorFor(c)

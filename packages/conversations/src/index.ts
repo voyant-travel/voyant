@@ -15,6 +15,7 @@ import { conversationsModule } from "./schema.js"
 
 export * from "./attachment-runtime.js"
 export * from "./content-security.js"
+export * from "./operations-service.js"
 export * from "./runtime-port.js"
 export * from "./schema.js"
 export * from "./service.js"
