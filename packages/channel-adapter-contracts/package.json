@@ -7,6 +7,7 @@
   "sideEffects": false,
   "exports": {
     ".": "./src/index.ts",
+    "./adapter-manifest": "./src/adapter-manifest.ts",
     "./v1": "./src/v1.ts",
     "./conformance": "./src/conformance.ts",
     "./testing": "./src/testing.ts"
@@ -25,7 +26,10 @@
     "typescript": "catalog:",
     "vitest": "catalog:"
   },
-  "files": ["dist", "README.md"],
+  "files": [
+    "dist",
+    "README.md"
+  ],
   "publishConfig": {
     "access": "public",
     "exports": {
@@ -33,6 +37,11 @@
         "types": "./dist/index.d.ts",
         "import": "./dist/index.js",
         "default": "./dist/index.js"
+      },
+      "./adapter-manifest": {
+        "types": "./dist/adapter-manifest.d.ts",
+        "import": "./dist/adapter-manifest.js",
+        "default": "./dist/adapter-manifest.js"
       },
       "./v1": {
         "types": "./dist/v1.d.ts",

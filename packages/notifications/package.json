@@ -14,6 +14,7 @@
     "./reminder-job": "./src/reminder-job.ts",
     "./job-runtime": "./src/job-runtime.ts",
     "./runtime-port": "./src/runtime-port.ts",
+    "./ports": "./src/ports.ts",
     "./durable-provider-port": "./src/durable-provider-port.ts",
     "./delivery-lifecycle-source-port": "./src/delivery-lifecycle-source-port.ts",
     "./delivery-lifecycle-job": "./src/delivery-lifecycle-job.ts",
@@ -126,6 +127,11 @@
         "types": "./dist/runtime-port.d.ts",
         "import": "./dist/runtime-port.js",
         "default": "./dist/runtime-port.js"
+      },
+      "./ports": {
+        "types": "./dist/ports.d.ts",
+        "import": "./dist/ports.js",
+        "default": "./dist/ports.js"
       },
       "./durable-provider-port": {
         "types": "./dist/durable-provider-port.d.ts",

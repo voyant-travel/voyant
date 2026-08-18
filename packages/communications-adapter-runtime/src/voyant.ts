@@ -1,7 +1,9 @@
 import { conversationIngressSourcePort } from "@voyant-travel/conversations/runtime-port"
 import { defineAdapter, providePort, requirePort } from "@voyant-travel/core/project"
-import { notificationDeliveryLifecycleSourcePort } from "@voyant-travel/notifications/delivery-lifecycle-source-port"
-import { durableNotificationProviderPort } from "@voyant-travel/notifications/durable-provider-port"
+import {
+  durableNotificationProviderPort,
+  notificationDeliveryLifecycleSourcePort,
+} from "@voyant-travel/notifications/ports"
 import { communicationsAdapterBundlePort } from "./runtime-port.js"
 
 export const communicationsAdapterRuntime = defineAdapter({

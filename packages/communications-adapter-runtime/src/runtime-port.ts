@@ -1,5 +1,7 @@
-import type { ChannelAdapterV1 } from "@voyant-travel/channel-adapter-contracts"
-import { validateChannelAdapter } from "@voyant-travel/channel-adapter-contracts"
+import {
+  type ChannelAdapterV1,
+  validateChannelAdapter,
+} from "@voyant-travel/channel-adapter-contracts/adapter-manifest"
 import { definePort } from "@voyant-travel/core/project"
 
 export interface CommunicationsAdapterAccountBinding {
