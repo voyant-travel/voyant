@@ -1,4 +1,6 @@
 import { generateLinkTableSql } from "@voyant-travel/core"
+import { appendActionLedgerMutation } from "@voyant-travel/action-ledger"
+import { actionLedgerEntries } from "@voyant-travel/action-ledger/schema"
 import { createLinkService } from "@voyant-travel/db/links"
 import { eventOutboxTable } from "@voyant-travel/db/schema"
 import { inquiryListQuerySchema } from "@voyant-travel/relationships-contracts"
@@ -97,11 +99,13 @@ describe.skipIf(!DB_AVAILABLE)("inquiriesService", () => {
         name: "brief.pdf",
         mimeType: "application/pdf",
         operationKey: "test_missing_operation",
+        ownerToken: "test_missing_owner_token",
         created: true,
       })),
       finalizePrivateDocument,
       abortPrivateDocument,
       claimPrivateDocument: vi.fn(async () => undefined),
+      claimExistingPrivateDocument: vi.fn(async () => undefined),
       releasePrivateDocument: vi.fn(async () => undefined),
       requestPrivateDocumentPurge: vi.fn(async () => undefined),
       resolvePrivateDocument: vi.fn(),
@@ -156,6 +160,7 @@ describe.skipIf(!DB_AVAILABLE)("inquiriesService", () => {
         name: asset.name,
         mimeType: asset.mimeType,
         operationKey: "test_replay_operation",
+        ownerToken: "test_replay_owner_token",
         created: false,
       })),
     }
@@ -328,7 +333,7 @@ describe.skipIf(!DB_AVAILABLE)("inquiriesService", () => {
     await inquiriesService.eraseInquiryPrivacy(
       db,
       inquiry.id,
-      { reason: "Verified data-subject request" },
+      { reasonCode: "data_subject_request" },
       "privacy_officer",
       {},
       {
@@ -336,6 +341,7 @@ describe.skipIf(!DB_AVAILABLE)("inquiriesService", () => {
         finalizePrivateDocument: vi.fn(),
         abortPrivateDocument: vi.fn(),
         claimPrivateDocument: vi.fn(),
+        claimExistingPrivateDocument: vi.fn(),
         releasePrivateDocument: vi.fn(),
         requestPrivateDocumentPurge,
         resolvePrivateDocument: vi.fn(),
@@ -348,6 +354,7 @@ describe.skipIf(!DB_AVAILABLE)("inquiriesService", () => {
       locale: null,
       unassignedReason: null,
       closeNote: null,
+      privacyErasureReason: "data_subject_request",
     })
     expect(
       await db
@@ -361,6 +368,154 @@ describe.skipIf(!DB_AVAILABLE)("inquiriesService", () => {
         .from(inquiryConversions)
         .where(eq(inquiryConversions.inquiryId, inquiry.id)),
     ).toEqual([{ id: conversion.id, targetId: "prps_preserved" }])
+  })
+
+  it("detaches a shared Activity without redacting data owned by its Person link", async () => {
+    const person = await seedPerson()
+    const { inquiry } = await inquiriesService.createInquiry(
+      db,
+      {
+        subject: "Shared activity privacy",
+        kind: "general",
+        contactSnapshot: { email: "shared@example.com" },
+        source: "admin",
+        tags: [],
+        customFields: {},
+      },
+      "user_1",
+    )
+    const [activity] = await db
+      .insert(activities)
+      .values({
+        subject: "Person-owned consultation",
+        type: "call",
+        status: "done",
+        description: "Text that belongs to the Person timeline",
+        customFields: { relationships: { personContext: "preserve" } },
+      })
+      .returning()
+    if (!activity) throw new Error("Failed to seed shared Activity")
+    await db.insert(activityLinks).values([
+      { activityId: activity.id, entityType: "inquiry", entityId: inquiry.id },
+      { activityId: activity.id, entityType: "person", entityId: person.id },
+    ])
+
+    await inquiriesService.eraseInquiryPrivacy(
+      db,
+      inquiry.id,
+      { reasonCode: "data_subject_request" },
+      "privacy_officer",
+      {},
+      {
+        preparePrivateDocument: vi.fn(),
+        finalizePrivateDocument: vi.fn(),
+        abortPrivateDocument: vi.fn(),
+        claimPrivateDocument: vi.fn(),
+        claimExistingPrivateDocument: vi.fn(),
+        releasePrivateDocument: vi.fn(),
+        requestPrivateDocumentPurge: vi.fn(),
+        resolvePrivateDocument: vi.fn(),
+        downloadPrivateDocument: vi.fn(),
+      },
+    )
+
+    expect(
+      await db.select().from(activities).where(eq(activities.id, activity.id)),
+    ).toEqual([
+      expect.objectContaining({
+        subject: "Person-owned consultation",
+        description: "Text that belongs to the Person timeline",
+        customFields: { relationships: { personContext: "preserve" } },
+      }),
+    ])
+    expect(
+      await db
+        .select({ entityType: activityLinks.entityType, entityId: activityLinks.entityId })
+        .from(activityLinks)
+        .where(eq(activityLinks.activityId, activity.id)),
+    ).toEqual([{ entityType: "person", entityId: person.id }])
+  })
+
+  it("rolls privacy erasure back when its Action Ledger append fails and retries atomically", async () => {
+    const { inquiry } = await inquiriesService.createInquiry(
+      db,
+      {
+        subject: "Atomic privacy erasure",
+        kind: "general",
+        contactSnapshot: { email: "atomic@example.com" },
+        source: "admin",
+        tags: [],
+        customFields: {},
+      },
+      "user_1",
+    )
+    const authority = {
+      preparePrivateDocument: vi.fn(),
+      finalizePrivateDocument: vi.fn(),
+      abortPrivateDocument: vi.fn(),
+      claimPrivateDocument: vi.fn(),
+      claimExistingPrivateDocument: vi.fn(),
+      releasePrivateDocument: vi.fn(),
+      requestPrivateDocumentPurge: vi.fn(),
+      resolvePrivateDocument: vi.fn(),
+      downloadPrivateDocument: vi.fn(),
+    }
+    let failAfterAppend = true
+    const appendAudit = async (tx: typeof db) => {
+      await appendActionLedgerMutation(tx, {
+        context: { userId: "privacy_officer" },
+        actionName: "relationships.inquiry.privacy_erasure",
+        actionKind: "delete",
+        evaluatedRisk: "high",
+        targetType: "inquiry",
+        targetId: inquiry.id,
+        mutationDetail: { summary: "Privacy erasure", reversalKind: "none" },
+      })
+      if (failAfterAppend) throw new Error("ledger unavailable")
+    }
+
+    await expect(
+      inquiriesService.eraseInquiryPrivacy(
+        db,
+        inquiry.id,
+        { reasonCode: "data_subject_request" },
+        "privacy_officer",
+        {},
+        authority,
+        appendAudit,
+      ),
+    ).rejects.toThrow("ledger unavailable")
+    expect(await inquiriesService.getInquiry(db, inquiry.id)).toMatchObject({
+      subject: "Atomic privacy erasure",
+      privacyErasedAt: null,
+    })
+    expect(
+      await db
+        .select({ id: actionLedgerEntries.id })
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, inquiry.id)),
+    ).toEqual([])
+
+    failAfterAppend = false
+    await inquiriesService.eraseInquiryPrivacy(
+      db,
+      inquiry.id,
+      { reasonCode: "data_subject_request" },
+      "privacy_officer",
+      {},
+      authority,
+      appendAudit,
+    )
+    expect(await inquiriesService.getInquiry(db, inquiry.id)).toMatchObject({
+      subject: "Redacted inquiry",
+      privacyErasureReason: "data_subject_request",
+    })
+    expect(
+      await db
+        .select({ id: actionLedgerEntries.id })
+        .from(actionLedgerEntries)
+        .where(eq(actionLedgerEntries.targetId, inquiry.id)),
+    ).toHaveLength(1)
   })
 
   it("records an owned chronological activity and advances last activity atomically", async () => {

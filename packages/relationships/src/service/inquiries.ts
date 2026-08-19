@@ -271,6 +271,7 @@ export const INQUIRY_PRIVACY_CLASSIFICATION = {
   "inquiry.internalSummary": "personal_data",
   "inquiry.customFields": "personal_data",
   "inquiry.lifecycle": "operational",
+  "inquiry.privacyErasureReason": "audit_provenance",
   "inquiry.privacyPurgeAssetIds": "audit_provenance",
   "activities.freeText": "personal_data",
   "activities.customFields": "personal_data",
@@ -350,6 +351,7 @@ export const inquiriesService = {
     actorId: string,
     _bindings?: unknown,
     authority?: MediaInquiryAttachmentRuntime,
+    appendAudit?: (tx: PostgresJsDatabase) => Promise<unknown>,
   ) {
     requireActor(actorId)
     if (!authority) {
@@ -364,6 +366,7 @@ export const inquiriesService = {
         for (const assetId of inquiry.privacyPurgeAssetIds) {
           await authority.requestPrivateDocumentPurge(tx, assetId)
         }
+        await appendAudit?.(tx as PostgresJsDatabase)
         return inquiry
       }
       const attachmentRows = await tx
@@ -379,9 +382,23 @@ export const inquiriesService = {
       await tx
         .delete(inquiryAttachmentSnapshots)
         .where(eq(inquiryAttachmentSnapshots.inquiryId, inquiryId))
-      // Activity identity/timestamps remain audit evidence; free-text PII is redacted.
+      // Activity identity/timestamps remain audit evidence. Only an Activity
+      // exclusively linked to this Inquiry can have its free text redacted;
+      // shared Activity data belongs to its other Relationship contexts.
       await tx.execute(sql`UPDATE activities SET subject = 'Redacted inquiry activity', description = NULL, location = NULL, custom_fields = '{}'::jsonb, updated_at = now()
-        WHERE id IN (SELECT activity_id FROM activity_links WHERE entity_type::text = 'inquiry' AND entity_id = ${inquiryId})`)
+        WHERE id IN (SELECT activity_id FROM activity_links WHERE entity_type::text = 'inquiry' AND entity_id = ${inquiryId})
+          AND NOT EXISTS (
+            SELECT 1 FROM activity_links other
+            WHERE other.activity_id = activities.id
+              AND NOT (other.entity_type::text = 'inquiry' AND other.entity_id = ${inquiryId})
+          )`)
+      await tx.execute(sql`DELETE FROM activity_links inquiry_link
+        WHERE inquiry_link.entity_type::text = 'inquiry'
+          AND inquiry_link.entity_id = ${inquiryId}
+          AND EXISTS (
+            SELECT 1 FROM activity_links other
+            WHERE other.activity_id = inquiry_link.activity_id AND other.id <> inquiry_link.id
+          )`)
       const erasedAt = new Date()
       const [updated] = await tx
         .update(inquiries)
@@ -403,7 +420,7 @@ export const inquiriesService = {
           customFields: {},
           privacyErasedAt: erasedAt,
           privacyErasedBy: actorId,
-          privacyErasureReason: input.reason,
+          privacyErasureReason: input.reasonCode,
           privacyPurgeAssetIds: Array.from(
             new Set(attachmentRows.map((attachment) => attachment.assetId)),
           ),
@@ -418,6 +435,7 @@ export const inquiriesService = {
         change: "privacy_erased",
         occurredAt: erasedAt.toISOString(),
       })
+      await appendAudit?.(tx as PostgresJsDatabase)
       return updated
     })
     return result
@@ -486,16 +504,7 @@ export const inquiriesService = {
         inquiryId,
         input.assetId,
       )
-      await authority.claimPrivateDocument(
-        tx,
-        {
-          id: input.assetId,
-          mimeType: asset.mimeType ?? "application/octet-stream",
-          operationKey: "existing-claimed-asset",
-          created: false,
-        },
-        linked.id,
-      )
+      await authority.claimExistingPrivateDocument(tx, input.assetId, linked.id)
       const [created] = await tx
         .insert(inquiryAttachmentSnapshots)
         .values({

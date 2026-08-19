@@ -331,6 +331,9 @@ export function createRelationshipsRuntimePortContribution(
               claimPrivateDocument: async (
                 ...args: Parameters<MediaInquiryAttachmentRuntime["claimPrivateDocument"]>
               ) => (await inquiryAttachments).claimPrivateDocument(...args),
+              claimExistingPrivateDocument: async (
+                ...args: Parameters<MediaInquiryAttachmentRuntime["claimExistingPrivateDocument"]>
+              ) => (await inquiryAttachments).claimExistingPrivateDocument(...args),
               releasePrivateDocument: async (
                 ...args: Parameters<MediaInquiryAttachmentRuntime["releasePrivateDocument"]>
               ) => (await inquiryAttachments).releasePrivateDocument(...args),

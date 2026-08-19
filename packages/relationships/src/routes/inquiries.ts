@@ -791,24 +791,25 @@ inquiryRoutes.openapi(privacyErasureRoute, async (c) => {
       requireUserId(c),
       c.env,
       inquiryAttachmentAuthority(c),
+      (tx) =>
+        appendActionLedgerMutation(tx, {
+          context: actionLedgerContext(c),
+          actionName: "relationships.inquiry.privacy_erasure",
+          actionVersion: "v1",
+          actionKind: "delete",
+          evaluatedRisk: access.evaluatedRisk ?? "high",
+          targetType: "inquiry",
+          targetId: inquiryId,
+          routeOrToolName: "relationships.inquiries.privacy-erasure",
+          capabilityId: INQUIRY_PRIVACY_ERASURE_CAPABILITY.id,
+          capabilityVersion: INQUIRY_PRIVACY_ERASURE_CAPABILITY.version,
+          authorizationSource: access.authorizationSource ?? "scope",
+          mutationDetail: {
+            summary: "Privacy-erased Inquiry personal data and queued private document purges",
+            reversalKind: "none",
+          },
+        }),
     )
-    await appendActionLedgerMutation(c.get("db"), {
-      context: actionLedgerContext(c),
-      actionName: "relationships.inquiry.privacy_erasure",
-      actionVersion: "v1",
-      actionKind: "delete",
-      evaluatedRisk: access.evaluatedRisk ?? "high",
-      targetType: "inquiry",
-      targetId: inquiryId,
-      routeOrToolName: "relationships.inquiries.privacy-erasure",
-      capabilityId: INQUIRY_PRIVACY_ERASURE_CAPABILITY.id,
-      capabilityVersion: INQUIRY_PRIVACY_ERASURE_CAPABILITY.version,
-      authorizationSource: access.authorizationSource ?? "scope",
-      mutationDetail: {
-        summary: "Privacy-erased Inquiry personal data and queued private document purges",
-        reversalKind: "none",
-      },
-    })
     return c.json({ data: await withTargets(c.get("db"), requireLink(c), row) }, 200)
   } catch (error) {
     return serviceErrorResponse(c, error)

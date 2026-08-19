@@ -28,9 +28,18 @@ const SUPPORTED_PRIVATE_DOCUMENT_MIME_TYPES = new Set([
 
 type AttachmentMarker = {
   operationKey?: unknown
+  ownerToken?: unknown
+  operationTokens?: unknown
   state?: unknown
   preparedAt?: unknown
   claimedAt?: unknown
+}
+
+function ownedOperationToken(marker: AttachmentMarker | undefined, operationKey: string) {
+  const tokens = marker?.operationTokens
+  if (!tokens || typeof tokens !== "object" || Array.isArray(tokens)) return undefined
+  const token = (tokens as Record<string, unknown>)[operationKey]
+  return typeof token === "string" ? token : undefined
 }
 
 function attachmentMarker(providerMeta: Record<string, unknown> | null): AttachmentMarker | undefined {
@@ -114,6 +123,7 @@ export function createMediaRuntimePortContribution(host: {
     const bytes = await toBytes(input.body)
     const checksum = await computeChecksum(bytes)
     const storageKey = mediaStorageKey(checksum, mimeType, "inquiry-private")
+    const issuedOwnerToken = crypto.randomUUID()
     let [row] = await db
       .select()
       .from(mediaAsset)
@@ -143,6 +153,8 @@ export function createMediaRuntimePortContribution(host: {
             providerMeta: {
               inquiryAttachment: {
                 operationKey: input.operationKey,
+                ownerToken: issuedOwnerToken,
+                operationTokens: { [input.operationKey]: issuedOwnerToken },
                 state: "uploading",
                 preparedAt: new Date().toISOString(),
               },
@@ -168,7 +180,30 @@ export function createMediaRuntimePortContribution(host: {
     if (!row) throw new Error("Private document preparation could not be persisted")
     const marker = attachmentMarker(row.providerMeta)
     if (marker?.state === "claimed") {
-      return { id: row.id, mimeType, operationKey: input.operationKey, created: false }
+      let ownerToken = ownedOperationToken(marker, input.operationKey)
+      if (!ownerToken) {
+        ownerToken = issuedOwnerToken
+        await db
+          .update(mediaAsset)
+          .set({
+            providerMeta: sql`jsonb_set(
+              ${mediaAsset.providerMeta},
+              '{inquiryAttachment,operationTokens}',
+              COALESCE(${mediaAsset.providerMeta} #> '{inquiryAttachment,operationTokens}', '{}'::jsonb)
+                || jsonb_build_object(${input.operationKey}, ${ownerToken}),
+              true
+            )`,
+            updatedAt: new Date(),
+          })
+          .where(eq(mediaAsset.id, row.id))
+      }
+      return {
+        id: row.id,
+        mimeType,
+        operationKey: input.operationKey,
+        ownerToken,
+        created: false,
+      }
     }
     if (
       (marker?.state !== "uploading" && marker?.state !== "prepared") ||
@@ -196,7 +231,9 @@ export function createMediaRuntimePortContribution(host: {
           sql`${mediaAsset.providerMeta} #>> '{inquiryAttachment,operationKey}' = ${input.operationKey}`,
         ),
       )
-    return { id: row.id, mimeType, operationKey: input.operationKey, created }
+    const ownerToken = ownedOperationToken(marker, input.operationKey)
+    if (!ownerToken) throw new Error("Private document preparation owner token is missing")
+    return { id: row.id, mimeType, operationKey: input.operationKey, ownerToken, created }
   }
 
   const inquiryAttachmentRuntime = {
@@ -217,7 +254,7 @@ export function createMediaRuntimePortContribution(host: {
       if (!row || (marker?.state !== "prepared" && marker?.state !== "claimed")) {
         throw new Error("Private document is not prepared")
       }
-      if (marker.state === "prepared" && marker.operationKey !== prepared.operationKey) {
+      if (ownedOperationToken(marker, prepared.operationKey) !== prepared.ownerToken) {
         throw new Error("Private document preparation belongs to another operation")
       }
       // A queued purge is only a request until the cleanup worker atomically
@@ -232,6 +269,26 @@ export function createMediaRuntimePortContribution(host: {
         entityId: usageId,
       })
     },
+    async claimExistingPrivateDocument(dbValue: unknown, assetId: string, usageId: string) {
+      const db = dbValue as PostgresJsDatabase
+      const [row] = await db
+        .select({ providerMeta: mediaAsset.providerMeta })
+        .from(mediaAsset)
+        .where(eq(mediaAsset.id, assetId))
+        .for("update")
+        .limit(1)
+      if (attachmentMarker(row?.providerMeta ?? null)?.state !== "claimed") {
+        throw new Error("Private document is not claimed")
+      }
+      await db
+        .delete(mediaPrivateDocumentDeletion)
+        .where(eq(mediaPrivateDocumentDeletion.assetId, assetId))
+      await recordAssetUsage(db, {
+        assetId,
+        entityType: INQUIRY_USAGE_TYPE,
+        entityId: usageId,
+      })
+    },
     async finalizePrivateDocument(bindings: unknown, prepared: PreparedInquiryAttachment) {
       const db = resolveDb(bindings)
       const [row] = await db
@@ -241,13 +298,13 @@ export function createMediaRuntimePortContribution(host: {
         .limit(1)
       const marker = attachmentMarker(row?.providerMeta ?? null)
       if (!row) throw new Error("Private document preparation was not found")
+      if (ownedOperationToken(marker, prepared.operationKey) !== prepared.ownerToken) {
+        throw new Error("Private document preparation belongs to another operation")
+      }
       if (marker?.state === "claimed") {
-        if (prepared.created && marker.operationKey !== prepared.operationKey) {
-          throw new Error("Private document preparation belongs to another operation")
-        }
         return
       }
-      if (marker?.state !== "prepared" || marker.operationKey !== prepared.operationKey) {
+      if (marker?.state !== "prepared") {
         throw new Error("Private document preparation belongs to another operation")
       }
       if ((await countAssetUsage(db, prepared.id)) === 0) {
@@ -278,7 +335,7 @@ export function createMediaRuntimePortContribution(host: {
         .limit(1)
       if (!row) return
       const marker = attachmentMarker(row.providerMeta)
-      if (marker?.state !== "claimed" && marker?.operationKey !== prepared.operationKey) {
+      if (ownedOperationToken(marker, prepared.operationKey) !== prepared.ownerToken) {
         throw new Error("Private document preparation belongs to another operation")
       }
       if (!prepared.created) return

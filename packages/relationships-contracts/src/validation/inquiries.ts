@@ -442,7 +442,10 @@ export const inquiryRecordSchema = z.object({
   closedAt: isoTimestampSchema.nullable(),
   privacyErasedAt: isoTimestampSchema.nullable().default(null),
   privacyErasedBy: z.string().nullable().default(null),
-  privacyErasureReason: z.string().nullable().default(null),
+  privacyErasureReason: z
+    .enum(["data_subject_request", "retention_expired", "consent_withdrawn", "admin_correction"])
+    .nullable()
+    .default(null),
   privacyPurgeAssetIds: z.array(z.string()).default([]),
   createdAt: isoTimestampSchema,
   updatedAt: isoTimestampSchema,
@@ -463,7 +466,12 @@ export const inquiryListResponseSchema = z.object({
 })
 
 export const eraseInquiryPrivacySchema = z.object({
-  reason: z.string().trim().min(1).max(1_000),
+  reasonCode: z.enum([
+    "data_subject_request",
+    "retention_expired",
+    "consent_withdrawn",
+    "admin_correction",
+  ]),
 })
 export const inquiryPrivacyExportSchema = z.object({
   inquiry: inquiryRecordSchema,

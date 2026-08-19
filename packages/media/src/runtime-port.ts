@@ -33,6 +33,8 @@ export interface PreparedInquiryAttachment {
   id: string
   mimeType: string
   operationKey: string
+  /** Media-issued, persisted capability proving ownership of this exact preparation. */
+  ownerToken: string
   created: boolean
 }
 export interface InquiryAttachmentDownload extends InquiryAttachmentAsset {
@@ -54,6 +56,7 @@ export interface MediaInquiryAttachmentRuntime {
   finalizePrivateDocument(bindings: unknown, prepared: PreparedInquiryAttachment): Promise<void>
   abortPrivateDocument(bindings: unknown, prepared: PreparedInquiryAttachment): Promise<void>
   claimPrivateDocument(db: unknown, prepared: PreparedInquiryAttachment, usageId: string): Promise<void>
+  claimExistingPrivateDocument(db: unknown, assetId: string, usageId: string): Promise<void>
   releasePrivateDocument(db: unknown, assetId: string, usageId: string): Promise<void>
   requestPrivateDocumentPurge(db: unknown, assetId: string): Promise<void>
   resolvePrivateDocument(db: unknown, assetId: string): Promise<InquiryAttachmentAsset | null>
@@ -74,6 +77,7 @@ export const mediaInquiryAttachmentRuntimePort = definePort<MediaInquiryAttachme
       typeof provider.finalizePrivateDocument !== "function" ||
       typeof provider.abortPrivateDocument !== "function" ||
       typeof provider.claimPrivateDocument !== "function" ||
+      typeof provider.claimExistingPrivateDocument !== "function" ||
       typeof provider.releasePrivateDocument !== "function" ||
       typeof provider.requestPrivateDocumentPurge !== "function" ||
       typeof provider.resolvePrivateDocument !== "function" ||

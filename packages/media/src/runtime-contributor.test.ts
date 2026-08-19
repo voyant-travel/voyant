@@ -93,6 +93,17 @@ describe("Media Inquiry attachment owner runtime", () => {
     await attachments.claimPrivateDocument(db, retry, "test_usage_one")
     await attachments.finalizePrivateDocument({}, retry)
     await attachments.finalizePrivateDocument({}, retry)
+    const foreign = {
+      ...retry,
+      operationKey: "test_foreign_claimed_operation",
+      ownerToken: "test_foreign_owner_token",
+    }
+    await expect(attachments.finalizePrivateDocument({}, foreign)).rejects.toThrow(
+      "another operation",
+    )
+    await expect(attachments.abortPrivateDocument({}, foreign)).rejects.toThrow(
+      "another operation",
+    )
     expect(await attachments.resolvePrivateDocument(db, prepared.id)).toMatchObject({
       id: prepared.id,
       name: "Private Inquiry document",

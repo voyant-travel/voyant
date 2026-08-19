@@ -17,7 +17,8 @@ describe("Inquiry private-data routes", () => {
       const response = await app.request(path, {
         method,
         headers: method === "POST" ? { "Content-Type": "application/json" } : undefined,
-        body: method === "POST" ? JSON.stringify({ reason: "customer request" }) : undefined,
+        body:
+          method === "POST" ? JSON.stringify({ reasonCode: "data_subject_request" }) : undefined,
       })
 
       expect(response.status).toBe(403)
