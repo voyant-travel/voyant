@@ -391,6 +391,100 @@ describe.skipIf(!DB_AVAILABLE)("Booking item move Amendments", () => {
     )
   })
 
+  it("releases a legacy duplicate source claim while moving one shared line", async () => {
+    const seeded = await seed({ quantity: 2 })
+    await db.update(bookings).set({ pax: 2 }).where(eq(bookings.id, seeded.booking.id))
+    const [peerItem] = await db
+      .insert(bookingItems)
+      .values({
+        bookingId: seeded.booking.id,
+        title: "Legacy duplicate line",
+        status: "confirmed",
+        quantity: 2,
+        sellCurrency: "EUR",
+        unitSellAmountCents: 10_000,
+        totalSellAmountCents: 20_000,
+        productId: seeded.product.id,
+        optionId: seeded.option.id,
+        availabilitySlotId: seeded.from.id,
+      })
+      .returning()
+    await db.insert(bookingAllocations).values({
+      bookingId: seeded.booking.id,
+      bookingItemId: peerItem!.id,
+      productId: seeded.product.id,
+      availabilitySlotId: seeded.from.id,
+      quantity: 2,
+      status: "confirmed",
+    })
+
+    const preview = await previewMove({
+      ...seeded,
+      booking: { ...seeded.booking, pax: 2 },
+    })
+    if (preview.status !== "ok") throw new Error(`Expected preview, received ${preview.status}`)
+    await expect(applyMove(preview.amendment, "move-legacy-duplicate")).resolves.toMatchObject({
+      status: "ok",
+    })
+
+    expect((await readSlot(seeded.from.id))?.remainingPax).toBe(2)
+    expect((await readSlot(seeded.to.id))?.remainingPax).toBe(6)
+    const allocations = await db
+      .select()
+      .from(bookingAllocations)
+      .where(eq(bookingAllocations.bookingId, seeded.booking.id))
+    expect(allocations.reduce((sum, allocation) => sum + allocation.quantity, 0)).toBe(4)
+  })
+
+  it("revalidates a closed target even when the booking already claims its capacity", async () => {
+    const seeded = await seed({ quantity: 2 })
+    await db.update(bookings).set({ pax: 2 }).where(eq(bookings.id, seeded.booking.id))
+    const [targetItem] = await db
+      .insert(bookingItems)
+      .values({
+        bookingId: seeded.booking.id,
+        title: "Existing target service",
+        status: "confirmed",
+        quantity: 2,
+        sellCurrency: "EUR",
+        unitSellAmountCents: 10_000,
+        totalSellAmountCents: 20_000,
+        productId: seeded.product.id,
+        optionId: seeded.option.id,
+        availabilitySlotId: seeded.to.id,
+      })
+      .returning()
+    await db.insert(bookingAllocations).values({
+      bookingId: seeded.booking.id,
+      bookingItemId: targetItem!.id,
+      productId: seeded.product.id,
+      availabilitySlotId: seeded.to.id,
+      quantity: 2,
+      status: "confirmed",
+    })
+    await db
+      .update(availabilitySlotsRef)
+      .set({ remainingPax: 6 })
+      .where(eq(availabilitySlotsRef.id, seeded.to.id))
+
+    const preview = await previewMove({
+      ...seeded,
+      booking: { ...seeded.booking, pax: 2 },
+    })
+    if (preview.status !== "ok") throw new Error(`Expected preview, received ${preview.status}`)
+    await db
+      .update(availabilitySlotsRef)
+      .set({ status: "closed" })
+      .where(eq(availabilitySlotsRef.id, seeded.to.id))
+
+    await expect(
+      applyMove(preview.amendment, "move-closed-preclaimed-target"),
+    ).resolves.toMatchObject({ status: "availability_changed" })
+    const [item] = await db.select().from(bookingItems).where(eq(bookingItems.id, seeded.item.id))
+    expect(item?.availabilitySlotId).toBe(seeded.from.id)
+    expect((await readSlot(seeded.from.id))?.remainingPax).toBe(0)
+  })
+
   it("refuses a departure that cannot seat the booking", async () => {
     const seeded = await seed({ quantity: 4, targetPax: 1 })
     expect((await previewMove(seeded)).status).toBe("availability_changed")

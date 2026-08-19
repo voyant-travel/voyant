@@ -393,6 +393,55 @@ describe.skipIf(!DB_AVAILABLE)("Booking item addition Amendments", () => {
     expect(slotAfterLastDelete?.remainingPax).toBe(48)
   })
 
+  it("does not normalize a legacy overclaim after the departure closes", async () => {
+    const seeded = await seed({ remainingPax: 48, existingPax: 3 })
+    await db
+      .update(bookingAllocations)
+      .set({ quantity: 5 })
+      .where(eq(bookingAllocations.id, seeded.existingAllocation!.id))
+    await db
+      .update(availabilitySlotsRef)
+      .set({ remainingPax: 43 })
+      .where(eq(availabilitySlotsRef.id, seeded.slot!.id))
+
+    const preview = await previewAddition(seeded, { quantity: 3 })
+    if (preview.status !== "ok") throw new Error("Expected a quote")
+    const proposed = preview.amendment.revisions?.find((r) => r.role === "proposed_after")
+    if (!proposed) throw new Error("Expected a proposed revision")
+    await db
+      .update(availabilitySlotsRef)
+      .set({ status: "closed" })
+      .where(eq(availabilitySlotsRef.id, seeded.slot!.id))
+
+    await bookingAmendmentService.accept(
+      db,
+      preview.amendment.id,
+      proposed.id,
+      context("accept-closed-overclaim"),
+      { finance: financeRuntime() },
+    )
+    await expect(
+      bookingAmendmentService.apply(
+        db,
+        preview.amendment.id,
+        { expectedBookingRevision: 1, proposedRevisionId: proposed.id },
+        context("apply-closed-overclaim"),
+        { finance: financeRuntime() },
+      ),
+    ).resolves.toMatchObject({ status: "availability_changed" })
+
+    const [slot] = await db
+      .select()
+      .from(availabilitySlotsRef)
+      .where(eq(availabilitySlotsRef.id, seeded.slot!.id))
+    expect(slot?.remainingPax).toBe(43)
+    const items = await db
+      .select()
+      .from(bookingItems)
+      .where(eq(bookingItems.bookingId, seeded.booking.id))
+    expect(items).toHaveLength(1)
+  })
+
   it("refuses a departure that cannot seat the addition", async () => {
     const seeded = await seed({ remainingPax: 1 })
     const preview = await previewAddition(seeded, { quantity: 4 })
