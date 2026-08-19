@@ -542,3 +542,4 @@ export type InquiryProposalConversionRefusalReason = z.infer<
 export type InquiryRecord = z.infer<typeof inquiryRecordSchema>
 export type InquiryCreateResponse = z.infer<typeof inquiryCreateResponseSchema>
 export type EraseInquiryPrivacyInput = z.infer<typeof eraseInquiryPrivacySchema>
+export type InquiryPrivacyErasureReasonCode = EraseInquiryPrivacyInput["reasonCode"]

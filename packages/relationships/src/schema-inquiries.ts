@@ -1,6 +1,7 @@
 import type { NamespacedCustomFieldValues } from "@voyant-travel/core/custom-fields"
 import { typeId, typeIdRef } from "@voyant-travel/db/lib/typeid-column"
 import type {
+  InquiryPrivacyErasureReasonCode,
   InquiryTravelBriefV1,
   inquiryContactSnapshotSchema,
 } from "@voyant-travel/relationships-contracts"
@@ -98,7 +99,7 @@ export const inquiries = pgTable(
     /** Explicit policy operation; Person cascade never substitutes for erasure. */
     privacyErasedAt: timestamp("privacy_erased_at", { withTimezone: true }),
     privacyErasedBy: text("privacy_erased_by"),
-    privacyErasureReason: text("privacy_erasure_reason"),
+    privacyErasureReason: text("privacy_erasure_reason").$type<InquiryPrivacyErasureReasonCode>(),
     privacyPurgeAssetIds: jsonb("privacy_purge_asset_ids").$type<string[]>().notNull().default([]),
     createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
     updatedAt: timestamp("updated_at", { withTimezone: true }).notNull().defaultNow(),
