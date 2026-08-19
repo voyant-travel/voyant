@@ -34,6 +34,7 @@ export {
 } from "./managed-fetch.js"
 export {
   createPublicApiClient,
+  type ManagedClientOptions,
   PublicApiClientCredentialError,
   type PublishableClientOptions,
   type SecretClientOptions,

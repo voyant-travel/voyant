@@ -14,8 +14,11 @@ const options = { baseUrl: "https://example.invalid" }
 // runtime 403.
 const assertPublishableTypeSurface = () => {
   const browserClient = createPublicApiClient({ ...options, publishableKey: PUBLISHABLE })
+  const managedClient = createPublicApiClient({ ...options, managed: true })
   // @ts-expect-error -- /leads is secret-only until an intake guard changes generated posture.
   void browserClient.POST("/v1/public/leads")
+  // @ts-expect-error -- managed transports cannot widen the publishable operation posture.
+  void managedClient.POST("/v1/public/leads")
 }
 void assertPublishableTypeSurface
 
@@ -23,6 +26,26 @@ describe("createPublicApiClient", () => {
   it("constructs a client for each credential class", () => {
     expect(() => createPublicApiClient({ ...options, publishableKey: PUBLISHABLE })).not.toThrow()
     expect(() => createPublicApiClient({ ...options, secretKey: SECRET })).not.toThrow()
+    expect(() => createPublicApiClient({ ...options, managed: true })).not.toThrow()
+  })
+
+  it("never forwards an API key in managed mode", async () => {
+    let seen: Request | undefined
+    const client = createPublicApiClient({
+      ...options,
+      managed: true,
+      headers: { [PUBLIC_API_KEY_HEADER]: OTHER_PUBLISHABLE },
+      fetch: async (request: Request) => {
+        seen = request
+        return Response.json({ data: {} })
+      },
+    })
+
+    await client.GET("/v1/public/settings", {
+      headers: { [PUBLIC_API_KEY_HEADER]: PUBLISHABLE },
+    })
+
+    expect(seen?.headers.get(PUBLIC_API_KEY_HEADER)).toBeNull()
   })
 
   it.each([
