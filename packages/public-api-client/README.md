@@ -33,6 +33,28 @@ const serverVoyant = createPublicApiClient({
 options are supported. The client always pins the validated credential header;
 constructor or per-call headers cannot replace it.
 
+## Operation identities for Theme manifests
+
+`publicApiOperations` is generated from the same composed OpenAPI document as
+the client. It exposes each stable operation ID together with its HTTP method,
+canonical path, and graph-derived credential posture. A Theme manifest can
+import and re-export the IDs it requires instead of maintaining a parallel
+registry:
+
+```ts
+import { publicApiOperations } from "@voyant-travel/public-api-client"
+
+export const requiredPublicApiOperations = [
+  publicApiOperations.getPublicProducts.id,
+  publicApiOperations.getPublicSettings.id,
+] as const
+```
+
+The Theme SDK can consume that ID list as manifest metadata. It should not copy
+the methods, paths, or request and response shapes: routing metadata remains
+generated here, while operation request and response truth remains in the
+OpenAPI-generated client types.
+
 ## Voyant-managed Sites
 
 Voyant-managed Sites use the same generated client through the canonical

@@ -4,4 +4,7 @@
 
 Add a Fetch-compatible managed transport seam that routes generated Public API
 client requests through a Site's canonical same-origin `/v1/public` proxy while
-preserving the client's operation types and credential validation.
+preserving the client's operation types and credential validation. Also export
+stable operation IDs, HTTP methods, paths, and graph-derived credential posture
+from the composed OpenAPI generation pipeline so Theme manifests can declare
+requirements without maintaining a parallel capability registry.

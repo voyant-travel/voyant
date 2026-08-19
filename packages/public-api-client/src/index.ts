@@ -20,6 +20,13 @@ export type {
   webhooks,
 } from "./generated/index.js"
 export {
+  type PublicApiHttpMethod,
+  type PublicApiOperationId,
+  type PublicApiOperationKeyKind,
+  type PublicApiOperationMetadata,
+  publicApiOperations,
+} from "./generated/index.js"
+export {
   createManagedPublicApiFetch,
   ManagedPublicApiFetchConfigurationError,
   type ManagedPublicApiFetchOptions,
