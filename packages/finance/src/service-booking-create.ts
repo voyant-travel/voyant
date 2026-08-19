@@ -1065,7 +1065,11 @@ async function loadProductOptionUnits(
 }
 
 function isInventoryOptionUnit(unit: PricingAssignmentUnit): boolean {
-  return unit.unitType === "room" || unit.unitType === "vehicle"
+  return isInventoryUnitType(unit.unitType)
+}
+
+function isInventoryUnitType(unitType: string | null | undefined): boolean {
+  return unitType === "room" || unitType === "vehicle"
 }
 
 function isPersonOptionUnit(unit: PricingAssignmentUnit): boolean {
@@ -1671,7 +1675,7 @@ async function reconcileBookingCreatePricing(
           ],
         }
       }
-      if (categoryRules.some((rule) => rule.unitType === "room") && optionBaseState) {
+      if (categoryRules.some((rule) => isInventoryUnitType(rule.unitType)) && optionBaseState) {
         const occupancyPrice = classifyOccupancyPrice({
           occupancyPriceBasis: persistedPricing?.occupancyPriceBasis ?? null,
           travelerBaseFareAmountCents: persistedPricing?.baseSellAmountCents ?? 0,
@@ -1709,7 +1713,7 @@ async function reconcileBookingCreatePricing(
       chargeQuantity,
     })
     if (flatUnitPrice.status === "priced") {
-      if (unitRule?.unitType === "room" && optionBaseState) {
+      if (unitRule && isInventoryUnitType(unitRule.unitType) && optionBaseState) {
         const occupancyPrice = classifyOccupancyPrice({
           occupancyPriceBasis: persistedPricing?.occupancyPriceBasis ?? null,
           travelerBaseFareAmountCents: persistedPricing?.baseSellAmountCents ?? 0,
