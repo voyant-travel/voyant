@@ -1,6 +1,7 @@
 import { cloudAuthUserLinks, userProfilesTable } from "@voyant-travel/db/schema/iam"
 import type { VoyantDb } from "@voyant-travel/hono"
 import type { AccessCatalog } from "@voyant-travel/types/api-keys"
+import { hasApiKeyPermission, permissionStringsToPermissions } from "@voyant-travel/types/api-keys"
 import { accessCatalogScopesForRole, isFullAccessRole } from "@voyant-travel/types/member-roles"
 import { and, eq, isNull } from "drizzle-orm"
 
@@ -37,6 +38,26 @@ function scopesForOperatorRole(
  */
 function fullAccessScopes(accessCatalog: AccessCatalog): string[] {
   return scopesForOperatorRole("admin", accessCatalog) ?? FULL_ACCESS_SCOPES
+}
+
+/**
+ * True when a stored scope set *is* the full-access sentinel rather than a
+ * deliberately chosen list.
+ *
+ * The column holds `["*"]` for far more than unconfigured accounts: the local
+ * team adapter writes `scopesForRole("admin")` and `scopesForRole("owner")`,
+ * both of which are `["*"]`, and
+ * `20260805000000_backfill_unassigned_member_permissions.sql` wrote the same
+ * value over every previously-null row. So reading the column as "assigned,
+ * therefore verbatim" would leave the expansion reaching only accounts with no
+ * profile at all — which is to say, almost nobody.
+ *
+ * `hasApiKeyPermission(..., "*", "*")` is the same test the role layer uses in
+ * `isFullAccessRole`, so `["catalog:read"]`, `["*:read"]` and `[]` are all
+ * genuinely restricted and pass through untouched.
+ */
+function isFullAccessScopeSet(scopes: string[]): boolean {
+  return hasApiKeyPermission(permissionStringsToPermissions(scopes), "*", "*")
 }
 
 export async function resolveStaffAccess(input: {
@@ -96,16 +117,18 @@ export async function resolveStaffAccess(input: {
     .from(userProfilesTable)
     .where(eq(userProfilesTable.id, input.userId))
     .limit(1)
+  // Expand full access through the catalog, exactly as the managed branch above
+  // does. A resource declared `wildcard: "explicit-resource"` is deliberately
+  // not satisfied by `*`, so the bare sentinel locks a full-access local admin
+  // out of every one of them — which is the opposite of what "full access"
+  // means. A genuinely restricted permission set is still returned verbatim:
+  // the point of the declaration is that a *restricted* member must have the
+  // resource named, not that an unconfigured deployment has less authority than
+  // a configured one.
+  const stored = profile?.permissions
   return {
     organizationId: null,
-    // Expand full access through the catalog, exactly as the managed branch
-    // above does. A resource declared `wildcard: "explicit-resource"` is
-    // deliberately not satisfied by `*`, so the bare sentinel locks a
-    // full-access local admin out of every one of them — which is the opposite
-    // of what "full access" means. An assigned permission set is still returned
-    // verbatim: the point of the declaration is that a *restricted* member must
-    // have the resource named, not that an unconfigured deployment has less
-    // authority than a configured one.
-    scopes: profile?.permissions ?? fullAccessScopes(input.accessCatalog),
+    scopes:
+      stored && !isFullAccessScopeSet(stored) ? stored : fullAccessScopes(input.accessCatalog),
   }
 }

@@ -170,13 +170,31 @@ describe("resolveStaffAccess", () => {
     })
   })
 
-  it("does not expand an assigned local permission set", async () => {
+  // `["*"]` in the column is not "someone chose this": the local team adapter
+  // writes it for both `admin` and `owner`, and the 20260805 backfill wrote it
+  // over every previously-null row. Expanding only the null case would reach
+  // almost no real account.
+  it("expands a stored full-access sentinel", async () => {
+    await expect(
+      resolveLocal([{ permissions: ["*"] }], ACCESS_CATALOG_WITH_EXPLICIT_RESOURCE),
+    ).resolves.toEqual({
+      organizationId: null,
+      scopes: ["*", "booking-customer-access:read", "booking-customer-access:write"],
+    })
+  })
+
+  it.each([
+    { label: "a narrow grant", permissions: ["catalog:read"] },
+    { label: "a read-everything grant that is not full access", permissions: ["*:read"] },
+    { label: "an explicitly empty set", permissions: [] },
+  ])("does not expand $label", async ({ permissions }) => {
     // The point of `explicit-resource` is that a deliberately restricted member
     // must have the resource named. Expanding here would hand every member the
-    // sensitive grants, which is the opposite failure.
+    // sensitive grants, which is the opposite failure. `*:read` matters most:
+    // it is broad but it is not `*:*`, so it must not be read as full access.
     await expect(
-      resolveLocal([{ permissions: ["catalog:read"] }], ACCESS_CATALOG_WITH_EXPLICIT_RESOURCE),
-    ).resolves.toEqual({ organizationId: null, scopes: ["catalog:read"] })
+      resolveLocal([{ permissions }], ACCESS_CATALOG_WITH_EXPLICIT_RESOURCE),
+    ).resolves.toEqual({ organizationId: null, scopes: permissions })
   })
 
   it("preserves an explicitly empty local scope set instead of reading it as full access", async () => {
