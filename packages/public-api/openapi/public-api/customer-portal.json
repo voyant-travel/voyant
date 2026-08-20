@@ -209,7 +209,9 @@
         "summary": "POST /v1/public/customer-portal/booking-claims",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "public-api"
+        "x-voyant-surface": "public-api",
+        "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
+        "x-voyant-package-name": "@voyant-travel/public-api"
       }
     },
     "/v1/public/customer-portal/booking-claims/{claimId}/confirm": {
@@ -296,7 +298,9 @@
         "summary": "POST /v1/public/customer-portal/booking-claims/{claimId}/confirm",
         "tags": ["customer-portal"],
         "x-voyant-module": "customer-portal",
-        "x-voyant-surface": "public-api"
+        "x-voyant-surface": "public-api",
+        "x-voyant-api-id": "@voyant-travel/public-api#customer-portal.api",
+        "x-voyant-package-name": "@voyant-travel/public-api"
       }
     },
     "/v1/public/customer-portal/me": {

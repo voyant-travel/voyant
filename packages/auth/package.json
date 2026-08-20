@@ -60,10 +60,6 @@
       "types": "./src/customer-business-onboarding-runtime-port.ts",
       "default": "./src/customer-business-onboarding-runtime-port.ts"
     },
-    "./personal-buyer-person-runtime-port": {
-      "types": "./src/personal-buyer-person-runtime-port.ts",
-      "default": "./src/personal-buyer-person-runtime-port.ts"
-    },
     "./ports": {
       "types": "./src/ports.ts",
       "default": "./src/ports.ts"
@@ -199,11 +195,6 @@
         "types": "./dist/customer-business-onboarding-runtime-port.d.ts",
         "import": "./dist/customer-business-onboarding-runtime-port.js",
         "default": "./dist/customer-business-onboarding-runtime-port.js"
-      },
-      "./personal-buyer-person-runtime-port": {
-        "types": "./dist/personal-buyer-person-runtime-port.d.ts",
-        "import": "./dist/personal-buyer-person-runtime-port.js",
-        "default": "./dist/personal-buyer-person-runtime-port.js"
       },
       "./ports": {
         "types": "./dist/ports.d.ts",

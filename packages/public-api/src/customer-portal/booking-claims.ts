@@ -240,7 +240,11 @@ export async function confirmCustomerBookingClaim(
       }
       return { status: result.status, grantId: result.grantId }
     }
-    if (result.status === "idempotency_conflict") return result
+    // Narrowing `result` here still carries the domain command's wider status
+    // union, and this transport deliberately collapses "invalid", "expired" and
+    // "not_found" into one answer, so the reply is written out rather than
+    // forwarded.
+    if (result.status === "idempotency_conflict") return { status: "idempotency_conflict" }
     return { status: "invalid_or_expired" }
   })
 }
