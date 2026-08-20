@@ -4,6 +4,41 @@ import { resolveStaffAccess } from "../../src/staff-access.js"
 
 const ACCESS_CATALOG = { resources: [], presets: [] }
 
+/**
+ * A catalog carrying a resource that `*` deliberately does not satisfy.
+ *
+ * The empty `ACCESS_CATALOG` above cannot distinguish the bare `*` sentinel
+ * from a properly expanded full-access scope set, because with no resources
+ * there is nothing to expand — which is why a full-access local admin could be
+ * locked out of every `explicit-resource` while every test stayed green.
+ */
+const ACCESS_CATALOG_WITH_EXPLICIT_RESOURCE = {
+  resources: [
+    {
+      id: "@voyant-travel/bookings#access.booking-customer-access",
+      unitId: "@voyant-travel/bookings",
+      resource: "booking-customer-access",
+      label: "Booking customer access",
+      description: "Explicit customer Buyer Account grants for Bookings.",
+      wildcard: "explicit-resource" as const,
+      actions: [
+        { action: "read", label: "Read", description: "Inspect grants." },
+        { action: "write", label: "Manage", description: "Grant or revoke." },
+      ],
+    },
+  ],
+  presets: [],
+}
+
+function resolveLocal(rows: unknown[], accessCatalog = ACCESS_CATALOG) {
+  return resolveStaffAccess({
+    accessCatalog,
+    authMode: "local",
+    db: databaseReturning(rows).db as never,
+    userId: "user_staff_1",
+  })
+}
+
 function databaseReturning(rows: unknown[]) {
   const limit = vi.fn(async () => rows)
   const where = vi.fn(() => ({ limit }))
@@ -121,6 +156,27 @@ describe("resolveStaffAccess", () => {
         userId: "user_staff_1",
       }),
     ).resolves.toEqual({ organizationId: null, scopes: ["*"] })
+  })
+
+  it.each([
+    { label: "an unassigned permission set", rows: [{ permissions: null }] },
+    { label: "no profile row at all", rows: [] },
+  ])("expands local full access with $label to the grants `*` does not satisfy", async ({
+    rows,
+  }) => {
+    await expect(resolveLocal(rows, ACCESS_CATALOG_WITH_EXPLICIT_RESOURCE)).resolves.toEqual({
+      organizationId: null,
+      scopes: ["*", "booking-customer-access:read", "booking-customer-access:write"],
+    })
+  })
+
+  it("does not expand an assigned local permission set", async () => {
+    // The point of `explicit-resource` is that a deliberately restricted member
+    // must have the resource named. Expanding here would hand every member the
+    // sensitive grants, which is the opposite failure.
+    await expect(
+      resolveLocal([{ permissions: ["catalog:read"] }], ACCESS_CATALOG_WITH_EXPLICIT_RESOURCE),
+    ).resolves.toEqual({ organizationId: null, scopes: ["catalog:read"] })
   })
 
   it("preserves an explicitly empty local scope set instead of reading it as full access", async () => {

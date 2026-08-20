@@ -27,6 +27,18 @@ function scopesForOperatorRole(
   return [...new Set([...base, ...(selected?.grants ?? [])])].sort()
 }
 
+/**
+ * What "full access" resolves to when no role or permission set says otherwise.
+ *
+ * Not the bare `*` sentinel: `accessCatalogScopesForRole` expands a full-access
+ * role to `*` **plus** every grant the catalog marks as one that `*` does not
+ * satisfy. `FULL_ACCESS_SCOPES` remains the fallback for a deployment whose
+ * catalog carries no such resources.
+ */
+function fullAccessScopes(accessCatalog: AccessCatalog): string[] {
+  return scopesForOperatorRole("admin", accessCatalog) ?? FULL_ACCESS_SCOPES
+}
+
 export async function resolveStaffAccess(input: {
   accessCatalog: AccessCatalog
   authMode: "local" | "voyant-cloud"
@@ -68,9 +80,9 @@ export async function resolveStaffAccess(input: {
       return null
     }
 
-    const fullAccessScopes =
-      scopesForOperatorRole("admin", input.accessCatalog) ?? FULL_ACCESS_SCOPES
-    const roleScopes = scopesForOperatorRole(link.roleSlug, input.accessCatalog) ?? fullAccessScopes
+    const roleScopes =
+      scopesForOperatorRole(link.roleSlug, input.accessCatalog) ??
+      fullAccessScopes(input.accessCatalog)
     return {
       organizationId: link.platformOrganizationId,
       scopes: isFullAccessRole(link.roleSlug) ? roleScopes : (link.scopes ?? roleScopes),
@@ -86,6 +98,14 @@ export async function resolveStaffAccess(input: {
     .limit(1)
   return {
     organizationId: null,
-    scopes: profile?.permissions ?? FULL_ACCESS_SCOPES,
+    // Expand full access through the catalog, exactly as the managed branch
+    // above does. A resource declared `wildcard: "explicit-resource"` is
+    // deliberately not satisfied by `*`, so the bare sentinel locks a
+    // full-access local admin out of every one of them — which is the opposite
+    // of what "full access" means. An assigned permission set is still returned
+    // verbatim: the point of the declaration is that a *restricted* member must
+    // have the resource named, not that an unconfigured deployment has less
+    // authority than a configured one.
+    scopes: profile?.permissions ?? fullAccessScopes(input.accessCatalog),
   }
 }
