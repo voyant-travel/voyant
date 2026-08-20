@@ -1,4 +1,5 @@
 // agent-quality: file-size exception -- owner: catalog; one generated-runtime contributor map centralizes the package's lazy port factories and shared host primitives.
+
 import {
   type BookingActionSourceRuntime,
   type BookingsRelationshipsRuntime,
@@ -62,6 +63,10 @@ import {
   type CatalogCompositeBookingSessionRuntime,
   catalogCompositeBookingSessionRuntimePort,
 } from "./composite-booking-session-runtime-port.js"
+import {
+  type PersonalBuyerPersonRuntime,
+  personalBuyerPersonRuntimePort,
+} from "./personal-buyer-person-runtime-port.js"
 import {
   type CatalogReindexCheckpoint,
   type CatalogReindexClaim,
@@ -174,6 +179,10 @@ export function createCatalogRuntimePortContribution(
     async resolveBookingsRelationshipsRuntime() {
       if (host.hasRuntimePort?.(bookingsRelationshipsRuntimePort) !== true) return null
       return host.getRuntimePort<BookingsRelationshipsRuntime>(bookingsRelationshipsRuntimePort)
+    },
+    async resolvePersonalBuyerPersonRuntime() {
+      if (host.hasRuntimePort?.(personalBuyerPersonRuntimePort) !== true) return null
+      return host.getRuntimePort<PersonalBuyerPersonRuntime>(personalBuyerPersonRuntimePort)
     },
     resolveFinanceServiceRuntime(context: unknown) {
       const eventBus = (context as { var?: { eventBus?: unknown } } | undefined)?.var?.eventBus
@@ -334,12 +343,12 @@ export function createCatalogRuntimePortContribution(
             ? {
                 actorKind: "customer",
                 principalId: input.ownerUserId,
-                storefront: input.channel,
+                publicApiOrigin: input.channel,
               }
             : {
                 actorKind: "anonymous",
                 capability: input.capability,
-                storefront: input.channel,
+                publicApiOrigin: input.channel,
               },
         )
       },

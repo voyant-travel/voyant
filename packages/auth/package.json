@@ -60,6 +60,10 @@
       "types": "./src/customer-business-onboarding-runtime-port.ts",
       "default": "./src/customer-business-onboarding-runtime-port.ts"
     },
+    "./personal-buyer-person-runtime-port": {
+      "types": "./src/personal-buyer-person-runtime-port.ts",
+      "default": "./src/personal-buyer-person-runtime-port.ts"
+    },
     "./ports": {
       "types": "./src/ports.ts",
       "default": "./src/ports.ts"
@@ -196,6 +200,11 @@
         "import": "./dist/customer-business-onboarding-runtime-port.js",
         "default": "./dist/customer-business-onboarding-runtime-port.js"
       },
+      "./personal-buyer-person-runtime-port": {
+        "types": "./dist/personal-buyer-person-runtime-port.d.ts",
+        "import": "./dist/personal-buyer-person-runtime-port.js",
+        "default": "./dist/personal-buyer-person-runtime-port.js"
+      },
       "./ports": {
         "types": "./dist/ports.d.ts",
         "import": "./dist/ports.js",
@@ -303,6 +312,7 @@
     "@better-auth/oauth-provider": "1.6.23",
     "@hono/zod-openapi": "catalog:",
     "@voyant-travel/action-ledger": "workspace:^",
+    "@voyant-travel/catalog": "workspace:^",
     "@voyant-travel/core": "workspace:^",
     "@voyant-travel/db": "workspace:^",
     "@voyant-travel/distribution": "workspace:^",
