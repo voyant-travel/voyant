@@ -857,6 +857,14 @@ async function commitOwnedBookingInTransaction(
       return row ? { bookingNumber: row.bookingNumber, status: row.status } : null
     },
   })
+  // Which Buyer Account this Commit grants ownership to. The Session's own is
+  // authoritative, but a Session created by the previous release does not have
+  // one — see the legacy branch in `isOwnedBy`. Authorization has already
+  // established that this caller owns the Session and that their Buyer Account
+  // context is well-formed, so falling back to the caller's account grants the
+  // Booking to the person who just paid for it rather than leaving them to
+  // claim their own Booking afterwards.
+  const grantAccount = commitGrantAccount(input)
   const result = await runtime.createFromSession({
     db: tx,
     sessionId: input.session.id,
@@ -871,13 +879,11 @@ async function commitOwnedBookingInTransaction(
       input.access.actorKind === "staff" || input.access.actorKind === "customer"
         ? input.access.principalId
         : undefined,
-    ...(input.access.actorKind === "customer" &&
-    input.session.ownerBuyerAccountId &&
-    input.session.ownerBuyerAccountKind
+    ...(grantAccount
       ? {
           customerAccess: {
-            buyerAccountId: input.session.ownerBuyerAccountId,
-            buyerAccountKind: input.session.ownerBuyerAccountKind,
+            buyerAccountId: grantAccount.id,
+            buyerAccountKind: grantAccount.kind,
             ...(input.access.membershipId ? { membershipId: input.access.membershipId } : {}),
             ...(input.access.membershipRole ? { membershipRole: input.access.membershipRole } : {}),
           },
@@ -890,6 +896,19 @@ async function commitOwnedBookingInTransaction(
     .from(bookingAllocationsRef)
     .where(eq(bookingAllocationsRef.bookingId, result.bookingId))
   return { bookingId: result.bookingId, allocationIds: allocations.map((row) => row.id) }
+}
+
+/** See the call site: Session first, caller second, nothing for a non-customer. */
+function commitGrantAccount(
+  input: Pick<CommitOwnedBookingInput, "session" | "access">,
+): { id: string; kind: "personal" | "business" } | null {
+  if (input.access.actorKind !== "customer") return null
+  if (input.session.ownerBuyerAccountId && input.session.ownerBuyerAccountKind) {
+    return { id: input.session.ownerBuyerAccountId, kind: input.session.ownerBuyerAccountKind }
+  }
+  const id = input.access.buyerAccountId?.trim()
+  const kind = input.access.buyerAccountKind
+  return id && kind ? { id, kind } : null
 }
 
 async function resolveBilling(

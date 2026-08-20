@@ -84,4 +84,11 @@ CREATE UNIQUE INDEX IF NOT EXISTS "uq_customer_booking_access_claim_challenge"
 CREATE INDEX IF NOT EXISTS "idx_customer_booking_access_claim_booking_account"
   ON "customer_booking_access_claims" USING btree ("booking_id", "buyer_account_id");--> statement-breakpoint
 CREATE INDEX IF NOT EXISTS "idx_customer_booking_access_claim_status_expires"
-  ON "customer_booking_access_claims" USING btree ("status", "expires_at");
+  ON "customer_booking_access_claims" USING btree ("status", "expires_at");--> statement-breakpoint
+
+-- Claim start resolves a Booking by reference case-insensitively, and the
+-- unique btree on "booking_number" cannot answer upper("booking_number").
+-- Without this, every claim attempt on a public, repeatedly-callable endpoint
+-- is a sequential scan of "bookings".
+CREATE INDEX IF NOT EXISTS "idx_bookings_number_upper"
+  ON "bookings" USING btree (upper("booking_number"));

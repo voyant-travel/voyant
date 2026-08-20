@@ -3451,9 +3451,26 @@ function isOwnedBy(
   access: BookingSessionAccessContext,
 ): boolean {
   if (session.actorKind === "customer") {
+    // A customer Session created by the previous release has no Buyer Account:
+    // the column is new and nullable, and nothing backfills it. Requiring one
+    // outright would reject resume, update, quote, hold, commit AND the adopt
+    // path that would otherwise repair it, so every checkout in flight at the
+    // moment of the upgrade would break for the rest of its TTL.
+    //
+    // For those rows fall back to the rule they were created under — the owning
+    // principal, and the owning organization when the Session pinned one. That
+    // grants no authority the previous release did not already grant, and the
+    // fallback drains on its own as legacy Sessions expire.
+    if (!session.ownerBuyerAccountId) {
+      return Boolean(
+        access.actorKind === "customer" &&
+          session.ownerPrincipalId &&
+          access.principalId === session.ownerPrincipalId &&
+          (!session.ownerOrganizationId || session.ownerOrganizationId === access.organizationId),
+      )
+    }
     return Boolean(
       access.actorKind === "customer" &&
-        session.ownerBuyerAccountId &&
         access.buyerAccountId === session.ownerBuyerAccountId &&
         access.buyerAccountKind === session.ownerBuyerAccountKind,
     )

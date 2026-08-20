@@ -711,6 +711,17 @@ function formatDepartureDate(departureDate: string | null, locale: string): stri
  * Account receives one. CRM people, acting principals, staff, partners, and
  * guests are deliberately not reusable payment-customer identities
  * (voyant#4637).
+ *
+ * This does mean a returning customer whose provider Customer was minted under
+ * the old Person-id key is not matched to it, and does not see instruments
+ * stored against it. That is the intended trade, not a gap to close here: the
+ * RFC treats provider customers keyed by Person id as compatibility data rather
+ * than authorization, and requires an explicit provider-customer mapping for
+ * the Buyer Account before a saved instrument may be offered. Attaching the
+ * qualified reference to an existing provider record is an adapter-side
+ * migration. Do not reinstate a Person or principal fallback to paper over it —
+ * that re-derives a payment identity from data the customer never proved
+ * control of, which is the thing this function stopped doing.
  */
 function customerReference(session: {
   actorKind: string
